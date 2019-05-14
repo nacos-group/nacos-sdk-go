@@ -41,15 +41,16 @@ const (
 	defaultListenerResource = baseResource + "/listener"
 )
 
+// Config defines the config information that used for retrieve from server
 type Config struct {
-	Host            string
-	Port            int
+	Host            string // the server host
+	Port            int // the server port
 	AccessKeyId     string
 	AccessKeySecret string
 	Group           string
 	Tenant          string
 	DataId          string
-	Cfg             interface{}
+	Cfg             interface{} // pointer of a struct that used for json unmarshal
 	md5Sum          string
 	running         bool
 	cancel          context.CancelFunc
@@ -64,6 +65,7 @@ type ResourcePaths struct {
 	ResourceListen string // the target resource for Listen, ex: /nacos/v1/cs/configs/listener
 }
 
+// Configs contains all configs
 type Configs struct {
 	resourcePaths *ResourcePaths
 	configsMap    sync.Map
@@ -88,6 +90,7 @@ func (c *Configs) WithResourcePaths(rp *ResourcePaths) *Configs {
 	return c
 }
 
+// Register will start a goroutine for listener
 func (c *Configs) Register(wg *sync.WaitGroup, cf *Config) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
