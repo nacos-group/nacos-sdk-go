@@ -25,8 +25,10 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"hash"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -44,7 +46,7 @@ const (
 // Config defines the config information that used for retrieve from server
 type Config struct {
 	Host            string // the server host
-	Port            int // the server port
+	Port            int    // the server port
 	AccessKeyId     string
 	AccessKeySecret string
 	Group           string
@@ -76,8 +78,8 @@ type Configs struct {
 func New() *Configs {
 	return &Configs{
 		resourcePaths: &ResourcePaths{
-			ResourceGet: baseResource,
-			ResourcePost: baseResource,
+			ResourceGet:    baseResource,
+			ResourcePost:   baseResource,
 			ResourceDelete: baseResource,
 			ResourceListen: defaultListenerResource,
 		},
@@ -132,13 +134,7 @@ func (c *Configs) listen(wg *sync.WaitGroup, cf *Config) {
 			break
 		}
 
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}
-
-		client := &http.Client{Transport: tr}
+		client := c.newHttpClient()
 		req, cancel, err := c.buildListenRequest(cf)
 		if err != nil {
 			failCount++
@@ -166,12 +162,55 @@ func (c *Configs) listen(wg *sync.WaitGroup, cf *Config) {
 			continue
 		}
 
-		if err := c.retrieveConfig(dataId, cfg); err != nil {
+		if err := c.retrieveConfig(cf); err != nil {
 			failCount++
 			time.Sleep(3 * time.Second)
 			continue
 		}
 	}
+}
+
+func (c *Configs) newHttpClient() *http.Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	client := &http.Client{Transport: tr}
+	return client
+}
+
+func (c *Configs) retrieveConfig(cf *Config) error {
+	req, _, err := c.buildRetrieveRequest(cf)
+	if err != nil {
+		return err
+	}
+	client := c.newHttpClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	v, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(v, cf.Cfg)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Configs) buildRetrieveRequest(cf *Config) (*http.Request, context.CancelFunc, error) {
+	urlHttps, err := c.buildRetrieveUrl(cf)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	urlHttps = fmt.Sprintf("%s?tenant=%s&dataId=%s&group=%s", urlHttps, cf.Tenant, cf.DataId, cf.Group)
+
+	return c.buildRequest(cf, "GET", urlHttps, "", -1)
 }
 
 func (c *Configs) buildListenRequest(cf *Config) (*http.Request, context.CancelFunc, error) {
@@ -185,20 +224,22 @@ func (c *Configs) buildListenRequest(cf *Config) (*http.Request, context.CancelF
 		cf.Group, fieldSeparator,
 		cf.md5Sum, fieldSeparator,
 		cf.Tenant, configSeparator)
-	bodyStr := "Probe-Modify-Request=" + bodyValue
-	fmt.Println(bodyStr)
-	body := bytes.NewBuffer([]byte(bodyStr))
+	body := "Probe-Modify-Request=" + bodyValue
 
-	return c.buildRequest(cf, "POST", urlHttps, 30000, body)
+	return c.buildRequest(cf, "POST", urlHttps, body, 30000)
 }
 
 func (c *Configs) buildRequest(
 	cf *Config,
-	method, urlStr string,
-	longPullingTimeout int,
-	body *bytes.Buffer) (*http.Request, context.CancelFunc, error) {
+	method, urlStr, body string,
+	longPullingTimeout int) (*http.Request, context.CancelFunc, error) {
 
-	req, err := http.NewRequest(method, urlStr, body)
+	var bd io.Reader = nil
+	if body != "" {
+		bd = bytes.NewBuffer([]byte(body))
+	}
+
+	req, err := http.NewRequest(method, urlStr, bd)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -219,8 +260,13 @@ func (c *Configs) buildRequest(
 	return req, cancel, nil
 }
 
+func (c *Configs) buildRetrieveUrl(cf *Config) (string, error) {
+	urlHttps := fmt.Sprintf("https://%s:%d%s", cf.Host, cf.Port, c.resourcePaths.ResourceGet)
+	return urlHttps, nil
+}
+
 func (c *Configs) buildListenUrl(cf *Config) (string, error) {
-	urlHttps := fmt.Sprintf("https://%s:%d/%s", cf.Host, cf.Port, )
+	urlHttps := fmt.Sprintf("https://%s:%d%s", cf.Host, cf.Port, c.resourcePaths.ResourceListen)
 	return urlHttps, nil
 }
 
