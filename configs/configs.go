@@ -125,6 +125,26 @@ func (c *Configs) Register(wg *sync.WaitGroup, cf *Config) error {
 	return nil
 }
 
+// Stop will stop all listener
+func (c *Configs) Stop(wg *sync.WaitGroup) error {
+	var failedDataId []string
+	c.configsMap.Range(func(key, value interface{}) bool {
+		if cf, ok := value.(*Config); ok {
+			cf.cancel()
+			cf.running = false
+		} else {
+			failedDataId = append(failedDataId, key.(string))
+		}
+		return true
+	})
+
+	if len(failedDataId) > 0 {
+		return fmt.Errorf("stop listener failed: %v", failedDataId)
+	}
+
+	return nil
+}
+
 func (c *Configs) listen(wg *sync.WaitGroup, cf *Config) {
 	defer wg.Done()
 
