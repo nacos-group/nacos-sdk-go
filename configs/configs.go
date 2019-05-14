@@ -99,30 +99,35 @@ func (c *Configs) Register(wg *sync.WaitGroup, cf *Config) error {
 
 	v := c.getConfig(cf.DataId)
 	if v == nil {
-		v = &Config{
-			Host:            cf.Host,
-			Port:            cf.Port,
-			AccessKeyId:     cf.AccessKeyId,
-			AccessKeySecret: cf.AccessKeySecret,
-			Group:           cf.Group,
-			Tenant:          cf.Tenant,
-			DataId:          cf.DataId,
-			Cfg:             cf.Cfg,
-			md5Sum:          MD5(""),
-			running:         false,
-		}
-		c.configsMap.Store(v.DataId, v)
+		v = c.newConfig(cf)
 	}
 
 	// listener for dataId is running
 	if v.running {
-		return nil
+		return fmt.Errorf("listener for dataId:%s is running", cf.DataId)
 	}
 
 	v.running = true
 	wg.Add(1)
-	go c.listen(wg, cf)
+	go c.listen(wg, v)
 	return nil
+}
+
+func (c *Configs) newConfig(cf *Config) *Config {
+	newCf := &Config{
+		Host:            cf.Host,
+		Port:            cf.Port,
+		AccessKeyId:     cf.AccessKeyId,
+		AccessKeySecret: cf.AccessKeySecret,
+		Group:           cf.Group,
+		Tenant:          cf.Tenant,
+		DataId:          cf.DataId,
+		Cfg:             cf.Cfg,
+		md5Sum:          MD5(""),
+		running:         false,
+	}
+	c.configsMap.Store(newCf.DataId, newCf)
+	return newCf
 }
 
 // Stop will stop all listener
@@ -223,22 +228,14 @@ func (c *Configs) retrieveConfig(cf *Config) error {
 }
 
 func (c *Configs) buildRetrieveRequest(cf *Config) (*http.Request, context.CancelFunc, error) {
-	urlHttps, err := c.buildRetrieveUrl(cf)
-	if err != nil {
-		return nil, nil, err
-	}
-
+	urlHttps := c.buildRetrieveUrl(cf)
 	urlHttps = fmt.Sprintf("%s?tenant=%s&dataId=%s&group=%s", urlHttps, cf.Tenant, cf.DataId, cf.Group)
 
 	return c.buildRequest(cf, "GET", urlHttps, "", -1)
 }
 
 func (c *Configs) buildListenRequest(cf *Config) (*http.Request, context.CancelFunc, error) {
-	urlHttps, err := c.buildListenUrl(cf)
-	if err != nil {
-		return nil, nil, err
-	}
-
+	urlHttps := c.buildListenUrl(cf)
 	bodyValue := fmt.Sprintf("%s%s%s%s%s%s%s%s",
 		cf.DataId, fieldSeparator,
 		cf.Group, fieldSeparator,
@@ -280,14 +277,14 @@ func (c *Configs) buildRequest(
 	return req, cancel, nil
 }
 
-func (c *Configs) buildRetrieveUrl(cf *Config) (string, error) {
+func (c *Configs) buildRetrieveUrl(cf *Config) string {
 	urlHttps := fmt.Sprintf("https://%s:%d%s", cf.Host, cf.Port, c.resourcePaths.ResourceGet)
-	return urlHttps, nil
+	return urlHttps
 }
 
-func (c *Configs) buildListenUrl(cf *Config) (string, error) {
+func (c *Configs) buildListenUrl(cf *Config) string {
 	urlHttps := fmt.Sprintf("https://%s:%d%s", cf.Host, cf.Port, c.resourcePaths.ResourceListen)
-	return urlHttps, nil
+	return urlHttps
 }
 
 func (c *Configs) getConfig(dataId string) *Config {
