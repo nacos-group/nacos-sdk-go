@@ -25,7 +25,6 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"hash"
 	"io"
@@ -45,17 +44,13 @@ const (
 
 // Config defines the config information that used for retrieve from server
 type Config struct {
-	Host            string // the server host
-	Port            int    // the server port
-	AccessKeyId     string
-	AccessKeySecret string
-	Group           string
-	Tenant          string // in ACM, the namespace is the tenant
-	DataId          string
-	Cfg             interface{} // pointer of a struct that used for json unmarshal
-	md5Sum          string
-	running         bool
-	cancel          context.CancelFunc
+	Group    string
+	Tenant   string // in ACM, the namespace is the tenant
+	DataId   string
+	OnChange func(namespace, group, dataId string, data []byte)
+	md5Sum   string
+	running  bool
+	cancel   context.CancelFunc
 }
 
 // ResourcePaths defines the resources for request, default for nacos resources
@@ -69,14 +64,22 @@ type ResourcePaths struct {
 
 // Configs contains all configs
 type Configs struct {
-	resourcePaths *ResourcePaths
-	configsMap    sync.Map
-	lock          sync.RWMutex
+	Host            string // the server host
+	Port            int    // the server port
+	AccessKeyId     string
+	AccessKeySecret string
+	resourcePaths   *ResourcePaths
+	configsMap      sync.Map
+	lock            sync.RWMutex
 }
 
 // New returns a *Configs
-func New() *Configs {
+func New(host string, port int, accessKeyId, AccessKeySecret string) *Configs {
 	return &Configs{
+		Host:            host,
+		Port:            port,
+		AccessKeyId:     accessKeyId,
+		AccessKeySecret: AccessKeySecret,
 		resourcePaths: &ResourcePaths{
 			ResourceGet:    baseResource,
 			ResourcePost:   baseResource,
@@ -92,8 +95,8 @@ func (c *Configs) WithResourcePaths(rp *ResourcePaths) *Configs {
 	return c
 }
 
-// Register will start a goroutine for listener
-func (c *Configs) Register(wg *sync.WaitGroup, cf *Config) error {
+// OnChange will start a goroutine for listener
+func (c *Configs) OnChange(wg *sync.WaitGroup, cf *Config) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -115,16 +118,12 @@ func (c *Configs) Register(wg *sync.WaitGroup, cf *Config) error {
 
 func (c *Configs) newConfig(cf *Config) *Config {
 	newCf := &Config{
-		Host:            cf.Host,
-		Port:            cf.Port,
-		AccessKeyId:     cf.AccessKeyId,
-		AccessKeySecret: cf.AccessKeySecret,
-		Group:           cf.Group,
-		Tenant:          cf.Tenant,
-		DataId:          cf.DataId,
-		Cfg:             cf.Cfg,
-		md5Sum:          MD5(""),
-		running:         false,
+		Group:    cf.Group,
+		Tenant:   cf.Tenant,
+		DataId:   cf.DataId,
+		OnChange: cf.OnChange,
+		md5Sum:   MD5(""),
+		running:  false,
 	}
 	c.configsMap.Store(newCf.DataId, newCf)
 	return newCf
@@ -220,10 +219,8 @@ func (c *Configs) retrieveConfig(cf *Config) error {
 		return err
 	}
 
-	err = json.Unmarshal(v, cf.Cfg)
-	if err != nil {
-		return err
-	}
+	cf.OnChange(cf.Tenant, cf.Group, cf.DataId, v)
+
 	return nil
 }
 
@@ -266,9 +263,9 @@ func (c *Configs) buildRequest(
 	now := time.Now().UnixNano() / 1e6
 
 	raw := cf.Tenant + "+" + cf.Group + "+" + strconv.FormatInt(now, 10)
-	signature := HmacSHA1(raw, cf.AccessKeySecret)
+	signature := HmacSHA1(raw, c.AccessKeySecret)
 
-	req.Header.Set("Spas-AccessKey", cf.AccessKeyId)
+	req.Header.Set("Spas-AccessKey", c.AccessKeyId)
 	req.Header.Set("Spas-Signature", signature)
 	if longPullingTimeout >= 0 {
 		req.Header.Set("longPullingTimeout", strconv.Itoa(longPullingTimeout))
@@ -278,12 +275,12 @@ func (c *Configs) buildRequest(
 }
 
 func (c *Configs) buildRetrieveUrl(cf *Config) string {
-	urlHttps := fmt.Sprintf("https://%s:%d%s", cf.Host, cf.Port, c.resourcePaths.ResourceGet)
+	urlHttps := fmt.Sprintf("https://%s:%d%s", c.Host, c.Port, c.resourcePaths.ResourceGet)
 	return urlHttps
 }
 
 func (c *Configs) buildListenUrl(cf *Config) string {
-	urlHttps := fmt.Sprintf("https://%s:%d%s", cf.Host, cf.Port, c.resourcePaths.ResourceListen)
+	urlHttps := fmt.Sprintf("https://%s:%d%s", c.Host, c.Port, c.resourcePaths.ResourceListen)
 	return urlHttps
 }
 
