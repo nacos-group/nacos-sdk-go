@@ -43,7 +43,7 @@ func TestConfigs_Register_Running(t *testing.T) {
 	}
 	cf.running = true
 
-	c.configsMap.Store("dataId123", cf)
+	c.configsMap.Store(cf.key(), cf)
 	err := c.OnChange(&wg, cf)
 	assert.NotNil(t, err)
 	assert.True(t, strings.Contains(err.Error(), "running"))
@@ -57,6 +57,9 @@ func TestConfigs_Stop(t *testing.T) {
 		Tenant: "tenantId_123",
 		Group: "group_123",
 		DataId: "dataId123",
+		OnChange: func(namespace, group, dataId string, data []byte) {
+			// omit
+		},
 	}
 	err := c.OnChange(&wg, cf)
 	assert.Nil(t, err)
@@ -83,8 +86,8 @@ func TestConfigs_GetConfig(t *testing.T) {
 	assert.NotNil(t, c)
 
 	cf := &Config{}
-	c.configsMap.Store("dataId1", cf)
-	v := c.getConfig("dataId1")
+	c.configsMap.Store(cf.key(), cf)
+	v := c.getConfig(cf)
 	assert.NotNil(t, v)
 	assert.Equal(t, "123.4.56.78", c.Host)
 }
@@ -95,7 +98,7 @@ func TestConfigs_GetConfig_NotFound(t *testing.T) {
 
 	cf := &Config{}
 	c.configsMap.Store("dataId1", cf)
-	v := c.getConfig("dataId2")
+	v := c.getConfig(cf)
 	assert.Nil(t, v)
 }
 
