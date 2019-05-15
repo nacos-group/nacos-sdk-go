@@ -10,11 +10,9 @@ import (
 )
 
 func TestConfigs_NewConfig(t *testing.T) {
-	c := New()
+	c := New("123.4.56.78", 0, "", "")
 	assert.NotNil(t, c)
-	cf := &Config{
-		Host: "123.4.56.78",
-	}
+	cf := &Config{}
 	newCf := c.newConfig(cf)
 	assert.NotNil(t, newCf)
 	assert.NotEmpty(t, newCf.md5Sum)
@@ -22,31 +20,23 @@ func TestConfigs_NewConfig(t *testing.T) {
 }
 
 func TestConfigs_Register(t *testing.T) {
-	c := New()
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123")
 	assert.NotNil(t, c)
 	var wg sync.WaitGroup
 	cf := &Config{
-		Host: "123.4.56.78",
-		Port: 8888,
-		AccessKeyId: "access_key_id_123",
-		AccessKeySecret: "access_key_secret_123",
 		Tenant: "tenantId_123",
 		Group: "group_123",
 		DataId: "dataId123",
 	}
-	err := c.Register(&wg, cf)
+	err := c.OnChange(&wg, cf)
 	assert.Nil(t, err)
 }
 
 func TestConfigs_Register_Running(t *testing.T) {
-	c := New()
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123")
 	assert.NotNil(t, c)
 	var wg sync.WaitGroup
 	cf := &Config{
-		Host: "123.4.56.78",
-		Port: 8888,
-		AccessKeyId: "access_key_id_123",
-		AccessKeySecret: "access_key_secret_123",
 		Tenant: "tenantId_123",
 		Group: "group_123",
 		DataId: "dataId123",
@@ -54,25 +44,21 @@ func TestConfigs_Register_Running(t *testing.T) {
 	cf.running = true
 
 	c.configsMap.Store("dataId123", cf)
-	err := c.Register(&wg, cf)
+	err := c.OnChange(&wg, cf)
 	assert.NotNil(t, err)
 	assert.True(t, strings.Contains(err.Error(), "running"))
 }
 
 func TestConfigs_Stop(t *testing.T) {
-	c := New()
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123")
 	assert.NotNil(t, c)
 	var wg sync.WaitGroup
 	cf := &Config{
-		Host: "123.4.56.78",
-		Port: 8888,
-		AccessKeyId: "access_key_id_123",
-		AccessKeySecret: "access_key_secret_123",
 		Tenant: "tenantId_123",
 		Group: "group_123",
 		DataId: "dataId123",
 	}
-	err := c.Register(&wg, cf)
+	err := c.OnChange(&wg, cf)
 	assert.Nil(t, err)
 
 	time.Sleep(1 * time.Second)
@@ -83,7 +69,7 @@ func TestConfigs_Stop(t *testing.T) {
 }
 
 func TestConfigs_Stop_Failed(t *testing.T) {
-	c := New()
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123")
 	assert.NotNil(t, c)
 	var wg sync.WaitGroup
 	cf := &Configs{}
@@ -93,38 +79,31 @@ func TestConfigs_Stop_Failed(t *testing.T) {
 }
 
 func TestConfigs_GetConfig(t *testing.T) {
-	c := New()
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123")
 	assert.NotNil(t, c)
 
-	cf := &Config{
-		Host: "123.4.56.78",
-	}
+	cf := &Config{}
 	c.configsMap.Store("dataId1", cf)
 	v := c.getConfig("dataId1")
 	assert.NotNil(t, v)
-	assert.Equal(t, "123.4.56.78", v.Host)
+	assert.Equal(t, "123.4.56.78", c.Host)
 }
 
 func TestConfigs_GetConfig_NotFound(t *testing.T) {
-	c := New()
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123")
 	assert.NotNil(t, c)
 
-	cf := &Config{
-		Host: "123.4.56.78",
-	}
+	cf := &Config{}
 	c.configsMap.Store("dataId1", cf)
 	v := c.getConfig("dataId2")
 	assert.Nil(t, v)
 }
 
 func TestConfigs_BuildRetieveUrl(t *testing.T) {
-	c := New()
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123")
 	assert.NotNil(t, c)
 
-	cf := &Config{
-		Host: "123.4.56.78",
-		Port: 8888,
-	}
+	cf := &Config{}
 	v := c.buildRetrieveUrl(cf)
 	assert.NotNil(t, v)
 	assert.Equal(t, "https://123.4.56.78:8888/nacos/v1/cs/configs", v)
@@ -137,26 +116,20 @@ func TestConfigs_BuildRetieveUrl_Customized(t *testing.T) {
 		ResourcePost: "/abe/3",
 		ResourceDelete: "/abf/4",
 	}
-	c := New().WithResourcePaths(rp)
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123").WithResourcePaths(rp)
 	assert.NotNil(t, c)
 
-	cf := &Config{
-		Host: "123.4.56.78",
-		Port: 8888,
-	}
+	cf := &Config{}
 	v := c.buildRetrieveUrl(cf)
 	assert.NotNil(t, v)
 	assert.Equal(t, "https://123.4.56.78:8888/abd/2", v)
 }
 
 func TestConfigs_BuildListenUrl(t *testing.T) {
-	c := New()
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123")
 	assert.NotNil(t, c)
 
-	cf := &Config{
-		Host: "123.4.56.78",
-		Port: 8888,
-	}
+	cf := &Config{}
 	v := c.buildListenUrl(cf)
 	assert.NotNil(t, v)
 	assert.Equal(t, "https://123.4.56.78:8888/nacos/v1/cs/configs/listener", v)
@@ -169,27 +142,20 @@ func TestConfigs_BuildListenUrl_Customized(t *testing.T) {
 		ResourcePost: "/abe/3",
 		ResourceDelete: "/abf/4",
 	}
-	c := New().WithResourcePaths(rp)
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123").WithResourcePaths(rp)
 	assert.NotNil(t, c)
 
-	cf := &Config{
-		Host: "123.4.56.78",
-		Port: 8888,
-	}
+	cf := &Config{}
 	v := c.buildListenUrl(cf)
 	assert.NotNil(t, v)
 	assert.Equal(t, "https://123.4.56.78:8888/abc/1/listener", v)
 }
 
 func TestConfigs_BuildRequest_Get(t *testing.T) {
-	c := New()
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123")
 	assert.NotNil(t, c)
 
 	cf := &Config{
-		Host: "123.4.56.78",
-		Port: 8888,
-		AccessKeyId: "access_key_id_123",
-		AccessKeySecret: "access_key_secret_123",
 		Tenant: "tenantId_123",
 		Group: "group_123",
 	}
@@ -200,21 +166,17 @@ func TestConfigs_BuildRequest_Get(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, req)
 	assert.NotNil(t, cancel)
-	assert.Equal(t, fmt.Sprintf("%s:%d", cf.Host, cf.Port), req.Host)
+	assert.Equal(t, fmt.Sprintf("%s:%d", c.Host, c.Port), req.Host)
 	assert.Equal(t, "GET", req.Method)
 	assert.NotNil(t, req.Header.Get("Spas-Signature"))
 	assert.NotEmpty(t, req.Header.Get("Spas-Signature"))
 }
 
 func TestConfigs_BuildRequest_Post(t *testing.T) {
-	c := New()
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123")
 	assert.NotNil(t, c)
 
 	cf := &Config{
-		Host: "123.4.56.78",
-		Port: 8888,
-		AccessKeyId: "access_key_id_123",
-		AccessKeySecret: "access_key_secret_123",
 		Tenant: "tenantId_123",
 		Group: "group_123",
 	}
@@ -225,7 +187,7 @@ func TestConfigs_BuildRequest_Post(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, req)
 	assert.NotNil(t, cancel)
-	assert.Equal(t, fmt.Sprintf("%s:%d", cf.Host, cf.Port), req.Host)
+	assert.Equal(t, fmt.Sprintf("%s:%d", c.Host, c.Port), req.Host)
 	assert.Equal(t, "POST", req.Method)
 	assert.NotNil(t, req.Header.Get("Spas-Signature"))
 	assert.NotEmpty(t, req.Header.Get("Spas-Signature"))
@@ -233,14 +195,10 @@ func TestConfigs_BuildRequest_Post(t *testing.T) {
 }
 
 func TestConfigs_BuildListenRequest(t *testing.T) {
-	c := New()
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123")
 	assert.NotNil(t, c)
 
 	cf := &Config{
-		Host: "123.4.56.78",
-		Port: 8888,
-		AccessKeyId: "access_key_id_123",
-		AccessKeySecret: "access_key_secret_123",
 		Tenant: "tenantId_123",
 		Group: "group_123",
 	}
@@ -249,7 +207,7 @@ func TestConfigs_BuildListenRequest(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, req)
 	assert.NotNil(t, cancel)
-	assert.Equal(t, fmt.Sprintf("%s:%d", cf.Host, cf.Port), req.Host)
+	assert.Equal(t, fmt.Sprintf("%s:%d", c.Host, c.Port), req.Host)
 	assert.Equal(t, "POST", req.Method)
 	assert.NotNil(t, req.Header.Get("Spas-Signature"))
 	assert.NotEmpty(t, req.Header.Get("Spas-Signature"))
@@ -257,14 +215,10 @@ func TestConfigs_BuildListenRequest(t *testing.T) {
 }
 
 func TestConfigs_BuildRetrieveRequest(t *testing.T) {
-	c := New()
+	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123")
 	assert.NotNil(t, c)
 
 	cf := &Config{
-		Host: "123.4.56.78",
-		Port: 8888,
-		AccessKeyId: "access_key_id_123",
-		AccessKeySecret: "access_key_secret_123",
 		Tenant: "tenantId_123",
 		Group: "group_123",
 		DataId: "dataId123",
@@ -274,7 +228,7 @@ func TestConfigs_BuildRetrieveRequest(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, req)
 	assert.NotNil(t, cancel)
-	assert.Equal(t, fmt.Sprintf("%s:%d", cf.Host, cf.Port), req.Host)
+	assert.Equal(t, fmt.Sprintf("%s:%d", c.Host, c.Port), req.Host)
 	assert.Equal(t, "GET", req.Method)
 	assert.NotNil(t, req.Header.Get("Spas-Signature"))
 	assert.NotEmpty(t, req.Header.Get("Spas-Signature"))
