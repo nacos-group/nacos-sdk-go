@@ -11,7 +11,7 @@ func main() {
 	var wg sync.WaitGroup
 	cf := &Config{
 		Tenant: "tenantId_123",
-		Group: "group_123",
+		Group:  "group_123",
 		DataId: "dataId123",
 		OnChange: func(namespace, group, dataId string, data []byte) {
 			// handle changes

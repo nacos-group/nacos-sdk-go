@@ -25,7 +25,7 @@ func TestConfigs_Register(t *testing.T) {
 	var wg sync.WaitGroup
 	cf := &Config{
 		Tenant: "tenantId_123",
-		Group: "group_123",
+		Group:  "group_123",
 		DataId: "dataId123",
 	}
 	err := c.OnChange(&wg, cf)
@@ -38,7 +38,7 @@ func TestConfigs_Register_Running(t *testing.T) {
 	var wg sync.WaitGroup
 	cf := &Config{
 		Tenant: "tenantId_123",
-		Group: "group_123",
+		Group:  "group_123",
 		DataId: "dataId123",
 	}
 	cf.running = true
@@ -55,7 +55,7 @@ func TestConfigs_Stop(t *testing.T) {
 	var wg sync.WaitGroup
 	cf := &Config{
 		Tenant: "tenantId_123",
-		Group: "group_123",
+		Group:  "group_123",
 		DataId: "dataId123",
 		OnChange: func(namespace, group, dataId string, data []byte) {
 			// omit
@@ -115,8 +115,8 @@ func TestConfigs_BuildRetieveUrl(t *testing.T) {
 func TestConfigs_BuildRetieveUrl_Customized(t *testing.T) {
 	rp := &ResourcePaths{
 		ResourceListen: "/abc/1/listener",
-		ResourceGet: "/abd/2",
-		ResourcePost: "/abe/3",
+		ResourceGet:    "/abd/2",
+		ResourcePost:   "/abe/3",
 		ResourceDelete: "/abf/4",
 	}
 	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123").WithResourcePaths(rp)
@@ -141,8 +141,8 @@ func TestConfigs_BuildListenUrl(t *testing.T) {
 func TestConfigs_BuildListenUrl_Customized(t *testing.T) {
 	rp := &ResourcePaths{
 		ResourceListen: "/abc/1/listener",
-		ResourceGet: "/abd/2",
-		ResourcePost: "/abe/3",
+		ResourceGet:    "/abd/2",
+		ResourcePost:   "/abe/3",
 		ResourceDelete: "/abf/4",
 	}
 	c := New("123.4.56.78", 8888, "access_key_id_123", "access_key_secret_123").WithResourcePaths(rp)
@@ -160,7 +160,7 @@ func TestConfigs_BuildRequest_Get(t *testing.T) {
 
 	cf := &Config{
 		Tenant: "tenantId_123",
-		Group: "group_123",
+		Group:  "group_123",
 	}
 
 	v := c.buildRetrieveUrl(cf)
@@ -181,7 +181,7 @@ func TestConfigs_BuildRequest_Post(t *testing.T) {
 
 	cf := &Config{
 		Tenant: "tenantId_123",
-		Group: "group_123",
+		Group:  "group_123",
 	}
 
 	v := c.buildRetrieveUrl(cf)
@@ -203,7 +203,7 @@ func TestConfigs_BuildListenRequest(t *testing.T) {
 
 	cf := &Config{
 		Tenant: "tenantId_123",
-		Group: "group_123",
+		Group:  "group_123",
 	}
 
 	req, cancel, err := c.buildListenRequest(cf)
@@ -223,7 +223,7 @@ func TestConfigs_BuildRetrieveRequest(t *testing.T) {
 
 	cf := &Config{
 		Tenant: "tenantId_123",
-		Group: "group_123",
+		Group:  "group_123",
 		DataId: "dataId123",
 	}
 
