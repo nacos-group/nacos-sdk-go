@@ -50,7 +50,7 @@ type Config struct {
 	AccessKeyId     string
 	AccessKeySecret string
 	Group           string
-	Tenant          string
+	Tenant          string // in ACM, the namespace is the tenant
 	DataId          string
 	Cfg             interface{} // pointer of a struct that used for json unmarshal
 	md5Sum          string
