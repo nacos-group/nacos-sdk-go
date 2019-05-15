@@ -25,11 +25,14 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -71,11 +74,17 @@ type Configs struct {
 	resourcePaths   *ResourcePaths
 	configsMap      sync.Map
 	lock            sync.RWMutex
+	logger          Logger
+}
+
+// Logger is used to log error messages.
+type Logger interface {
+	Println(v ...interface{})
 }
 
 // New returns a *Configs
 func New(host string, port int, accessKeyId, AccessKeySecret string) *Configs {
-	return &Configs{
+	cs := &Configs{
 		Host:            host,
 		Port:            port,
 		AccessKeyId:     accessKeyId,
@@ -87,22 +96,34 @@ func New(host string, port int, accessKeyId, AccessKeySecret string) *Configs {
 			ResourceListen: defaultListenerResource,
 		},
 	}
+	_ = cs.SetLogger(log.New(os.Stdout, "\r\n", 0))
+	return cs
 }
 
 // WithResourcePaths can specify the *ResourcePaths
-func (c *Configs) WithResourcePaths(rp *ResourcePaths) *Configs {
-	c.resourcePaths = rp
-	return c
+func (cs *Configs) WithResourcePaths(rp *ResourcePaths) *Configs {
+	cs.resourcePaths = rp
+	return cs
+}
+
+// SetLogger sets the logger that implemented interface configs.Logger
+// The initial logger is os.Stderr.
+func (cs *Configs) SetLogger(logger Logger) error {
+	if logger == nil {
+		return errors.New("logger is nil")
+	}
+	cs.logger = logger
+	return nil
 }
 
 // OnChange will start a goroutine for listener
-func (c *Configs) OnChange(wg *sync.WaitGroup, cf *Config) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+func (cs *Configs) OnChange(wg *sync.WaitGroup, cf *Config) error {
+	cs.lock.Lock()
+	defer cs.lock.Unlock()
 
-	v := c.getConfig(cf.DataId)
+	v := cs.getConfig(cf)
 	if v == nil {
-		v = c.newConfig(cf)
+		v = cs.newConfig(cf)
 	}
 
 	// listener for dataId is running
@@ -112,11 +133,11 @@ func (c *Configs) OnChange(wg *sync.WaitGroup, cf *Config) error {
 
 	v.running = true
 	wg.Add(1)
-	go c.listen(wg, v)
+	go cs.listen(wg, v)
 	return nil
 }
 
-func (c *Configs) newConfig(cf *Config) *Config {
+func (cs *Configs) newConfig(cf *Config) *Config {
 	newCf := &Config{
 		Group:    cf.Group,
 		Tenant:   cf.Tenant,
@@ -125,41 +146,45 @@ func (c *Configs) newConfig(cf *Config) *Config {
 		md5Sum:   MD5(""),
 		running:  false,
 	}
-	c.configsMap.Store(newCf.DataId, newCf)
+	cs.configsMap.Store(newCf.key(), newCf)
 	return newCf
 }
 
 // Stop will stop all listener
-func (c *Configs) Stop(wg *sync.WaitGroup) error {
-	var failedDataId []string
-	c.configsMap.Range(func(key, value interface{}) bool {
+func (cs *Configs) Stop(wg *sync.WaitGroup) error {
+	cs.logger.Println("stopping all listeners")
+	var failedConfigs []string
+	cs.configsMap.Range(func(key, value interface{}) bool {
 		if cf, ok := value.(*Config); ok {
 			cf.cancel()
 			cf.running = false
+			cs.logger.Println(cf.key() + " stopped")
 		} else {
-			failedDataId = append(failedDataId, key.(string))
+			failedConfigs = append(failedConfigs, key.(string))
 		}
 		return true
 	})
 
-	if len(failedDataId) > 0 {
-		return fmt.Errorf("stop listener failed: %v", failedDataId)
+	if len(failedConfigs) > 0 {
+		cs.logger.Println(fmt.Sprintf("stop failed list: %v", failedConfigs))
+		return fmt.Errorf("stop listener failed: %v", failedConfigs)
 	}
-
+	cs.logger.Println("all stopped")
 	return nil
 }
 
-func (c *Configs) listen(wg *sync.WaitGroup, cf *Config) {
+func (cs *Configs) listen(wg *sync.WaitGroup, cf *Config) {
 	defer wg.Done()
 
 	failCount := 0
 	for {
 		if !cf.running || failCount > 10 {
+			cs.logger.Println("stop listener")
 			break
 		}
 
-		client := c.newHttpClient()
-		req, cancel, err := c.buildListenRequest(cf)
+		client := cs.newHttpClient()
+		req, cancel, err := cs.buildListenRequest(cf)
 		if err != nil {
 			failCount++
 			time.Sleep(1 * time.Second)
@@ -186,7 +211,7 @@ func (c *Configs) listen(wg *sync.WaitGroup, cf *Config) {
 			continue
 		}
 
-		if err := c.retrieveConfig(cf); err != nil {
+		if err := cs.retrieveConfig(cf); err != nil {
 			failCount++
 			time.Sleep(3 * time.Second)
 			continue
@@ -194,7 +219,7 @@ func (c *Configs) listen(wg *sync.WaitGroup, cf *Config) {
 	}
 }
 
-func (c *Configs) newHttpClient() *http.Client {
+func (cs *Configs) newHttpClient() *http.Client {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
@@ -204,12 +229,12 @@ func (c *Configs) newHttpClient() *http.Client {
 	return client
 }
 
-func (c *Configs) retrieveConfig(cf *Config) error {
-	req, _, err := c.buildRetrieveRequest(cf)
+func (cs *Configs) retrieveConfig(cf *Config) error {
+	req, _, err := cs.buildRetrieveRequest(cf)
 	if err != nil {
 		return err
 	}
-	client := c.newHttpClient()
+	client := cs.newHttpClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -224,15 +249,15 @@ func (c *Configs) retrieveConfig(cf *Config) error {
 	return nil
 }
 
-func (c *Configs) buildRetrieveRequest(cf *Config) (*http.Request, context.CancelFunc, error) {
-	urlHttps := c.buildRetrieveUrl(cf)
+func (cs *Configs) buildRetrieveRequest(cf *Config) (*http.Request, context.CancelFunc, error) {
+	urlHttps := cs.buildRetrieveUrl(cf)
 	urlHttps = fmt.Sprintf("%s?tenant=%s&dataId=%s&group=%s", urlHttps, cf.Tenant, cf.DataId, cf.Group)
 
-	return c.buildRequest(cf, "GET", urlHttps, "", -1)
+	return cs.buildRequest(cf, "GET", urlHttps, "", -1)
 }
 
-func (c *Configs) buildListenRequest(cf *Config) (*http.Request, context.CancelFunc, error) {
-	urlHttps := c.buildListenUrl(cf)
+func (cs *Configs) buildListenRequest(cf *Config) (*http.Request, context.CancelFunc, error) {
+	urlHttps := cs.buildListenUrl(cf)
 	bodyValue := fmt.Sprintf("%s%s%s%s%s%s%s%s",
 		cf.DataId, fieldSeparator,
 		cf.Group, fieldSeparator,
@@ -240,10 +265,10 @@ func (c *Configs) buildListenRequest(cf *Config) (*http.Request, context.CancelF
 		cf.Tenant, configSeparator)
 	body := "Probe-Modify-Request=" + bodyValue
 
-	return c.buildRequest(cf, "POST", urlHttps, body, 30000)
+	return cs.buildRequest(cf, "POST", urlHttps, body, 30000)
 }
 
-func (c *Configs) buildRequest(
+func (cs *Configs) buildRequest(
 	cf *Config,
 	method, urlStr, body string,
 	longPullingTimeout int) (*http.Request, context.CancelFunc, error) {
@@ -258,14 +283,14 @@ func (c *Configs) buildRequest(
 		return nil, nil, err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	now := time.Now().UnixNano() / 1e6
 
 	raw := cf.Tenant + "+" + cf.Group + "+" + strconv.FormatInt(now, 10)
-	signature := HmacSHA1(raw, c.AccessKeySecret)
+	signature := HmacSHA1(raw, cs.AccessKeySecret)
 
-	req.Header.Set("Spas-AccessKey", c.AccessKeyId)
+	req.Header.Set("Spas-AccessKey", cs.AccessKeyId)
 	req.Header.Set("Spas-Signature", signature)
 	if longPullingTimeout >= 0 {
 		req.Header.Set("longPullingTimeout", strconv.Itoa(longPullingTimeout))
@@ -274,24 +299,28 @@ func (c *Configs) buildRequest(
 	return req, cancel, nil
 }
 
-func (c *Configs) buildRetrieveUrl(cf *Config) string {
-	urlHttps := fmt.Sprintf("https://%s:%d%s", c.Host, c.Port, c.resourcePaths.ResourceGet)
+func (cs *Configs) buildRetrieveUrl(cf *Config) string {
+	urlHttps := fmt.Sprintf("https://%s:%d%s", cs.Host, cs.Port, cs.resourcePaths.ResourceGet)
 	return urlHttps
 }
 
-func (c *Configs) buildListenUrl(cf *Config) string {
-	urlHttps := fmt.Sprintf("https://%s:%d%s", c.Host, c.Port, c.resourcePaths.ResourceListen)
+func (cs *Configs) buildListenUrl(cf *Config) string {
+	urlHttps := fmt.Sprintf("https://%s:%d%s", cs.Host, cs.Port, cs.resourcePaths.ResourceListen)
 	return urlHttps
 }
 
-func (c *Configs) getConfig(dataId string) *Config {
-	if v, found := c.configsMap.Load(dataId); found {
+func (cs *Configs) getConfig(cf *Config) *Config {
+	if v, found := cs.configsMap.Load(cf.key()); found {
 		if cfg, ok := v.(*Config); ok {
 			return cfg
 		}
 		return nil
 	}
 	return nil
+}
+
+func (c *Config) key() string {
+	return fmt.Sprintf("%s_%s_%s", c.Tenant, c.Group, c.DataId)
 }
 
 // HmacSHA1 returns the base64 encoded string hashed by Hmac and SHA1
