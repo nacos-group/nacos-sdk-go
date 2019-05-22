@@ -201,13 +201,9 @@ func (cs *Configs) listen(wg *sync.WaitGroup, cf *Config) {
 		}
 
 		v, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
+		if err != nil || len(v) == 0{
 			failCount++
 			time.Sleep(1 * time.Second)
-			continue
-		}
-
-		if len(v) == 0 {
 			continue
 		}
 
@@ -216,6 +212,7 @@ func (cs *Configs) listen(wg *sync.WaitGroup, cf *Config) {
 			time.Sleep(3 * time.Second)
 			continue
 		}
+		failCount = 0
 	}
 }
 
