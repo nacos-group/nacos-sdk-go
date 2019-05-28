@@ -116,7 +116,7 @@ func (cs *Configs) SetLogger(logger Logger) error {
 	return nil
 }
 
-// OnChange will start a goroutine for listener
+// OnChange starts a goroutine for listener
 func (cs *Configs) OnChange(wg *sync.WaitGroup, cf *Config) error {
 	cs.lock.Lock()
 	defer cs.lock.Unlock()
@@ -135,6 +135,24 @@ func (cs *Configs) OnChange(wg *sync.WaitGroup, cf *Config) error {
 	wg.Add(1)
 	go cs.listen(wg, v)
 	return nil
+}
+
+// Get returns the data content associated to specified tenant(namespace),group and dataId
+func (cs *Configs) Get(cf *Config) (string, error) {
+	req, _, err := cs.buildRetrieveRequest(cf)
+	if err != nil {
+		return "", err
+	}
+	client := cs.newHttpClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	v, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(v), nil
 }
 
 func (cs *Configs) newConfig(cf *Config) *Config {
