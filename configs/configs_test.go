@@ -236,3 +236,22 @@ func TestConfigs_BuildRetrieveRequest(t *testing.T) {
 	assert.NotNil(t, req.Header.Get("Spas-Signature"))
 	assert.NotEmpty(t, req.Header.Get("Spas-Signature"))
 }
+
+func TestConfigs_Get_Customized(t *testing.T) {
+	rp := &ResourcePaths{
+		ResourceListen: "/diamond-server/config.co",
+		ResourceGet:    "/diamond-server/config.co",
+		ResourcePost:   "/abe/3",
+		ResourceDelete: "/abf/4",
+	}
+	c := New("127.0.0.1", 443, "abc", "abc123").WithResourcePaths(rp)
+	assert.NotNil(t, c)
+
+	cf := &Config{
+		Tenant:"11111111-056b-4914-8c1d-2222222222",
+		Group:"abc",
+		DataId:"def",
+	}
+	_, err := c.Get(cf)
+	assert.NotNil(t, err)
+}
