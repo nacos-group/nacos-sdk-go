@@ -16,6 +16,28 @@
 // Author: github.com/atlanssia
 package configs
 
-func GetConfigAddr() (string, int, error) {
-	panic("not implemented yet")
+import (
+	"fmt"
+	"io/ioutil"
+	"math/rand"
+	"net/http"
+	"strings"
+)
+
+func GetConfigAddr(url string) (string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	v, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	addrs := strings.Split(strings.TrimSpace(string(v)), "\n")
+	if addrs == nil || len(addrs) == 0 {
+		return "", fmt.Errorf("no addr found: %+v", string(v))
+	}
+	return addrs[rand.Intn(len(addrs))], nil
 }
