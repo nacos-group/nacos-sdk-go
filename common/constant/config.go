@@ -16,11 +16,12 @@ type ServerConfig struct {
 }
 
 type ClientConfig struct {
-	TimeoutMs       uint64
-	ListenInterval  uint64
-	BeatInterval    int64
-	NamespaceId     string
-	Endpoint        string
-	CacheDir        string
-	UpdateThreadNum int
+	TimeoutMs           uint64
+	ListenInterval      uint64
+	BeatInterval        int64
+	NamespaceId         string
+	Endpoint            string
+	CacheDir            string
+	UpdateThreadNum     int
+	NotLoadCacheAtStart bool
 }

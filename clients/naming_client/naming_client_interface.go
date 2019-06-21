@@ -1,4 +1,4 @@
-package service_client
+package naming_client
 
 import (
 	"github.com/nacos-group/nacos-sdk-go/model"
@@ -16,7 +16,7 @@ import (
 
 //go:generate mockgen -destination ../../mock/mock_service_client_interface.go -package mock -source=./service_client_interface.go
 
-type IServiceClient interface {
+type INamingClient interface {
 	// 注册服务实例
 	RegisterServiceInstance(param vo.RegisterServiceInstanceParam) (bool, error)
 	// 注销服务实例

@@ -1,4 +1,4 @@
-package service_client
+package naming_client
 
 import (
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
@@ -9,37 +9,38 @@ import (
 	"strings"
 )
 
-type ServiceClient struct {
+type NamingClient struct {
 	nacos_client.INacosClient
 	hostReactor  HostReactor
-	serviceProxy ServiceProxy
+	serviceProxy NamingProxy
 	subCallback  SubscribeCallback
 	beatReactor  BeatReactor
 }
 
-func NewServiceClient(nc nacos_client.INacosClient) (ServiceClient, error) {
-	sc := ServiceClient{}
-	clientConfig, err := nc.GetClientConfig()
+func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
+	naming := NamingClient{}
+	clientConfig, err :=
+		nc.GetClientConfig()
 	if err != nil {
-		return sc, err
+		return naming, err
 	}
 	serverConfig, err := nc.GetServerConfig()
 	if err != nil {
-		return sc, err
+		return naming, err
 	}
 	httpAgent, err := nc.GetHttpAgent()
 	if err != nil {
-		return sc, err
+		return naming, err
 	}
-	sc.subCallback = NewSubscribeCallback()
-	sc.serviceProxy = NewServiceProxy(clientConfig, serverConfig, httpAgent)
-	sc.hostReactor = NewHostReactor(sc.serviceProxy, clientConfig.CacheDir, clientConfig.UpdateThreadNum, true, sc.subCallback)
-	sc.beatReactor = NewBeatReactor(sc.serviceProxy, clientConfig.BeatInterval)
-	return sc, nil
+	naming.subCallback = NewSubscribeCallback()
+	naming.serviceProxy = NewNamingProxy(clientConfig, serverConfig, httpAgent)
+	naming.hostReactor = NewHostReactor(naming.serviceProxy, clientConfig.CacheDir, clientConfig.UpdateThreadNum, clientConfig.NotLoadCacheAtStart, naming.subCallback)
+	naming.beatReactor = NewBeatReactor(naming.serviceProxy, clientConfig.BeatInterval)
+	return naming, nil
 }
 
 // 注册服务实例
-func (sc *ServiceClient) RegisterServiceInstance(param vo.RegisterServiceInstanceParam) (bool, error) {
+func (sc *NamingClient) RegisterServiceInstance(param vo.RegisterServiceInstanceParam) (bool, error) {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
@@ -71,11 +72,11 @@ func (sc *ServiceClient) RegisterServiceInstance(param vo.RegisterServiceInstanc
 }
 
 // 注销服务实例
-func (sc *ServiceClient) LogoutServiceInstance(param vo.LogoutServiceInstanceParam) (bool, error) {
+func (sc *NamingClient) LogoutServiceInstance(param vo.LogoutServiceInstanceParam) (bool, error) {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	_, err := sc.serviceProxy.DeristerService(utils.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port, param.Cluster)
+	_, err := sc.serviceProxy.DeristerService(utils.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port, param.Cluster, true)
 	if err != nil {
 		return false, err
 	}
@@ -84,7 +85,7 @@ func (sc *ServiceClient) LogoutServiceInstance(param vo.LogoutServiceInstancePar
 }
 
 // 获取服务列表
-func (sc *ServiceClient) GetService(param vo.GetServiceParam) (model.Service, error) {
+func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, error) {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
@@ -93,17 +94,17 @@ func (sc *ServiceClient) GetService(param vo.GetServiceParam) (model.Service, er
 }
 
 // 获取服务某个实例
-func (sc *ServiceClient) GetServiceInstance(param vo.GetServiceInstanceParam) (model.ServiceInstance, error) {
+func (sc *NamingClient) GetServiceInstance(param vo.GetServiceInstanceParam) (model.ServiceInstance, error) {
 	return model.ServiceInstance{}, nil
 }
 
 // 获取service的基本信息
-func (sc *ServiceClient) GetServiceDetail(param vo.GetServiceDetailParam) (model.ServiceDetail, error) {
+func (sc *NamingClient) GetServiceDetail(param vo.GetServiceDetailParam) (model.ServiceDetail, error) {
 	return model.ServiceDetail{}, nil
 }
 
 // 服务监听
-func (sc *ServiceClient) Subscribe(param *vo.SubscribeParam) error {
+func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
@@ -122,7 +123,7 @@ func (sc *ServiceClient) Subscribe(param *vo.SubscribeParam) error {
 }
 
 //取消服务监听
-func (sc *ServiceClient) Unsubscribe(param *vo.SubscribeParam) error {
+func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
 	sc.subCallback.RemoveCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 	return nil
 }

@@ -1,4 +1,4 @@
-package service_client
+package naming_client
 
 import (
 	"errors"
@@ -8,7 +8,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
-	"github.com/satori/go.uuid"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -20,7 +19,7 @@ import (
 	"time"
 )
 
-type ServiceProxy struct {
+type NamingProxy struct {
 	sync.RWMutex
 	clientConfig        constant.ClientConfig
 	httpAgent           http_agent.IHttpAgent
@@ -29,8 +28,8 @@ type ServiceProxy struct {
 	vipSrvRefInterMills int64
 }
 
-func NewServiceProxy(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig, httpAgent http_agent.IHttpAgent) ServiceProxy {
-	srvProxy := ServiceProxy{}
+func NewNamingProxy(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig, httpAgent http_agent.IHttpAgent) NamingProxy {
+	srvProxy := NamingProxy{}
 	srvProxy.clientConfig = clientCfg
 	srvProxy.httpAgent = httpAgent
 	if serverCfgs != nil && len(serverCfgs) != 0 {
@@ -44,8 +43,8 @@ func NewServiceProxy(clientCfg constant.ClientConfig, serverCfgs []constant.Serv
 	return srvProxy
 }
 
-func (proxy *ServiceProxy) RegisterService(serviceName string, groupName string, instance model.ServiceInstance) (string, error) {
-	log.Printf("[INFO]:register service namespaceId:[%s],serviceName:[%s] with instance:[%s] \n", proxy.clientConfig.NamespaceId, serviceName, utils.ToJsonString(instance))
+func (proxy *NamingProxy) RegisterService(serviceName string, groupName string, instance model.ServiceInstance) (string, error) {
+	log.Printf("[INFO] register service namespaceId:<%s>,serviceName:<%s> with instance:<%s> \n", proxy.clientConfig.NamespaceId, serviceName, utils.ToJsonString(instance))
 	params := map[string]string{}
 	params["namespaceId"] = proxy.clientConfig.NamespaceId
 	params["serviceName"] = serviceName
@@ -62,20 +61,21 @@ func (proxy *ServiceProxy) RegisterService(serviceName string, groupName string,
 	return proxy.reqApi(api, params, http.MethodPost)
 }
 
-func (proxy *ServiceProxy) DeristerService(serviceName string, ip string, port uint64, clusterName string) (string, error) {
-	log.Printf("[INFO]:deregister service namespaceId:[%s],serviceName:[%s] with instance:%s:%d@%s \n", proxy.clientConfig.NamespaceId, serviceName, ip, port, clusterName)
+func (proxy *NamingProxy) DeristerService(serviceName string, ip string, port uint64, clusterName string, ephemeral bool) (string, error) {
+	log.Printf("[INFO] deregister service namespaceId:<%s>,serviceName:<%s> with instance:<%s:%d@%s> \n", proxy.clientConfig.NamespaceId, serviceName, ip, port, clusterName)
 	params := map[string]string{}
 	params["namespaceId"] = proxy.clientConfig.NamespaceId
 	params["serviceName"] = serviceName
 	params["clusterName"] = clusterName
 	params["ip"] = ip
 	params["port"] = strconv.Itoa(int(port))
+	params["ephemeral"] = strconv.FormatBool(ephemeral)
 	api := constant.WEB_CONTEXT + constant.SERVICE_PATH
 	return proxy.reqApi(api, params, http.MethodDelete)
 }
 
-func (proxy *ServiceProxy) SendBeat(info model.BeatInfo) (int64, error) {
-	log.Printf("[INFO]:namespaceId:[%s] sending beat to server:%s \n", proxy.clientConfig.NamespaceId, utils.ToJsonString(info))
+func (proxy *NamingProxy) SendBeat(info model.BeatInfo) (int64, error) {
+	log.Printf("[INFO] namespaceId:<%s> sending beat to server:<%s> \n", proxy.clientConfig.NamespaceId, utils.ToJsonString(info))
 	params := map[string]string{}
 	params["namespaceId"] = proxy.clientConfig.NamespaceId
 	params["serviceName"] = info.ServiceName
@@ -88,7 +88,7 @@ func (proxy *ServiceProxy) SendBeat(info model.BeatInfo) (int64, error) {
 	if result != "" {
 		interVal, err := jsonparser.GetInt([]byte(result), "clientBeatInterval")
 		if err != nil {
-			return 0, errors.New(fmt.Sprintf("[ERROR]:namespaceId:[%s] sending beat to server:%s get 'clientBeatInterval' from[%s] error:%s", proxy.clientConfig.NamespaceId, utils.ToJsonString(info), result, err.Error()))
+			return 0, errors.New(fmt.Sprintf("[ERROR] namespaceId:<%s> sending beat to server:<%s> get 'clientBeatInterval' from <%s> error:<%s>", proxy.clientConfig.NamespaceId, utils.ToJsonString(info), result, err.Error()))
 		} else {
 			return interVal, nil
 		}
@@ -97,7 +97,7 @@ func (proxy *ServiceProxy) SendBeat(info model.BeatInfo) (int64, error) {
 
 }
 
-func (proxy *ServiceProxy) GetServiceList(pageNo int, pageSize int, groupName string, selector *model.ExpressionSelector) (*model.ServiceList, error) {
+func (proxy *NamingProxy) GetServiceList(pageNo int, pageSize int, groupName string, selector *model.ExpressionSelector) (*model.ServiceList, error) {
 	params := map[string]string{}
 	params["namespaceId"] = proxy.clientConfig.NamespaceId
 	params["groupName"] = groupName
@@ -121,27 +121,27 @@ func (proxy *ServiceProxy) GetServiceList(pageNo int, pageSize int, groupName st
 		return nil, err
 	}
 	if result == "" {
-		return nil, errors.New("request server return empty!")
+		return nil, errors.New("request server return empty")
 	}
 
 	serviceList := model.ServiceList{}
 	count, err := jsonparser.GetInt([]byte(result), "count")
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[ERROR]:namespaceId:[%s] get service list pageNo:%d pageSize:%d selector:%s from %s get 'count' from[%s] error:%s", proxy.clientConfig.NamespaceId, pageNo, pageSize, utils.ToJsonString(selector), groupName, result, err.Error()))
+		return nil, errors.New(fmt.Sprintf("[ERROR] namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'count' from <%s> error:<%s>", proxy.clientConfig.NamespaceId, pageNo, pageSize, utils.ToJsonString(selector), groupName, result, err.Error()))
 	}
 	var doms []string
 	_, err = jsonparser.ArrayEach([]byte(result), func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		doms = append(doms, string(value))
 	}, "doms")
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[ERROR]:namespaceId:[%s] get service list pageNo:%d pageSize:%d selector:%s from %s get 'doms' from[%s] error:%s", proxy.clientConfig.NamespaceId, pageNo, pageSize, utils.ToJsonString(selector), groupName, result, err.Error()))
+		return nil, errors.New(fmt.Sprintf("[ERROR] namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'doms' from <%s> error:<%s> ", proxy.clientConfig.NamespaceId, pageNo, pageSize, utils.ToJsonString(selector), groupName, result, err.Error()))
 	}
 	serviceList.Count = count
 	serviceList.Doms = doms
 	return &serviceList, nil
 }
 
-func (proxy *ServiceProxy) ServerHealthy() bool {
+func (proxy *NamingProxy) ServerHealthy() bool {
 	api := constant.WEB_CONTEXT + constant.SERVICE_BASE_PATH + "/operator/metrics"
 	result, err := proxy.reqApi(api, map[string]string{}, http.MethodGet)
 	if err != nil {
@@ -159,7 +159,7 @@ func (proxy *ServiceProxy) ServerHealthy() bool {
 	return false
 }
 
-func (proxy *ServiceProxy) QueryList(serviceName string, clusters string, udpPort int, healthyOnly bool) (string, error) {
+func (proxy *NamingProxy) QueryList(serviceName string, clusters string, udpPort int, healthyOnly bool) (string, error) {
 	param := make(map[string]string)
 	param["namespaceId"] = proxy.clientConfig.NamespaceId
 	param["serviceName"] = serviceName
@@ -171,14 +171,14 @@ func (proxy *ServiceProxy) QueryList(serviceName string, clusters string, udpPor
 	return proxy.reqApi(api, param, http.MethodGet)
 }
 
-func (proxy *ServiceProxy) callServer(api string, params map[string]string, method string, curServer string) (result string, err error) {
+func (proxy *NamingProxy) callServer(api string, params map[string]string, method string, curServer string) (result string, err error) {
 	url := "http://" + curServer + api
 	headers := map[string][]string{}
 	headers["Client-Version"] = []string{constant.CLIENT_VERSION}
 	headers["User-Agent"] = []string{constant.CLIENT_VERSION}
 	headers["Accept-Encoding"] = []string{"gzip,deflate,sdch"}
 	headers["Connection"] = []string{"Keep-Alive"}
-	headers["RequestId"] = []string{uuid.NewV4().String()}
+	//headers["RequestId"] = []string{uuid.NewV4().String()}
 	headers["Request-Module"] = []string{"Naming"}
 	headers["Content-Type"] = []string{"application/x-www-form-urlencoded"}
 	var response *http.Response
@@ -196,16 +196,16 @@ func (proxy *ServiceProxy) callServer(api string, params map[string]string, meth
 	if response.StatusCode == 200 {
 		return
 	} else {
-		err = errors.New(fmt.Sprintf("request return error code:%d", response.StatusCode))
+		err = errors.New(fmt.Sprintf("request return error code %d", response.StatusCode))
 		return
 	}
 }
 
-func (proxy *ServiceProxy) reqApi(api string, params map[string]string, method string) (string, error) {
+func (proxy *NamingProxy) reqApi(api string, params map[string]string, method string) (string, error) {
 	params["namespaceId"] = proxy.clientConfig.NamespaceId
 	srvs := proxy.serverList
 	if srvs == nil || len(srvs) == 0 {
-		return "", errors.New(fmt.Sprintf("[ERROR]:api[%s], method:[%s], params:[%s], server list is empty \n", api, method, utils.ToJsonString(params)))
+		return "", errors.New("server list is empty")
 	}
 	//only one server,retry request when error
 	if len(srvs) == 1 {
@@ -214,26 +214,25 @@ func (proxy *ServiceProxy) reqApi(api string, params map[string]string, method s
 			if err == nil {
 				return result, nil
 			}
-			log.Printf("[ERROR]:api[%s],method[%s], params:[%s], call domain error:%s , result:%s \n", api, method, utils.ToJsonString(params), err.Error(), result)
+			log.Printf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s> \n", api, method, utils.ToJsonString(params), err.Error(), result)
 		}
 		return "", errors.New("retry " + strconv.Itoa(constant.REQUEST_DOMAIN_RETRY_TIME) + " times request failed!")
 	} else {
 		index := rand.Intn(len(srvs))
 		for i := 1; i <= len(srvs); i++ {
-			//TODO 验证随机性和是否遍历所有server
 			curServer := srvs[index]
 			result, err := proxy.callServer(api, params, method, curServer)
 			if err == nil {
 				return result, nil
 			}
-			log.Printf("[ERROR]:api[%s],method:[%s] params:[%s], call domain error:%s \n", api, method, utils.ToJsonString(params), err.Error())
+			log.Printf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s> \n", api, method, utils.ToJsonString(params), err.Error(), result)
 			index = (index + i) % len(srvs)
 		}
 		return "", errors.New("retry " + strconv.Itoa(constant.REQUEST_DOMAIN_RETRY_TIME) + " times request failed!")
 	}
 }
 
-func (proxy *ServiceProxy) initRefreshSrvIfNeed() {
+func (proxy *NamingProxy) initRefreshSrvIfNeed() {
 	if proxy.clientConfig.Endpoint == "" {
 		return
 	}
@@ -245,7 +244,7 @@ func (proxy *ServiceProxy) initRefreshSrvIfNeed() {
 
 }
 
-func (proxy *ServiceProxy) refreshServerSrvIfNeed() {
+func (proxy *NamingProxy) refreshServerSrvIfNeed() {
 	if utils.CurrentMillis()-proxy.lastSrvRefTime < proxy.vipSrvRefInterMills && len(proxy.serverList) > 0 {
 		return
 	}
@@ -254,7 +253,7 @@ func (proxy *ServiceProxy) refreshServerSrvIfNeed() {
 	urlString := "http://" + proxy.clientConfig.Endpoint + "/nacos/serverlist"
 	result := proxy.httpAgent.RequestOnlyResult(http.MethodGet, urlString, nil, proxy.clientConfig.TimeoutMs, nil)
 	list = strings.Split(result, "\n")
-	log.Printf("http nacos server list: %s \n", result)
+	log.Printf("[info] http nacos server list: <%s> \n", result)
 
 	var servers []string
 	for _, line := range list {
@@ -266,7 +265,7 @@ func (proxy *ServiceProxy) refreshServerSrvIfNeed() {
 	if len(servers) > 0 {
 		proxy.Lock()
 		if !reflect.DeepEqual(proxy.serverList, servers) {
-			log.Printf("server list is updated, old: %v,new:%v \n", proxy.serverList, servers)
+			log.Printf("[info] server list is updated, old: <%v>,new:<%v> \n", proxy.serverList, servers)
 		}
 		proxy.serverList = servers
 		proxy.lastSrvRefTime = utils.CurrentMillis()

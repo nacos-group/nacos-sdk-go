@@ -30,18 +30,16 @@ func put(path string, header http.Header, timeoutMs uint64, params map[string]st
 	}
 	request, errNew := http.NewRequest(http.MethodPut, path, strings.NewReader(body))
 	if errNew != nil {
-		log.Println(errNew)
 		err = errNew
+		return
 	}
-	if err == nil {
-		request.Header = header
-		resp, errDo := client.Do(request)
-		if errDo != nil {
-			log.Println(errDo)
-			err = errDo
-		} else {
-			response = resp
-		}
+	request.Header = header
+	resp, errDo := client.Do(request)
+	if errDo != nil {
+		log.Println(errDo)
+		err = errDo
+	} else {
+		response = resp
 	}
 	return
 }

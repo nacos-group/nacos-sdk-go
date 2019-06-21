@@ -1,4 +1,4 @@
-package service_client
+package naming_client
 
 import (
 	"errors"

@@ -1,10 +1,11 @@
-package service_client
+package naming_client
 
 import (
 	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/stretchr/testify/assert"
 	"log"
 	"strings"
 	"testing"
@@ -43,13 +44,13 @@ func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
 		},
 	}
 	ed.AddCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	key := utils.GetServiceCacheKey(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
 	for k, v := range ed.callbackFuncsMap.Items() {
-		log.Printf("key:%s,%v", k, v)
-	}
-	if len(ed.callbackFuncsMap.Items()) == 1 {
-		log.Println("add callback funcs success")
-	} else {
-		log.Panicln("add callback funcs failed")
+		assert.Equal(t, key, k, "key should be equal!")
+		funcs := v.([]*func(services []model.SubscribeService, err error))
+		assert.Equal(t, len(funcs), 1)
+		assert.Equal(t, funcs[0], &param.SubscribeCallback, "callback function must be equal!")
+
 	}
 }
 
@@ -85,6 +86,7 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 		},
 	}
 	ed.AddCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	assert.Equal(t, len(ed.callbackFuncsMap.Items()), 1, "callback funcs map length should be 1")
 
 	param2 := vo.SubscribeParam{
 		ServiceName: "Test",
@@ -95,20 +97,27 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 		},
 	}
 	ed.AddCallbackFuncs(utils.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	assert.Equal(t, len(ed.callbackFuncsMap.Items()), 1, "callback funcs map length should be 2")
 
 	for k, v := range ed.callbackFuncsMap.Items() {
 		log.Printf("key:%s,%d", k, len(v.([]*func(services []model.SubscribeService, err error))))
 	}
 
 	ed.RemoveCallbackFuncs(utils.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+
+	key := utils.GetServiceCacheKey(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
 	for k, v := range ed.callbackFuncsMap.Items() {
-		log.Printf("key:%s,%d", k, len(v.([]*func(services []model.SubscribeService, err error))))
+		assert.Equal(t, key, k, "key should be equal!")
+		funcs := v.([]*func(services []model.SubscribeService, err error))
+		assert.Equal(t, len(funcs), 1)
+		assert.Equal(t, funcs[0], &param.SubscribeCallback, "callback function must be equal!")
+
 	}
 }
 
 func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 	service := model.Service{
-		Dom:         "public@@Test",
+		Name:        "public@@Test",
 		Clusters:    strings.Join([]string{"default"}, ","),
 		CacheMillis: 10000,
 		Checksum:    "abcd",

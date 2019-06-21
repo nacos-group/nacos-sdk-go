@@ -29,6 +29,7 @@ func main() {
 		Enable:      true,
 		Healthy:     true,
 	})
+	example.ExampleServiceClient_GetService(client)
 	param := &vo.SubscribeParam{
 		ServiceName: "demo",
 		Clusters:    []string{"a"},

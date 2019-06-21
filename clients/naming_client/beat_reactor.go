@@ -1,4 +1,4 @@
-package service_client
+package naming_client
 
 import (
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
@@ -13,7 +13,7 @@ import (
 
 type BeatReactor struct {
 	beatMap            cache.ConcurrentMap
-	serviceProxy       ServiceProxy
+	serviceProxy       NamingProxy
 	clientBeatInterval int64
 	beatThreadCount    int
 	beatRecordMap      cache.ConcurrentMap
@@ -21,7 +21,7 @@ type BeatReactor struct {
 
 const Default_Bead_Thread_Num = 20
 
-func NewBeatReactor(serviceProxy ServiceProxy, clientBeatInterval int64) BeatReactor {
+func NewBeatReactor(serviceProxy NamingProxy, clientBeatInterval int64) BeatReactor {
 	br := BeatReactor{}
 	if clientBeatInterval <= 0 {
 		clientBeatInterval = 5 * 1000

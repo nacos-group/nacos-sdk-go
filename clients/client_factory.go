@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
-	"github.com/nacos-group/nacos-sdk-go/clients/service_client"
+	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 )
@@ -16,14 +16,14 @@ func CreateConfigClient(properties map[string]interface{}) (iClient config_clien
 }
 
 // 创建服务发现相关的客户端
-func CreateServiceClient(properties map[string]interface{}) (iClient service_client.IServiceClient, err error) {
+func CreateServiceClient(properties map[string]interface{}) (iClient naming_client.INamingClient, err error) {
 	nacosClient, errSetConfig := setConfig(properties)
 	if errSetConfig != nil {
 		err = errSetConfig
 		return
 	}
 	nacosClient.SetHttpAgent(&http_agent.HttpAgent{})
-	client, errNew := service_client.NewServiceClient(nacosClient)
+	client, errNew := naming_client.NewNamingClient(nacosClient)
 	if errNew != nil {
 		err = errNew
 		return

@@ -1,4 +1,4 @@
-package service_client
+package naming_client
 
 import (
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
@@ -14,14 +14,14 @@ type HostReactor struct {
 	serviceInfoMap  cache.ConcurrentMap
 	cacheDir        string
 	updateThreadNum int
-	serviceProxy    ServiceProxy
+	serviceProxy    NamingProxy
 	pushReceiver    PushReceiver
 	subCallback     SubscribeCallback
 }
 
 const Default_Update_Thread_Num = 20
 
-func NewHostReactor(serviceProxy ServiceProxy, cacheDir string, updateThreadNum int, loadCacheAtStart bool, subCallback SubscribeCallback) HostReactor {
+func NewHostReactor(serviceProxy NamingProxy, cacheDir string, updateThreadNum int, notLoadCacheAtStart bool, subCallback SubscribeCallback) HostReactor {
 	if updateThreadNum <= 0 {
 		updateThreadNum = Default_Update_Thread_Num
 	}
@@ -34,7 +34,7 @@ func NewHostReactor(serviceProxy ServiceProxy, cacheDir string, updateThreadNum 
 	}
 	pr := NewPushRecevier(&hr)
 	hr.pushReceiver = *pr
-	if loadCacheAtStart {
+	if !notLoadCacheAtStart {
 		hr.loadCacheFromDisk()
 	}
 	go hr.asyncUpdateService()
@@ -83,7 +83,7 @@ func (hr *HostReactor) ProcessServiceJson(result string) {
 		cache.WriteToFile(*service, hr.cacheDir)
 		hr.subCallback.ServiceChanged(service)
 	}
-	service.LastRefTime = uint64(utils.CurrentMillis())
+	//service.LastRefTime = uint64(utils.CurrentMillis())
 	hr.serviceInfoMap.Set(cacheKey, *service)
 }
 
