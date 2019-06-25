@@ -1,11 +1,15 @@
 package naming_client
 
 import (
+	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/pkg/errors"
+	"math"
+	"math/rand"
 	"strings"
 )
 
@@ -15,6 +19,7 @@ type NamingClient struct {
 	serviceProxy NamingProxy
 	subCallback  SubscribeCallback
 	beatReactor  BeatReactor
+	indexMap     cache.ConcurrentMap
 }
 
 func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
@@ -34,17 +39,18 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 	}
 	naming.subCallback = NewSubscribeCallback()
 	naming.serviceProxy = NewNamingProxy(clientConfig, serverConfig, httpAgent)
-	naming.hostReactor = NewHostReactor(naming.serviceProxy, clientConfig.CacheDir, clientConfig.UpdateThreadNum, clientConfig.NotLoadCacheAtStart, naming.subCallback)
+	naming.hostReactor = NewHostReactor(naming.serviceProxy, clientConfig.CacheDir, clientConfig.UpdateThreadNum, clientConfig.NotLoadCacheAtStart, naming.subCallback, clientConfig.UpdateCacheWhenEmpty)
 	naming.beatReactor = NewBeatReactor(naming.serviceProxy, clientConfig.BeatInterval)
+	naming.indexMap = cache.NewConcurrentMap()
 	return naming, nil
 }
 
 // 注册服务实例
-func (sc *NamingClient) RegisterServiceInstance(param vo.RegisterServiceInstanceParam) (bool, error) {
+func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, error) {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	instance := model.ServiceInstance{
+	instance := model.Instance{
 		Ip:          param.Ip,
 		Port:        param.Port,
 		Metadata:    param.Metadata,
@@ -72,7 +78,7 @@ func (sc *NamingClient) RegisterServiceInstance(param vo.RegisterServiceInstance
 }
 
 // 注销服务实例
-func (sc *NamingClient) LogoutServiceInstance(param vo.LogoutServiceInstanceParam) (bool, error) {
+func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error) {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
@@ -93,14 +99,100 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, err
 	return service, nil
 }
 
-// 获取服务某个实例
-func (sc *NamingClient) GetServiceInstance(param vo.GetServiceInstanceParam) (model.ServiceInstance, error) {
-	return model.ServiceInstance{}, nil
+func (sc *NamingClient) SelectAllInstancs(param vo.SelectAllInstancesParam) ([]model.Instance, error) {
+	if param.GroupName == "" {
+		param.GroupName = constant.DEFAULT_GROUP
+	}
+	service := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	if service.Hosts == nil || len(service.Hosts) == 0 {
+		return []model.Instance{}, errors.New("instance list is empty!")
+	}
+	return service.Hosts, nil
 }
 
-// 获取service的基本信息
-func (sc *NamingClient) GetServiceDetail(param vo.GetServiceDetailParam) (model.ServiceDetail, error) {
-	return model.ServiceDetail{}, nil
+func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.Instance, error) {
+	if param.GroupName == "" {
+		param.GroupName = constant.DEFAULT_GROUP
+	}
+	service := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	return sc.selectInstances(service, param.HealthyOnly)
+}
+
+func (sc *NamingClient) selectInstances(service model.Service, healthy bool) ([]model.Instance, error) {
+	if service.Hosts == nil || len(service.Hosts) == 0 {
+		return []model.Instance{}, errors.New("instance list is empty!")
+	}
+	hosts := service.Hosts
+	var result []model.Instance
+	for _, host := range hosts {
+		if host.Healthy == healthy && host.Enable && host.Weight > 0 {
+			result = append(result, host)
+		}
+	}
+	return result, nil
+}
+
+func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanceParam) (*model.Instance, error) {
+	if param.GroupName == "" {
+		param.GroupName = constant.DEFAULT_GROUP
+	}
+	service := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	return sc.selectOneHealthyInstances(service)
+}
+
+func (sc *NamingClient) selectOneHealthyInstances(service model.Service) (*model.Instance, error) {
+	if service.Hosts == nil || len(service.Hosts) == 0 {
+		return nil, errors.New("instance list is empty!")
+	}
+	hosts := service.Hosts
+	var result []model.Instance
+	mw := 0
+	for _, host := range hosts {
+		if host.Healthy && host.Enable && host.Weight > 0 {
+			cw := int(math.Ceil(host.Weight))
+			if cw > mw {
+				mw = cw
+			}
+			result = append(result, host)
+		}
+	}
+	if len(result) == 0 {
+		return nil, errors.New("healthy instance list is empty!")
+	}
+
+	randomInstances := random(result, mw)
+	key := utils.GetServiceCacheKey(service.Name, service.Clusters)
+	i, indexOk := sc.indexMap.Get(key)
+	var index int
+
+	if !indexOk {
+		index = rand.Intn(len(randomInstances))
+	} else {
+		index = i.(int)
+		index += 1
+		if index >= len(randomInstances) {
+			index = index % len(randomInstances)
+		}
+	}
+
+	sc.indexMap.Set(key, index)
+	return &randomInstances[index], nil
+}
+
+func random(instances []model.Instance, mw int) []model.Instance {
+	if len(instances) <= 1 || mw <= 1 {
+		return instances
+	}
+	//实例交叉插入列表，避免列表中是连续的实例
+	var result = make([]model.Instance, 0)
+	for i := 1; i <= mw; i++ {
+		for _, host := range instances {
+			if int(math.Ceil(host.Weight)) >= i {
+				result = append(result, host)
+			}
+		}
+	}
+	return result
 }
 
 // 服务监听

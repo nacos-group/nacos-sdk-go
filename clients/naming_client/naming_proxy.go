@@ -43,7 +43,7 @@ func NewNamingProxy(clientCfg constant.ClientConfig, serverCfgs []constant.Serve
 	return srvProxy
 }
 
-func (proxy *NamingProxy) RegisterService(serviceName string, groupName string, instance model.ServiceInstance) (string, error) {
+func (proxy *NamingProxy) RegisterService(serviceName string, groupName string, instance model.Instance) (string, error) {
 	log.Printf("[INFO] register service namespaceId:<%s>,serviceName:<%s> with instance:<%s> \n", proxy.clientConfig.NamespaceId, serviceName, utils.ToJsonString(instance))
 	params := map[string]string{}
 	params["namespaceId"] = proxy.clientConfig.NamespaceId

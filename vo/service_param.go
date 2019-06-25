@@ -11,7 +11,7 @@ import "github.com/nacos-group/nacos-sdk-go/model"
 * @create : 2019-01-09 10:03
 **/
 
-type RegisterServiceInstanceParam struct {
+type RegisterInstanceParam struct {
 	Ip          string            `param:"ip"`
 	Port        uint64            `param:"port"`
 	Tenant      string            `param:"tenant"`
@@ -24,23 +24,13 @@ type RegisterServiceInstanceParam struct {
 	GroupName   string            `param:"groupName"`
 }
 
-type LogoutServiceInstanceParam struct {
+type DeregisterInstanceParam struct {
 	Ip          string `param:"ip"`
 	Port        uint64 `param:"port"`
 	Tenant      string `param:"tenant"`
 	Cluster     string `param:"cluster"`
 	ServiceName string `param:"serviceName"`
 	GroupName   string `param:"groupName"`
-}
-
-type ModifyServiceInstanceParam struct {
-	ServiceName string            `param:"serviceName"`
-	Ip          string            `param:"ip"`
-	Port        uint64            `param:"port"`
-	Cluster     string            `param:"cluster"`
-	Tenant      string            `param:"tenant"`
-	Weight      float64           `param:"weight"`
-	Metadata    map[string]string `param:"metadata"`
 }
 
 type GetServiceParam struct {
@@ -65,15 +55,6 @@ type GetServiceInstanceParam struct {
 	Port        uint64 `param:"port"`
 }
 
-type BeatTaskParam struct {
-	Ip       string            `json:"ip"`
-	Port     uint64            `json:"port"`
-	Weight   float64           `json:"weight"`
-	Dom      string            `json:"dom"` // Dom == ServiceName
-	Cluster  string            `json:"cluster"`
-	Metadata map[string]string `json:"metadata"`
-}
-
 type GetServiceDetailParam struct {
 	ServiceName string `param:"serviceName"`
 }
@@ -83,4 +64,23 @@ type SubscribeParam struct {
 	Clusters          []string `param:"clusters"`
 	GroupName         string   `param:"groupName"`
 	SubscribeCallback func(services []model.SubscribeService, err error)
+}
+
+type SelectAllInstancesParam struct {
+	Clusters    []string `param:"clusters"`
+	ServiceName string   `param:"serviceName"`
+	GroupName   string   `param:"groupName"`
+}
+
+type SelectInstancesParam struct {
+	Clusters    []string `param:"clusters"`
+	ServiceName string   `param:"serviceName"`
+	GroupName   string   `param:"groupName"`
+	HealthyOnly bool     `param:"healthyOnly"`
+}
+
+type SelectOneHealthInstanceParam struct {
+	Clusters    []string `param:"clusters"`
+	ServiceName string   `param:"serviceName"`
+	GroupName   string   `param:"groupName"`
 }

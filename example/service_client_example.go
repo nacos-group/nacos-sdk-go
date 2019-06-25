@@ -7,13 +7,13 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/vo"
 )
 
-func ExampleServiceClient_RegisterServiceInstance(client naming_client.INamingClient, param vo.RegisterServiceInstanceParam) {
-	success, _ := client.RegisterServiceInstance(param)
+func ExampleServiceClient_RegisterServiceInstance(client naming_client.INamingClient, param vo.RegisterInstanceParam) {
+	success, _ := client.RegisterInstance(param)
 	fmt.Println(success)
 }
 
-func ExampleServiceClient_DeRegisterServiceInstance(client naming_client.INamingClient, param vo.LogoutServiceInstanceParam) {
-	success, _ := client.LogoutServiceInstance(param)
+func ExampleServiceClient_DeRegisterServiceInstance(client naming_client.INamingClient, param vo.DeregisterInstanceParam) {
+	success, _ := client.DeregisterInstance(param)
 	fmt.Println(success)
 }
 

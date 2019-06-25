@@ -20,7 +20,7 @@ func main() {
 			},
 		},
 	})
-	example.ExampleServiceClient_RegisterServiceInstance(client, vo.RegisterServiceInstanceParam{
+	example.ExampleServiceClient_RegisterServiceInstance(client, vo.RegisterInstanceParam{
 		Ip:          "10.0.0.11",
 		Port:        8848,
 		ServiceName: "demo",
@@ -39,7 +39,7 @@ func main() {
 	}
 	example.ExampleServiceClient_Subscribe(client, param)
 	time.Sleep(20 * time.Second)
-	example.ExampleServiceClient_RegisterServiceInstance(client, vo.RegisterServiceInstanceParam{
+	example.ExampleServiceClient_RegisterServiceInstance(client, vo.RegisterInstanceParam{
 		Ip:          "10.0.0.12",
 		Port:        8848,
 		ServiceName: "demo",
@@ -50,7 +50,7 @@ func main() {
 	})
 	time.Sleep(20 * time.Second)
 	example.ExampleServiceClient_UnSubscribe(client, param)
-	example.ExampleServiceClient_DeRegisterServiceInstance(client, vo.LogoutServiceInstanceParam{
+	example.ExampleServiceClient_DeRegisterServiceInstance(client, vo.DeregisterInstanceParam{
 		Ip:          "10.0.0.12",
 		Port:        8848,
 		ServiceName: "demo",

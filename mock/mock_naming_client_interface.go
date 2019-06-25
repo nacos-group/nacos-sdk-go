@@ -34,34 +34,34 @@ func (m *MockINamingClient) EXPECT() *MockINamingClientMockRecorder {
 	return m.recorder
 }
 
-// RegisterServiceInstance mocks base method
-func (m *MockINamingClient) RegisterServiceInstance(param vo.RegisterServiceInstanceParam) (bool, error) {
+// RegisterInstance mocks base method
+func (m *MockINamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterServiceInstance", param)
+	ret := m.ctrl.Call(m, "RegisterInstance", param)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// RegisterServiceInstance indicates an expected call of RegisterServiceInstance
-func (mr *MockINamingClientMockRecorder) RegisterServiceInstance(param interface{}) *gomock.Call {
+// RegisterInstance indicates an expected call of RegisterInstance
+func (mr *MockINamingClientMockRecorder) RegisterInstance(param interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterServiceInstance", reflect.TypeOf((*MockINamingClient)(nil).RegisterServiceInstance), param)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterInstance", reflect.TypeOf((*MockINamingClient)(nil).RegisterInstance), param)
 }
 
-// LogoutServiceInstance mocks base method
-func (m *MockINamingClient) LogoutServiceInstance(param vo.LogoutServiceInstanceParam) (bool, error) {
+// DeregisterInstance mocks base method
+func (m *MockINamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LogoutServiceInstance", param)
+	ret := m.ctrl.Call(m, "DeregisterInstance", param)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// LogoutServiceInstance indicates an expected call of LogoutServiceInstance
-func (mr *MockINamingClientMockRecorder) LogoutServiceInstance(param interface{}) *gomock.Call {
+// DeregisterInstance indicates an expected call of DeregisterInstance
+func (mr *MockINamingClientMockRecorder) DeregisterInstance(param interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LogoutServiceInstance", reflect.TypeOf((*MockINamingClient)(nil).LogoutServiceInstance), param)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeregisterInstance", reflect.TypeOf((*MockINamingClient)(nil).DeregisterInstance), param)
 }
 
 // GetService mocks base method
@@ -79,34 +79,34 @@ func (mr *MockINamingClientMockRecorder) GetService(param interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetService", reflect.TypeOf((*MockINamingClient)(nil).GetService), param)
 }
 
-// GetServiceInstance mocks base method
-func (m *MockINamingClient) GetServiceInstance(param vo.GetServiceInstanceParam) (model.ServiceInstance, error) {
+// SelectInstances mocks base method
+func (m *MockINamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.Instance, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetServiceInstance", param)
-	ret0, _ := ret[0].(model.ServiceInstance)
+	ret := m.ctrl.Call(m, "SelectInstances", param)
+	ret0, _ := ret[0].([]model.Instance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetServiceInstance indicates an expected call of GetServiceInstance
-func (mr *MockINamingClientMockRecorder) GetServiceInstance(param interface{}) *gomock.Call {
+// SelectInstances indicates an expected call of SelectInstances
+func (mr *MockINamingClientMockRecorder) SelectInstances(param interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceInstance", reflect.TypeOf((*MockINamingClient)(nil).GetServiceInstance), param)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectInstances", reflect.TypeOf((*MockINamingClient)(nil).SelectInstances), param)
 }
 
-// GetServiceDetail mocks base method
-func (m *MockINamingClient) GetServiceDetail(param vo.GetServiceDetailParam) (model.ServiceDetail, error) {
+// SelectOneHealthyInstance mocks base method
+func (m *MockINamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanceParam) (*model.Instance, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetServiceDetail", param)
-	ret0, _ := ret[0].(model.ServiceDetail)
+	ret := m.ctrl.Call(m, "SelectOneHealthyInstance", param)
+	ret0, _ := ret[0].(*model.Instance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetServiceDetail indicates an expected call of GetServiceDetail
-func (mr *MockINamingClientMockRecorder) GetServiceDetail(param interface{}) *gomock.Call {
+// SelectOneHealthyInstance indicates an expected call of SelectOneHealthyInstance
+func (mr *MockINamingClientMockRecorder) SelectOneHealthyInstance(param interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceDetail", reflect.TypeOf((*MockINamingClient)(nil).GetServiceDetail), param)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectOneHealthyInstance", reflect.TypeOf((*MockINamingClient)(nil).SelectOneHealthyInstance), param)
 }
 
 // Subscribe mocks base method

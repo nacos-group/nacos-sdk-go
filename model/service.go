@@ -9,21 +9,21 @@ package model
 * @create : 2019-01-09 10:26
 **/
 
-type ServiceInstance struct {
-	InstanceId  string            `json:"instanceId"`
-	Ip          string            `json:"ip"`
-	Port        uint64            `json:"port"`
-	Metadata    map[string]string `json:"metadata"`
-	Service     string            `json:"service"`
-	Healthy     bool              `json:"healthy"`
-	ClusterName string            `json:"clusterName"`
-	Weight      float64           `json:"weight"`
-	ServiceName string            `json:"serviceName"`
-	Enable      bool              `json:"enabled"`
-	Ephemeral   bool              `json:"ephemeral"`
-}
+//type ServiceInstance struct {
+//	InstanceId  string            `json:"instanceId"`
+//	Ip          string            `json:"ip"`
+//	Port        uint64            `json:"port"`
+//	Metadata    map[string]string `json:"metadata"`
+//	Service     string            `json:"service"`
+//	Healthy     bool              `json:"healthy"`
+//	ClusterName string            `json:"clusterName"`
+//	Weight      float64           `json:"weight"`
+//	ServiceName string            `json:"serviceName"`
+//	Enable      bool              `json:"enabled"`
+//	Ephemeral   bool              `json:"ephemeral"`
+//}
 
-type Host struct {
+type Instance struct {
 	Valid       bool              `json:"valid"`
 	Marked      bool              `json:"marked"`
 	InstanceId  string            `json:"instanceId"`
@@ -34,13 +34,15 @@ type Host struct {
 	ClusterName string            `json:"clusterName"`
 	ServiceName string            `json:"serviceName"`
 	Enable      bool              `json:"enabled"`
+	Healthy     bool              `json:"healthy"`
+	Ephemeral   bool              `json:"ephemeral"`
 }
 
 type Service struct {
 	Dom             string            `json:"dom"`
 	CacheMillis     uint64            `json:"cacheMillis"`
 	UseSpecifiedURL bool              `json:"useSpecifiedUrl"`
-	Hosts           []Host            `json:"hosts"`
+	Hosts           []Instance        `json:"hosts"`
 	Checksum        string            `json:"checksum"`
 	LastRefTime     uint64            `json:"lastRefTime"`
 	Env             string            `json:"env"`

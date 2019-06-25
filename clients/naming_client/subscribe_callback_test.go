@@ -20,8 +20,8 @@ func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
 		Checksum:    "abcd",
 		LastRefTime: uint64(time.Now().Unix()),
 	}
-	var hosts []model.Host
-	host := model.Host{
+	var hosts []model.Instance
+	host := model.Instance{
 		Valid:       true,
 		Enable:      true,
 		InstanceId:  "123",
@@ -62,8 +62,8 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 		Checksum:    "abcd",
 		LastRefTime: uint64(time.Now().Unix()),
 	}
-	var hosts []model.Host
-	host := model.Host{
+	var hosts []model.Instance
+	host := model.Instance{
 		Valid:       true,
 		Enable:      true,
 		InstanceId:  "123",
@@ -123,8 +123,8 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 		Checksum:    "abcd",
 		LastRefTime: uint64(time.Now().Unix()),
 	}
-	var hosts []model.Host
-	host := model.Host{
+	var hosts []model.Instance
+	host := model.Instance{
 		Valid:       true,
 		Enable:      true,
 		InstanceId:  "123",

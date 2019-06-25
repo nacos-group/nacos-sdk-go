@@ -2,7 +2,6 @@ package naming_client
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"log"
 	"math/rand"
@@ -35,13 +34,13 @@ func NewPushRecevier(hostReactor *HostReactor) *PushReceiver {
 func (us *PushReceiver) tryListen() (*net.UDPConn, bool) {
 	addr, err := net.ResolveUDPAddr("udp", us.host+":"+strconv.Itoa(us.port))
 	if err != nil {
-		fmt.Println("Can't resolve address: ", err)
+		log.Printf("[ERROR]: Can't resolve address,err: %s \n", err.Error())
 		return nil, false
 	}
 
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		fmt.Println("Error listening:", err)
+		log.Printf("Error listening %s:%d,err:%s \n", us.host, us.port, err.Error())
 		return nil, false
 	}
 
@@ -59,8 +58,7 @@ func (us *PushReceiver) startServer() {
 
 		if ok {
 			conn = conn1
-			log.Println("udp server start, port: " + strconv.Itoa(port))
-			log.Println("udp server start, port: " + strconv.Itoa(port))
+			log.Println("[INFO] udp server start, port: " + strconv.Itoa(port))
 			break
 		}
 
@@ -85,12 +83,12 @@ func (us *PushReceiver) handleClient(conn *net.UDPConn) {
 	}
 
 	s := utils.TryDecompressData(data[:n])
-	log.Println("receive push: "+s+" from: ", remoteAddr)
+	log.Println("[INFO] receive push: "+s+" from: ", remoteAddr)
 
 	var pushData PushData
 	err1 := json.Unmarshal([]byte(s), &pushData)
 	if err1 != nil {
-		log.Printf("failed to process push data.err:%s \n", err1.Error())
+		log.Printf("[ERROR] failed to process push data.err:%s \n", err1.Error())
 		return
 	}
 	ack := make(map[string]string)

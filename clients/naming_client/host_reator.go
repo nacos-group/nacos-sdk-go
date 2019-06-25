@@ -11,26 +11,30 @@ import (
 )
 
 type HostReactor struct {
-	serviceInfoMap  cache.ConcurrentMap
-	cacheDir        string
-	updateThreadNum int
-	serviceProxy    NamingProxy
-	pushReceiver    PushReceiver
-	subCallback     SubscribeCallback
+	serviceInfoMap       cache.ConcurrentMap
+	cacheDir             string
+	updateThreadNum      int
+	serviceProxy         NamingProxy
+	pushReceiver         PushReceiver
+	subCallback          SubscribeCallback
+	updateTimeMap        cache.ConcurrentMap
+	updateCacheWhenEmpty bool
 }
 
 const Default_Update_Thread_Num = 20
 
-func NewHostReactor(serviceProxy NamingProxy, cacheDir string, updateThreadNum int, notLoadCacheAtStart bool, subCallback SubscribeCallback) HostReactor {
+func NewHostReactor(serviceProxy NamingProxy, cacheDir string, updateThreadNum int, notLoadCacheAtStart bool, subCallback SubscribeCallback, updateCacheWhenEmpty bool) HostReactor {
 	if updateThreadNum <= 0 {
 		updateThreadNum = Default_Update_Thread_Num
 	}
 	hr := HostReactor{
-		serviceProxy:    serviceProxy,
-		cacheDir:        cacheDir,
-		updateThreadNum: updateThreadNum,
-		serviceInfoMap:  cache.NewConcurrentMap(),
-		subCallback:     subCallback,
+		serviceProxy:         serviceProxy,
+		cacheDir:             cacheDir,
+		updateThreadNum:      updateThreadNum,
+		serviceInfoMap:       cache.NewConcurrentMap(),
+		subCallback:          subCallback,
+		updateTimeMap:        cache.NewConcurrentMap(),
+		updateCacheWhenEmpty: updateCacheWhenEmpty,
 	}
 	pr := NewPushRecevier(&hr)
 	hr.pushReceiver = *pr
@@ -59,16 +63,8 @@ func (hr *HostReactor) ProcessServiceJson(result string) {
 	cacheKey := utils.GetServiceCacheKey(service.Name, service.Clusters)
 
 	oldDomain, ok := hr.serviceInfoMap.Get(cacheKey)
-	if ok {
-		//如果无可用的实例，不更新当前缓存
-		hosts := service.Hosts
-		var result []model.Host
-		for _, host := range hosts {
-			if host.Enable && host.Valid && host.Weight > 0 {
-				result = append(result, host)
-			}
-		}
-
+	if ok && !hr.updateCacheWhenEmpty {
+		//if instance list is empty,not to update cache
 		if len(result) == 0 {
 			log.Printf("[ERROR]:do not have useful host, ignore it, name:%s \n", service.Name)
 			return
@@ -76,14 +72,14 @@ func (hr *HostReactor) ProcessServiceJson(result string) {
 	}
 	if !ok || ok && !reflect.DeepEqual(service.Hosts, oldDomain.(model.Service).Hosts) {
 		if !ok {
-			log.Println("service not found in cache " + cacheKey)
+			log.Println("[INFO] service not found in cache " + cacheKey)
 		} else {
-			log.Printf("service key:%s was updated to:%s \n", cacheKey, utils.ToJsonString(service))
+			log.Printf("[INFO] service key:%s was updated to:%s \n", cacheKey, utils.ToJsonString(service))
 		}
 		cache.WriteToFile(*service, hr.cacheDir)
 		hr.subCallback.ServiceChanged(service)
 	}
-	//service.LastRefTime = uint64(utils.CurrentMillis())
+	hr.updateTimeMap.Set(cacheKey, uint64(utils.CurrentMillis()))
 	hr.serviceInfoMap.Set(cacheKey, *service)
 }
 
@@ -118,7 +114,11 @@ func (hr *HostReactor) asyncUpdateService() {
 	for {
 		for _, v := range hr.serviceInfoMap.Items() {
 			service := v.(model.Service)
-			if uint64(utils.CurrentMillis())-service.LastRefTime > service.CacheMillis {
+			lastRefTime, ok := hr.updateTimeMap.Get(utils.GetServiceCacheKey(service.Name, service.Clusters))
+			if !ok {
+				lastRefTime = uint64(0)
+			}
+			if uint64(utils.CurrentMillis())-lastRefTime.(uint64) > service.CacheMillis {
 				sema.Acquire()
 				go func() {
 					hr.updateServiceNow(service.Name, service.Clusters)

@@ -40,12 +40,12 @@ func buildKey(serviceName string, ip string, port uint64) string {
 }
 
 func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo model.BeatInfo) {
-	log.Printf("[BEAT] adding beat: {%v} to beat map.\n", beatInfo)
+	log.Printf("[INFO] adding beat: <%s> to beat map.\n", utils.ToJsonString(beatInfo))
 	br.beatMap.Set(buildKey(serviceName, beatInfo.Ip, beatInfo.Port), beatInfo)
 }
 
 func (br *BeatReactor) RemoveBeatInfo(serviceName string, ip string, port uint64) {
-	log.Printf("[BEAT] remove beat: %s@%s:%d from beat map.\n", serviceName, ip, port)
+	log.Printf("[INFO] remove beat: %s@%s:%d from beat map.\n", serviceName, ip, port)
 	br.beatMap.Remove(buildKey(serviceName, ip, port))
 }
 

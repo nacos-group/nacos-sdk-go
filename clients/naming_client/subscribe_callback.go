@@ -19,7 +19,7 @@ func NewSubscribeCallback() SubscribeCallback {
 }
 
 func (ed *SubscribeCallback) AddCallbackFuncs(serviceName string, clusters string, callbackFunc *func(services []model.SubscribeService, err error)) {
-	log.Printf("[LISTENER] adding " + serviceName + " with " + clusters + " to listener map")
+	log.Printf("[INFO] adding " + serviceName + " with " + clusters + " to listener map")
 	key := utils.GetServiceCacheKey(serviceName, clusters)
 	var funcs []*func(services []model.SubscribeService, err error)
 	old, ok := ed.callbackFuncsMap.Get(key)
@@ -31,7 +31,7 @@ func (ed *SubscribeCallback) AddCallbackFuncs(serviceName string, clusters strin
 }
 
 func (ed *SubscribeCallback) RemoveCallbackFuncs(serviceName string, clusters string, callbackFunc *func(services []model.SubscribeService, err error)) {
-	log.Printf("[LISTENER] removing " + serviceName + " with " + clusters + " to listener map")
+	log.Printf("[INFO] removing " + serviceName + " with " + clusters + " to listener map")
 	key := utils.GetServiceCacheKey(serviceName, clusters)
 	funcs, ok := ed.callbackFuncsMap.Get(key)
 	if ok && funcs != nil {

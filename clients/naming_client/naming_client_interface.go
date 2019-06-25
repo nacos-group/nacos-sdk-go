@@ -18,15 +18,17 @@ import (
 
 type INamingClient interface {
 	// 注册服务实例
-	RegisterServiceInstance(param vo.RegisterServiceInstanceParam) (bool, error)
+	RegisterInstance(param vo.RegisterInstanceParam) (bool, error)
 	// 注销服务实例
-	LogoutServiceInstance(param vo.LogoutServiceInstanceParam) (bool, error)
-	// 获取服务列表
+	DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error)
+	// 获取服务信息
 	GetService(param vo.GetServiceParam) (model.Service, error)
-	// 获取服务某个实例
-	GetServiceInstance(param vo.GetServiceInstanceParam) (model.ServiceInstance, error)
-	// 获取service的基本信息
-	GetServiceDetail(param vo.GetServiceDetailParam) (model.ServiceDetail, error)
+	//获取所有的实例列表
+	SelectAllInstancs(param vo.SelectAllInstancesParam) ([]model.Instance, error)
+	// 获取实例列表
+	SelectInstances(param vo.SelectInstancesParam) ([]model.Instance, error)
+	//获取一个健康的实例
+	SelectOneHealthyInstance(param vo.SelectOneHealthInstanceParam) (*model.Instance, error)
 	// 服务监听
 	Subscribe(param *vo.SubscribeParam) error
 	//取消监听
