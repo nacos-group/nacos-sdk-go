@@ -16,7 +16,7 @@ func main() {
 	client, _ := clients.CreateServiceClient(map[string]interface{}{
 		"serverConfigs": []constant.ServerConfig{
 			{
-				IpAddr: "11.239.112.161",
+				IpAddr: "127.0.0.1",
 				Port:   8848,
 			},
 		},
