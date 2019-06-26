@@ -24,7 +24,7 @@ type INamingClient interface {
 	// 获取服务信息
 	GetService(param vo.GetServiceParam) (model.Service, error)
 	//获取所有的实例列表
-	SelectAllInstancs(param vo.SelectAllInstancesParam) ([]model.Instance, error)
+	SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error)
 	// 获取实例列表
 	SelectInstances(param vo.SelectInstancesParam) ([]model.Instance, error)
 	//获取一个健康的实例

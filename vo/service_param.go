@@ -22,6 +22,7 @@ type RegisterInstanceParam struct {
 	ClusterName string            `param:"clusterName"`
 	ServiceName string            `param:"serviceName"`
 	GroupName   string            `param:"groupName"`
+	Ephemeral   bool              `param:"ephemeral"`
 }
 
 type DeregisterInstanceParam struct {
@@ -31,6 +32,7 @@ type DeregisterInstanceParam struct {
 	Cluster     string `param:"cluster"`
 	ServiceName string `param:"serviceName"`
 	GroupName   string `param:"groupName"`
+	Ephemeral   bool   `param:"ephemeral"`
 }
 
 type GetServiceParam struct {
