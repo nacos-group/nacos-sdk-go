@@ -12,23 +12,35 @@ import (
 // 创建配置相关的客户端
 func CreateConfigClient(properties map[string]interface{}) (iClient config_client.IConfigClient,
 	err error) {
-	return
-}
-
-// 创建服务发现相关的客户端
-func CreateServiceClient(properties map[string]interface{}) (iClient naming_client.INamingClient, err error) {
 	nacosClient, errSetConfig := setConfig(properties)
 	if errSetConfig != nil {
 		err = errSetConfig
 		return
 	}
 	nacosClient.SetHttpAgent(&http_agent.HttpAgent{})
-	client, errNew := naming_client.NewNamingClient(nacosClient)
+	config, errNew := config_client.NewConfigClient(nacosClient)
 	if errNew != nil {
 		err = errNew
 		return
 	}
-	iClient = &client
+	iClient = &config
+	return
+}
+
+// 创建服务发现相关的客户端
+func CreateNamingClient(properties map[string]interface{}) (iClient naming_client.INamingClient, err error) {
+	nacosClient, errSetConfig := setConfig(properties)
+	if errSetConfig != nil {
+		err = errSetConfig
+		return
+	}
+	nacosClient.SetHttpAgent(&http_agent.HttpAgent{})
+	naming, errNew := naming_client.NewNamingClient(nacosClient)
+	if errNew != nil {
+		err = errNew
+		return
+	}
+	iClient = &naming
 	return
 }
 

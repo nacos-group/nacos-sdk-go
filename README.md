@@ -1,5 +1,5 @@
 ### nacos-go
-go语言版本的nacos client，支持config_client(#TODO)和service_client
+go语言版本的nacos client，支持config_client和service_client
 
 #### client的config
 - ClientConfig 客户端配置参数  
@@ -12,6 +12,8 @@ go语言版本的nacos client，支持config_client(#TODO)和service_client
         Endpoint:          ""
         CacheDir:         "/data/nacos/cache",
         UpdateThreadNum:   20
+		NotLoadCacheAtStart: true
+        UpdateCacheWhenEmpty:true
 	}
 ```
 TimeoutMs：http请求超时时间，单位毫秒
@@ -27,6 +29,10 @@ NamespaceId：nacos命名空间
 CacheDir：缓存目录
 
 UpdateThreadNum：更新服务的线程数
+
+NotLoadCacheAtStart: 在启动时不读取本地缓存数据，true--不读取，false--读取
+
+UpdateCacheWhenEmpty: 当服务列表为空时是否更新本地缓存，true--更新,false--不更新
 
 
 - ServerConfig nacos服务信息配置参数
@@ -46,18 +52,25 @@ ContextPath：nacos服务的上下文路径，默认是“/nacos”
 #### service_client
 注册服务实例  
 1. RegisterInstance  
+
 注销服务实例  
 2. DeregisterInstance  
+
 获取服务
 3. GetService
+
 获取所有的实例列表 
 4.SelectAllInstancs 
+
 获取实例列表
 5.SelectInstances
+
 获取一个健康的实例（加权轮训负载均衡）
 6.SelectOneHealthyInstance
+
 服务监听
 7. Subscribe
+
 取消服务监听  
 8. Unsubscribe
 
@@ -88,7 +101,7 @@ Step 1. 构造相关参数
 Step 2. 构造客户端
 ```go
     // 如果参数设置不合法，将抛出error
-    client, err := CreateServiceClient(map[string]interface{}{
+    client, err := CreateNamingClient(map[string]interface{}{
     	"serverConfigs": serverConfigs,
     	"clientConfig":  clientConfig,
     })

@@ -13,12 +13,17 @@ import (
 
 func main() {
 
-	client, _ := clients.CreateServiceClient(map[string]interface{}{
+	client, _ := clients.CreateNamingClient(map[string]interface{}{
 		"serverConfigs": []constant.ServerConfig{
 			{
 				IpAddr: "127.0.0.1",
 				Port:   8848,
 			},
+		},
+		"clientConfig": constant.ClientConfig{
+			TimeoutMs:           20000,
+			ListenInterval:      10000,
+			NotLoadCacheAtStart: true,
 		},
 	})
 

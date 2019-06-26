@@ -13,7 +13,7 @@ type ConfigParam struct {
 	DataId  string `param:"dataId"`
 	Group   string `param:"group"`
 	Content string `param:"content"`
-	Desc    string `param:"desc"`
+	Tag     string `param:"tag"`
 	AppName string `param:"appName"`
 	Tenant  string `param:"tenant"`
 }

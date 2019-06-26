@@ -8,6 +8,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/mock"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
+	"net/http"
 	"testing"
 )
 
@@ -21,7 +22,7 @@ import (
 **/
 
 var clientConfigTest = constant.ClientConfig{
-	TimeoutMs:      10000,
+	TimeoutMs:      20000,
 	ListenInterval: 10000,
 	BeatInterval:   10000,
 }
@@ -63,8 +64,20 @@ var serverConfigsTest = []constant.ServerConfig{serverConfigTest}
 var httpAgentTest = mock.MockIHttpAgent{}
 
 func cretateConfigClientTest() ConfigClient {
-	client := ConfigClient{}
-	client.INacosClient = &nacos_client.NacosClient{}
+	nc := nacos_client.NacosClient{}
+	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+	nc.SetClientConfig(clientConfigTest)
+	nc.SetHttpAgent(&http_agent.HttpAgent{})
+	client, _ := NewConfigClient(&nc)
+	return client
+}
+
+func cretateConfigClientHttpTest(mockHttpAgent http_agent.IHttpAgent) ConfigClient {
+	nc := nacos_client.NacosClient{}
+	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+	nc.SetClientConfig(clientConfigTest)
+	nc.SetHttpAgent(mockHttpAgent)
+	client, _ := NewConfigClient(&nc)
 	return client
 }
 
@@ -167,15 +180,12 @@ func Test_GetConfig(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
 
-	client := cretateConfigClientTest()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
+	client := cretateConfigClientHttpTest(mockHttpAgent)
 
-	mockHttpAgent.EXPECT().Get(
+	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodGet),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
-		gomock.Nil(),
+		gomock.AssignableToTypeOf(http.Header{}),
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(configParamMapTest),
 	).Times(1).Return(http_agent.FakeHttpResponse(200, "content"), nil)
@@ -187,59 +197,15 @@ func Test_GetConfig(t *testing.T) {
 func Test_GetConfigWithErrorResponse(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
-	client := cretateConfigClientTest()
-	agent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(agent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-	agent.EXPECT().Get(
+	mockHttpAgent := mock.NewMockIHttpAgent(controller)
+	client := cretateConfigClientHttpTest(mockHttpAgent)
+	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodGet),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
-		gomock.Nil(),
+		gomock.AssignableToTypeOf(http.Header{}),
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(configParamMapTest),
-	).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
+	).Times(3).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
 	_, err := client.GetConfig(configParamTest)
-	assert.NotNil(t, err)
-}
-
-// getConfig
-
-func Test_getConfig(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-	client := cretateConfigClientTest()
-	agent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(agent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-	path := "http://console.nacos.io:80/nacos/v1/cs/configs"
-	agent.EXPECT().Get(
-		gomock.Eq(path),
-		gomock.Nil(),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(configParamMapTest),
-	).Return(http_agent.FakeHttpResponse(200, "content"), nil)
-	content, err := getConfig(agent, path, clientConfigTest.TimeoutMs, configParamMapTest)
-	assert.Nil(t, err)
-	assert.Equal(t, "content", content)
-}
-
-func Test_getConfigWithErrorResponse(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-	client := cretateConfigClientTest()
-	agent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(agent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-	path := "http://console.nacos.io:80/nacos/v1/cs/configs"
-	agent.EXPECT().Get(
-		gomock.Eq(path),
-		gomock.Nil(),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(configParamMapTest),
-	).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
-	_, err := getConfig(agent, path, clientConfigTest.TimeoutMs, configParamMapTest)
 	assert.NotNil(t, err)
 }
 
@@ -278,16 +244,11 @@ func Test_PublishConfigWithoutContent(t *testing.T) {
 func Test_PublishConfig(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
-
-	client := cretateConfigClientTest()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-
-	mockHttpAgent.EXPECT().Post(
+	client := cretateConfigClientHttpTest(mockHttpAgent)
+	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodPost),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
-		gomock.AssignableToTypeOf(headerTest),
+		gomock.AssignableToTypeOf(http.Header{}),
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(localConfigMapTest),
 	).Times(1).Return(http_agent.FakeHttpResponse(200, "true"), nil)
@@ -300,18 +261,14 @@ func Test_PublishConfigWithErrorResponse(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
 
-	client := cretateConfigClientTest()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-
-	mockHttpAgent.EXPECT().Post(
+	client := cretateConfigClientHttpTest(mockHttpAgent)
+	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodPost),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
-		gomock.AssignableToTypeOf(headerTest),
+		gomock.AssignableToTypeOf(http.Header{}),
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(localConfigMapTest),
-	).Times(1).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
+	).Times(3).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
 	success, err := client.PublishConfig(localConfigTest)
 	assert.NotNil(t, err)
 	assert.True(t, !success)
@@ -321,63 +278,15 @@ func Test_PublishConfigWithErrorResponse_200(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
 
-	client := cretateConfigClientTest()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-
-	mockHttpAgent.EXPECT().Post(
+	client := cretateConfigClientHttpTest(mockHttpAgent)
+	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodPost),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
-		gomock.AssignableToTypeOf(headerTest),
+		gomock.AssignableToTypeOf(http.Header{}),
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(localConfigMapTest),
 	).Times(1).Return(http_agent.FakeHttpResponse(200, "false"), nil)
 	success, err := client.PublishConfig(localConfigTest)
-	assert.NotNil(t, err)
-	assert.True(t, !success)
-}
-
-// publishConfig
-
-func Test_publishConfig(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-
-	client := cretateConfigClientTest()
-	agent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(agent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-	path := "http://console.nacos.io:80/nacos/v1/cs/configs"
-	agent.EXPECT().Post(
-		gomock.Eq(path),
-		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(localConfigMapTest),
-	).Times(1).Return(http_agent.FakeHttpResponse(200, "true"), nil)
-	success, err := publishConfig(agent, path, clientConfigTest.TimeoutMs, localConfigMapTest)
-	assert.Nil(t, err)
-	assert.True(t, success)
-}
-
-func Test_publishConfigWithErrorResponse(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-
-	client := cretateConfigClientTest()
-	agent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(agent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-	path := "http://console.nacos.io:80/nacos/v1/cs/configs"
-	agent.EXPECT().Post(
-		gomock.Eq(path),
-		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(localConfigMapTest),
-	).Times(1).Return(http_agent.FakeHttpResponse(200, "false"), nil)
-	success, err := publishConfig(agent, path, clientConfigTest.TimeoutMs, localConfigMapTest)
 	assert.NotNil(t, err)
 	assert.True(t, !success)
 }
@@ -388,15 +297,12 @@ func Test_DeleteConfig(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
 
-	client := cretateConfigClientTest()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
+	client := cretateConfigClientHttpTest(mockHttpAgent)
 
-	mockHttpAgent.EXPECT().Delete(
+	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodDelete),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
-		gomock.Nil(),
+		gomock.AssignableToTypeOf(http.Header{}),
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(configParamMapTest),
 	).Times(1).Return(http_agent.FakeHttpResponse(200, "true"), nil)
@@ -409,15 +315,12 @@ func Test_DeleteConfigWithErrorResponse_200(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
 
-	client := cretateConfigClientTest()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
+	client := cretateConfigClientHttpTest(mockHttpAgent)
 
-	mockHttpAgent.EXPECT().Delete(
+	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodDelete),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
-		gomock.Nil(),
+		gomock.AssignableToTypeOf(http.Header{}),
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(configParamMapTest),
 	).Times(1).Return(http_agent.FakeHttpResponse(200, "false"), nil)
@@ -430,18 +333,15 @@ func Test_DeleteConfigWithErrorResponse_401(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
 
-	client := cretateConfigClientTest()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
+	client := cretateConfigClientHttpTest(mockHttpAgent)
 
-	mockHttpAgent.EXPECT().Delete(
+	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodDelete),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
-		gomock.Nil(),
+		gomock.AssignableToTypeOf(http.Header{}),
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(configParamMapTest),
-	).Times(1).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
+	).Times(3).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
 	success, err := client.DeleteConfig(configParamTest)
 	assert.NotNil(t, err)
 	assert.Equal(t, false, success)
@@ -463,74 +363,6 @@ func Test_DeleteConfigWithoutGroup(t *testing.T) {
 		DataId: "dataId",
 		Group:  "",
 	})
-	assert.NotNil(t, err)
-	assert.Equal(t, false, success)
-}
-
-// deleteConfig
-
-func Test_deleteConfig(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-
-	client := cretateConfigClientTest()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-
-	path := "http://console.nacos.io:80/nacos/v1/cs/configs"
-	mockHttpAgent.EXPECT().Delete(
-		gomock.Eq(path),
-		gomock.Nil(),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(configParamMapTest),
-	).Times(1).Return(http_agent.FakeHttpResponse(200, "true"), nil)
-	success, err := deleteConfig(mockHttpAgent, path, clientConfigTest.TimeoutMs, configParamMapTest)
-	assert.Nil(t, err)
-	assert.Equal(t, true, success)
-}
-
-func Test_deleteConfigWithErrorResponse_200(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-
-	client := cretateConfigClientTest()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-
-	path := "http://console.nacos.io:80/nacos/v1/cs/configs"
-	mockHttpAgent.EXPECT().Delete(
-		gomock.Eq(path),
-		gomock.Nil(),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(configParamMapTest),
-	).Times(1).Return(http_agent.FakeHttpResponse(200, "false"), nil)
-	success, err := deleteConfig(mockHttpAgent, path, clientConfigTest.TimeoutMs, configParamMapTest)
-	assert.NotNil(t, err)
-	assert.Equal(t, false, success)
-}
-
-func Test_deleteConfigWithErrorResponse_401(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-
-	client := cretateConfigClientTest()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-
-	path := "http://console.nacos.io:80/nacos/v1/cs/configs"
-	mockHttpAgent.EXPECT().Delete(
-		gomock.Eq(path),
-		gomock.Nil(),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(configParamMapTest),
-	).Times(1).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
-	success, err := deleteConfig(mockHttpAgent, path, clientConfigTest.TimeoutMs, configParamMapTest)
 	assert.NotNil(t, err)
 	assert.Equal(t, false, success)
 }

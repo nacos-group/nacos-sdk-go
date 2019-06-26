@@ -38,7 +38,10 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 		return naming, err
 	}
 	naming.subCallback = NewSubscribeCallback()
-	naming.serviceProxy = NewNamingProxy(clientConfig, serverConfig, httpAgent)
+	naming.serviceProxy, err = NewNamingProxy(clientConfig, serverConfig, httpAgent)
+	if err != nil {
+		return naming, err
+	}
 	naming.hostReactor = NewHostReactor(naming.serviceProxy, clientConfig.CacheDir, clientConfig.UpdateThreadNum, clientConfig.NotLoadCacheAtStart, naming.subCallback, clientConfig.UpdateCacheWhenEmpty)
 	naming.beatReactor = NewBeatReactor(naming.serviceProxy, clientConfig.BeatInterval)
 	naming.indexMap = cache.NewConcurrentMap()

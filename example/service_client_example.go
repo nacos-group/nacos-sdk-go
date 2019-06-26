@@ -19,7 +19,7 @@ func ExampleServiceClient_DeRegisterServiceInstance(client naming_client.INaming
 
 func ExampleServiceClient_GetService(client naming_client.INamingClient) {
 	service, _ := client.GetService(vo.GetServiceParam{
-		ServiceName: "demo",
+		ServiceName: "demo.go",
 		Clusters:    []string{"a"},
 	})
 	fmt.Println(utils.ToJsonString(service))

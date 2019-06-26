@@ -411,7 +411,7 @@ func TestNamingClient_SelectAllInstancs(t *testing.T) {
 	nc.SetClientConfig(clientConfigTest)
 	nc.SetHttpAgent(mockIHttpAgent)
 	client, _ := NewNamingClient(&nc)
-	instances, err := client.SelectAllInstancs(vo.SelectAllInstancesParam{
+	instances, err := client.SelectAllInstances(vo.SelectAllInstancesParam{
 		ServiceName: "DEMO",
 		Clusters:    []string{"a"},
 	})
