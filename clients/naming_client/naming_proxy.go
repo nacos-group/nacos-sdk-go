@@ -43,8 +43,8 @@ func NewNamingProxy(clientCfg constant.ClientConfig, serverCfgs []constant.Serve
 	return srvProxy
 }
 
-func (proxy *NamingProxy) RegisterService(serviceName string, groupName string, instance model.Instance) (string, error) {
-	log.Printf("[INFO] register service namespaceId:<%s>,serviceName:<%s> with instance:<%s> \n", proxy.clientConfig.NamespaceId, serviceName, utils.ToJsonString(instance))
+func (proxy *NamingProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) (string, error) {
+	log.Printf("[INFO] register instance namespaceId:<%s>,serviceName:<%s> with instance:<%s> \n", proxy.clientConfig.NamespaceId, serviceName, utils.ToJsonString(instance))
 	params := map[string]string{}
 	params["namespaceId"] = proxy.clientConfig.NamespaceId
 	params["serviceName"] = serviceName
@@ -61,8 +61,8 @@ func (proxy *NamingProxy) RegisterService(serviceName string, groupName string, 
 	return proxy.reqApi(api, params, http.MethodPost)
 }
 
-func (proxy *NamingProxy) DeristerService(serviceName string, ip string, port uint64, clusterName string, ephemeral bool) (string, error) {
-	log.Printf("[INFO] deregister service namespaceId:<%s>,serviceName:<%s> with instance:<%s:%d@%s> \n", proxy.clientConfig.NamespaceId, serviceName, ip, port, clusterName)
+func (proxy *NamingProxy) DeregisterInstance(serviceName string, ip string, port uint64, clusterName string, ephemeral bool) (string, error) {
+	log.Printf("[INFO] deregister instance namespaceId:<%s>,serviceName:<%s> with instance:<%s:%d@%s> \n", proxy.clientConfig.NamespaceId, serviceName, ip, port, clusterName)
 	params := map[string]string{}
 	params["namespaceId"] = proxy.clientConfig.NamespaceId
 	params["serviceName"] = serviceName

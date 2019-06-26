@@ -12,26 +12,30 @@ import (
 )
 
 func main() {
+
 	client, _ := clients.CreateServiceClient(map[string]interface{}{
 		"serverConfigs": []constant.ServerConfig{
 			{
-				IpAddr: "127.0.0.1",
+				IpAddr: "11.239.112.161",
 				Port:   8848,
 			},
 		},
 	})
+
 	example.ExampleServiceClient_RegisterServiceInstance(client, vo.RegisterInstanceParam{
 		Ip:          "10.0.0.11",
 		Port:        8848,
-		ServiceName: "demo",
+		ServiceName: "demo.go",
 		Weight:      10,
 		ClusterName: "a",
 		Enable:      true,
 		Healthy:     true,
+		Ephemeral:   true,
 	})
+
 	example.ExampleServiceClient_GetService(client)
 	param := &vo.SubscribeParam{
-		ServiceName: "demo",
+		ServiceName: "demo.go",
 		Clusters:    []string{"a"},
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
 			log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
@@ -42,18 +46,20 @@ func main() {
 	example.ExampleServiceClient_RegisterServiceInstance(client, vo.RegisterInstanceParam{
 		Ip:          "10.0.0.12",
 		Port:        8848,
-		ServiceName: "demo",
+		ServiceName: "demo.go",
 		Weight:      10,
 		ClusterName: "a",
 		Enable:      true,
 		Healthy:     true,
+		Ephemeral:   true,
 	})
 	time.Sleep(20 * time.Second)
 	example.ExampleServiceClient_UnSubscribe(client, param)
 	example.ExampleServiceClient_DeRegisterServiceInstance(client, vo.DeregisterInstanceParam{
-		Ip:          "10.0.0.12",
+		Ip:          "10.0.0.11",
+		Ephemeral:   true,
 		Port:        8848,
-		ServiceName: "demo",
+		ServiceName: "demo.go",
 		Cluster:     "a",
 	})
 

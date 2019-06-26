@@ -58,7 +58,7 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 		Healthy:     param.Healthy,
 		Enable:      param.Enable,
 		Weight:      param.Weight,
-		Ephemeral:   true,
+		Ephemeral:   param.Ephemeral,
 	}
 	beatInfo := model.BeatInfo{
 		Ip:          param.Ip,
@@ -68,11 +68,13 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 		Cluster:     param.ClusterName,
 		Weight:      param.Weight,
 	}
-	_, err := sc.serviceProxy.RegisterService(utils.GetGroupName(param.ServiceName, param.GroupName), param.GroupName, instance)
+	_, err := sc.serviceProxy.RegisterInstance(utils.GetGroupName(param.ServiceName, param.GroupName), param.GroupName, instance)
 	if err != nil {
 		return false, err
 	}
-	sc.beatReactor.AddBeatInfo(utils.GetGroupName(param.ServiceName, param.GroupName), beatInfo)
+	if instance.Ephemeral {
+		sc.beatReactor.AddBeatInfo(utils.GetGroupName(param.ServiceName, param.GroupName), beatInfo)
+	}
 	return true, nil
 
 }
@@ -82,7 +84,7 @@ func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bo
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	_, err := sc.serviceProxy.DeristerService(utils.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port, param.Cluster, true)
+	_, err := sc.serviceProxy.DeregisterInstance(utils.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port, param.Cluster, param.Ephemeral)
 	if err != nil {
 		return false, err
 	}
@@ -99,7 +101,7 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, err
 	return service, nil
 }
 
-func (sc *NamingClient) SelectAllInstancs(param vo.SelectAllInstancesParam) ([]model.Instance, error) {
+func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error) {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
