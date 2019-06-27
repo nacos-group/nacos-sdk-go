@@ -201,33 +201,35 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
 	serverConfigs []constant.ServerConfig, agent http_agent.IHttpAgent, param vo.ConfigParam) {
 	var listeningConfigs string
-	var err error
-	if len(client.localConfigs) <= 0 {
-		err = errors.New("[client.ListenConfig] listen configs can not be empty")
-	}
 	// 检查&拼接监听参数
-	if err == nil {
-		client.mutex.Lock()
-		if len(param.DataId) <= 0 {
-			err = errors.New("[client.ListenConfig] DataId can not be empty")
-			return
-		}
-		if len(param.Group) <= 0 {
-			err = errors.New("[client.ListenConfig] Group can not be empty")
-			return
-		}
-		var tenant string
-		if len(param.Tenant) > 0 {
-			tenant = param.Tenant
-		}
-		var md5 string
-		if len(param.Content) > 0 {
-			md5 = util.Md5(param.Content)
-		}
-		listeningConfigs += param.DataId + constant.SPLIT_CONFIG_INNER + param.Group + constant.SPLIT_CONFIG_INNER +
-			md5 + constant.SPLIT_CONFIG_INNER + tenant + constant.SPLIT_CONFIG
-		client.mutex.Unlock()
+	client.mutex.Lock()
+	if len(param.DataId) <= 0 {
+		log.Fatalf("[client.ListenConfig] DataId can not be empty")
+		return
 	}
+	if len(param.Group) <= 0 {
+		log.Fatalf("[client.ListenConfig] Group can not be empty")
+		return
+	}
+	var tenant string
+	if len(param.Tenant) > 0 {
+		tenant = param.Tenant
+	}
+
+	for _, config := range client.localConfigs {
+		if config.Group == param.Group && config.DataId == param.DataId && config.Tenant == param.Tenant {
+			param.Content = config.Content
+			break
+		}
+	}
+
+	var md5 string
+	if len(param.Content) > 0 {
+		md5 = util.Md5(param.Content)
+	}
+	listeningConfigs += param.DataId + constant.SPLIT_CONFIG_INNER + param.Group + constant.SPLIT_CONFIG_INNER +
+		md5 + constant.SPLIT_CONFIG_INNER + tenant + constant.SPLIT_CONFIG
+	client.mutex.Unlock()
 
 	// http 请求
 	params := make(map[string]string)
