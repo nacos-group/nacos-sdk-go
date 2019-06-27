@@ -32,6 +32,7 @@ type ConfigClient struct {
 
 func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
 	config := ConfigClient{}
+	config.INacosClient = nc
 	clientConfig, err := nc.GetClientConfig()
 	if err != nil {
 		return config, err

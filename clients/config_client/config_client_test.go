@@ -422,9 +422,9 @@ func TestListenConfig(t *testing.T) {
 func Test_listenConfigTask_NoChange(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
-	client := cretateConfigClientTest()
 
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
+	client := cretateConfigClientHttpTest(mockHttpAgent)
 	mockHttpAgent.EXPECT().Post(
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs/listener"),
 		gomock.AssignableToTypeOf(headerTest),
