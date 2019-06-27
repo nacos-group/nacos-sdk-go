@@ -22,6 +22,7 @@ type ClientConfig struct {
 	NamespaceId          string
 	Endpoint             string
 	CacheDir             string
+	LogDir               string
 	UpdateThreadNum      int
 	NotLoadCacheAtStart  bool
 	UpdateCacheWhenEmpty bool

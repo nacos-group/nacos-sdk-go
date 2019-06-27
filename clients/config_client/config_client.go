@@ -2,15 +2,19 @@ package config_client
 
 import (
 	"errors"
+	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_error"
 	"github.com/nacos-group/nacos-sdk-go/common/util"
+	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,10 +23,11 @@ import (
 
 type ConfigClient struct {
 	nacos_client.INacosClient
-	localConfigs []vo.ConfigParam
-	mutex        sync.Mutex
-	listening    bool
-	configProxy  ConfigProxy
+	localConfigs   []vo.ConfigParam
+	mutex          sync.Mutex
+	listening      bool
+	configProxy    ConfigProxy
+	configCacheDir string
 }
 
 func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
@@ -39,6 +44,11 @@ func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
 	if err != nil {
 		return config, err
 	}
+	err = logger.InitLog(clientConfig.LogDir + string(os.PathSeparator) + "config")
+	if err != nil {
+		return config, err
+	}
+	config.configCacheDir = clientConfig.CacheDir + string(os.PathSeparator) + "config"
 	config.configProxy, err = NewConfigProxy(serverConfig, clientConfig, httpAgent)
 	return config, err
 }
@@ -100,7 +110,21 @@ func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err
 	if len(param.Group) <= 0 {
 		err = errors.New("[client.GetConfig] param.group can not be empty")
 	}
-	return client.configProxy.GetConfigProxy(param)
+	cacheKey := utils.GetConfigCacheKey(param.DataId, param.Group, param.Tenant)
+	content, err = client.configProxy.GetConfigProxy(param)
+	if err != nil {
+		log.Printf("[ERROR] get config from server error:%s ", err.Error())
+		content, err = cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
+		if err != nil {
+			log.Printf("[ERROR] get config from cache  error:%s ", err.Error())
+			return "", errors.New("read config from both server and cache fail")
+		}
+		return content, nil
+	} else {
+		cache.WriteConfigToFile(cacheKey, client.configCacheDir, content)
+		return content, nil
+	}
+
 }
 
 func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,

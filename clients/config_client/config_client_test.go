@@ -209,6 +209,34 @@ func Test_GetConfigWithErrorResponse(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func Test_GetConfigWithCache(t *testing.T) {
+	controller := gomock.NewController(t)
+	defer controller.Finish()
+
+	mockHttpAgent := mock.NewMockIHttpAgent(controller)
+	client := cretateConfigClientHttpTest(mockHttpAgent)
+
+	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodGet),
+		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
+		gomock.AssignableToTypeOf(http.Header{}),
+		gomock.Eq(clientConfigTest.TimeoutMs),
+		gomock.Eq(configParamMapTest),
+	).Times(1).Return(http_agent.FakeHttpResponse(200, "content"), nil)
+	content, err := client.GetConfig(configParamTest)
+	assert.Nil(t, err)
+	assert.Equal(t, "content", content)
+
+	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodGet),
+		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
+		gomock.AssignableToTypeOf(http.Header{}),
+		gomock.Eq(clientConfigTest.TimeoutMs),
+		gomock.Eq(configParamMapTest),
+	).Times(3).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
+	content, err = client.GetConfig(configParamTest)
+	assert.Nil(t, err)
+	assert.Equal(t, "content", content)
+}
+
 // PublishConfig
 
 func Test_PublishConfigWithoutDataId(t *testing.T) {

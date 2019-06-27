@@ -11,6 +11,7 @@ go语言版本的nacos client，支持config_client和service_client
         NamespaceId:       "public",
         Endpoint:          ""
         CacheDir:         "/data/nacos/cache",
+		LogDIr:         "/data/nacos/log",
         UpdateThreadNum:   20
 		NotLoadCacheAtStart: true
         UpdateCacheWhenEmpty:true
@@ -27,6 +28,8 @@ Endpoint：获取nacos节点ip的服务地址
 NamespaceId：nacos命名空间
 
 CacheDir：缓存目录
+
+LogDir:日志目录
 
 UpdateThreadNum：更新服务的线程数
 
