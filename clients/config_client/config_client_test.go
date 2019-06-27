@@ -179,21 +179,22 @@ func Test_GetConfigWithoutGroup(t *testing.T) {
 }
 
 func Test_GetConfig(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
 
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	client := cretateConfigClientHttpTest(mockHttpAgent)
+	client := cretateConfigClientTest()
+	success, err := client.PublishConfig(vo.ConfigParam{
+		DataId:  "dataId",
+		Group:   "group",
+		Content: "hello world!"})
 
-	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodGet),
-		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
-		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(configParamMapTest),
-	).Times(1).Return(http_agent.FakeHttpResponse(200, "content"), nil)
-	content, err := client.GetConfig(configParamTest)
 	assert.Nil(t, err)
-	assert.Equal(t, "content", content)
+	assert.True(t, success)
+
+	content, err := client.GetConfig(vo.ConfigParam{
+		DataId: "dataId",
+		Group:  "group"})
+
+	assert.Nil(t, err)
+	assert.Equal(t, "hello world!", content)
 }
 
 func Test_GetConfigWithErrorResponse(t *testing.T) {
@@ -272,17 +273,14 @@ func Test_PublishConfigWithoutContent(t *testing.T) {
 }
 
 func Test_PublishConfig(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	client := cretateConfigClientHttpTest(mockHttpAgent)
-	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodPost),
-		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
-		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(localConfigMapTest),
-	).Times(1).Return(http_agent.FakeHttpResponse(200, "true"), nil)
-	success, err := client.PublishConfig(localConfigTest)
+
+	client := cretateConfigClientTest()
+
+	success, err := client.PublishConfig(vo.ConfigParam{
+		DataId:  "dataId",
+		Group:   "group",
+		Content: "hello world!"})
+
 	assert.Nil(t, err)
 	assert.True(t, success)
 }
@@ -324,21 +322,23 @@ func Test_PublishConfigWithErrorResponse_200(t *testing.T) {
 // DeleteConfig
 
 func Test_DeleteConfig(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
 
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	client := cretateConfigClientHttpTest(mockHttpAgent)
+	client := cretateConfigClientTest()
 
-	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodDelete),
-		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
-		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(configParamMapTest),
-	).Times(1).Return(http_agent.FakeHttpResponse(200, "true"), nil)
-	success, err := client.DeleteConfig(configParamTest)
+	success, err := client.PublishConfig(vo.ConfigParam{
+		DataId:  "dataId",
+		Group:   "group",
+		Content: "hello world!"})
+
 	assert.Nil(t, err)
-	assert.Equal(t, true, success)
+	assert.True(t, success)
+
+	success, err = client.DeleteConfig(vo.ConfigParam{
+		DataId: "dataId",
+		Group:  "group"})
+
+	assert.Nil(t, err)
+	assert.True(t, success)
 }
 
 func Test_DeleteConfigWithErrorResponse_200(t *testing.T) {
@@ -403,13 +403,39 @@ func TestListenConfig(t *testing.T) {
 	client := cretateConfigClientTest()
 	client.listening = true
 
-	err := client.ListenConfig(vo.ConfigParam{
+	success, err := client.PublishConfig(vo.ConfigParam{
+		DataId:  "dataId",
+		Group:   "group",
+		Content: "hello world!"})
+
+	assert.NotNil(t, err)
+	assert.Equal(t, true, success)
+
+	err = client.ListenConfig(vo.ConfigParam{
 		DataId: "dataId",
 		Group:  "group",
 		OnChange: func(namespace, group, dataId, data string) {
-			fmt.Print("group:" + group + ", dataId:" + dataId + ", data:" + data)
+			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
 		},
 	})
+
+	err = client.ListenConfig(vo.ConfigParam{
+		DataId: "abc",
+		Group:  "DEFAULT_GROUP",
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+		},
+	})
+
+	time.Sleep(10 * time.Second)
+
+	success, err = client.PublishConfig(vo.ConfigParam{
+		DataId:  "dataId",
+		Group:   "group",
+		Content: "abc"})
+
+	assert.NotNil(t, err)
+	assert.Equal(t, true, success)
 
 	time.Sleep(1000000 * time.Second)
 
