@@ -5,12 +5,14 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_error"
 	"github.com/nacos-group/nacos-sdk-go/common/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -36,6 +38,10 @@ func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
 		return config, err
 	}
 	httpAgent, err := nc.GetHttpAgent()
+	if err != nil {
+		return config, err
+	}
+	err = logger.InitLog(clientConfig.LogDir + string(os.PathSeparator) + "config")
 	if err != nil {
 		return config, err
 	}

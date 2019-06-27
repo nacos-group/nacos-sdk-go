@@ -24,6 +24,7 @@ func main() {
 			TimeoutMs:           20000,
 			ListenInterval:      10000,
 			NotLoadCacheAtStart: true,
+			LogDir:              "data/nacos/log",
 		},
 	})
 
