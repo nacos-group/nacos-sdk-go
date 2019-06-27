@@ -2,6 +2,8 @@ package cache
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/go-errors/errors"
 	"github.com/nacos-group/nacos-sdk-go/common/util"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
@@ -65,12 +67,11 @@ func WriteConfigToFile(cacheKey string, cacheDir string, content string) {
 	}
 }
 
-func ReadConfigFromFile(cacheKey string, cacheDir string) string {
+func ReadConfigFromFile(cacheKey string, cacheDir string) (string, error) {
 	fileName := GetFileName(cacheKey, cacheDir)
 	b, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		log.Printf("[ERROR]:failed to read config cache file:%s,err:%s! ", fileName, err.Error())
-		return ""
+		return "", errors.New(fmt.Sprintf("failed to read config cache file:%s,err:%s! ", fileName, err.Error()))
 	}
-	return string(b)
+	return string(b), nil
 }

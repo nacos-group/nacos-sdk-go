@@ -53,6 +53,7 @@ const (
 	CLIENT_VERSION              = "Nacos-go-Client:v1.0.0"
 	REQUEST_DOMAIN_RETRY_TIME   = 3
 	SERVICE_INFO_SPLITER        = "@@"
+	CONFIG_INFO_SPLITER         = "@@"
 	DEFAULT_NAMESPACE_ID        = "public"
 	DEFAULT_GROUP               = "DEFAULT_GROUP"
 	NAMING_INSTANCE_ID_SPLITTER = "#"
