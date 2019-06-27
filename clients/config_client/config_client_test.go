@@ -1,6 +1,7 @@
 package config_client
 
 import (
+	"fmt"
 	"github.com/golang/mock/gomock"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -10,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+	"time"
 )
 
 /**
@@ -400,7 +402,17 @@ func Test_DeleteConfigWithoutGroup(t *testing.T) {
 func TestListenConfig(t *testing.T) {
 	client := cretateConfigClientTest()
 	client.listening = true
-	err := client.ListenConfig([]vo.ConfigParam{localConfigTest})
+
+	err := client.ListenConfig(vo.ConfigParam{
+		DataId: "dataId",
+		Group:  "group",
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Print("group:" + group + ", dataId:" + dataId + ", data:" + data)
+		},
+	})
+
+	time.Sleep(1000000 * time.Second)
+
 	assert.True(t, client.listening)
 	assert.NotNil(t, err)
 }
@@ -423,16 +435,16 @@ func Test_listenConfigTask_NoChange(t *testing.T) {
 	).Times(1).Return(http_agent.FakeHttpResponse(200, ""), nil)
 
 	client.listening = true
-	configs := []vo.ConfigParam{{
+	changeCount := 0
+	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
-		Tenant:  "tenant",
 		Content: "content",
-	}}
-	client.localConfigs = configs
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent)
-	assert.Equal(t, true, client.listening)
-	assert.Equal(t, configs, client.localConfigs)
+		OnChange: func(namespace, group, dataId, data string) {
+			changeCount = changeCount + 1
+		}})
+
+	assert.Equal(t, 0, changeCount)
 }
 
 func Test_listenConfigTask_Change_WithTenant(t *testing.T) {
@@ -464,17 +476,16 @@ func Test_listenConfigTask_Change_WithTenant(t *testing.T) {
 	_ = client.SetClientConfig(clientConfigTest)
 	_ = client.SetServerConfig(serverConfigsTest)
 	client.listening = true
-	configs := []vo.ConfigParam{{
+	configData := ""
+	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
-		Tenant:  "tenant",
 		Content: "content",
-	}}
-	client.localConfigs = configs
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent)
-	assert.Equal(t, true, client.listening)
-	configs[0].Content = "content2"
-	assert.Equal(t, configs, client.localConfigs)
+		OnChange: func(namespace, group, dataId, data string) {
+			configData = data
+		}})
+
+	assert.Equal(t, "content2", configData)
 }
 
 func Test_listenConfigTask_Change_NoTenant(t *testing.T) {
@@ -505,16 +516,17 @@ func Test_listenConfigTask_Change_NoTenant(t *testing.T) {
 	_ = client.SetClientConfig(clientConfigTest)
 	_ = client.SetServerConfig(serverConfigsTest)
 	client.listening = true
-	configs := []vo.ConfigParam{{
+	configData := ""
+	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "content",
-	}}
-	client.localConfigs = configs
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent)
-	assert.Equal(t, true, client.listening)
-	configs[0].Content = "content2"
-	assert.Equal(t, configs, client.localConfigs)
+		OnChange: func(namespace, group, dataId, data string) {
+			configData = data
+		},
+	})
+
+	assert.Equal(t, "content2", configData)
 }
 
 func Test_listenConfigTaskWithoutLocalConfigs(t *testing.T) {
@@ -523,39 +535,12 @@ func Test_listenConfigTaskWithoutLocalConfigs(t *testing.T) {
 	client := cretateConfigClientTest()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
 	client.listening = true
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent)
-	assert.Equal(t, false, client.listening)
-}
-
-func Test_listenConfigTaskWithErrorLocalConfigs_NoDataId(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-	client := cretateConfigClientTest()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	client.listening = true
-	client.localConfigs = []vo.ConfigParam{
-		{
-			DataId: "",
-			Group:  "group",
-		},
-	}
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent)
-	assert.Equal(t, false, client.listening)
-}
-
-func Test_listenConfigTaskWithErrorLocalConfigs_NoGroup(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-	client := cretateConfigClientTest()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	client.listening = true
-	client.localConfigs = []vo.ConfigParam{
-		{
-			DataId: "dataId",
-			Group:  "",
-		},
-	}
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent)
+	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent,
+		vo.ConfigParam{
+			DataId:  "dataId",
+			Group:   "group",
+			Content: "content",
+		})
 	assert.Equal(t, false, client.listening)
 }
 
