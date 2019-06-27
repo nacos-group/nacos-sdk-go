@@ -46,7 +46,7 @@ func NewHostReactor(serviceProxy NamingProxy, cacheDir string, updateThreadNum i
 }
 
 func (hr *HostReactor) loadCacheFromDisk() {
-	serviceMap := cache.ReadFromFile(hr.cacheDir)
+	serviceMap := cache.ReadServicesFromFile(hr.cacheDir)
 	if serviceMap == nil || len(serviceMap) == 0 {
 		return
 	}
@@ -76,7 +76,7 @@ func (hr *HostReactor) ProcessServiceJson(result string) {
 		} else {
 			log.Printf("[INFO] service key:%s was updated to:%s \n", cacheKey, utils.ToJsonString(service))
 		}
-		cache.WriteToFile(*service, hr.cacheDir)
+		cache.WriteServicesToFile(*service, hr.cacheDir)
 		hr.subCallback.ServiceChanged(service)
 	}
 	hr.updateTimeMap.Set(cacheKey, uint64(utils.CurrentMillis()))

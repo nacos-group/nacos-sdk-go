@@ -5,6 +5,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/utils"
+	"log"
 	"os"
 	"strconv"
 )
@@ -49,9 +50,12 @@ func (client *NacosClient) SetClientConfig(config constant.ClientConfig) (err er
 	}
 
 	if config.CacheDir == "" {
-		config.CacheDir = utils.GetCurrentPath() + string(os.PathSeparator) + "-cache"
+		config.CacheDir = utils.GetCurrentPath() + string(os.PathSeparator) + "cache"
 	}
-
+	if config.LogDir == "" {
+		config.LogDir = utils.GetCurrentPath() + string(os.PathSeparator) + "log"
+	}
+	log.Printf("[INFO] logDir:<%s>   cacheDir:<%s>", config.LogDir, config.CacheDir)
 	if config.NamespaceId == "" {
 		config.NamespaceId = constant.DEFAULT_NAMESPACE_ID
 	}

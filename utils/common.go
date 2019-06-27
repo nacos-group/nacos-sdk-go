@@ -99,6 +99,10 @@ func GetServiceCacheKey(serviceName string, clusters string) string {
 	return serviceName + constant.SERVICE_INFO_SPLITER + clusters
 }
 
+func GetConfigCacheKey(dataId string, group string, tenant string) string {
+	return dataId + constant.CONFIG_INFO_SPLITER + group + constant.CONFIG_INFO_SPLITER + tenant
+}
+
 var localIP = ""
 
 func LocalIP() string {
