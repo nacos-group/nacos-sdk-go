@@ -39,7 +39,7 @@ type IConfigClient interface {
 	// dataId  require
 	// group   require
 	// tenant ==>nacos.namespace optional
-	ListenConfig(params []vo.ConfigParam) (err error)
+	ListenConfig(params vo.ConfigParam) (err error)
 
 	// 增加监听配置 仅在调用ListenConfig以后才会生效
 	AddConfigToListen(params []vo.ConfigParam) (err error)

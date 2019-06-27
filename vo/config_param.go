@@ -10,10 +10,11 @@ package vo
 **/
 
 type ConfigParam struct {
-	DataId  string `param:"dataId"`
-	Group   string `param:"group"`
-	Content string `param:"content"`
-	Tag     string `param:"tag"`
-	AppName string `param:"appName"`
-	Tenant  string `param:"tenant"`
+	DataId   string `param:"dataId"`
+	Group    string `param:"group"`
+	Content  string `param:"content"`
+	Tag      string `param:"tag"`
+	AppName  string `param:"appName"`
+	Tenant   string `param:"tenant"`
+	OnChange func(namespace, group, dataId, data string)
 }

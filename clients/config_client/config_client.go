@@ -153,22 +153,7 @@ func (client *ConfigClient) AddConfigToListen(params []vo.ConfigParam) (err erro
 	return
 }
 
-func (client *ConfigClient) ListenConfig(params []vo.ConfigParam) (err error) {
-	client.mutex.Lock()
-	defer client.mutex.Unlock()
-	if client.listening {
-		err = errors.New("[client.ListenConfig] client is listening,do not operator repeat")
-	}
-	// 监听
-	if err == nil {
-		client.listening = true
-		client.localConfigs = params
-		client.listenConfig()
-	}
-	return
-}
-
-func (client *ConfigClient) listenConfig() {
+func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	go func() {
 		for {
 			clientConfig, serverConfigs, agent, err := client.sync()
@@ -177,17 +162,19 @@ func (client *ConfigClient) listenConfig() {
 			if err == nil {
 				timer = time.NewTimer(time.Duration(clientConfig.ListenInterval) * time.Millisecond)
 			}
-			client.listenConfigTask(clientConfig, serverConfigs, agent)
+			client.listenConfigTask(clientConfig, serverConfigs, agent, param)
 			if !client.listening {
 				break
 			}
 			<-timer.C
 		}
 	}()
+
+	return nil
 }
 
 func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
-	serverConfigs []constant.ServerConfig, agent http_agent.IHttpAgent) {
+	serverConfigs []constant.ServerConfig, agent http_agent.IHttpAgent, param vo.ConfigParam) {
 	var listeningConfigs string
 	var err error
 	if len(client.localConfigs) <= 0 {
@@ -196,61 +183,52 @@ func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
 	// 检查&拼接监听参数
 	if err == nil {
 		client.mutex.Lock()
-		for index, param := range client.localConfigs {
-			if len(param.DataId) <= 0 {
-				err = errors.New("[client.ListenConfig] params[" + strconv.Itoa(index) + "].DataId can not be empty")
-				break
-			}
-			if len(param.Group) <= 0 {
-				err = errors.New("[client.ListenConfig] params[" + strconv.Itoa(index) + "].Group can not be empty")
-				break
-			}
-			var tenant string
-			if len(param.Tenant) > 0 {
-				tenant = param.Tenant
-			}
-			var md5 string
-			if len(param.Content) > 0 {
-				md5 = util.Md5(param.Content)
-			}
-			listeningConfigs += param.DataId + constant.SPLIT_CONFIG_INNER + param.Group + constant.SPLIT_CONFIG_INNER +
-				md5 + constant.SPLIT_CONFIG_INNER + tenant + constant.SPLIT_CONFIG
+		if len(param.DataId) <= 0 {
+			err = errors.New("[client.ListenConfig] DataId can not be empty")
+			return
 		}
+		if len(param.Group) <= 0 {
+			err = errors.New("[client.ListenConfig] Group can not be empty")
+			return
+		}
+		var tenant string
+		if len(param.Tenant) > 0 {
+			tenant = param.Tenant
+		}
+		var md5 string
+		if len(param.Content) > 0 {
+			md5 = util.Md5(param.Content)
+		}
+		listeningConfigs += param.DataId + constant.SPLIT_CONFIG_INNER + param.Group + constant.SPLIT_CONFIG_INNER +
+			md5 + constant.SPLIT_CONFIG_INNER + tenant + constant.SPLIT_CONFIG
 		client.mutex.Unlock()
 	}
-	if err != nil {
-		client.mutex.Lock()
-		client.listening = false
-		client.mutex.Unlock()
-		log.Println(err)
-		log.Println("client.ListenConfig failed")
-	}
+
 	// http 请求
-	if err == nil {
-		params := make(map[string]string)
-		params[constant.KEY_LISTEN_CONFIGS] = listeningConfigs
-		var changed string
-		for _, serverConfig := range serverConfigs {
-			path := client.buildBasePath(serverConfig) + "/listener"
-			changedTmp, err := listen(agent, path, clientConfig.TimeoutMs, clientConfig.ListenInterval, params)
-			if err == nil {
+	params := make(map[string]string)
+	params[constant.KEY_LISTEN_CONFIGS] = listeningConfigs
+	var changed string
+	for _, serverConfig := range serverConfigs {
+		path := client.buildBasePath(serverConfig) + "/listener"
+		changedTmp, err := listen(agent, path, clientConfig.TimeoutMs, clientConfig.ListenInterval, params)
+		if err == nil {
+			changed = changedTmp
+			break
+		} else {
+			if _, ok := err.(*nacos_error.NacosError); ok {
 				changed = changedTmp
 				break
 			} else {
-				if _, ok := err.(*nacos_error.NacosError); ok {
-					changed = changedTmp
-					break
-				} else {
-					log.Println("[client.ListenConfig] listen config error:", err.Error())
-				}
+				log.Println("[client.ListenConfig] listen config error:", err.Error())
 			}
 		}
-		if strings.ToLower(strings.Trim(changed, " ")) == "" {
-			log.Println("[client.ListenConfig] no change")
-		} else {
-			log.Print("[client.ListenConfig] config changed:" + changed)
-			client.updateLocalConfig(changed)
-		}
+	}
+
+	if strings.ToLower(strings.Trim(changed, " ")) == "" {
+		log.Println("[client.ListenConfig] no change")
+	} else {
+		log.Print("[client.ListenConfig] config changed:" + changed)
+		client.updateLocalConfig(changed, param)
 	}
 }
 
@@ -291,8 +269,7 @@ func (client *ConfigClient) StopListenConfig() {
 	log.Println("[client.StopListenConfig] stop listen config success")
 }
 
-// ListenConfig 发现配置变化时候，修改本地配置
-func (client *ConfigClient) updateLocalConfig(changed string) {
+func (client *ConfigClient) updateLocalConfig(changed string, param vo.ConfigParam) {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
 	changedConfigs := strings.Split(changed, "%01")
@@ -311,6 +288,10 @@ func (client *ConfigClient) updateLocalConfig(changed string) {
 					Group:   attrs[1],
 					Content: content,
 				})
+
+				// call listener:
+				param.OnChange("", attrs[1], attrs[0], content)
+
 			}
 		} else if len(attrs) == 3 {
 			content, err := client.GetConfig(vo.ConfigParam{
@@ -327,6 +308,9 @@ func (client *ConfigClient) updateLocalConfig(changed string) {
 					Tenant:  attrs[2],
 					Content: content,
 				})
+
+				// call listener:
+				param.OnChange(attrs[2], attrs[1], attrs[0], content)
 			}
 		}
 	}
