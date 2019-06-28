@@ -401,7 +401,6 @@ func Test_DeleteConfigWithoutGroup(t *testing.T) {
 
 func TestListenConfig(t *testing.T) {
 	client := cretateConfigClientTest()
-	client.listening = true
 
 	success, err := client.PublishConfig(vo.ConfigParam{
 		DataId:  "dataId",
@@ -439,7 +438,7 @@ func TestListenConfig(t *testing.T) {
 
 	time.Sleep(1000000 * time.Second)
 
-	assert.True(t, client.listening)
+	//assert.True(t, client.listening)
 	assert.NotNil(t, err)
 }
 
@@ -460,7 +459,6 @@ func Test_listenConfigTask_NoChange(t *testing.T) {
 		}),
 	).Times(1).Return(http_agent.FakeHttpResponse(200, ""), nil)
 
-	client.listening = true
 	changeCount := 0
 	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent, vo.ConfigParam{
 		DataId:  "dataId",
@@ -501,7 +499,6 @@ func Test_listenConfigTask_Change_WithTenant(t *testing.T) {
 	_ = client.SetHttpAgent(mockHttpAgent)
 	_ = client.SetClientConfig(clientConfigTest)
 	_ = client.SetServerConfig(serverConfigsTest)
-	client.listening = true
 	configData := ""
 	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent, vo.ConfigParam{
 		DataId:  "dataId",
@@ -541,7 +538,6 @@ func Test_listenConfigTask_Change_NoTenant(t *testing.T) {
 	_ = client.SetHttpAgent(mockHttpAgent)
 	_ = client.SetClientConfig(clientConfigTest)
 	_ = client.SetServerConfig(serverConfigsTest)
-	client.listening = true
 	configData := ""
 	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent, vo.ConfigParam{
 		DataId:  "dataId",
@@ -560,14 +556,13 @@ func Test_listenConfigTaskWithoutLocalConfigs(t *testing.T) {
 	defer controller.Finish()
 	client := cretateConfigClientTest()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	client.listening = true
 	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent,
 		vo.ConfigParam{
 			DataId:  "dataId",
 			Group:   "group",
 			Content: "content",
 		})
-	assert.Equal(t, false, client.listening)
+	//assert.Equal(t, false, client.listening)
 }
 
 // listen
@@ -622,9 +617,8 @@ func Test_listenWithErrorResponse_401(t *testing.T) {
 
 func Test_StopListenConfig(t *testing.T) {
 	client := cretateConfigClientTest()
-	client.listening = true
 	client.StopListenConfig()
-	assert.True(t, !client.listening)
+	//assert.True(t, !client.listening)
 }
 
 // AddConfigToListen
@@ -641,7 +635,6 @@ func Test_AddConfigToListenWithNotListening(t *testing.T) {
 
 func Test_AddConfigToListenWithRepeatAdd(t *testing.T) {
 	client := cretateConfigClientTest()
-	client.listening = true
 	configs := []vo.ConfigParam{{
 		DataId: "dataId",
 		Group:  "group",
@@ -664,7 +657,6 @@ func Test_AddConfigToListenWithRepeatAdd(t *testing.T) {
 
 func Test_AddConfigToListen(t *testing.T) {
 	client := cretateConfigClientTest()
-	client.listening = true
 	configs := []vo.ConfigParam{{
 		DataId: "dataId",
 		Group:  "group",
