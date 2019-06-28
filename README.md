@@ -4,18 +4,18 @@ go语言版本的nacos client，支持config_client和service_client
 #### client的config
 - ClientConfig 客户端配置参数  
 ```go
-    constant.ClientConfig{
-		TimeoutMs:      30 * 1000,
-		ListenInterval: 10 * 1000,
-		BeatInterval:   5 * 1000,
-        NamespaceId:       "public",
-        Endpoint:          ""
-        CacheDir:         "/data/nacos/cache",
-		LogDIr:         "/data/nacos/log",
-        UpdateThreadNum:   20
-		NotLoadCacheAtStart: true
-        UpdateCacheWhenEmpty:true
-	}
+constant.ClientConfig{
+    TimeoutMs:      30 * 1000,
+    ListenInterval: 10 * 1000,
+    BeatInterval:   5 * 1000,
+    NamespaceId:       "public",
+    Endpoint:          ""
+    CacheDir:         "/data/nacos/cache",
+    LogDIr:         "/data/nacos/log",
+    UpdateThreadNum:   20
+    NotLoadCacheAtStart: true
+    UpdateCacheWhenEmpty:true
+}
 ```
 TimeoutMs：http请求超时时间，单位毫秒
   
