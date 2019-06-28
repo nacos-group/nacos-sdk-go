@@ -41,9 +41,6 @@ type IConfigClient interface {
 	// tenant ==>nacos.namespace optional
 	ListenConfig(params vo.ConfigParam) (err error)
 
-	// 增加监听配置 仅在调用ListenConfig以后才会生效
-	AddConfigToListen(params []vo.ConfigParam) (err error)
-
 	// 停止监听配置变化 会把当前一次监听任务做完后关闭
 	StopListenConfig()
 

@@ -25,7 +25,6 @@ type ConfigClient struct {
 	nacos_client.INacosClient
 	localConfigs   []vo.ConfigParam
 	mutex          sync.Mutex
-	listening      bool
 	configProxy    ConfigProxy
 	configCacheDir string
 }
@@ -156,25 +155,22 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool,
 func (client *ConfigClient) AddConfigToListen(params []vo.ConfigParam) (err error) {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
-	if !client.listening {
-		err = errors.New("[client.ListenConfig] client is not listening")
-	} else {
-		var newParams []vo.ConfigParam
-		// 去掉重复添加的
-		for _, newParam := range params {
-			flag := true
-			for _, param := range client.localConfigs {
-				if param.Group == newParam.Group && param.DataId == newParam.DataId {
-					flag = false
-					break
-				}
-			}
-			if flag {
-				newParams = append(newParams, newParam)
+
+	var newParams []vo.ConfigParam
+	// 去掉重复添加的
+	for _, newParam := range params {
+		flag := true
+		for _, param := range client.localConfigs {
+			if param.Group == newParam.Group && param.DataId == newParam.DataId {
+				flag = false
+				break
 			}
 		}
-		client.localConfigs = append(client.localConfigs, newParams...)
+		if flag {
+			newParams = append(newParams, newParam)
+		}
 	}
+	client.localConfigs = append(client.localConfigs, newParams...)
 	return
 }
 
@@ -188,9 +184,6 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 				timer = time.NewTimer(time.Duration(clientConfig.ListenInterval) * time.Millisecond)
 			}
 			client.listenConfigTask(clientConfig, serverConfigs, agent, param)
-			if !client.listening {
-				break
-			}
 			<-timer.C
 		}
 	}()
@@ -290,9 +283,6 @@ func listen(agent http_agent.IHttpAgent, path string,
 func (client *ConfigClient) StopListenConfig() {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
-	if client.listening {
-		client.listening = false
-	}
 	log.Println("[client.StopListenConfig] stop listen config success")
 }
 
