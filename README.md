@@ -24,11 +24,11 @@ constant.ClientConfig{
 * ServerConfig nacos服务信息配置参数
 
 ```go
-    constant.ServerConfig{{
-		IpAddr:      "console.nacos.io", //nacos服务的ip地址 
-		ContextPath: "/nacos", //nacos服务的上下文路径，默认是“/nacos” 
-		Port:        80, //nacos服务端口
-	}
+constant.ServerConfig{{
+    IpAddr:      "console.nacos.io", //nacos服务的ip地址 
+    ContextPath: "/nacos", //nacos服务的上下文路径，默认是“/nacos” 
+    Port:        80, //nacos服务端口
+}
 ```
 
 <b>注：ServerConfig支持配置多个，在请求出错时，自动切换</b>
