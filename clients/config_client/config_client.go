@@ -44,7 +44,7 @@ func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
 	if err != nil {
 		return config, err
 	}
-	err = logger.InitLog(clientConfig.LogDir + string(os.PathSeparator) + "config")
+	err = logger.InitLog(clientConfig.LogDir)
 	if err != nil {
 		return config, err
 	}
@@ -69,35 +69,6 @@ func (client *ConfigClient) sync() (clientConfig constant.ClientConfig,
 		agent, err = client.GetHttpAgent()
 		if err != nil {
 			log.Println(err, ";do you call client.SetHttpAgent()?")
-		}
-	}
-	return
-}
-
-func (client *ConfigClient) GetConfigContent(dataId string, group string) (content string,
-	err error) {
-	if len(dataId) <= 0 {
-		err = errors.New("[client.GetConfigContent] dataId param can not be empty")
-	}
-	if err == nil && len(group) <= 0 {
-		err = errors.New("[client.GetConfigContent] group param can not be empty")
-	}
-	if err == nil {
-		client.mutex.Lock()
-		defer client.mutex.Unlock()
-		exist := false
-		for _, config := range client.localConfigs {
-			if config.Group == group && config.DataId == dataId {
-				content = config.Content
-				exist = true
-				break
-			}
-		}
-		if !exist || len(content) <= 0 {
-			content, err = client.GetConfig(vo.ConfigParam{
-				DataId: dataId,
-				Group:  group,
-			})
 		}
 	}
 	return
@@ -278,12 +249,6 @@ func listen(agent http_agent.IHttpAgent, path string,
 		}
 	}
 	return
-}
-
-func (client *ConfigClient) StopListenConfig() {
-	client.mutex.Lock()
-	defer client.mutex.Unlock()
-	log.Println("[client.StopListenConfig] stop listen config success")
 }
 
 func (client *ConfigClient) updateLocalConfig(changed string, param vo.ConfigParam) {

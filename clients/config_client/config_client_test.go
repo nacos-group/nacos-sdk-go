@@ -115,69 +115,6 @@ func Test_Sync(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-// GetConfigContent
-
-func Test_GetConfigContentWithoutDataId(t *testing.T) {
-	client := cretateConfigClientTest()
-	_, err := client.GetConfigContent("", "Test")
-	assert.NotNil(t, err)
-}
-
-func Test_GetConfigContentWithoutGroup(t *testing.T) {
-	client := cretateConfigClientTest()
-	_, err := client.GetConfigContent("Test", "")
-	assert.NotNil(t, err)
-}
-
-func Test_GetConfigContentWithoutLocalConfig(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-	client := cretateConfigClientTest()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-	mockHttpAgent.EXPECT().Get(
-		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
-		gomock.Nil(),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(configParamMapTest),
-	).Times(1).Return(http_agent.FakeHttpResponse(200, "content"), nil)
-	content, err := client.GetConfigContent("dataId", "group")
-	assert.Nil(t, err)
-	assert.Equal(t, "content", content)
-}
-
-func Test_GetConfigContentWithLocalConfig(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-	client := cretateConfigClientTest()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-	client.localConfigs = []vo.ConfigParam{
-		localConfigTest,
-	}
-	content, err := client.GetConfigContent("dataId", "group")
-	assert.Nil(t, err)
-	assert.Equal(t, "content", content)
-}
-
-// GetConfig
-
-func Test_GetConfigWithoutDataId(t *testing.T) {
-	client := cretateConfigClientTest()
-	_, err := client.GetConfigContent("", "Test")
-	assert.NotNil(t, err)
-}
-
-func Test_GetConfigWithoutGroup(t *testing.T) {
-	client := cretateConfigClientTest()
-	_, err := client.GetConfigContent("Test", "")
-	assert.NotNil(t, err)
-}
-
 func Test_GetConfig(t *testing.T) {
 
 	client := cretateConfigClientTest()
@@ -279,7 +216,7 @@ func Test_PublishConfig(t *testing.T) {
 	success, err := client.PublishConfig(vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
-		Content: "hello world!"})
+		Content: "hello world2!"})
 
 	assert.Nil(t, err)
 	assert.True(t, success)
@@ -611,14 +548,6 @@ func Test_listenWithErrorResponse_401(t *testing.T) {
 
 	_, err := listen(mockHttpAgent, path, clientConfigTest.TimeoutMs, clientConfigTest.ListenInterval, param)
 	assert.NotNil(t, err)
-}
-
-// StopListenConfig
-
-func Test_StopListenConfig(t *testing.T) {
-	client := cretateConfigClientTest()
-	client.StopListenConfig()
-	//assert.True(t, !client.listening)
 }
 
 // AddConfigToListen

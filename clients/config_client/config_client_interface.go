@@ -40,13 +40,4 @@ type IConfigClient interface {
 	// group   require
 	// tenant ==>nacos.namespace optional
 	ListenConfig(params vo.ConfigParam) (err error)
-
-	// 停止监听配置变化 会把当前一次监听任务做完后关闭
-	StopListenConfig()
-
-	// 获取配置内容
-	// dataId  require
-	// group   require
-	// 先从本地监听的配置中获取，没有则从服务器上获取
-	GetConfigContent(dataId string, groupId string) (string, error)
 }
