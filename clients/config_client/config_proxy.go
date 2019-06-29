@@ -23,14 +23,20 @@ func NewConfigProxy(serverConfig []constant.ServerConfig, clientConfig constant.
 
 }
 
-func (cp *ConfigProxy) GetConfigProxy(param vo.ConfigParam) (string, error) {
+func (cp *ConfigProxy) GetConfigProxy(param vo.ConfigParam, tenant string) (string, error) {
 	params := util.TransformObject2Param(param)
+	if len(tenant) > 0 {
+		params["tenant"] = tenant
+	}
 	result, err := cp.nacosServer.ReqApi(constant.CONFIG_PATH, params, http.MethodGet)
 	return result, err
 }
 
-func (cp *ConfigProxy) PublishConfigProxy(param vo.ConfigParam) (bool, error) {
+func (cp *ConfigProxy) PublishConfigProxy(param vo.ConfigParam, tenant string) (bool, error) {
 	params := util.TransformObject2Param(param)
+	if len(tenant) > 0 {
+		params["tenant"] = tenant
+	}
 	result, err := cp.nacosServer.ReqApi(constant.CONFIG_PATH, params, http.MethodPost)
 	if err != nil {
 		return false, errors.New("[client.PublishConfig] publish config failed:" + err.Error())
@@ -42,8 +48,11 @@ func (cp *ConfigProxy) PublishConfigProxy(param vo.ConfigParam) (bool, error) {
 	}
 }
 
-func (cp *ConfigProxy) DeleteConfigProxy(param vo.ConfigParam) (bool, error) {
+func (cp *ConfigProxy) DeleteConfigProxy(param vo.ConfigParam, tenant string) (bool, error) {
 	params := util.TransformObject2Param(param)
+	if len(tenant) > 0 {
+		params["tenant"] = tenant
+	}
 	result, err := cp.nacosServer.ReqApi(constant.CONFIG_PATH, params, http.MethodDelete)
 	if err != nil {
 		return false, errors.New("[client.DeleteConfig] deleted config failed:" + err.Error())

@@ -27,6 +27,7 @@ var clientConfigTest = constant.ClientConfig{
 	TimeoutMs:      20000,
 	ListenInterval: 10000,
 	BeatInterval:   10000,
+	LogDir:         "~/logs/nacos",
 }
 
 var serverConfigTest = constant.ServerConfig{
@@ -121,7 +122,7 @@ func Test_GetConfig(t *testing.T) {
 	success, err := client.PublishConfig(vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
-		Content: "hello world!"})
+		Content: "hello world!222222"})
 
 	assert.Nil(t, err)
 	assert.True(t, success)
@@ -131,7 +132,7 @@ func Test_GetConfig(t *testing.T) {
 		Group:  "group"})
 
 	assert.Nil(t, err)
-	assert.Equal(t, "hello world!", content)
+	assert.Equal(t, "hello world!222222", content)
 }
 
 func Test_GetConfigWithErrorResponse(t *testing.T) {
@@ -344,14 +345,17 @@ func TestListenConfig(t *testing.T) {
 		Group:   "group",
 		Content: "hello world!"})
 
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	assert.Equal(t, true, success)
+
+	content := ""
 
 	err = client.ListenConfig(vo.ConfigParam{
 		DataId: "dataId",
 		Group:  "group",
 		OnChange: func(namespace, group, dataId, data string) {
 			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+			content = data
 		},
 	})
 
@@ -363,20 +367,21 @@ func TestListenConfig(t *testing.T) {
 		},
 	})
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
+
+	assert.Equal(t, "hello world!", content)
 
 	success, err = client.PublishConfig(vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "abc"})
 
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	assert.Equal(t, true, success)
 
-	time.Sleep(1000000 * time.Second)
+	time.Sleep(10 * time.Second)
 
-	//assert.True(t, client.listening)
-	assert.NotNil(t, err)
+	assert.Equal(t, "abc", content)
 }
 
 // listenConfigTask

@@ -81,8 +81,10 @@ func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err
 	if len(param.Group) <= 0 {
 		err = errors.New("[client.GetConfig] param.group can not be empty")
 	}
-	cacheKey := utils.GetConfigCacheKey(param.DataId, param.Group, param.Tenant)
-	content, err = client.configProxy.GetConfigProxy(param)
+
+	clientConfig, _ := client.GetClientConfig()
+	cacheKey := utils.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
+	content, err = client.configProxy.GetConfigProxy(param, clientConfig.NamespaceId)
 	if err != nil {
 		log.Printf("[ERROR] get config from server error:%s ", err.Error())
 		content, err = cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
@@ -109,7 +111,8 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	if len(param.Content) <= 0 {
 		err = errors.New("[client.PublishConfig] param.content can not be empty")
 	}
-	return client.configProxy.PublishConfigProxy(param)
+	clientConfig, _ := client.GetClientConfig()
+	return client.configProxy.PublishConfigProxy(param, clientConfig.NamespaceId)
 }
 
 func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool,
@@ -120,7 +123,9 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool,
 	if len(param.Group) <= 0 {
 		err = errors.New("[client.DeleteConfig] param.group can not be empty")
 	}
-	return client.configProxy.DeleteConfigProxy(param)
+
+	clientConfig, _ := client.GetClientConfig()
+	return client.configProxy.DeleteConfigProxy(param, clientConfig.NamespaceId)
 }
 
 func (client *ConfigClient) AddConfigToListen(params []vo.ConfigParam) (err error) {
@@ -176,12 +181,12 @@ func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
 		return
 	}
 	var tenant string
-	if len(param.Tenant) > 0 {
-		tenant = param.Tenant
+	if len(clientConfig.NamespaceId) > 0 {
+		tenant = clientConfig.NamespaceId
 	}
 
 	for _, config := range client.localConfigs {
-		if config.Group == param.Group && config.DataId == param.DataId && config.Tenant == param.Tenant {
+		if config.Group == param.Group && config.DataId == param.DataId {
 			param.Content = config.Content
 			break
 		}
@@ -279,7 +284,6 @@ func (client *ConfigClient) updateLocalConfig(changed string, param vo.ConfigPar
 			content, err := client.GetConfig(vo.ConfigParam{
 				DataId: attrs[0],
 				Group:  attrs[1],
-				Tenant: attrs[2],
 			})
 			if err != nil {
 				log.Println("[client.updateLocalConfig] update config failed:", err.Error())
@@ -287,7 +291,6 @@ func (client *ConfigClient) updateLocalConfig(changed string, param vo.ConfigPar
 				client.putLocalConfig(vo.ConfigParam{
 					DataId:  attrs[0],
 					Group:   attrs[1],
-					Tenant:  attrs[2],
 					Content: content,
 				})
 

@@ -15,6 +15,5 @@ type ConfigParam struct {
 	Content  string `param:"content"`
 	Tag      string `param:"tag"`
 	AppName  string `param:"appName"`
-	Tenant   string `param:"tenant"`
 	OnChange func(namespace, group, dataId, data string)
 }

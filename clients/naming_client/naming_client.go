@@ -39,7 +39,7 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 	if err != nil {
 		return naming, err
 	}
-	err = logger.InitLog(clientConfig.LogDir + string(os.PathSeparator) + "name")
+	err = logger.InitLog(clientConfig.LogDir)
 	if err != nil {
 		return naming, err
 	}
@@ -48,7 +48,8 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 	if err != nil {
 		return naming, err
 	}
-	naming.hostReactor = NewHostReactor(naming.serviceProxy, clientConfig.CacheDir+string(os.PathSeparator)+"name", clientConfig.UpdateThreadNum, clientConfig.NotLoadCacheAtStart, naming.subCallback, clientConfig.UpdateCacheWhenEmpty)
+	naming.hostReactor = NewHostReactor(naming.serviceProxy, clientConfig.CacheDir+string(os.PathSeparator)+"naming",
+		clientConfig.UpdateThreadNum, clientConfig.NotLoadCacheAtStart, naming.subCallback, clientConfig.UpdateCacheWhenEmpty)
 	naming.beatReactor = NewBeatReactor(naming.serviceProxy, clientConfig.BeatInterval)
 	naming.indexMap = cache.NewConcurrentMap()
 

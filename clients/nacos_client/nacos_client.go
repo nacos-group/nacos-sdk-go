@@ -56,10 +56,6 @@ func (client *NacosClient) SetClientConfig(config constant.ClientConfig) (err er
 		config.LogDir = utils.GetCurrentPath() + string(os.PathSeparator) + "log"
 	}
 	log.Printf("[INFO] logDir:<%s>   cacheDir:<%s>", config.LogDir, config.CacheDir)
-	if config.NamespaceId == "" {
-		config.NamespaceId = constant.DEFAULT_NAMESPACE_ID
-	}
-
 	client.clientConfig = config
 	client.clientConfigValid = true
 
