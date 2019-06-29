@@ -27,7 +27,6 @@ var clientConfigTest = constant.ClientConfig{
 	TimeoutMs:      20000,
 	ListenInterval: 10000,
 	BeatInterval:   10000,
-	LogDir:         "~/logs/nacos",
 }
 
 var serverConfigTest = constant.ServerConfig{
