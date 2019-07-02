@@ -81,7 +81,6 @@ func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err
 	if len(param.Group) <= 0 {
 		err = errors.New("[client.GetConfig] param.group can not be empty")
 	}
-
 	clientConfig, _ := client.GetClientConfig()
 	cacheKey := utils.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
 	content, err = client.configProxy.GetConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
