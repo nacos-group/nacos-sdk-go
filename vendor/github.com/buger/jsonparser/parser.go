@@ -285,7 +285,11 @@ func searchKeys(data []byte, keys ...string) int {
 			if !lastMatched {
 				end := blockEnd(data[i:], '{', '}')
 				i += end - 1
+<<<<<<< HEAD
 			} else {
+=======
+			} else{
+>>>>>>> master
 				level++
 			}
 		case '}':
