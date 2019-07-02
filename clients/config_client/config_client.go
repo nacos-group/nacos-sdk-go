@@ -84,7 +84,8 @@ func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err
 
 	clientConfig, _ := client.GetClientConfig()
 	cacheKey := utils.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
-	content, err = client.configProxy.GetConfigProxy(param, clientConfig.NamespaceId)
+	content, err = client.configProxy.GetConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
+
 	if err != nil {
 		log.Printf("[ERROR] get config from server error:%s ", err.Error())
 		content, err = cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
@@ -112,7 +113,7 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 		err = errors.New("[client.PublishConfig] param.content can not be empty")
 	}
 	clientConfig, _ := client.GetClientConfig()
-	return client.configProxy.PublishConfigProxy(param, clientConfig.NamespaceId)
+	return client.configProxy.PublishConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
 }
 
 func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool,
@@ -125,7 +126,7 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool,
 	}
 
 	clientConfig, _ := client.GetClientConfig()
-	return client.configProxy.DeleteConfigProxy(param, clientConfig.NamespaceId)
+	return client.configProxy.DeleteConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
 }
 
 func (client *ConfigClient) AddConfigToListen(params []vo.ConfigParam) (err error) {
@@ -196,15 +197,22 @@ func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
 	if len(param.Content) > 0 {
 		md5 = util.Md5(param.Content)
 	}
-	listeningConfigs += param.DataId + constant.SPLIT_CONFIG_INNER + param.Group + constant.SPLIT_CONFIG_INNER +
-		md5 + constant.SPLIT_CONFIG_INNER + tenant + constant.SPLIT_CONFIG
-	client.mutex.Unlock()
+	if len(tenant) > 0 {
+		listeningConfigs += param.DataId + constant.SPLIT_CONFIG_INNER + param.Group + constant.SPLIT_CONFIG_INNER +
+			md5 + constant.SPLIT_CONFIG_INNER + tenant + constant.SPLIT_CONFIG
+	} else {
+		listeningConfigs += param.DataId + constant.SPLIT_CONFIG_INNER + param.Group + constant.SPLIT_CONFIG_INNER +
+			md5 + constant.SPLIT_CONFIG
+	}
 
+
+	client.mutex.Unlock()
 	// http 请求
 	params := make(map[string]string)
 	params[constant.KEY_LISTEN_CONFIGS] = listeningConfigs
 	var changed string
-	for _, serverConfig := range serverConfigs {
+
+	for _, serverConfig := range client.configProxy.GetServerList() {
 		path := client.buildBasePath(serverConfig) + "/listener"
 		changedTmp, err := listen(agent, path, clientConfig.TimeoutMs, clientConfig.ListenInterval, params)
 		if err == nil {
