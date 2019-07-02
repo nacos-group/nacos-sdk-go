@@ -12,6 +12,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -124,3 +125,17 @@ func LocalIP() string {
 	}
 	return localIP
 }
+
+func GetDurationWithDefault(metadata map[string]string, key string, defaultDuration time.Duration) time.Duration {
+	data, ok := metadata[key]
+	if ok {
+		value, err := strconv.ParseInt(data, 10, 64)
+		if err != nil {
+			log.Printf("key:%s is not a number \n", key)
+			return defaultDuration
+		}
+		return time.Duration(value)
+	}
+	return defaultDuration
+}
+
