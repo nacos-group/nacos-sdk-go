@@ -1,10 +1,14 @@
 package nacos_server
 
 import (
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/common/nacos_error"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/satori/go.uuid"
 	"io/ioutil"
@@ -16,9 +20,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"crypto/sha1"
-	"crypto/hmac"
-	"encoding/base64"
 )
 
 type NacosServer struct {
@@ -82,7 +83,7 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 	if response.StatusCode == 200 {
 		return
 	} else {
-		err = errors.New(fmt.Sprintf("request return error code %d", response.StatusCode))
+		err = nacos_error.NewNacosError(strconv.Itoa(response.StatusCode), string(bytes), nil)
 		return
 	}
 }
@@ -128,27 +129,29 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 		return "", errors.New("server list is empty")
 	}
 	//only one server,retry request when error
+	var err error
+	var result string
 	if len(srvs) == 1 {
 		for i := 0; i < constant.REQUEST_DOMAIN_RETRY_TIME; i++ {
-			result, err := server.callConfigServer(api, params, headers, method, getAddress(srvs[0]), srvs[0].ContextPath)
+			result, err = server.callConfigServer(api, params, headers, method, getAddress(srvs[0]), srvs[0].ContextPath)
 			if err == nil {
 				return result, nil
 			}
 			log.Printf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s> \n", api, method, utils.ToJsonString(params), err.Error(), result)
 		}
-		return "", errors.New("retry " + strconv.Itoa(constant.REQUEST_DOMAIN_RETRY_TIME) + " times request failed!")
+		return "", err
 	} else {
 		index := rand.Intn(len(srvs))
 		for i := 1; i <= len(srvs); i++ {
 			curServer := srvs[index]
-			result, err := server.callConfigServer(api, params, headers, method, getAddress(curServer), curServer.ContextPath)
+			result, err = server.callConfigServer(api, params, headers, method, getAddress(curServer), curServer.ContextPath)
 			if err == nil {
 				return result, nil
 			}
 			log.Printf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s> \n", api, method, utils.ToJsonString(params), err.Error(), result)
 			index = (index + i) % len(srvs)
 		}
-		return "", errors.New("retry " + strconv.Itoa(constant.REQUEST_DOMAIN_RETRY_TIME) + " times request failed!")
+		return "", err
 	}
 }
 
@@ -243,7 +246,7 @@ func getAddress(cfg constant.ServerConfig) string {
 	return cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
 }
 
-func getSignHeaders(params map[string]string, newHeaders map[string]string) (map[string]string) {
+func getSignHeaders(params map[string]string, newHeaders map[string]string) map[string]string {
 	resource := ""
 
 	if len(params["tenant"]) != 0 {
@@ -254,7 +257,7 @@ func getSignHeaders(params map[string]string, newHeaders map[string]string) (map
 
 	headers := map[string]string{}
 
-	timeStamp := strconv.FormatInt(time.Now().UnixNano() / 1e6, 10)
+	timeStamp := strconv.FormatInt(time.Now().UnixNano()/1e6, 10)
 	headers["timeStamp"] = timeStamp
 
 	signature := ""
@@ -262,7 +265,7 @@ func getSignHeaders(params map[string]string, newHeaders map[string]string) (map
 	if resource == "" {
 		signature = signWithhmacSHA1Encrypt(timeStamp, newHeaders["secretKey"])
 	} else {
-		signature = signWithhmacSHA1Encrypt(resource + "+" + timeStamp, newHeaders["secretKey"])
+		signature = signWithhmacSHA1Encrypt(resource+"+"+timeStamp, newHeaders["secretKey"])
 	}
 
 	headers["Spas-Signature"] = signature
@@ -270,7 +273,7 @@ func getSignHeaders(params map[string]string, newHeaders map[string]string) (map
 	return headers
 }
 
-func signWithhmacSHA1Encrypt(encryptText, encryptKey string) (string) {
+func signWithhmacSHA1Encrypt(encryptText, encryptKey string) string {
 	//hmac ,use sha1
 	key := []byte(encryptKey)
 	mac := hmac.New(sha1.New, key)

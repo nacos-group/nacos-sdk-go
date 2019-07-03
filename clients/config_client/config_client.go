@@ -87,6 +87,16 @@ func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err
 
 	if err != nil {
 		log.Printf("[ERROR] get config from server error:%s ", err.Error())
+		if _, ok := err.(*nacos_error.NacosError); ok {
+			nacosErr := err.(*nacos_error.NacosError)
+			if nacosErr.ErrorCode() == "404" {
+				cache.WriteConfigToFile(cacheKey, client.configCacheDir, "")
+				return "", errors.New("config not found")
+			}
+			if nacosErr.ErrorCode() == "403" {
+				return "", errors.New("get config forbidden")
+			}
+		}
 		content, err = cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
 		if err != nil {
 			log.Printf("[ERROR] get config from cache  error:%s ", err.Error())
@@ -204,7 +214,6 @@ func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
 			md5 + constant.SPLIT_CONFIG
 	}
 
-
 	client.mutex.Unlock()
 	// http 请求
 	params := make(map[string]string)
@@ -254,9 +263,7 @@ func listen(agent http_agent.IHttpAgent, path string,
 			if response.StatusCode == 200 {
 				changed = string(bytes)
 			} else {
-				err = &nacos_error.NacosError{
-					ErrMsg: "[" + strconv.Itoa(response.StatusCode) + "]" + string(bytes),
-				}
+				err = nacos_error.NewNacosError(strconv.Itoa(response.StatusCode), string(bytes), nil)
 			}
 		}
 	}

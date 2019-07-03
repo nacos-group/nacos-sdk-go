@@ -57,4 +57,5 @@ const (
 	DEFAULT_NAMESPACE_ID        = "public"
 	DEFAULT_GROUP               = "DEFAULT_GROUP"
 	NAMING_INSTANCE_ID_SPLITTER = "#"
+	DefaultClientErrorCode      = "SDK.NacosError"
 )

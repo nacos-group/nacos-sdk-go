@@ -138,4 +138,3 @@ func GetDurationWithDefault(metadata map[string]string, key string, defaultDurat
 	}
 	return defaultDuration
 }
-
