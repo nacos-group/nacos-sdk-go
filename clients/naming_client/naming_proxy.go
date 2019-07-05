@@ -155,3 +155,12 @@ func (proxy *NamingProxy) QueryList(serviceName string, clusters string, udpPort
 	api := constant.SERVICE_PATH + "/list"
 	return proxy.nacosServer.ReqApi(api, param, http.MethodGet)
 }
+
+func (proxy *NamingProxy) GetAllServiceInfoList(namespace string, groupName string, clusters string) (string, error) {
+	param := make(map[string]string)
+	param["namespaceId"] = proxy.clientConfig.NamespaceId
+	param["clusters"] = clusters
+	param["groupName"] = groupName;
+	api := constant.SERVICE_INFO_PATH + "/getAll"
+	return proxy.nacosServer.ReqApi(api, param, http.MethodGet)
+}
