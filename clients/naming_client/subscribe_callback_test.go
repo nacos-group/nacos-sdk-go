@@ -2,6 +2,7 @@ package naming_client
 
 import (
 	"fmt"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
@@ -43,7 +44,16 @@ func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
 			fmt.Println(utils.ToJsonString(ed.callbackFuncsMap))
 		},
 	}
-	ed.AddCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+
+	clusters := param.Clusters
+
+	if clusters == nil || len(clusters) == 0 {
+		clusters = []string{constant.STRING_EMPTY}
+	}
+
+	for index := range clusters {
+		ed.AddCallbackFuncs(clusters[index], utils.GetGroupName(param.ServiceName, param.GroupName), param.CallbackFuncId, &param.SubscribeCallback)
+	}
 	key := utils.GetServiceCacheKey(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
 	for k, v := range ed.callbackFuncsMap.Items() {
 		assert.Equal(t, key, k, "key should be equal!")
@@ -85,7 +95,15 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 			fmt.Printf("func1:%s \n", utils.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	clusters := param.Clusters
+
+	if clusters == nil || len(clusters) == 0 {
+		clusters = []string{constant.STRING_EMPTY}
+	}
+
+	for index := range clusters {
+		ed.AddCallbackFuncs(clusters[index], utils.GetGroupName(param.ServiceName, param.GroupName), param.CallbackFuncId, &param.SubscribeCallback)
+	}
 	assert.Equal(t, len(ed.callbackFuncsMap.Items()), 1, "callback funcs map length should be 1")
 
 	param2 := vo.SubscribeParam{
@@ -96,14 +114,24 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 			fmt.Printf("func2:%s \n", utils.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFuncs(utils.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	clusters2 := param2.Clusters
+
+	if clusters2 == nil || len(clusters2) == 0 {
+		clusters2 = []string{constant.STRING_EMPTY}
+	}
+
+	for index2 := range clusters2 {
+		ed.AddCallbackFuncs(clusters2[index2], utils.GetGroupName(param2.ServiceName, param2.GroupName), param2.CallbackFuncId, &param2.SubscribeCallback)
+	}
 	assert.Equal(t, len(ed.callbackFuncsMap.Items()), 1, "callback funcs map length should be 2")
 
 	for k, v := range ed.callbackFuncsMap.Items() {
 		log.Printf("key:%s,%d", k, len(v.([]*func(services []model.SubscribeService, err error))))
 	}
 
-	ed.RemoveCallbackFuncs(utils.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	for index2 := range clusters2 {
+		ed.RemoveCallbackFuncs(clusters2[index2], utils.GetGroupName(param2.ServiceName, param2.GroupName), param2.CallbackFuncId, &param2.SubscribeCallback)
+	}
 
 	key := utils.GetServiceCacheKey(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
 	for k, v := range ed.callbackFuncsMap.Items() {
@@ -146,7 +174,15 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 			log.Printf("func1:%s \n", utils.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	clusters := param.Clusters
+
+	if clusters == nil || len(clusters) == 0 {
+		clusters = []string{constant.STRING_EMPTY}
+	}
+
+	for index := range clusters {
+		ed.AddCallbackFuncs(clusters[index], utils.GetGroupName(param.ServiceName, param.GroupName), param.CallbackFuncId, &param.SubscribeCallback)
+	}
 
 	param2 := vo.SubscribeParam{
 		ServiceName: "Test",
@@ -157,7 +193,16 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 
 		},
 	}
-	ed.AddCallbackFuncs(utils.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+
+	clusters2 := param2.Clusters
+
+	if clusters2 == nil || len(clusters2) == 0 {
+		clusters2 = []string{constant.STRING_EMPTY}
+	}
+
+	for index2 := range clusters2 {
+		ed.AddCallbackFuncs(clusters2[index2], utils.GetGroupName(param2.ServiceName, param2.GroupName), param2.CallbackFuncId, &param2.SubscribeCallback)
+	}
 
 	ed.ServiceChanged(&service)
 }

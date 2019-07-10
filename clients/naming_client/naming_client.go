@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"time"
 )
 
 type NamingClient struct {
@@ -78,6 +79,7 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 		ServiceName: utils.GetGroupName(param.ServiceName, param.GroupName),
 		Cluster:     param.ClusterName,
 		Weight:      param.Weight,
+		Period:      utils.GetDurationWithDefault(param.Metadata, constant.HEART_BEAT_INTERVAL, time.Second*5),
 	}
 	_, err := sc.serviceProxy.RegisterInstance(utils.GetGroupName(param.ServiceName, param.GroupName), param.GroupName, instance)
 	if err != nil {
@@ -109,6 +111,17 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, err
 		param.GroupName = constant.DEFAULT_GROUP
 	}
 	service := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	return service, nil
+}
+
+func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) ([]model.Service, error) {
+	if param.GroupName == "" {
+		param.GroupName = constant.DEFAULT_GROUP
+	}
+	if param.NameSpace == "" {
+		param.NameSpace = constant.DEFAULT_NAMESPACE_ID
+	}
+	service := sc.hostReactor.GetAllServiceInfo(param.NameSpace, param.GroupName, strings.Join(param.Clusters, ","))
 	return service, nil
 }
 
@@ -209,9 +222,12 @@ func random(instances []model.Instance, mw int) []model.Instance {
 }
 
 // 服务监听
-func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
+func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) (string, error) {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
+	}
+	if param.CallbackFuncId == "" {
+		param.CallbackFuncId = utils.GenerateCallbackFuncId()
 	}
 	serviceParam := vo.GetServiceParam{
 		ServiceName: param.ServiceName,
@@ -219,16 +235,33 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 		Clusters:    param.Clusters,
 	}
 
-	sc.subCallback.AddCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	clusters := param.Clusters
+
+	if clusters == nil || len(clusters) == 0 {
+		clusters = []string{constant.STRING_EMPTY}
+	}
+
+	for index := range clusters {
+		sc.subCallback.AddCallbackFuncs(clusters[index], utils.GetGroupName(param.ServiceName, param.GroupName), param.CallbackFuncId, &param.SubscribeCallback)
+	}
+
 	_, err := sc.GetService(serviceParam)
 	if err != nil {
-		return err
+		return param.CallbackFuncId, err
 	}
-	return nil
+	return param.CallbackFuncId, nil
 }
 
 //取消服务监听
-func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
-	sc.subCallback.RemoveCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
-	return nil
+func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) (string, error) {
+	clusters := param.Clusters
+
+	if clusters == nil || len(clusters) == 0 {
+		clusters = []string{constant.STRING_EMPTY}
+	}
+
+	for index := range clusters {
+		sc.subCallback.RemoveCallbackFuncs(clusters[index], utils.GetGroupName(param.ServiceName, param.GroupName), param.CallbackFuncId, &param.SubscribeCallback)
+	}
+	return param.CallbackFuncId, nil
 }

@@ -30,7 +30,9 @@ type INamingClient interface {
 	//获取一个健康的实例
 	SelectOneHealthyInstance(param vo.SelectOneHealthInstanceParam) (*model.Instance, error)
 	// 服务监听
-	Subscribe(param *vo.SubscribeParam) error
+	Subscribe(param *vo.SubscribeParam) (string, error)
 	//取消监听
-	Unsubscribe(param *vo.SubscribeParam) error
+	Unsubscribe(param *vo.SubscribeParam) (string, error)
+	//获取全部服务信息
+	GetAllServicesInfo(param vo.GetAllServiceInfoParam) ([]model.Service, error)
 }

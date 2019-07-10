@@ -41,6 +41,12 @@ type GetServiceParam struct {
 	GroupName   string   `param:"groupName"`
 }
 
+type GetAllServiceInfoParam struct {
+	Clusters  []string `param:"clusters"`
+	NameSpace string   `param:"nameSpace"`
+	GroupName string   `param:"groupName"`
+}
+
 type GetServiceListParam struct {
 	StartPage   uint32 `param:"startPg"`
 	PageSize    uint32 `param:"pgSize"`
@@ -65,6 +71,7 @@ type SubscribeParam struct {
 	ServiceName       string   `param:"serviceName"`
 	Clusters          []string `param:"clusters"`
 	GroupName         string   `param:"groupName"`
+	CallbackFuncId  string   `param:"callbackFuncId"`
 	SubscribeCallback func(services []model.SubscribeService, err error)
 }
 
