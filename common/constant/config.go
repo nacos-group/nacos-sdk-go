@@ -21,9 +21,13 @@ type ClientConfig struct {
 	BeatInterval         int64
 	NamespaceId          string
 	Endpoint             string
+	AccessKey            string
+	SecretKey            string
 	CacheDir             string
 	LogDir               string
 	UpdateThreadNum      int
 	NotLoadCacheAtStart  bool
 	UpdateCacheWhenEmpty bool
+	OpenKMS              bool
+	RegionId             string
 }

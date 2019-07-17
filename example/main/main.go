@@ -12,7 +12,6 @@ import (
 )
 
 func main() {
-
 	client, _ := clients.CreateNamingClient(map[string]interface{}{
 		"serverConfigs": []constant.ServerConfig{
 			{
