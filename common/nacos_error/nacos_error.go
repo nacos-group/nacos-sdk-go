@@ -1,5 +1,10 @@
 package nacos_error
 
+import (
+	"fmt"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+)
+
 /**
 *
 * @description :
@@ -10,9 +15,32 @@ package nacos_error
 **/
 
 type NacosError struct {
-	ErrMsg string
+	errorCode   string
+	errMsg      string
+	originError error
+}
+
+func NewNacosError(errorCode string, errMsg string, originError error) *NacosError {
+	return &NacosError{
+		errorCode:   errorCode,
+		errMsg:      errMsg,
+		originError: originError,
+	}
+
 }
 
 func (err *NacosError) Error() (str string) {
-	return err.ErrMsg
+	nacosErrMsg := fmt.Sprintf("[%s] %s", err.ErrorCode(), err.errMsg)
+	if err.originError != nil {
+		return nacosErrMsg + "\ncaused by:\n" + err.originError.Error()
+	}
+	return nacosErrMsg
+}
+
+func (err *NacosError) ErrorCode() string {
+	if err.errorCode == "" {
+		return constant.DefaultClientErrorCode
+	} else {
+		return err.errorCode
+	}
 }

@@ -1,6 +1,4 @@
-
-# nacos-sdk-go
-
+## nacos-go
 go语言版本的nacos client，支持服务发现和配置管理
 
 ### 客户端配置
@@ -226,4 +224,3 @@ configClient.ListenConfig(vo.ConfigParam{
 })
 
 ```
-

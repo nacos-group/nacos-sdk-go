@@ -33,4 +33,7 @@ type INamingClient interface {
 	Subscribe(param *vo.SubscribeParam) error
 	//取消监听
 	Unsubscribe(param *vo.SubscribeParam) error
+
+	//获取全部服务信息
+	GetAllServicesInfo(param vo.GetAllServiceInfoParam) ([]model.Service, error)
 }

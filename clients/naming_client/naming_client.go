@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"time"
 )
 
 type NamingClient struct {
@@ -78,6 +79,7 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 		ServiceName: utils.GetGroupName(param.ServiceName, param.GroupName),
 		Cluster:     param.ClusterName,
 		Weight:      param.Weight,
+		Period:      utils.GetDurationWithDefault(param.Metadata, constant.HEART_BEAT_INTERVAL, time.Second*5),
 	}
 	_, err := sc.serviceProxy.RegisterInstance(utils.GetGroupName(param.ServiceName, param.GroupName), param.GroupName, instance)
 	if err != nil {
@@ -109,6 +111,17 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, err
 		param.GroupName = constant.DEFAULT_GROUP
 	}
 	service := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	return service, nil
+}
+
+func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) ([]model.Service, error) {
+	if param.GroupName == "" {
+		param.GroupName = constant.DEFAULT_GROUP
+	}
+	if param.NameSpace == "" {
+		param.NameSpace = constant.DEFAULT_NAMESPACE_ID
+	}
+	service := sc.hostReactor.GetAllServiceInfo(param.NameSpace, param.GroupName, strings.Join(param.Clusters, ","))
 	return service, nil
 }
 
