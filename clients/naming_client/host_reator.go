@@ -1,6 +1,7 @@
 package naming_client
 
 import (
+	"encoding/json"
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
@@ -94,6 +95,26 @@ func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string) model
 	newService, _ := hr.serviceInfoMap.Get(key)
 
 	return newService.(model.Service)
+}
+
+func (hr *HostReactor) GetAllServiceInfo(nameSpace string, groupName string, clusters string) []model.Service {
+	result, err := hr.serviceProxy.GetAllServiceInfoList(nameSpace, groupName, clusters)
+	if err != nil {
+		log.Printf("[ERROR]:query all services info return error!nameSpace:%s cluster:%s groupName:%s  err:%s \n", nameSpace, clusters, groupName, err.Error())
+		return nil
+	}
+	if result == "" {
+		log.Printf("[ERROR]:query all services info is empty!nameSpace:%s cluster:%s groupName:%s \n", nameSpace, clusters, groupName)
+		return nil
+	}
+
+	var data []model.Service
+	err = json.Unmarshal([]byte(result), &data)
+	if err != nil {
+		log.Printf("[ERROR]: the result of quering all services info json.Unmarshal error !nameSpace:%s cluster:%s groupName:%s \n", nameSpace, clusters, groupName)
+		return nil
+	}
+	return data
 }
 
 func (hr *HostReactor) updateServiceNow(serviceName string, clusters string) {

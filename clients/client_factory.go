@@ -69,8 +69,12 @@ func setConfig(properties map[string]interface{}) (iClient nacos_client.INacosCl
 			}
 		}
 	} else {
-		err = errors.New("server configs not found in properties")
-		return
+		clientConfig, _ := client.GetClientConfig()
+		if len(clientConfig.Endpoint) <= 0 {
+			err = errors.New("server configs not found in properties")
+			return
+		}
+		client.SetServerConfig([]constant.ServerConfig{})
 	}
 
 	iClient = &client
