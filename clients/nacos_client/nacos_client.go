@@ -33,8 +33,8 @@ func (client *NacosClient) SetClientConfig(config constant.ClientConfig) (err er
 		err = errors.New("[client.SetClientConfig] config.TimeoutMs should > 0")
 		return
 	}
-	if config.TimeoutMs <= config.ListenInterval {
-		err = errors.New("[client.SetClientConfig] config.TimeoutMs should > config.ListenInterval")
+	if config.TimeoutMs >= config.ListenInterval {
+		err = errors.New("[client.SetClientConfig] config.TimeoutMs should < config.ListenInterval")
 		return
 	}
 
@@ -65,7 +65,8 @@ func (client *NacosClient) SetClientConfig(config constant.ClientConfig) (err er
 // 设置 serverConfigs
 func (client *NacosClient) SetServerConfig(configs []constant.ServerConfig) (err error) {
 	if len(configs) <= 0 {
-		err = errors.New("[client.SetServerConfig] configs can not be empty")
+		client.serverConfigsValid = true
+		//err = errors.New("[client.SetServerConfig] configs can not be empty")
 		return
 	}
 

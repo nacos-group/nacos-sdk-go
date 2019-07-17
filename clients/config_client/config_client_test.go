@@ -134,7 +134,7 @@ func Test_GetConfig(t *testing.T) {
 	assert.Equal(t, "hello world!222222", content)
 }
 
-func Test_GetConfigWithErrorResponse(t *testing.T) {
+func Test_GetConfigWithErrorResponse_401(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
@@ -145,8 +145,43 @@ func Test_GetConfigWithErrorResponse(t *testing.T) {
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(configParamMapTest),
 	).Times(3).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
-	_, err := client.GetConfig(configParamTest)
+	result, err := client.GetConfig(configParamTest)
+	assert.Nil(t, err)
+	fmt.Printf("result:%s \n", result)
+}
+
+func Test_GetConfigWithErrorResponse_404(t *testing.T) {
+	controller := gomock.NewController(t)
+	defer controller.Finish()
+	mockHttpAgent := mock.NewMockIHttpAgent(controller)
+	client := cretateConfigClientHttpTest(mockHttpAgent)
+	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodGet),
+		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
+		gomock.AssignableToTypeOf(http.Header{}),
+		gomock.Eq(clientConfigTest.TimeoutMs),
+		gomock.Eq(configParamMapTest),
+	).Times(3).Return(http_agent.FakeHttpResponse(404, ""), nil)
+	reslut, err := client.GetConfig(configParamTest)
 	assert.NotNil(t, err)
+	assert.Equal(t, "", reslut)
+	fmt.Println(err.Error())
+}
+
+func Test_GetConfigWithErrorResponse_403(t *testing.T) {
+	controller := gomock.NewController(t)
+	defer controller.Finish()
+	mockHttpAgent := mock.NewMockIHttpAgent(controller)
+	client := cretateConfigClientHttpTest(mockHttpAgent)
+	mockHttpAgent.EXPECT().Request(gomock.Eq(http.MethodGet),
+		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
+		gomock.AssignableToTypeOf(http.Header{}),
+		gomock.Eq(clientConfigTest.TimeoutMs),
+		gomock.Eq(configParamMapTest),
+	).Times(3).Return(http_agent.FakeHttpResponse(403, ""), nil)
+	reslut, err := client.GetConfig(configParamTest)
+	assert.NotNil(t, err)
+	assert.Equal(t, "", reslut)
+	fmt.Println(err.Error())
 }
 
 func Test_GetConfigWithCache(t *testing.T) {

@@ -49,6 +49,10 @@
   branch = "master"
   name = "github.com/toolkits/concurrent"
 
+[[constraint]]
+  name = "github.com/aliyun/alibaba-cloud-sdk-go"
+  revision = "e6958b522d6f315a3585561bca1f87f6a41fd0c3"
+
 [prune]
   go-tests = true
   unused-packages = true
