@@ -43,7 +43,7 @@ func buildKey(serviceName string, ip string, port uint64) string {
 func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo model.BeatInfo) {
 	log.Printf("[INFO] adding beat: <%s> to beat map.\n", utils.ToJsonString(beatInfo))
 	k := buildKey(serviceName, beatInfo.Ip, beatInfo.Port)
-	br.beatMap.Set(k, beatInfo)
+	br.beatMap.Set(k, &beatInfo)
 	go br.sendInstanceBeat(k, &beatInfo)
 }
 
