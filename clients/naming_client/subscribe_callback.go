@@ -64,7 +64,7 @@ func (ed *SubscribeCallback) ServiceChanged(service *model.Service) {
 				subscribeService.Valid = host.Valid
 				subscribeService.Port = host.Port
 				subscribeService.Ip = host.Ip
-				subscribeService.Metadata = service.Metadata
+				subscribeService.Metadata = host.Metadata
 				subscribeService.ServiceName = host.ServiceName
 				subscribeService.ClusterName = host.ClusterName
 				subscribeService.Weight = host.Weight
