@@ -16,9 +16,9 @@ import (
 )
 
 var clientConfigTest = constant.ClientConfig{
-	TimeoutMs:           20 * 1000,
+	TimeoutMs:           10 * 1000,
 	BeatInterval:        5 * 1000,
-	ListenInterval:      10 * 1000,
+	ListenInterval:      30 * 1000,
 	NotLoadCacheAtStart: true,
 }
 
