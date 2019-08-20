@@ -7,8 +7,8 @@ go语言版本的nacos client，支持服务发现和配置管理
  
 ```go
 constant.ClientConfig{
-    TimeoutMs:      30 * 1000, //http请求超时时间，单位毫秒
-    ListenInterval: 10 * 1000, //监听间隔时间，单位毫秒（仅在ConfigClient中有效）
+    TimeoutMs:      10 * 1000, //http请求超时时间，单位毫秒
+    ListenInterval: 30 * 1000, //监听间隔时间，单位毫秒（仅在ConfigClient中有效）
     BeatInterval:   5 * 1000, //心跳间隔时间，单位毫秒（仅在ServiceClient中有效）
     NamespaceId:       "public", //nacos命名空间
     Endpoint:          "" //获取nacos节点ip的服务地址
