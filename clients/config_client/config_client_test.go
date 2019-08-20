@@ -24,8 +24,8 @@ import (
 **/
 
 var clientConfigTest = constant.ClientConfig{
-	TimeoutMs:      20000,
-	ListenInterval: 10000,
+	TimeoutMs:      10000,
+	ListenInterval: 20000,
 	BeatInterval:   10000,
 }
 

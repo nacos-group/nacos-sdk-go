@@ -38,8 +38,8 @@ constant.ServerConfig{
 ```go
 // 可以没有，采用默认值
 clientConfig := constant.ClientConfig{
-    TimeoutMs:      30 * 1000,
-    ListenInterval: 10 * 1000,
+    TimeoutMs:      10 * 1000,
+    ListenInterval: 30 * 1000,
     BeatInterval:   5 * 1000,
     LogDir: "/nacos/logs",
     CacheDir: "/nacos/cache",
