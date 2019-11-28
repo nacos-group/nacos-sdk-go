@@ -34,9 +34,9 @@ type NacosServer struct {
 
 func NewNacosServer(serverList []constant.ServerConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
 	if len(serverList) == 0 && endpoint == "" {
-		return NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
+		return &NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
 	}
-	ns := NacosServer{
+	ns := &NacosServer{
 		serverList:          serverList,
 		httpAgent:           httpAgent,
 		timeoutMs:           timeoutMs,
