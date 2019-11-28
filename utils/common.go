@@ -68,7 +68,6 @@ func JsonToService(result string) *model.Service {
 	}
 	if len(service.Hosts) == 0 {
 		log.Printf("[WARN]:instance list is empty,json string:%s \n", result)
-		return nil
 	}
 	return &service
 

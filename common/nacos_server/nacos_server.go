@@ -63,7 +63,7 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 	headers["exConfigInfo"] = []string{"true"}
 	headers["RequestId"] = []string{uuid.NewV4().String()}
 	headers["Request-Module"] = []string{"Naming"}
-	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=GBK"}
+	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=UTF8"}
 	headers["Spas-AccessKey"] = []string{newHeaders["accessKey"]}
 	headers["Timestamp"] = []string{signHeaders["timeStamp"]}
 	headers["Spas-Signature"] = []string{signHeaders["Spas-Signature"]}
@@ -97,11 +97,11 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 	headers := map[string][]string{}
 	headers["Client-Version"] = []string{constant.CLIENT_VERSION}
 	headers["User-Agent"] = []string{constant.CLIENT_VERSION}
-	headers["Accept-Encoding"] = []string{"gzip,deflate,sdch"}
+	//headers["Accept-Encoding"] = []string{"gzip,deflate,sdch"}
 	headers["Connection"] = []string{"Keep-Alive"}
 	headers["RequestId"] = []string{uuid.NewV4().String()}
 	headers["Request-Module"] = []string{"Naming"}
-	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=GBK"}
+	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=UTF8"}
 
 	var response *http.Response
 	response, err = server.httpAgent.Request(method, url, headers, server.timeoutMs, params)
