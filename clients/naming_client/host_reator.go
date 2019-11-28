@@ -66,7 +66,7 @@ func (hr *HostReactor) ProcessServiceJson(result string) {
 	oldDomain, ok := hr.serviceInfoMap.Get(cacheKey)
 	if ok && !hr.updateCacheWhenEmpty {
 		//if instance list is empty,not to update cache
-		if len(result) == 0 {
+		if service.Hosts == nil || len(service.Hosts) == 0 {
 			log.Printf("[ERROR]:do not have useful host, ignore it, name:%s \n", service.Name)
 			return
 		}
