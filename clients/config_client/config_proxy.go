@@ -18,7 +18,11 @@ type ConfigProxy struct {
 func NewConfigProxy(serverConfig []constant.ServerConfig, clientConfig constant.ClientConfig, httpAgent http_agent.IHttpAgent) (ConfigProxy, error) {
 	proxy := ConfigProxy{}
 	var err error
-	proxy.nacosServer, err = nacos_server.NewNacosServer(serverConfig, httpAgent, clientConfig.TimeoutMs, clientConfig.Endpoint)
+	s, err := nacos_server.NewNacosServer(serverConfig, httpAgent, clientConfig.TimeoutMs, clientConfig.Endpoint)
+	if err != nil {
+		return ConfigProxy{}, err
+	}
+	proxy.nacosServer = s
 	return proxy, err
 
 }

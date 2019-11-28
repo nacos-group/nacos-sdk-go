@@ -23,10 +23,11 @@ func NewNamingProxy(clientCfg constant.ClientConfig, serverCfgs []constant.Serve
 	srvProxy := NamingProxy{}
 	srvProxy.clientConfig = clientCfg
 	var err error
-	srvProxy.nacosServer, err = nacos_server.NewNacosServer(serverCfgs, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint)
+	s, err := nacos_server.NewNacosServer(serverCfgs, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint)
 	if err != nil {
 		return srvProxy, err
 	}
+	srvProxy.nacosServer = s
 	return srvProxy, nil
 }
 
