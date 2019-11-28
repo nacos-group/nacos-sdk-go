@@ -97,7 +97,7 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 	headers := map[string][]string{}
 	headers["Client-Version"] = []string{constant.CLIENT_VERSION}
 	headers["User-Agent"] = []string{constant.CLIENT_VERSION}
-	headers["Accept-Encoding"] = []string{"gzip,deflate,sdch"}
+	//headers["Accept-Encoding"] = []string{"gzip,deflate,sdch"}
 	headers["Connection"] = []string{"Keep-Alive"}
 	headers["RequestId"] = []string{uuid.NewV4().String()}
 	headers["Request-Module"] = []string{"Naming"}
