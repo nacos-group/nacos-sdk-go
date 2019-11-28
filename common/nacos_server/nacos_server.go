@@ -32,7 +32,7 @@ type NacosServer struct {
 	vipSrvRefInterMills int64
 }
 
-func NewNacosServer(serverList []constant.ServerConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (NacosServer, error) {
+func NewNacosServer(serverList []constant.ServerConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
 	if len(serverList) == 0 && endpoint == "" {
 		return NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
 	}
@@ -191,8 +191,10 @@ func (server *NacosServer) initRefreshSrvIfNeed() {
 	}
 	server.refreshServerSrvIfNeed()
 	go func() {
-		time.Sleep(time.Duration(1) * time.Second)
-		server.refreshServerSrvIfNeed()
+		for {
+			time.Sleep(time.Duration(1) * time.Second)
+			server.refreshServerSrvIfNeed()
+		}
 	}()
 
 }
@@ -229,6 +231,10 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 			server.Lock()
 			log.Printf("[info] server list is updated, old: <%v>,new:<%v> \n", server.serverList, servers)
 			server.serverList = servers
+			server.lastSrvRefTime = utils.CurrentMillis()
+			server.Unlock()
+		} else {
+			server.Lock()
 			server.lastSrvRefTime = utils.CurrentMillis()
 			server.Unlock()
 		}
