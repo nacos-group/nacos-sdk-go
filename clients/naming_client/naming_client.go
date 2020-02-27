@@ -97,11 +97,12 @@ func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bo
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
+	sc.beatReactor.RemoveBeatInfo(utils.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port)
+
 	_, err := sc.serviceProxy.DeregisterInstance(utils.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port, param.Cluster, param.Ephemeral)
 	if err != nil {
 		return false, err
 	}
-	sc.beatReactor.RemoveBeatInfo(utils.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port)
 	return true, nil
 }
 
