@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="33a29beb-18c3-4392-a41a-ab47783ad60b" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/common/security/security_proxy.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utils/semaphore.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gopkg.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gopkg.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/clients/config_client/config_client_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/clients/config_client/config_client_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/clients/naming_client/host_reator.go" beforeDir="false" afterPath="$PROJECT_DIR$/clients/naming_client/host_reator.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/clients/naming_client/naming_client_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/clients/naming_client/naming_client_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/constant/const.go" beforeDir="false" afterPath="$PROJECT_DIR$/common/constant/const.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credential.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials/access_key_credential.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials/bearer_token_credential.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials/ecs_ram_role.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials/provider/env.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials/provider/instance_credentials.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials/provider/profile_credentials.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials/provider/provider.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials/provider/provider_chain.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials/rsa_key_pair_credential.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials/sts_credential.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials/sts_role_arn_credential.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/roa_signature_composer.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/rpc_signature_composer.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/signer.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/signers/algorithms.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/signers/credential_updater.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/signers/session_credential.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/signers/signer_access_key.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/signers/signer_bearer_token.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/signers/signer_ecs_ram_role.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/signers/signer_key_pair.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/signers/signer_ram_role_arn.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/signers/signer_sts_token.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/signers/signer_v2.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/client.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/config.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/endpoints/endpoints_config.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/endpoints/local_global_resolver.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/endpoints/local_regional_resolver.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/endpoints/location_resolver.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/endpoints/mapping_resolver.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/endpoints/resolver.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/endpoints/simple_host_resolver.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/errors/client_error.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/errors/error.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/errors/server_error.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/errors/signature_does_not_match_wrapper.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/logger.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests/acs_request.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests/common_request.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests/roa_request.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests/rpc_request.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests/types.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses/json_parser.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses/response.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils/debug.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils/utils.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/cancel_key_deletion.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/client.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/create_alias.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/create_key.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/decrypt.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/delete_alias.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/delete_key_material.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/describe_key.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/describe_regions.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/disable_key.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/enable_key.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/encrypt.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/generate_data_key.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/get_parameters_for_import.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/import_key_material.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/list_aliases.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/list_aliases_by_key_id.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/list_keys.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/list_resource_tags.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/schedule_key_deletion.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/struct_alias.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/struct_aliases_in_list_aliases.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/struct_aliases_in_list_aliases_by_key_id.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/struct_key.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/struct_key_metadata.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/struct_keys.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/struct_region.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/struct_regions.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/struct_tag.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/struct_tags.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/tag_resource.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/untag_resource.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/aliyun/alibaba-cloud-sdk-go/services/kms/update_alias.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/buger/jsonparser/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/buger/jsonparser/.travis.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/buger/jsonparser/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/buger/jsonparser/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/buger/jsonparser/Makefile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/buger/jsonparser/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/buger/jsonparser/bytes.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/buger/jsonparser/bytes_safe.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/buger/jsonparser/bytes_unsafe.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/buger/jsonparser/escape.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/buger/jsonparser/parser.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/davecgh/go-spew/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/davecgh/go-spew/spew/bypass.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/davecgh/go-spew/spew/bypasssafe.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/davecgh/go-spew/spew/common.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/davecgh/go-spew/spew/config.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/davecgh/go-spew/spew/doc.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/davecgh/go-spew/spew/dump.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/davecgh/go-spew/spew/format.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/davecgh/go-spew/spew/spew.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/go-errors/errors/.travis.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/go-errors/errors/LICENSE.MIT" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/go-errors/errors/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/go-errors/errors/cover.out" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/go-errors/errors/error.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/go-errors/errors/parse_panic.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/go-errors/errors/stackframe.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/golang/mock/AUTHORS" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/golang/mock/CONTRIBUTORS" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/golang/mock/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/golang/mock/gomock/call.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/golang/mock/gomock/callset.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/golang/mock/gomock/controller.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/golang/mock/gomock/matchers.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/jmespath/go-jmespath/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/jmespath/go-jmespath/.travis.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/jmespath/go-jmespath/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/jmespath/go-jmespath/Makefile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/jmespath/go-jmespath/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/jmespath/go-jmespath/api.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/jmespath/go-jmespath/astnodetype_string.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/jmespath/go-jmespath/functions.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/jmespath/go-jmespath/interpreter.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/jmespath/go-jmespath/lexer.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/jmespath/go-jmespath/parser.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/jmespath/go-jmespath/toktype_string.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/jmespath/go-jmespath/util.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/.codecov.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/.travis.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/Gopkg.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/Gopkg.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/adapter.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/any.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/any_array.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/any_bool.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/any_float.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/any_int32.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/any_int64.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/any_invalid.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/any_nil.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/any_number.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/any_object.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/any_str.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/any_uint32.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/any_uint64.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/build.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/config.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/fuzzy_mode_convert_table.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/iter.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/iter_array.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/iter_float.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/iter_int.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/iter_object.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/iter_skip.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/iter_skip_sloppy.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/iter_skip_strict.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/iter_str.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/jsoniter.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/pool.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/reflect.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/reflect_array.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/reflect_dynamic.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/reflect_extension.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/reflect_json_number.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/reflect_json_raw_message.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/reflect_map.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/reflect_marshaler.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/reflect_native.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/reflect_optional.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/reflect_slice.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/reflect_struct_decoder.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/reflect_struct_encoder.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/stream.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/stream_float.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/stream_int.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/stream_str.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/json-iterator/go/test.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/lestrrat/go-file-rotatelogs/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/lestrrat/go-file-rotatelogs/.travis.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/lestrrat/go-file-rotatelogs/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/lestrrat/go-file-rotatelogs/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/lestrrat/go-file-rotatelogs/interface.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/lestrrat/go-file-rotatelogs/rotatelogs.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/lestrrat/go-strftime/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/lestrrat/go-strftime/.travis.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/lestrrat/go-strftime/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/lestrrat/go-strftime/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/lestrrat/go-strftime/strftime.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/lestrrat/go-strftime/writer.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/concurrent/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/concurrent/.travis.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/concurrent/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/concurrent/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/concurrent/executor.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/concurrent/go_above_19.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/concurrent/go_below_19.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/concurrent/log.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/concurrent/test.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/concurrent/unbounded_executor.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/.travis.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/Gopkg.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/Gopkg.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/go_above_17.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/go_above_19.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/go_below_17.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/go_below_19.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/reflect2.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/reflect2_amd64.s" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/reflect2_kind.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/relfect2_386.s" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/relfect2_amd64p32.s" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/relfect2_arm.s" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/relfect2_arm64.s" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/relfect2_mips64x.s" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/relfect2_mipsx.s" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/relfect2_ppc64x.s" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/relfect2_s390x.s" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/safe_field.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/safe_map.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/safe_slice.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/safe_struct.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/safe_type.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/test.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/type_map.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/unsafe_array.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/unsafe_eface.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/unsafe_field.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/unsafe_iface.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/unsafe_link.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/unsafe_map.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/unsafe_ptr.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/unsafe_slice.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/unsafe_struct.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/modern-go/reflect2/unsafe_type.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/pkg/errors/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/pkg/errors/.travis.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/pkg/errors/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/pkg/errors/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/pkg/errors/appveyor.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/pkg/errors/errors.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/pkg/errors/stack.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/pmezard/go-difflib/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/pmezard/go-difflib/difflib/difflib.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/satori/go.uuid/.travis.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/satori/go.uuid/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/satori/go.uuid/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/satori/go.uuid/codec.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/satori/go.uuid/generator.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/satori/go.uuid/sql.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/satori/go.uuid/uuid.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/stretchr/testify/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/stretchr/testify/assert/assertion_format.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/stretchr/testify/assert/assertion_format.go.tmpl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/stretchr/testify/assert/assertion_forward.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/stretchr/testify/assert/assertion_forward.go.tmpl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/stretchr/testify/assert/assertions.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/stretchr/testify/assert/doc.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/stretchr/testify/assert/errors.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/stretchr/testify/assert/forward_assertions.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/stretchr/testify/assert/http_assertions.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/toolkits/concurrent/semaphore/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/github.com/toolkits/concurrent/semaphore/semaphore.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/gopkg.in/ini.v1/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/gopkg.in/ini.v1/.travis.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/gopkg.in/ini.v1/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/gopkg.in/ini.v1/Makefile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/gopkg.in/ini.v1/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/gopkg.in/ini.v1/error.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/gopkg.in/ini.v1/file.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/gopkg.in/ini.v1/ini.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/gopkg.in/ini.v1/key.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/gopkg.in/ini.v1/parser.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/gopkg.in/ini.v1/section.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/vendor/gopkg.in/ini.v1/struct.go" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DatabaseView">
+    <option name="SHOW_INTERMEDIATE" value="true" />
+    <option name="GROUP_DATA_SOURCES" value="true" />
+    <option name="GROUP_SCHEMA" value="true" />
+    <option name="GROUP_CONTENTS" value="false" />
+    <option name="SORT_POSITIONED" value="false" />
+    <option name="SHOW_EMPTY_GROUPS" value="false" />
+    <option name="AUTO_SCROLL_FROM_SOURCE" value="false" />
+    <option name="HIDDEN_KINDS">
+      <set />
+    </option>
+    <expand />
+    <select />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+      </list>
+    </option>
+  </component>
+  <component name="GOROOT" path="/usr/local/go" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GoDepProject">
+    <integration-enabled>true</integration-enabled>
+    <exec-path>/usr/local/bin/dep</exec-path>
+  </component>
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="false" />
+  </component>
+  <component name="IgnoredFileRootStore">
+    <option name="generatedRoots">
+      <set>
+        <option value="$PROJECT_DIR$/.idea" />
+      </set>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds">
+    <option name="x" value="42" />
+    <option name="y" value="23" />
+    <option name="width" value="1903" />
+    <option name="height" value="1057" />
+  </component>
+  <component name="ProjectId" id="1QgDG9v0NSxhkoDCWN7e7bHAilP" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
+    <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="DefaultGoTemplateProperty" value="Go File" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="configurable.Global.GOPATH.is.expanded" value="true" />
+    <property name="configurable.Module.GOPATH.is.expanded" value="true" />
+    <property name="configurable.Project.GOPATH.is.expanded" value="true" />
+    <property name="go.gopath.indexing.explicitly.defined" value="true" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="go.sdk.automatically.set" value="true" />
+    <property name="go.vendoring.notification.had.been.shown" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.toml" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VgoProject">
+    <integration-enabled>true</integration-enabled>
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="579" y="217" key="#Notifications" timestamp="1583155371486">
+      <screen x="38" y="23" width="1882" height="1057" />
+    </state>
+    <state x="579" y="217" key="#Notifications/38.23.1882.1057@38.23.1882.1057" timestamp="1583155371486" />
+    <state x="488" y="190" key="SettingsEditor" timestamp="1583158873708">
+      <screen x="38" y="23" width="1882" height="1057" />
+    </state>
+    <state x="488" y="190" key="SettingsEditor/38.23.1882.1057@38.23.1882.1057" timestamp="1583158873708" />
+    <state x="659" y="187" width="639" height="729" key="find.popup" timestamp="1583164142067">
+      <screen x="38" y="23" width="1882" height="1057" />
+    </state>
+    <state x="659" y="187" width="639" height="729" key="find.popup/38.23.1882.1057@38.23.1882.1057" timestamp="1583164142067" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/common/security/security_proxy.go</url>
+          <line>15</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

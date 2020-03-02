@@ -183,7 +183,7 @@ func Test_RegisterServiceInstance_401(t *testing.T) {
 			"metadata":    "null",
 			"ephemeral":   "true",
 		})).Times(3).
-		Return(http_agent.FakeHttpResponse(401, `no auth`), nil)
+		Return(http_agent.FakeHttpResponse(401, `no security`), nil)
 
 	nc := nacos_client.NacosClient{}
 	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
@@ -284,7 +284,7 @@ func TestNamingProxy_DeristerService_401(t *testing.T) {
 			"port":        "80",
 			"ephemeral":   "true",
 		})).Times(3).
-		Return(http_agent.FakeHttpResponse(401, `no auth`), nil)
+		Return(http_agent.FakeHttpResponse(401, `no security`), nil)
 	nc := nacos_client.NacosClient{}
 	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
 	nc.SetClientConfig(clientConfigTest)
