@@ -10,6 +10,8 @@ package constant
 **/
 
 const (
+	KEY_USERNAME                = "username"
+	KEY_PASSWORD                = "password"
 	KEY_ENDPOINT                = "endpoint"
 	KEY_NAME_SPACE              = "namespace"
 	KEY_ACCESS_KEY              = "accessKey"
@@ -27,6 +29,11 @@ const (
 	KEY_LISTEN_INTERVAL         = "listenInterval"
 	KEY_SERVER_CONFIGS          = "serverConfigs"
 	KEY_CLIENT_CONFIG           = "clientConfig"
+	KEY_TOKEN                   = "token"
+	KEY_ACCESS_TOKEN            = "accessToken"
+	KEY_TOKEN_TTL               = "tokenTtl"
+	KEY_GLOBAL_ADMIN            = "globalAdmin"
+	KEY_TOKEN_REFRESH_WINDOW    = "tokenRefreshWindow"
 	WEB_CONTEXT                 = "/nacos"
 	CONFIG_BASE_PATH            = "/v1/cs"
 	CONFIG_PATH                 = CONFIG_BASE_PATH + "/configs"
