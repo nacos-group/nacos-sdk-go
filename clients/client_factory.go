@@ -15,16 +15,16 @@ func CreateConfigClient(properties map[string]interface{}) (iClient config_clien
 	nacosClient, errSetConfig := setConfig(properties)
 	if errSetConfig != nil {
 		err = errSetConfig
-		return
+		return nil, err
 	}
 	nacosClient.SetHttpAgent(&http_agent.HttpAgent{})
 	config, errNew := config_client.NewConfigClient(nacosClient)
 	if errNew != nil {
 		err = errNew
-		return
+		return nil, err
 	}
 	iClient = &config
-	return
+	return iClient, nil
 }
 
 // 创建服务发现相关的客户端
@@ -32,16 +32,16 @@ func CreateNamingClient(properties map[string]interface{}) (iClient naming_clien
 	nacosClient, errSetConfig := setConfig(properties)
 	if errSetConfig != nil {
 		err = errSetConfig
-		return
+		return nil, err
 	}
 	nacosClient.SetHttpAgent(&http_agent.HttpAgent{})
 	naming, errNew := naming_client.NewNamingClient(nacosClient)
 	if errNew != nil {
 		err = errNew
-		return
+		return nil, err
 	}
 	iClient = &naming
-	return
+	return iClient, nil
 }
 
 func setConfig(properties map[string]interface{}) (iClient nacos_client.INacosClient, err error) {
@@ -50,7 +50,7 @@ func setConfig(properties map[string]interface{}) (iClient nacos_client.INacosCl
 		if clientConfig, ok := clientConfigTmp.(constant.ClientConfig); ok {
 			err = client.SetClientConfig(clientConfig)
 			if err != nil {
-				return
+				return nil, err
 			}
 		}
 	} else {
@@ -65,19 +65,19 @@ func setConfig(properties map[string]interface{}) (iClient nacos_client.INacosCl
 		if serverConfigs, ok := serverConfigTmp.([]constant.ServerConfig); ok {
 			err = client.SetServerConfig(serverConfigs)
 			if err != nil {
-				return
+				return nil, err
 			}
 		}
 	} else {
 		clientConfig, _ := client.GetClientConfig()
 		if len(clientConfig.Endpoint) <= 0 {
 			err = errors.New("server configs not found in properties")
-			return
+			return nil, err
 		}
 		client.SetServerConfig([]constant.ServerConfig{})
 	}
 
 	iClient = &client
 
-	return
+	return iClient, nil
 }

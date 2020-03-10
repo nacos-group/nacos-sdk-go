@@ -46,9 +46,9 @@ func Test_RegisterServiceInstance_withoutGroupeName(t *testing.T) {
 	mockIHttpAgent.EXPECT().Request(gomock.Eq("POST"),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
 		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(20*1000)),
+		gomock.Eq(uint64(10*1000)),
 		gomock.Eq(map[string]string{
-			"namespaceId": "public",
+			"namespaceId": "",
 			"serviceName": "DEFAULT_GROUP@@DEMO",
 			"groupName":   "DEFAULT_GROUP",
 			"clusterName": "",
@@ -71,6 +71,7 @@ func Test_RegisterServiceInstance_withoutGroupeName(t *testing.T) {
 		ServiceName: "DEMO",
 		Ip:          "10.0.0.10",
 		Port:        80,
+		Ephemeral:   true,
 	})
 	assert.Equal(t, nil, err)
 	assert.Equal(t, true, success)
@@ -112,6 +113,7 @@ func Test_RegisterServiceInstance_withGroupeName(t *testing.T) {
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
+		Ephemeral:	 true,
 	})
 	assert.Equal(t, nil, err)
 	assert.Equal(t, true, success)
@@ -127,9 +129,9 @@ func Test_RegisterServiceInstance_withCluster(t *testing.T) {
 	mockIHttpAgent.EXPECT().Request(gomock.Eq("POST"),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
 		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(20*1000)),
+		gomock.Eq(uint64(10*1000)),
 		gomock.Eq(map[string]string{
-			"namespaceId": "public",
+			"namespaceId": "",
 			"serviceName": "test_group@@DEMO",
 			"groupName":   "test_group",
 			"clusterName": "test",
@@ -154,6 +156,7 @@ func Test_RegisterServiceInstance_withCluster(t *testing.T) {
 		Port:        80,
 		GroupName:   "test_group",
 		ClusterName: "test",
+		Ephemeral:	 true,
 	})
 	assert.Equal(t, nil, err)
 	assert.Equal(t, true, success)
@@ -169,9 +172,9 @@ func Test_RegisterServiceInstance_401(t *testing.T) {
 	mockIHttpAgent.EXPECT().Request(gomock.Eq("POST"),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
 		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(20*1000)),
+		gomock.Eq(uint64(10*1000)),
 		gomock.Eq(map[string]string{
-			"namespaceId": "public",
+			"namespaceId": "",
 			"serviceName": "test_group@@DEMO",
 			"groupName":   "test_group",
 			"clusterName": "",
@@ -195,6 +198,7 @@ func Test_RegisterServiceInstance_401(t *testing.T) {
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
+		Ephemeral:	 true,
 	})
 	assert.Equal(t, false, result)
 	assert.NotNil(t, err)
@@ -210,9 +214,9 @@ func TestNamingProxy_DeristerService_WithoutGroupName(t *testing.T) {
 	mockIHttpAgent.EXPECT().Request(gomock.Eq("DELETE"),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
 		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(20*1000)),
+		gomock.Eq(uint64(10*1000)),
 		gomock.Eq(map[string]string{
-			"namespaceId": "public",
+			"namespaceId": "",
 			"serviceName": "DEFAULT_GROUP@@DEMO",
 			"clusterName": "",
 			"ip":          "10.0.0.10",
@@ -229,6 +233,7 @@ func TestNamingProxy_DeristerService_WithoutGroupName(t *testing.T) {
 		ServiceName: "DEMO",
 		Ip:          "10.0.0.10",
 		Port:        80,
+		Ephemeral:	 true,
 	})
 }
 
@@ -242,9 +247,9 @@ func TestNamingProxy_DeristerService_WithGroupName(t *testing.T) {
 	mockIHttpAgent.EXPECT().Request(gomock.Eq("DELETE"),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
 		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(20*1000)),
+		gomock.Eq(uint64(10*1000)),
 		gomock.Eq(map[string]string{
-			"namespaceId": "public",
+			"namespaceId": "",
 			"serviceName": "test_group@@DEMO",
 			"clusterName": "",
 			"ip":          "10.0.0.10",
@@ -262,6 +267,7 @@ func TestNamingProxy_DeristerService_WithGroupName(t *testing.T) {
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
+		Ephemeral:	 true,
 	})
 }
 
@@ -275,9 +281,9 @@ func TestNamingProxy_DeristerService_401(t *testing.T) {
 	mockIHttpAgent.EXPECT().Request(gomock.Eq("DELETE"),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
 		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(20*1000)),
+		gomock.Eq(uint64(10*1000)),
 		gomock.Eq(map[string]string{
-			"namespaceId": "public",
+			"namespaceId": "",
 			"serviceName": "test_group@@DEMO",
 			"clusterName": "",
 			"ip":          "10.0.0.10",
@@ -295,6 +301,7 @@ func TestNamingProxy_DeristerService_401(t *testing.T) {
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
+		Ephemeral:	 true,
 	})
 }
 
@@ -374,7 +381,7 @@ func TestNamingProxy_GetService_WithoutGroupName(t *testing.T) {
 	mockIHttpAgent.EXPECT().Request(gomock.Eq("GET"),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance/list"),
 		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(20*1000)),
+		gomock.Eq(uint64(10*1000)),
 		gomock.Any()).Times(2).
 		Return(http_agent.FakeHttpResponse(200, serviceJsonTest), nil)
 
@@ -402,7 +409,7 @@ func TestNamingClient_SelectAllInstancs(t *testing.T) {
 	mockIHttpAgent.EXPECT().Request(gomock.Eq("GET"),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance/list"),
 		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(20*1000)),
+		gomock.Eq(uint64(10*1000)),
 		gomock.Any()).Times(2).
 		Return(http_agent.FakeHttpResponse(200, serviceJsonTest), nil)
 
