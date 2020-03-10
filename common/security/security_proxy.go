@@ -9,57 +9,62 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
+	"sync/atomic"
 	"time"
 )
 
 type AuthClient struct {
 	username           string
 	password           string
-	accessToken        string
+	accessToken        *atomic.Value
 	tokenTtl           int64
 	lastRefreshTime    int64
 	tokenRefreshWindow int64
-	contextPath        string
 	agent              http_agent.IHttpAgent
-	config             constant.ClientConfig
+	clientCfg          constant.ClientConfig
+	serverCfgs         []constant.ServerConfig
 }
 
-func NewAuthClient(properties map[string]string, config constant.ClientConfig) *AuthClient {
-	username := properties[constant.KEY_USERNAME]
-	password := properties[constant.KEY_PASSWORD]
-	contextPath := properties[constant.KEY_CONTEXT_PATH]
+func NewAuthClient(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig, agent http_agent.IHttpAgent) AuthClient {
 
-	client := &AuthClient{}
-
-	client.username = username
-	client.password = password
-	client.contextPath = contextPath
-	client.config = config
+	client := AuthClient{
+		username:    clientCfg.Username,
+		password:    clientCfg.Password,
+		serverCfgs:  serverCfgs,
+		clientCfg:   clientCfg,
+		agent:       agent,
+		accessToken: &atomic.Value{},
+	}
 
 	return client
 }
 
 func (ac *AuthClient) GetAccessToken() string {
-	return ac.accessToken
+	v := ac.accessToken.Load()
+	if v == nil {
+		return ""
+	}
+	return v.(string)
 }
 
-func (ac *AuthClient) AutoRefresh(servers []string)  {
+func (ac *AuthClient) AutoRefresh() {
 	go func() {
 		ticker := time.NewTicker(time.Millisecond * 5)
 
 		for range ticker.C {
-			_, err := ac.Login(servers)
-			if  err != nil {
+			_, err := ac.Login()
+			if err != nil {
 				log.Printf("[ERROR]: login has error %s", err)
 			}
 		}
 	}()
 }
 
-func (ac *AuthClient) Login(servers []string) (bool, error) {
+func (ac *AuthClient) Login() (bool, error) {
 	var throwable error = nil
-	for i := 0; i < len(servers); i++ {
-		result, err := ac.login(servers[i])
+	for i := 0; i < len(ac.serverCfgs); i++ {
+		result, err := ac.login(ac.serverCfgs[i])
 		throwable = err
 		if result {
 			return true, nil
@@ -68,29 +73,40 @@ func (ac *AuthClient) Login(servers []string) (bool, error) {
 	return false, throwable
 }
 
-func (ac *AuthClient) SetHttpAgent(agent http_agent.IHttpAgent) (err error) {
-	if agent == nil {
-		err = errors.New("[client.SetHttpAgent] http agent can not be nil")
-	} else {
-		ac.agent = agent
-	}
-	return
-}
-
-func (ac *AuthClient) login(server string) (bool, error) {
+func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 	if ac.username != "" {
+		query := map[string]string{"username": ac.username, "password": ac.password}
 
-		params := map[string]string{"username": ac.username, "password": ac.password}
-		reqUrl := "http://" + server + ac.contextPath + "/v1/auth/users/login"
+		contextPath := server.ContextPath
+
+		if !strings.HasPrefix(contextPath, "/") {
+			contextPath = "/" + contextPath
+		}
+
+		if strings.HasSuffix(contextPath, "/") {
+			contextPath = contextPath[0 : len(contextPath)-1]
+		}
+
+		reqUrl := "http://" + server.IpAddr + ":" + strconv.FormatInt(int64(server.Port), 10) + contextPath + "/v1/auth/users/login"
+
+		queryInfo := ""
+
+		for key, value := range query {
+			if len(value) > 0 {
+				queryInfo += key + "=" + value + "&"
+			}
+		}
+		if strings.HasSuffix(queryInfo, "&") {
+			queryInfo = queryInfo[:len(queryInfo)-1]
+		}
+
+		reqUrl += "?" + queryInfo
+
 		header := http.Header{}
-		resp, err := ac.agent.Post(reqUrl, header, ac.config.TimeoutMs, params)
+		resp, err := ac.agent.Post(reqUrl, header, ac.clientCfg.TimeoutMs, map[string]string{})
 
 		if err != nil {
 			return false, err
-		}
-
-		if resp.StatusCode != 200 {
-			return false, nil
 		}
 
 		var bytes []byte
@@ -100,7 +116,12 @@ func (ac *AuthClient) login(server string) (bool, error) {
 			return false, err
 		}
 
-		var result map[string]string
+		if resp.StatusCode != 200 {
+			errMsg := string(bytes)
+			return false, errors.New(errMsg)
+		}
+
+		var result map[string]interface{}
 
 		err = json.Unmarshal(bytes, &result)
 
@@ -109,8 +130,8 @@ func (ac *AuthClient) login(server string) (bool, error) {
 		}
 
 		if val, ok := result[constant.KEY_ACCESS_TOKEN]; ok {
-			ac.accessToken = val
-			ac.tokenTtl, _ = strconv.ParseInt(result[constant.KEY_TOKEN_TTL], 10, 64)
+			ac.accessToken.Store(val)
+			ac.tokenTtl = int64(result[constant.KEY_TOKEN_TTL].(float64))
 			ac.lastRefreshTime = ac.tokenTtl / 10
 		}
 	}

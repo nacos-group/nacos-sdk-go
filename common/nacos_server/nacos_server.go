@@ -9,6 +9,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_error"
+	"github.com/nacos-group/nacos-sdk-go/common/security"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/satori/go.uuid"
 	"io/ioutil"
@@ -24,6 +25,7 @@ import (
 
 type NacosServer struct {
 	sync.RWMutex
+	securityLogin       security.AuthClient
 	serverList          []constant.ServerConfig
 	httpAgent           http_agent.IHttpAgent
 	timeoutMs           uint64
@@ -32,18 +34,29 @@ type NacosServer struct {
 	vipSrvRefInterMills int64
 }
 
-func NewNacosServer(serverList []constant.ServerConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (NacosServer, error) {
+func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (NacosServer, error) {
 	if len(serverList) == 0 && endpoint == "" {
 		return NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
 	}
+
+	securityLogin := security.NewAuthClient(clientCfg, serverList, httpAgent)
+
 	ns := NacosServer{
 		serverList:          serverList,
+		securityLogin:       securityLogin,
 		httpAgent:           httpAgent,
 		timeoutMs:           timeoutMs,
 		endpoint:            endpoint,
 		vipSrvRefInterMills: 10000,
 	}
 	ns.initRefreshSrvIfNeed()
+	_, err := securityLogin.Login()
+
+	if err != nil {
+		return ns, err
+	}
+
+	securityLogin.AutoRefresh()
 	return ns, nil
 }
 
@@ -67,6 +80,8 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 	headers["Spas-AccessKey"] = []string{newHeaders["accessKey"]}
 	headers["Timestamp"] = []string{signHeaders["timeStamp"]}
 	headers["Spas-Signature"] = []string{signHeaders["Spas-Signature"]}
+
+	injectSecurityInfo(server, params)
 
 	var response *http.Response
 	response, err = server.httpAgent.Request(method, url, headers, server.timeoutMs, params)
@@ -103,6 +118,8 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 	headers["Request-Module"] = []string{"Naming"}
 	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=UTF8"}
 
+	injectSecurityInfo(server, params)
+
 	var response *http.Response
 	response, err = server.httpAgent.Request(method, url, headers, server.timeoutMs, params)
 	if err != nil {
@@ -128,6 +145,9 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 	if srvs == nil || len(srvs) == 0 {
 		return "", errors.New("server list is empty")
 	}
+
+	injectSecurityInfo(server, params)
+
 	//only one server,retry request when error
 	var err error
 	var result string
@@ -160,6 +180,9 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 	if srvs == nil || len(srvs) == 0 {
 		return "", errors.New("server list is empty")
 	}
+
+	injectSecurityInfo(server, params)
+
 	//only one server,retry request when error
 	if len(srvs) == 1 {
 		for i := 0; i < constant.REQUEST_DOMAIN_RETRY_TIME; i++ {
@@ -240,6 +263,13 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 
 func (server *NacosServer) GetServerList() []constant.ServerConfig {
 	return server.serverList
+}
+
+func injectSecurityInfo(server *NacosServer, param map[string]string) {
+	accessToken := server.securityLogin.GetAccessToken()
+	if accessToken != "" {
+		param[constant.KEY_ACCESS_TOKEN] = accessToken
+	}
 }
 
 func getAddress(cfg constant.ServerConfig) string {

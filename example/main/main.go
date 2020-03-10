@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	client, _ := clients.CreateNamingClient(map[string]interface{}{
+	client, err := clients.CreateNamingClient(map[string]interface{}{
 		"serverConfigs": []constant.ServerConfig{
 			{
 				IpAddr: "console.nacos.io",
@@ -20,12 +20,18 @@ func main() {
 			},
 		},
 		"clientConfig": constant.ClientConfig{
-			TimeoutMs:           20000,
+			TimeoutMs:           5000,
 			ListenInterval:      10000,
 			NotLoadCacheAtStart: true,
 			LogDir:              "data/nacos/log",
+			Username:			 "nacos",
+			Password:			 "nacos",
 		},
 	})
+
+	if err != nil {
+		panic(err)
+	}
 
 	example.ExampleServiceClient_RegisterServiceInstance(client, vo.RegisterInstanceParam{
 		Ip:          "10.0.0.11",
