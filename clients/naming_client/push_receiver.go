@@ -64,7 +64,7 @@ func (us *PushReceiver) startServer() {
 
 		if !ok && i == 2 {
 			log.Panicf("failed to start udp server after trying 3 times.")
-			os.Exit(1)
+			//os.Exit(1)  //It is weird dangerous to invoke the os.Exit() as a Middleware.
 		}
 	}
 
