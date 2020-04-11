@@ -71,6 +71,8 @@ func (hr *HostReactor) ProcessServiceJson(result string) {
 			return
 		}
 	}
+	hr.updateTimeMap.Set(cacheKey, uint64(utils.CurrentMillis()))
+	hr.serviceInfoMap.Set(cacheKey, *service)
 	if !ok || ok && !reflect.DeepEqual(service.Hosts, oldDomain.(model.Service).Hosts) {
 		if !ok {
 			log.Println("[INFO] service not found in cache " + cacheKey)
@@ -80,8 +82,6 @@ func (hr *HostReactor) ProcessServiceJson(result string) {
 		cache.WriteServicesToFile(*service, hr.cacheDir)
 		hr.subCallback.ServiceChanged(service)
 	}
-	hr.updateTimeMap.Set(cacheKey, uint64(utils.CurrentMillis()))
-	hr.serviceInfoMap.Set(cacheKey, *service)
 }
 
 func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string) model.Service {
