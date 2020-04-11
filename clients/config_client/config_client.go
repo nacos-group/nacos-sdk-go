@@ -104,7 +104,7 @@ func (client *ConfigClient) decrypt(dataId, content string) (string, error) {
 		request.CiphertextBlob = content
 		response, err := client.kmsClient.Decrypt(request)
 		if err != nil {
-			return "", errors.New("ksm decrypt failed")
+			return "", errors.New("kms decrypt failed")
 		}
 		content = response.Plaintext
 	}
