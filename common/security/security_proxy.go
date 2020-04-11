@@ -27,7 +27,6 @@ type AuthClient struct {
 }
 
 func NewAuthClient(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig, agent http_agent.IHttpAgent) AuthClient {
-
 	client := AuthClient{
 		username:    clientCfg.Username,
 		password:    clientCfg.Password,
@@ -49,6 +48,13 @@ func (ac *AuthClient) GetAccessToken() string {
 }
 
 func (ac *AuthClient) AutoRefresh() {
+
+	// If the username is not set, the automatic refresh Token is not enabled
+
+	if ac.username == "" {
+		return
+	}
+
 	go func() {
 		ticker := time.NewTicker(time.Millisecond * 5)
 
