@@ -15,8 +15,8 @@ import (
 )
 
 type NamingProxy struct {
-	clientConfig  constant.ClientConfig
-	nacosServer   nacos_server.NacosServer
+	clientConfig constant.ClientConfig
+	nacosServer  nacos_server.NacosServer
 }
 
 func NewNamingProxy(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig, httpAgent http_agent.IHttpAgent) (NamingProxy, error) {
@@ -166,4 +166,3 @@ func (proxy *NamingProxy) GetAllServiceInfoList(namespace string, groupName stri
 	api := constant.SERVICE_INFO_PATH + "/getAll"
 	return proxy.nacosServer.ReqApi(api, param, http.MethodGet)
 }
-
