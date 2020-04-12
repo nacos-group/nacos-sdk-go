@@ -134,6 +134,20 @@ func Test_GetConfig(t *testing.T) {
 	assert.Equal(t, "hello world!222222", content)
 }
 
+func Test_SearchConfig(t *testing.T) {
+	client := cretateConfigClientTest()
+	configPage, err := client.SearchConfig(vo.SearchConfigParm{
+		Search:   "accurate",
+		DataId:   "",
+		Group:    "DEFAULT_GROUP",
+		PageNo:   1,
+		PageSize: 10,
+	})
+	assert.Nil(t, err)
+	assert.Nil(t, configPage)
+	assert.NotEmpty(t, configPage.PageItems)
+}
+
 func Test_GetConfigWithErrorResponse_401(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
