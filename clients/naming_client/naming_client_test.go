@@ -113,7 +113,7 @@ func Test_RegisterServiceInstance_withGroupeName(t *testing.T) {
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
-		Ephemeral:	 true,
+		Ephemeral:   true,
 	})
 	assert.Equal(t, nil, err)
 	assert.Equal(t, true, success)
@@ -156,7 +156,7 @@ func Test_RegisterServiceInstance_withCluster(t *testing.T) {
 		Port:        80,
 		GroupName:   "test_group",
 		ClusterName: "test",
-		Ephemeral:	 true,
+		Ephemeral:   true,
 	})
 	assert.Equal(t, nil, err)
 	assert.Equal(t, true, success)
@@ -198,7 +198,7 @@ func Test_RegisterServiceInstance_401(t *testing.T) {
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
-		Ephemeral:	 true,
+		Ephemeral:   true,
 	})
 	assert.Equal(t, false, result)
 	assert.NotNil(t, err)
@@ -233,7 +233,7 @@ func TestNamingProxy_DeristerService_WithoutGroupName(t *testing.T) {
 		ServiceName: "DEMO",
 		Ip:          "10.0.0.10",
 		Port:        80,
-		Ephemeral:	 true,
+		Ephemeral:   true,
 	})
 }
 
@@ -267,7 +267,7 @@ func TestNamingProxy_DeristerService_WithGroupName(t *testing.T) {
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
-		Ephemeral:	 true,
+		Ephemeral:   true,
 	})
 }
 
@@ -301,7 +301,7 @@ func TestNamingProxy_DeristerService_401(t *testing.T) {
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
-		Ephemeral:	 true,
+		Ephemeral:   true,
 	})
 }
 

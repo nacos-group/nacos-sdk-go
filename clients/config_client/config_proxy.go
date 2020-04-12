@@ -1,11 +1,13 @@
 package config_client
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
 	"github.com/nacos-group/nacos-sdk-go/common/util"
+	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"net/http"
 	"strings"
@@ -41,6 +43,31 @@ func (cp *ConfigProxy) GetConfigProxy(param vo.ConfigParam, tenant, accessKey, s
 	return result, err
 }
 
+func (cp *ConfigProxy) SearchConfigProxy(param vo.SearchConfigParm, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
+	params := util.TransformObject2Param(param)
+	if len(tenant) > 0 {
+		params["tenant"] = tenant
+	}
+	if _, ok := params["group"]; !ok {
+		params["group"] = ""
+	}
+	if _, ok := params["dataId"]; !ok {
+		params["dataId"] = ""
+	}
+	var headers = map[string]string{}
+	headers["accessKey"] = accessKey
+	headers["secretKey"] = secretKey
+	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_PATH, params, headers, http.MethodGet)
+	if err != nil {
+		return nil, err
+	}
+	var configPage model.ConfigPage
+	err = json.Unmarshal([]byte(result), &configPage)
+	if err != nil {
+		return nil, err
+	}
+	return &configPage, nil
+}
 func (cp *ConfigProxy) PublishConfigProxy(param vo.ConfigParam, tenant, accessKey, secretKey string) (bool, error) {
 	params := util.TransformObject2Param(param)
 	if len(tenant) > 0 {
