@@ -50,7 +50,7 @@ func setConfig(properties map[string]interface{}) (iClient nacos_client.INacosCl
 		if clientConfig, ok := clientConfigTmp.(constant.ClientConfig); ok {
 			err = client.SetClientConfig(clientConfig)
 			if err != nil {
-				return
+				return nil, err
 			}
 		}
 	} else {
@@ -65,7 +65,7 @@ func setConfig(properties map[string]interface{}) (iClient nacos_client.INacosCl
 		if serverConfigs, ok := serverConfigTmp.([]constant.ServerConfig); ok {
 			err = client.SetServerConfig(serverConfigs)
 			if err != nil {
-				return
+				return nil, err
 			}
 		}
 	} else {

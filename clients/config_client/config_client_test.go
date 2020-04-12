@@ -144,7 +144,7 @@ func Test_GetConfigWithErrorResponse_401(t *testing.T) {
 		gomock.AssignableToTypeOf(http.Header{}),
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(configParamMapTest),
-	).Times(3).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
+	).Times(3).Return(http_agent.FakeHttpResponse(401, "no security"), nil)
 	result, err := client.GetConfig(configParamTest)
 	assert.Nil(t, err)
 	fmt.Printf("result:%s \n", result)
@@ -206,7 +206,7 @@ func Test_GetConfigWithCache(t *testing.T) {
 		gomock.AssignableToTypeOf(http.Header{}),
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(configParamMapTest),
-	).Times(3).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
+	).Times(3).Return(http_agent.FakeHttpResponse(401, "no security"), nil)
 	content, err = client.GetConfig(configParamTest)
 	assert.Nil(t, err)
 	assert.Equal(t, "content", content)
@@ -268,7 +268,7 @@ func Test_PublishConfigWithErrorResponse(t *testing.T) {
 		gomock.AssignableToTypeOf(http.Header{}),
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(localConfigMapTest),
-	).Times(3).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
+	).Times(3).Return(http_agent.FakeHttpResponse(401, "no security"), nil)
 	success, err := client.PublishConfig(localConfigTest)
 	assert.NotNil(t, err)
 	assert.True(t, !success)
@@ -343,7 +343,7 @@ func Test_DeleteConfigWithErrorResponse_401(t *testing.T) {
 		gomock.AssignableToTypeOf(http.Header{}),
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(configParamMapTest),
-	).Times(3).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
+	).Times(3).Return(http_agent.FakeHttpResponse(401, "no security"), nil)
 	success, err := client.DeleteConfig(configParamTest)
 	assert.NotNil(t, err)
 	assert.Equal(t, false, success)
@@ -581,7 +581,7 @@ func Test_listenWithErrorResponse_401(t *testing.T) {
 		gomock.AssignableToTypeOf(headerTest),
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(param),
-	).Times(1).Return(http_agent.FakeHttpResponse(401, "no auth"), nil)
+	).Times(1).Return(http_agent.FakeHttpResponse(401, "no security"), nil)
 
 	_ = client.SetHttpAgent(mockHttpAgent)
 

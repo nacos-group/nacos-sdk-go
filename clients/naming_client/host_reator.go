@@ -5,7 +5,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
-	nsema "github.com/toolkits/concurrent/semaphore"
 	"log"
 	"reflect"
 	"time"
@@ -131,7 +130,7 @@ func (hr *HostReactor) updateServiceNow(serviceName string, clusters string) {
 }
 
 func (hr *HostReactor) asyncUpdateService() {
-	sema := nsema.NewSemaphore(hr.updateThreadNum)
+	sema := utils.NewSemaphore(hr.updateThreadNum)
 	for {
 		for _, v := range hr.serviceInfoMap.Items() {
 			service := v.(model.Service)
