@@ -24,8 +24,8 @@ func main() {
 			ListenInterval:      10000,
 			NotLoadCacheAtStart: true,
 			LogDir:              "data/nacos/log",
-			Username:			 "nacos",
-			Password:			 "nacos",
+			//Username:			 "nacos",
+			//Password:			 "nacos",
 		},
 	})
 

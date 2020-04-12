@@ -9,6 +9,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_error"
 	"github.com/nacos-group/nacos-sdk-go/common/util"
+	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 
@@ -380,4 +381,36 @@ func (client *ConfigClient) buildBasePath(serverConfig constant.ServerConfig) (b
 	basePath = "http://" + serverConfig.IpAddr + ":" +
 		strconv.FormatUint(serverConfig.Port, 10) + serverConfig.ContextPath + constant.CONFIG_PATH
 	return
+}
+
+func (client *ConfigClient) SearchConfig(param vo.SearchConfigParm) (*model.ConfigPage, error) {
+	return client.searchConfigInnter(param)
+}
+
+func (client *ConfigClient) searchConfigInnter(param vo.SearchConfigParm) (*model.ConfigPage, error) {
+	if param.Search != "accurate" && param.Search != "blur" {
+		return nil, errors.New("[client.searchConfigInnter] param.search must be accurate or blur")
+	}
+	if param.PageNo <= 0 {
+		param.PageNo = 1
+	}
+	if param.PageSize <= 0 {
+		param.PageSize = 10
+	}
+	clientConfig, _ := client.GetClientConfig()
+	configItems, err := client.configProxy.SearchConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
+	if err != nil {
+		log.Printf("[ERROR] search config from server error:%s ", err.Error())
+		if _, ok := err.(*nacos_error.NacosError); ok {
+			nacosErr := err.(*nacos_error.NacosError)
+			if nacosErr.ErrorCode() == "404" {
+				return nil, errors.New("config not found")
+			}
+			if nacosErr.ErrorCode() == "403" {
+				return nil, errors.New("get config forbidden")
+			}
+		}
+		return nil, err
+	}
+	return configItems, nil
 }

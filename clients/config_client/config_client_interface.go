@@ -1,6 +1,7 @@
 package config_client
 
 import (
+	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 )
 
@@ -40,4 +41,13 @@ type IConfigClient interface {
 	// group   require
 	// tenant ==>nacos.namespace optional
 	ListenConfig(params vo.ConfigParam) (err error)
+
+	// 搜索配置
+	// search  require search=accurate--精确搜索  search=blur--模糊搜索
+	// group   option
+	// dataId  option
+	// tenant ==>nacos.namespace optional
+	// pageNo  option
+	// pageSize option
+	SearchConfig(param vo.SearchConfigParm) (*model.ConfigPage, error)
 }
