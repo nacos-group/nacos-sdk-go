@@ -30,6 +30,6 @@ type ClientConfig struct {
 	UpdateCacheWhenEmpty bool
 	OpenKMS              bool
 	RegionId             string
-	Username			 string
-	Password			 string
+	Username             string
+	Password             string
 }
