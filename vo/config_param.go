@@ -17,3 +17,13 @@ type ConfigParam struct {
 	AppName  string `param:"appName"`
 	OnChange func(namespace, group, dataId, data string)
 }
+
+type SearchConfigParm struct {
+	Search   string `param:"search"`
+	DataId   string `param:"dataId"`
+	Group    string `param:"group"`
+	Tag      string `param:"tag"`
+	AppName  string `param:"appName"`
+	PageNo   int    `param:"pageNo"`
+	PageSize int    `param:"pageSize"`
+}
