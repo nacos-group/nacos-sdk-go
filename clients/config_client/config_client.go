@@ -260,7 +260,8 @@ func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
 
 	for _, serverConfig := range client.configProxy.GetServerList() {
 		path := client.buildBasePath(serverConfig) + "/listener"
-		changedTmp, err := listen(agent, path, clientConfig.TimeoutMs, clientConfig.ListenInterval, params)
+		//TimeoutMS必须大于等于listenInterval，否则listen会因为timeout连接中断
+		changedTmp, err := listen(agent, path, clientConfig.ListenInterval, clientConfig.ListenInterval, params)
 		if err == nil {
 			changed = changedTmp
 			break
