@@ -759,3 +759,16 @@ func TestNamingClient_SelectInstances_Empty(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, len(instances))
 }
+
+func TestNamingClient_GetAllServicesInfo(t *testing.T) {
+	nc := nacos_client.NacosClient{}
+	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+	nc.SetClientConfig(clientConfigTest)
+	nc.SetHttpAgent(&http_agent.HttpAgent{})
+	client, _ := NewNamingClient(&nc)
+	reslut, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
+		GroupName: "DEFAULT_GROUP",
+	})
+	fmt.Println(len(reslut))
+	assert.NotNil(t, err)
+}
