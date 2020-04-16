@@ -1,6 +1,7 @@
 package config_client
 
 import (
+	"errors"
 	"fmt"
 	"github.com/golang/mock/gomock"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
@@ -144,7 +145,7 @@ func Test_SearchConfig(t *testing.T) {
 		PageSize: 10,
 	})
 	assert.Nil(t, err)
-	assert.Nil(t, configPage)
+	assert.NotEmpty(t, configPage)
 	assert.NotEmpty(t, configPage.PageItems)
 }
 
@@ -387,37 +388,22 @@ func Test_DeleteConfigWithoutGroup(t *testing.T) {
 
 func TestListenConfig(t *testing.T) {
 	client := cretateConfigClientTest()
+	var err error
+	var success bool
+	ch := make(chan string)
+	go func() {
+		err = client.ListenConfig(vo.ConfigParam{
+			DataId: "dataId",
+			Group:  "group",
+			OnChange: func(namespace, group, dataId, data string) {
+				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+				ch <- data
+			},
+		})
+		assert.Nil(t, err)
+	}()
 
-	success, err := client.PublishConfig(vo.ConfigParam{
-		DataId:  "dataId",
-		Group:   "group",
-		Content: "hello world!"})
-
-	assert.Nil(t, err)
-	assert.Equal(t, true, success)
-
-	content := ""
-
-	err = client.ListenConfig(vo.ConfigParam{
-		DataId: "dataId",
-		Group:  "group",
-		OnChange: func(namespace, group, dataId, data string) {
-			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
-			content = data
-		},
-	})
-
-	err = client.ListenConfig(vo.ConfigParam{
-		DataId: "abc",
-		Group:  "DEFAULT_GROUP",
-		OnChange: func(namespace, group, dataId, data string) {
-			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
-		},
-	})
-
-	time.Sleep(5 * time.Second)
-
-	assert.Equal(t, "hello world!", content)
+	time.Sleep(2 * time.Second)
 
 	success, err = client.PublishConfig(vo.ConfigParam{
 		DataId:  "dataId",
@@ -426,10 +412,13 @@ func TestListenConfig(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, true, success)
-
-	time.Sleep(10 * time.Second)
-
-	assert.Equal(t, "abc", content)
+	select {
+	case content := <-ch:
+		fmt.Println("content:" + content)
+	case <-time.After(10 * time.Second):
+		fmt.Println("timeout")
+		assert.Errorf(t, errors.New("timeout"), "timeout")
+	}
 }
 
 // listenConfigTask
