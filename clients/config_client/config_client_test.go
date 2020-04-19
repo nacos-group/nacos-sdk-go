@@ -3,6 +3,7 @@ package config_client
 import (
 	"errors"
 	"fmt"
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/golang/mock/gomock"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -28,6 +29,13 @@ var clientConfigTest = constant.ClientConfig{
 	TimeoutMs:      10000,
 	ListenInterval: 20000,
 	BeatInterval:   10000,
+}
+
+var clientConfigTestWithTenant = constant.ClientConfig{
+	TimeoutMs:      10000,
+	ListenInterval: 20000,
+	BeatInterval:   10000,
+	NamespaceId:    "tenant",
 }
 
 var serverConfigTest = constant.ServerConfig{
@@ -84,36 +92,13 @@ func cretateConfigClientHttpTest(mockHttpAgent http_agent.IHttpAgent) ConfigClie
 	return client
 }
 
-// sync
-
-func Test_SyncWithoutClientConfig(t *testing.T) {
-	client := cretateConfigClientTest()
-	_, _, _, err := client.sync()
-	assert.NotNil(t, err)
-}
-
-func Test_SyncWithoutServerConfig(t *testing.T) {
-	client := cretateConfigClientTest()
-	_ = client.SetClientConfig(clientConfigTest)
-	_, _, _, err := client.sync()
-	assert.NotNil(t, err)
-}
-
-func Test_SyncWithoutHttpAgent(t *testing.T) {
-	client := cretateConfigClientTest()
-	_ = client.SetServerConfig(serverConfigsTest)
-	_ = client.SetClientConfig(clientConfigTest)
-	_, _, _, err := client.sync()
-	assert.NotNil(t, err)
-}
-
-func Test_Sync(t *testing.T) {
-	client := cretateConfigClientTest()
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-	_ = client.SetHttpAgent(&httpAgentTest)
-	_, _, _, err := client.sync()
-	assert.Nil(t, err)
+func cretateConfigClientHttpTestWithTenant(mockHttpAgent http_agent.IHttpAgent) ConfigClient {
+	nc := nacos_client.NacosClient{}
+	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+	nc.SetClientConfig(clientConfigTestWithTenant)
+	nc.SetHttpAgent(mockHttpAgent)
+	client, _ := NewConfigClient(&nc)
+	return client
 }
 
 func Test_GetConfig(t *testing.T) {
@@ -426,20 +411,21 @@ func TestListenConfig(t *testing.T) {
 func Test_listenConfigTask_NoChange(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
+	//var headerTest = map[string][]string{}
 
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	client := cretateConfigClientHttpTest(mockHttpAgent)
-	mockHttpAgent.EXPECT().Post(
+	client := cretateConfigClientHttpTestWithTenant(mockHttpAgent)
+	mockHttpAgent.EXPECT().Request(gomock.Eq(requests.POST),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs/listener"),
-		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
+		gomock.AssignableToTypeOf(http.Header{}),
+		gomock.Eq(clientConfigTestWithTenant.ListenInterval),
 		gomock.Eq(map[string]string{
 			"Listening-Configs": "dataIdgroup9a0364b9e99bb480dd25e1f0284c8555tenant",
 		}),
 	).Times(1).Return(http_agent.FakeHttpResponse(200, ""), nil)
 
 	changeCount := 0
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent, vo.ConfigParam{
+	client.listenConfigTask(clientConfigTestWithTenant, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "content",
@@ -453,21 +439,23 @@ func Test_listenConfigTask_NoChange(t *testing.T) {
 func Test_listenConfigTask_Change_WithTenant(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
-	client := cretateConfigClientTest()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	mockHttpAgent.EXPECT().Post(
+	client := cretateConfigClientHttpTestWithTenant(mockHttpAgent)
+	mockHttpAgent.EXPECT().Request(
+		gomock.Eq(requests.POST),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs/listener"),
-		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
+		gomock.AssignableToTypeOf(http.Header{}),
+		gomock.Eq(clientConfigTestWithTenant.ListenInterval),
 		gomock.Eq(map[string]string{
 			"Listening-Configs": "dataIdgroup9a0364b9e99bb480dd25e1f0284c8555tenant",
 		}),
 	).Times(1).Return(http_agent.FakeHttpResponse(200, "dataId%02group%02tenant%01"), nil)
 
-	mockHttpAgent.EXPECT().Get(
+	mockHttpAgent.EXPECT().Request(
+		gomock.Eq(http.MethodGet),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
 		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
+		gomock.Eq(clientConfigTestWithTenant.TimeoutMs),
 		gomock.Eq(map[string]string{
 			"dataId": "dataId",
 			"group":  "group",
@@ -476,10 +464,10 @@ func Test_listenConfigTask_Change_WithTenant(t *testing.T) {
 	).Times(1).Return(http_agent.FakeHttpResponse(200, "content2"), nil)
 
 	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
+	_ = client.SetClientConfig(clientConfigTestWithTenant)
 	_ = client.SetServerConfig(serverConfigsTest)
 	configData := ""
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent, vo.ConfigParam{
+	client.listenConfigTask(clientConfigTestWithTenant, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "content",
@@ -493,18 +481,20 @@ func Test_listenConfigTask_Change_WithTenant(t *testing.T) {
 func Test_listenConfigTask_Change_NoTenant(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
-	client := cretateConfigClientTest()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	mockHttpAgent.EXPECT().Post(
+	client := cretateConfigClientHttpTest(mockHttpAgent)
+	mockHttpAgent.EXPECT().Request(
+		gomock.Eq(http.MethodPost),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs/listener"),
 		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
+		gomock.Eq(clientConfigTest.ListenInterval),
 		gomock.Eq(map[string]string{
-			"Listening-Configs": "dataIdgroup9a0364b9e99bb480dd25e1f0284c8555",
+			"Listening-Configs": "dataIdgroup9a0364b9e99bb480dd25e1f0284c8555",
 		}),
 	).Times(1).Return(http_agent.FakeHttpResponse(200, "dataId%02group%01"), nil)
 
-	mockHttpAgent.EXPECT().Get(
+	mockHttpAgent.EXPECT().Request(
+		gomock.Eq(http.MethodGet),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
 		gomock.AssignableToTypeOf(headerTest),
 		gomock.Eq(clientConfigTest.TimeoutMs),
@@ -518,7 +508,7 @@ func Test_listenConfigTask_Change_NoTenant(t *testing.T) {
 	_ = client.SetClientConfig(clientConfigTest)
 	_ = client.SetServerConfig(serverConfigsTest)
 	configData := ""
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent, vo.ConfigParam{
+	client.listenConfigTask(clientConfigTest, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "content",
@@ -530,68 +520,6 @@ func Test_listenConfigTask_Change_NoTenant(t *testing.T) {
 	assert.Equal(t, "content2", configData)
 }
 
-func Test_listenConfigTaskWithoutLocalConfigs(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-	client := cretateConfigClientTest()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent,
-		vo.ConfigParam{
-			DataId:  "dataId",
-			Group:   "group",
-			Content: "content",
-		})
-	//assert.Equal(t, false, client.listening)
-}
-
-// listen
-
-func Test_listen(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-	client := cretateConfigClientTest()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	path := "http://console.nacos.io:80/nacos/v1/cs/configs/listener"
-	param := map[string]string{
-		"Listening-Configs": "dataIdgroup9a0364b9e99bb480dd25e1f0284c8555tenant",
-	}
-	changedString := "dataId%02group%02tenant%01"
-	mockHttpAgent.EXPECT().Post(
-		gomock.Eq(path),
-		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(param),
-	).Times(1).Return(http_agent.FakeHttpResponse(200, changedString), nil)
-
-	_ = client.SetHttpAgent(mockHttpAgent)
-
-	changed, err := listen(mockHttpAgent, path, clientConfigTest.TimeoutMs, clientConfigTest.ListenInterval, param)
-	assert.Equal(t, changed, changedString)
-	assert.Nil(t, err)
-}
-
-func Test_listenWithErrorResponse_401(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-	client := cretateConfigClientTest()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	path := "http://console.nacos.io:80/nacos/v1/cs/configs/listener"
-	param := map[string]string{
-		"Listening-Configs": "dataIdgroup9a0364b9e99bb480dd25e1f0284c8555tenant",
-	}
-	mockHttpAgent.EXPECT().Post(
-		gomock.Eq(path),
-		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(param),
-	).Times(1).Return(http_agent.FakeHttpResponse(401, "no security"), nil)
-
-	_ = client.SetHttpAgent(mockHttpAgent)
-
-	_, err := listen(mockHttpAgent, path, clientConfigTest.TimeoutMs, clientConfigTest.ListenInterval, param)
-	assert.NotNil(t, err)
-}
-
 // AddConfigToListen
 func Test_AddConfigToListenWithNotListening(t *testing.T) {
 	client := cretateConfigClientTest()
@@ -601,7 +529,7 @@ func Test_AddConfigToListenWithNotListening(t *testing.T) {
 		Content: "content",
 	}}
 	err := client.AddConfigToListen(configs)
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 }
 
 func Test_AddConfigToListenWithRepeatAdd(t *testing.T) {

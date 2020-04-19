@@ -13,8 +13,10 @@ import (
 var clientConfigTest = constant.ClientConfig{
 	TimeoutMs:           10 * 1000,
 	BeatInterval:        5 * 1000,
-	ListenInterval:      30 * 1000,
+	ListenInterval:      300 * 1000,
 	NotLoadCacheAtStart: true,
+	//Username:            "nacos",
+	//Password:            "nacos",
 }
 
 var serverConfigTest = constant.ServerConfig{
@@ -34,7 +36,11 @@ func cretateConfigClientTest() config_client.ConfigClient {
 
 func main() {
 	client := cretateConfigClientTest()
-
+	content, _ := client.GetConfig(vo.ConfigParam{
+		DataId: "dataId",
+		Group:  "group",
+	})
+	fmt.Println("config :" + content)
 	_, err := client.PublishConfig(vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
@@ -42,22 +48,22 @@ func main() {
 	if err != nil {
 		fmt.Printf("success err:%s", err.Error())
 	}
-	content := ""
+	content = ""
 
-	err = client.ListenConfig(vo.ConfigParam{
+	client.ListenConfig(vo.ConfigParam{
 		DataId: "dataId",
 		Group:  "group",
 		OnChange: func(namespace, group, dataId, data string) {
-			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+			fmt.Println("config changed group:" + group + ", dataId:" + dataId + ", data:" + data)
 			content = data
 		},
 	})
 
-	err = client.ListenConfig(vo.ConfigParam{
+	client.ListenConfig(vo.ConfigParam{
 		DataId: "abc",
 		Group:  "DEFAULT_GROUP",
 		OnChange: func(namespace, group, dataId, data string) {
-			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+			fmt.Println("config changed group:" + group + ", dataId:" + dataId + ", data:" + data)
 		},
 	})
 
