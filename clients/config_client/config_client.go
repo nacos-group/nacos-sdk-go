@@ -14,14 +14,11 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/vo"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 type ConfigClient struct {
@@ -201,22 +198,15 @@ func (client *ConfigClient) AddConfigToListen(params []vo.ConfigParam) (err erro
 func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	go func() {
 		for {
-			clientConfig, serverConfigs, agent, err := client.sync()
-			// 创建计时器
-			var timer *time.Timer
-			if err == nil {
-				timer = time.NewTimer(time.Duration(clientConfig.ListenInterval) * time.Millisecond)
-			}
-			client.listenConfigTask(clientConfig, serverConfigs, agent, param)
-			<-timer.C
+			clientConfig, _ := client.GetClientConfig()
+			client.listenConfigTask(clientConfig, param)
 		}
 	}()
 
 	return nil
 }
 
-func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
-	serverConfigs []constant.ServerConfig, agent http_agent.IHttpAgent, param vo.ConfigParam) {
+func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig, param vo.ConfigParam) {
 	var listeningConfigs string
 	// 检查&拼接监听参数
 	client.mutex.Lock()
@@ -257,56 +247,22 @@ func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
 	params := make(map[string]string)
 	params[constant.KEY_LISTEN_CONFIGS] = listeningConfigs
 	var changed string
-
-	for _, serverConfig := range client.configProxy.GetServerList() {
-		path := client.buildBasePath(serverConfig) + "/listener"
-		//TimeoutMS必须大于等于listenInterval，否则listen会因为timeout连接中断
-		changedTmp, err := listen(agent, path, clientConfig.ListenInterval, clientConfig.ListenInterval, params)
-		if err == nil {
+	changedTmp, err := client.configProxy.ListenConfig(params, tenant, clientConfig.AccessKey, clientConfig.SecretKey)
+	if err == nil {
+		changed = changedTmp
+	} else {
+		if _, ok := err.(*nacos_error.NacosError); ok {
 			changed = changedTmp
-			break
 		} else {
-			if _, ok := err.(*nacos_error.NacosError); ok {
-				changed = changedTmp
-				break
-			} else {
-				log.Println("[client.ListenConfig] listen config error:", err.Error())
-			}
+			log.Println("[client.ListenConfig] listen config error:", err.Error())
 		}
 	}
-
 	if strings.ToLower(strings.Trim(changed, " ")) == "" {
 		log.Println("[client.ListenConfig] no change")
 	} else {
 		log.Print("[client.ListenConfig] config changed:" + changed)
 		client.updateLocalConfig(changed, param)
 	}
-}
-
-func listen(agent http_agent.IHttpAgent, path string,
-	timeoutMs uint64, listenInterval uint64,
-	params map[string]string) (changed string, err error) {
-	header := map[string][]string{
-		"Content-Type":         {"application/x-www-form-urlencoded"},
-		"Long-Pulling-Timeout": {strconv.FormatUint(listenInterval, 10)},
-	}
-	log.Println("[client.ListenConfig] request url:", path, " ;params:", params, " ;header:", header)
-	var response *http.Response
-	response, err = agent.Post(path, header, timeoutMs, params)
-	if err == nil {
-		bytes, errRead := ioutil.ReadAll(response.Body)
-		defer response.Body.Close()
-		if errRead != nil {
-			err = errRead
-		} else {
-			if response.StatusCode == 200 {
-				changed = string(bytes)
-			} else {
-				err = nacos_error.NewNacosError(strconv.Itoa(response.StatusCode), string(bytes), nil)
-			}
-		}
-	}
-	return
 }
 
 func (client *ConfigClient) updateLocalConfig(changed string, param vo.ConfigParam) {
