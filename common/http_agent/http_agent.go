@@ -2,9 +2,9 @@ package http_agent
 
 import (
 	"github.com/go-errors/errors"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
@@ -41,20 +41,20 @@ func (agent *HttpAgent) RequestOnlyResult(method string, path string, header htt
 		response, err = agent.Delete(path, header, timeoutMs, params)
 		break
 	default:
-		log.Printf("[ERROR]:request method[%s], path[%s],header:[%s],params:[%s], not avaliable method ", method, path, utils.ToJsonString(header), utils.ToJsonString(params))
+		logger.Error.Printf(":request method[%s], path[%s],header:[%s],params:[%s], not avaliable method ", method, path, utils.ToJsonString(header), utils.ToJsonString(params))
 	}
 	if err != nil {
-		log.Printf("[ERROR]:request method[%s],request path[%s],header:[%s],params:[%s],err:%s", method, path, utils.ToJsonString(header), utils.ToJsonString(params), err.Error())
+		logger.Error.Printf(":request method[%s],request path[%s],header:[%s],params:[%s],err:%s", method, path, utils.ToJsonString(header), utils.ToJsonString(params), err.Error())
 		return ""
 	}
 	if response.StatusCode != 200 {
-		log.Printf("[ERROR]:request method[%s],request path[%s],header:[%s],params:[%s],status code error:%d", method, path, utils.ToJsonString(header), utils.ToJsonString(params), response.StatusCode)
+		logger.Error.Printf(":request method[%s],request path[%s],header:[%s],params:[%s],status code error:%d", method, path, utils.ToJsonString(header), utils.ToJsonString(params), response.StatusCode)
 		return ""
 	}
 	bytes, errRead := ioutil.ReadAll(response.Body)
 	defer response.Body.Close()
 	if errRead != nil {
-		log.Printf("[ERROR]:request method[%s],request path[%s],header:[%s],params:[%s],read error:%s", method, path, utils.ToJsonString(header), utils.ToJsonString(params), errRead.Error())
+		logger.Error.Printf(":request method[%s],request path[%s],header:[%s],params:[%s],read error:%s", method, path, utils.ToJsonString(header), utils.ToJsonString(params), errRead.Error())
 		return ""
 	}
 	return string(bytes)
@@ -77,7 +77,7 @@ func (agent *HttpAgent) Request(method string, path string, header http.Header, 
 		return
 	default:
 		err = errors.New("not avaliable method")
-		log.Printf("[ERROR]:request method[%s], path[%s],header:[%s],params:[%s], not avaliable method ", method, path, utils.ToJsonString(header), utils.ToJsonString(params))
+		logger.Error.Printf(":request method[%s], path[%s],header:[%s],params:[%s], not avaliable method ", method, path, utils.ToJsonString(header), utils.ToJsonString(params))
 	}
 	return
 }

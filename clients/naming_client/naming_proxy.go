@@ -6,10 +6,10 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
-	"log"
 	"net/http"
 	"strconv"
 )
@@ -33,7 +33,7 @@ func NewNamingProxy(clientCfg constant.ClientConfig, serverCfgs []constant.Serve
 }
 
 func (proxy *NamingProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) (string, error) {
-	log.Printf("[INFO] register instance namespaceId:<%s>,serviceName:<%s> with instance:<%s> \n", proxy.clientConfig.NamespaceId, serviceName, utils.ToJsonString(instance))
+	logger.Info.Printf(" register instance namespaceId:<%s>,serviceName:<%s> with instance:<%s> \n", proxy.clientConfig.NamespaceId, serviceName, utils.ToJsonString(instance))
 	params := map[string]string{}
 	params["namespaceId"] = proxy.clientConfig.NamespaceId
 	params["serviceName"] = serviceName
@@ -50,7 +50,7 @@ func (proxy *NamingProxy) RegisterInstance(serviceName string, groupName string,
 }
 
 func (proxy *NamingProxy) DeregisterInstance(serviceName string, ip string, port uint64, clusterName string, ephemeral bool) (string, error) {
-	log.Printf("[INFO] deregister instance namespaceId:<%s>,serviceName:<%s> with instance:<%s:%d@%s> \n", proxy.clientConfig.NamespaceId, serviceName, ip, port, clusterName)
+	logger.Info.Printf(" deregister instance namespaceId:<%s>,serviceName:<%s> with instance:<%s:%d@%s> \n", proxy.clientConfig.NamespaceId, serviceName, ip, port, clusterName)
 	params := map[string]string{}
 	params["namespaceId"] = proxy.clientConfig.NamespaceId
 	params["serviceName"] = serviceName
@@ -62,7 +62,7 @@ func (proxy *NamingProxy) DeregisterInstance(serviceName string, ip string, port
 }
 
 func (proxy *NamingProxy) SendBeat(info model.BeatInfo) (int64, error) {
-	log.Printf("[INFO] namespaceId:<%s> sending beat to server:<%s> \n", proxy.clientConfig.NamespaceId, utils.ToJsonString(info))
+	logger.Info.Printf(" namespaceId:<%s> sending beat to server:<%s> \n", proxy.clientConfig.NamespaceId, utils.ToJsonString(info))
 	params := map[string]string{}
 	params["namespaceId"] = proxy.clientConfig.NamespaceId
 	params["serviceName"] = info.ServiceName
@@ -132,13 +132,13 @@ func (proxy *NamingProxy) ServerHealthy() bool {
 	api := constant.SERVICE_BASE_PATH + "/operator/metrics"
 	result, err := proxy.nacosServer.ReqApi(api, map[string]string{}, http.MethodGet)
 	if err != nil {
-		log.Printf("[ERROR]:namespaceId:[%s] sending server healthy failed!,result:%s error:%s", proxy.clientConfig.NamespaceId, result, err.Error())
+		logger.Error.Printf(":namespaceId:[%s] sending server healthy failed!,result:%s error:%s", proxy.clientConfig.NamespaceId, result, err.Error())
 		return false
 	}
 	if result != "" {
 		status, err := jsonparser.GetString([]byte(result), "status")
 		if err != nil {
-			log.Printf("[ERROR]:namespaceId:[%s] sending server healthy failed!,result:%s error:%s", proxy.clientConfig.NamespaceId, result, err.Error())
+			logger.Error.Printf(":namespaceId:[%s] sending server healthy failed!,result:%s error:%s", proxy.clientConfig.NamespaceId, result, err.Error())
 		} else {
 			return status == "UP"
 		}

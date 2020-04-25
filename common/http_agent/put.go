@@ -1,7 +1,7 @@
 package http_agent
 
 import (
-	"log"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"net/http"
 	"strings"
 	"time"
@@ -36,7 +36,7 @@ func put(path string, header http.Header, timeoutMs uint64, params map[string]st
 	request.Header = header
 	resp, errDo := client.Do(request)
 	if errDo != nil {
-		log.Println(errDo)
+		logger.Info.Println(errDo)
 		err = errDo
 	} else {
 		response = resp

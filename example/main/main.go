@@ -3,11 +3,11 @@ package main
 import (
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/example"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-	"log"
 	"time"
 )
 
@@ -49,7 +49,7 @@ func main() {
 		ServiceName: "demo.go",
 		Clusters:    []string{"a"},
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
+			logger.Info.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
 		},
 	}
 	example.ExampleServiceClient_Subscribe(client, param)

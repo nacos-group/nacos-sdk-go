@@ -2,8 +2,8 @@ package naming_client
 
 import (
 	"encoding/json"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/utils"
-	"log"
 	"math/rand"
 	"net"
 	"strconv"
@@ -33,13 +33,13 @@ func NewPushRecevier(hostReactor *HostReactor) *PushReceiver {
 func (us *PushReceiver) tryListen() (*net.UDPConn, bool) {
 	addr, err := net.ResolveUDPAddr("udp", us.host+":"+strconv.Itoa(us.port))
 	if err != nil {
-		log.Printf("[ERROR]: Can't resolve address,err: %s \n", err.Error())
+		logger.Error.Printf(": Can't resolve address,err: %s \n", err.Error())
 		return nil, false
 	}
 
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		log.Printf("Error listening %s:%d,err:%s \n", us.host, us.port, err.Error())
+		logger.Error.Printf("Error listening %s:%d,err:%s \n", us.host, us.port, err.Error())
 		return nil, false
 	}
 
@@ -57,12 +57,12 @@ func (us *PushReceiver) startServer() {
 
 		if ok {
 			conn = conn1
-			log.Println("[INFO] udp server start, port: " + strconv.Itoa(port))
+			logger.Info.Printf(" udp server start, port: " + strconv.Itoa(port))
 			break
 		}
 
 		if !ok && i == 2 {
-			log.Panicf("failed to start udp server after trying 3 times.")
+			logger.Info.Panicf("failed to start udp server after trying 3 times.")
 			//os.Exit(1)  //It is weird dangerous to invoke the os.Exit() as a Middleware.
 		}
 	}
@@ -77,17 +77,17 @@ func (us *PushReceiver) handleClient(conn *net.UDPConn) {
 	data := make([]byte, 4024)
 	n, remoteAddr, err := conn.ReadFromUDP(data)
 	if err != nil {
-		log.Printf("[ERROR]:failed to read UDP msg because of %s \n", err.Error())
+		logger.Error.Printf(":failed to read UDP msg because of %s \n", err.Error())
 		return
 	}
 
 	s := utils.TryDecompressData(data[:n])
-	log.Println("[INFO] receive push: "+s+" from: ", remoteAddr)
+	logger.Info.Printf(" receive push: "+s+" from: ", remoteAddr)
 
 	var pushData PushData
 	err1 := json.Unmarshal([]byte(s), &pushData)
 	if err1 != nil {
-		log.Printf("[ERROR] failed to process push data.err:%s \n", err1.Error())
+		logger.Error.Printf(" failed to process push data.err:%s \n", err1.Error())
 		return
 	}
 	ack := make(map[string]string)

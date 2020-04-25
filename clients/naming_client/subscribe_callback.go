@@ -3,9 +3,9 @@ package naming_client
 import (
 	"errors"
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
-	"log"
 )
 
 type SubscribeCallback struct {
@@ -19,7 +19,7 @@ func NewSubscribeCallback() SubscribeCallback {
 }
 
 func (ed *SubscribeCallback) AddCallbackFuncs(serviceName string, clusters string, callbackFunc *func(services []model.SubscribeService, err error)) {
-	log.Printf("[INFO] adding " + serviceName + " with " + clusters + " to listener map")
+	logger.Info.Printf(" adding " + serviceName + " with " + clusters + " to listener map")
 	key := utils.GetServiceCacheKey(serviceName, clusters)
 	var funcs []*func(services []model.SubscribeService, err error)
 	old, ok := ed.callbackFuncsMap.Get(key)
@@ -31,7 +31,7 @@ func (ed *SubscribeCallback) AddCallbackFuncs(serviceName string, clusters strin
 }
 
 func (ed *SubscribeCallback) RemoveCallbackFuncs(serviceName string, clusters string, callbackFunc *func(services []model.SubscribeService, err error)) {
-	log.Printf("[INFO] removing " + serviceName + " with " + clusters + " to listener map")
+	logger.Info.Printf(" removing " + serviceName + " with " + clusters + " to listener map")
 	key := utils.GetServiceCacheKey(serviceName, clusters)
 	funcs, ok := ed.callbackFuncsMap.Get(key)
 	if ok && funcs != nil {

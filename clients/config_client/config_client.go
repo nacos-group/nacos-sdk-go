@@ -15,7 +15,6 @@ import (
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -69,18 +68,18 @@ func (client *ConfigClient) sync() (clientConfig constant.ClientConfig,
 	serverConfigs []constant.ServerConfig, agent http_agent.IHttpAgent, err error) {
 	clientConfig, err = client.GetClientConfig()
 	if err != nil {
-		log.Println(err, ";do you call client.SetClientConfig()?")
+		logger.Info.Println(err, ";do you call client.SetClientConfig()?")
 	}
 	if err == nil {
 		serverConfigs, err = client.GetServerConfig()
 		if err != nil {
-			log.Println(err, ";do you call client.SetServerConfig()?")
+			logger.Info.Println(err, ";do you call client.SetServerConfig()?")
 		}
 	}
 	if err == nil {
 		agent, err = client.GetHttpAgent()
 		if err != nil {
-			log.Println(err, ";do you call client.SetHttpAgent()?")
+			logger.Info.Println(err, ";do you call client.SetHttpAgent()?")
 		}
 	}
 	return
@@ -125,7 +124,7 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 	content, err = client.configProxy.GetConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
 
 	if err != nil {
-		log.Printf("[ERROR] get config from server error:%s ", err.Error())
+		logger.Error.Printf("[ERROR] get config from server error:%s ", err.Error())
 		if _, ok := err.(*nacos_error.NacosError); ok {
 			nacosErr := err.(*nacos_error.NacosError)
 			if nacosErr.ErrorCode() == "404" {
@@ -138,7 +137,7 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 		}
 		content, err = cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
 		if err != nil {
-			log.Printf("[ERROR] get config from cache  error:%s ", err.Error())
+			logger.Error.Printf("[ERROR] get config from cache  error:%s ", err.Error())
 			return "", errors.New("read config from both server and cache fail")
 		}
 
@@ -221,11 +220,11 @@ func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
 	// 检查&拼接监听参数
 	client.mutex.Lock()
 	if len(param.DataId) <= 0 {
-		log.Fatalf("[client.ListenConfig] DataId can not be empty")
+		logger.Info.Fatalf("[client.ListenConfig] DataId can not be empty")
 		return
 	}
 	if len(param.Group) <= 0 {
-		log.Fatalf("[client.ListenConfig] Group can not be empty")
+		logger.Info.Fatalf("[client.ListenConfig] Group can not be empty")
 		return
 	}
 	var tenant string
@@ -269,15 +268,15 @@ func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
 				changed = changedTmp
 				break
 			} else {
-				log.Println("[client.ListenConfig] listen config error:", err.Error())
+				logger.Info.Println("[client.ListenConfig] listen config error:", err.Error())
 			}
 		}
 	}
 
 	if strings.ToLower(strings.Trim(changed, " ")) == "" {
-		log.Println("[client.ListenConfig] no change")
+		logger.Info.Println("[client.ListenConfig] no change")
 	} else {
-		log.Print("[client.ListenConfig] config changed:" + changed)
+		logger.Info.Print("[client.ListenConfig] config changed:" + changed)
 		client.updateLocalConfig(changed, param)
 	}
 }
@@ -289,7 +288,7 @@ func listen(agent http_agent.IHttpAgent, path string,
 		"Content-Type":         {"application/x-www-form-urlencoded"},
 		"Long-Pulling-Timeout": {strconv.FormatUint(listenInterval, 10)},
 	}
-	log.Println("[client.ListenConfig] request url:", path, " ;params:", params, " ;header:", header)
+	logger.Info.Println("[client.ListenConfig] request url:", path, " ;params:", params, " ;header:", header)
 	var response *http.Response
 	response, err = agent.Post(path, header, timeoutMs, params)
 	if err == nil {
@@ -320,7 +319,7 @@ func (client *ConfigClient) updateLocalConfig(changed string, param vo.ConfigPar
 				Group:  attrs[1],
 			})
 			if err != nil {
-				log.Println("[client.updateLocalConfig] update config failed:", err.Error())
+				logger.Info.Println("[client.updateLocalConfig] update config failed:", err.Error())
 			} else {
 				client.putLocalConfig(vo.ConfigParam{
 					DataId:  attrs[0],
@@ -339,7 +338,7 @@ func (client *ConfigClient) updateLocalConfig(changed string, param vo.ConfigPar
 				Group:  attrs[1],
 			})
 			if err != nil {
-				log.Println("[client.updateLocalConfig] update config failed:", err.Error())
+				logger.Info.Println("[client.updateLocalConfig] update config failed:", err.Error())
 			} else {
 				client.putLocalConfig(vo.ConfigParam{
 					DataId:  attrs[0],
@@ -353,8 +352,8 @@ func (client *ConfigClient) updateLocalConfig(changed string, param vo.ConfigPar
 			}
 		}
 	}
-	log.Println("[client.updateLocalConfig] update config complete")
-	log.Println("[client.localConfig] ", client.localConfigs)
+	logger.Info.Println("[client.updateLocalConfig] update config complete")
+	logger.Info.Println("[client.localConfig] ", client.localConfigs)
 }
 
 func (client *ConfigClient) putLocalConfig(config vo.ConfigParam) {
@@ -374,7 +373,7 @@ func (client *ConfigClient) putLocalConfig(config vo.ConfigParam) {
 			client.localConfigs = append(client.localConfigs, config)
 		}
 	}
-	log.Println("[client.putLocalConfig] putLocalConfig success")
+	logger.Info.Println("[client.putLocalConfig] putLocalConfig success")
 }
 
 func (client *ConfigClient) buildBasePath(serverConfig constant.ServerConfig) (basePath string) {
@@ -400,7 +399,7 @@ func (client *ConfigClient) searchConfigInnter(param vo.SearchConfigParm) (*mode
 	clientConfig, _ := client.GetClientConfig()
 	configItems, err := client.configProxy.SearchConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
 	if err != nil {
-		log.Printf("[ERROR] search config from server error:%s ", err.Error())
+		logger.Error.Printf(" search config from server error:%s ", err.Error())
 		if _, ok := err.(*nacos_error.NacosError); ok {
 			nacosErr := err.(*nacos_error.NacosError)
 			if nacosErr.ErrorCode() == "404" {

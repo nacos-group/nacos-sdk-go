@@ -5,8 +5,8 @@ import (
 	"errors"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -61,7 +61,7 @@ func (ac *AuthClient) AutoRefresh() {
 		for range ticker.C {
 			_, err := ac.Login()
 			if err != nil {
-				log.Printf("[ERROR]: login has error %s", err)
+				logger.Error.Printf(": login has error %s", err)
 			}
 		}
 	}()

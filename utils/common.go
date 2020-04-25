@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -36,7 +36,7 @@ func TryDecompressData(data []byte) string {
 	reader, err := gzip.NewReader(bytes.NewReader(data))
 
 	if err != nil {
-		log.Printf("[ERROR]:failed to decompress gzip data,err:%s \n", err.Error())
+		logger.Error.Printf(":failed to decompress gzip data,err:%s \n", err.Error())
 		return ""
 	}
 
@@ -44,7 +44,7 @@ func TryDecompressData(data []byte) string {
 	bs, err1 := ioutil.ReadAll(reader)
 
 	if err1 != nil {
-		log.Printf("[ERROR]:failed to decompress gzip data,err:%s \n", err1.Error())
+		logger.Error.Printf(":failed to decompress gzip data,err:%s \n", err1.Error())
 		return ""
 	}
 
@@ -63,11 +63,11 @@ func JsonToService(result string) *model.Service {
 	var service model.Service
 	err := json.Unmarshal([]byte(result), &service)
 	if err != nil {
-		log.Printf("[ERROR]:failed to unmarshal json string:%s err:%v \n", result, err.Error())
+		logger.Error.Printf(":failed to unmarshal json string:%s err:%v \n", result, err.Error())
 		return nil
 	}
 	if len(service.Hosts) == 0 {
-		log.Printf("[WARN]:instance list is empty,json string:%s \n", result)
+		logger.Warning.Printf(":instance list is empty,json string:%s \n", result)
 	}
 	return &service
 
@@ -109,14 +109,14 @@ func LocalIP() string {
 	if localIP == "" {
 		addrs, err := net.InterfaceAddrs()
 		if err != nil {
-			log.Printf("[ERROR]:get InterfaceAddres failed,err:%s \n", err.Error())
+			logger.Error.Printf(":get InterfaceAddres failed,err:%s \n", err.Error())
 			return ""
 		}
 		for _, address := range addrs {
 			if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 				if ipnet.IP.To4() != nil {
 					localIP = ipnet.IP.String()
-					log.Printf("InitLocalIp, LocalIp:%s \n", localIP)
+					logger.Info.Printf("InitLocalIp, LocalIp:%s \n", localIP)
 					break
 				}
 			}
@@ -130,7 +130,7 @@ func GetDurationWithDefault(metadata map[string]string, key string, defaultDurat
 	if ok {
 		value, err := strconv.ParseInt(data, 10, 64)
 		if err != nil {
-			log.Printf("key:%s is not a number \n", key)
+			logger.Info.Printf("key:%s is not a number \n", key)
 			return defaultDuration
 		}
 		return time.Duration(value)

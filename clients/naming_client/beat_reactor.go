@@ -3,10 +3,10 @@ package naming_client
 import (
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	nsema "github.com/toolkits/concurrent/semaphore"
-	"log"
 	"strconv"
 	"time"
 )
@@ -41,14 +41,14 @@ func buildKey(serviceName string, ip string, port uint64) string {
 }
 
 func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo model.BeatInfo) {
-	log.Printf("[INFO] adding beat: <%s> to beat map.\n", utils.ToJsonString(beatInfo))
+	logger.Info.Printf(" adding beat: <%s> to beat map.\n", utils.ToJsonString(beatInfo))
 	k := buildKey(serviceName, beatInfo.Ip, beatInfo.Port)
 	br.beatMap.Set(k, &beatInfo)
 	go br.sendInstanceBeat(k, &beatInfo)
 }
 
 func (br *BeatReactor) RemoveBeatInfo(serviceName string, ip string, port uint64) {
-	log.Printf("[INFO] remove beat: %s@%s:%d from beat map.\n", serviceName, ip, port)
+	logger.Info.Printf(" remove beat: %s@%s:%d from beat map.\n", serviceName, ip, port)
 	k := buildKey(serviceName, ip, port)
 	data, exist := br.beatMap.Get(k)
 	if exist {
@@ -63,7 +63,7 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 		br.beatThreadSemaphore.Acquire()
 		//如果当前实例注销，则进行停止心跳
 		if beatInfo.Stopped {
-			log.Printf("[INFO] intance[%s] stop heartBeating\n", k)
+			logger.Info.Printf(" intance[%s] stop heartBeating\n", k)
 			br.beatThreadSemaphore.Release()
 			return
 		}
@@ -71,7 +71,7 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 		//进行心跳通信
 		beatInterval, err := br.serviceProxy.SendBeat(*beatInfo)
 		if err != nil {
-			log.Printf("[ERROR]:beat to server return error:%s \n", err.Error())
+			logger.Error.Printf(":beat to server return error:%s \n", err.Error())
 			br.beatThreadSemaphore.Release()
 			t := time.NewTimer(beatInfo.Period)
 			<-t.C

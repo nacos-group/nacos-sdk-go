@@ -2,11 +2,11 @@ package naming_client
 
 import (
 	"fmt"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
-	"log"
 	"strings"
 	"testing"
 	"time"
@@ -100,7 +100,7 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 	assert.Equal(t, len(ed.callbackFuncsMap.Items()), 1, "callback funcs map length should be 2")
 
 	for k, v := range ed.callbackFuncsMap.Items() {
-		log.Printf("key:%s,%d", k, len(v.([]*func(services []model.SubscribeService, err error))))
+		logger.Info.Printf("key:%s,%d", k, len(v.([]*func(services []model.SubscribeService, err error))))
 	}
 
 	ed.RemoveCallbackFuncs(utils.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
@@ -143,7 +143,7 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 		Clusters:    []string{"default"},
 		GroupName:   "public",
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			log.Printf("func1:%s \n", utils.ToJsonString(services))
+			logger.Info.Printf("func1:%s \n", utils.ToJsonString(services))
 		},
 	}
 	ed.AddCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
@@ -153,7 +153,7 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 		Clusters:    []string{"default"},
 		GroupName:   "public",
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			log.Printf("func2:%s \n", utils.ToJsonString(services))
+			logger.Info.Printf("func2:%s \n", utils.ToJsonString(services))
 
 		},
 	}
