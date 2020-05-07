@@ -80,7 +80,11 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 	//headers["Accept-Encoding"] = []string{"gzip,deflate,sdch"}
 	headers["Connection"] = []string{"Keep-Alive"}
 	headers["exConfigInfo"] = []string{"true"}
-	headers["RequestId"] = []string{uuid.NewV4().String()}
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return
+	}
+	headers["RequestId"] = []string{uid.String()}
 	headers["Request-Module"] = []string{"Naming"}
 	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=utf-8"}
 	headers["Spas-AccessKey"] = []string{newHeaders["accessKey"]}
@@ -119,7 +123,11 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 	headers["User-Agent"] = []string{constant.CLIENT_VERSION}
 	//headers["Accept-Encoding"] = []string{"gzip,deflate,sdch"}
 	headers["Connection"] = []string{"Keep-Alive"}
-	headers["RequestId"] = []string{uuid.NewV4().String()}
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return
+	}
+	headers["RequestId"] = []string{uid.String()}
 	headers["Request-Module"] = []string{"Naming"}
 	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=utf-8"}
 
