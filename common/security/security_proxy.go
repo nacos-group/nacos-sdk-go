@@ -56,7 +56,8 @@ func (ac *AuthClient) AutoRefresh() {
 	}
 
 	go func() {
-		ticker := time.NewTicker(time.Millisecond * 5)
+		nextRefreshSecond := time.Duration(ac.tokenTtl - ac.tokenRefreshWindow)
+		ticker := time.NewTicker(time.Second * nextRefreshSecond)
 
 		for range ticker.C {
 			_, err := ac.Login()
@@ -138,7 +139,7 @@ func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 		if val, ok := result[constant.KEY_ACCESS_TOKEN]; ok {
 			ac.accessToken.Store(val)
 			ac.tokenTtl = int64(result[constant.KEY_TOKEN_TTL].(float64))
-			ac.lastRefreshTime = ac.tokenTtl / 10
+			ac.tokenRefreshWindow = ac.tokenTtl / 10
 		}
 	}
 	return true, nil
