@@ -12,6 +12,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"sort"
 	"strings"
 	"time"
 )
@@ -23,6 +24,12 @@ type NamingClient struct {
 	subCallback  SubscribeCallback
 	beatReactor  BeatReactor
 	indexMap     cache.ConcurrentMap
+}
+
+type Chooser struct {
+	data   []model.Instance
+	totals []int
+	max    int
 }
 
 func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
@@ -172,38 +179,13 @@ func (sc *NamingClient) selectOneHealthyInstances(service model.Service) (*model
 		return nil, errors.New("instance list is empty!")
 	}
 	hosts := service.Hosts
-	var result []model.Instance
-	mw := 0
-	for _, host := range hosts {
-		if host.Healthy && host.Enable && host.Weight > 0 {
-			cw := int(math.Ceil(host.Weight))
-			if cw > mw {
-				mw = cw
-			}
-			result = append(result, host)
-		}
-	}
-	if len(result) == 0 {
+	if len(hosts) == 0 {
 		return nil, errors.New("healthy instance list is empty!")
 	}
 
-	randomInstances := random(result, mw)
-	key := utils.GetServiceCacheKey(service.Name, service.Clusters)
-	i, indexOk := sc.indexMap.Get(key)
-	var index int
-
-	if !indexOk {
-		index = rand.Intn(len(randomInstances))
-	} else {
-		index = i.(int)
-		index += 1
-		if index >= len(randomInstances) {
-			index = index % len(randomInstances)
-		}
-	}
-
-	sc.indexMap.Set(key, index)
-	return &randomInstances[index], nil
+	chooser := newChooser(hosts)
+	namingClient := chooser.pick().(model.Instance)
+	return &namingClient, nil
 }
 
 func random(instances []model.Instance, mw int) []model.Instance {
@@ -220,6 +202,26 @@ func random(instances []model.Instance, mw int) []model.Instance {
 		}
 	}
 	return result
+}
+
+// NewChooser initializes a new Chooser for picking from the provided Choices.
+func newChooser(instances []model.Instance) Chooser {
+	sort.Slice(instances, func(i, j int) bool {
+		return instances[i].Weight < instances[j].Weight
+	})
+	totals := make([]int, len(instances))
+	runningTotal := 0
+	for i, c := range instances {
+		runningTotal += int(c.Weight)
+		totals[i] = runningTotal
+	}
+	return Chooser{data: instances, totals: totals, max: runningTotal}
+}
+
+func (chs Chooser) pick() interface{} {
+	r := rand.Intn(chs.max) + 1
+	i := sort.SearchInts(chs.totals, r)
+	return chs.data[i]
 }
 
 // 服务监听
