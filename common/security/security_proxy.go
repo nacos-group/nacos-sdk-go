@@ -60,7 +60,7 @@ func (ac *AuthClient) AutoRefresh() {
 
 		for {
 			select {
-			case <-t.C:
+			case <-timer.C:
 				_, err := ac.Login()
 				if err != nil {
 					log.Printf("[ERROR]: login has error %s", err)
