@@ -56,13 +56,16 @@ func (ac *AuthClient) AutoRefresh() {
 	}
 
 	go func() {
-		nextRefreshSecond := time.Duration(ac.tokenTtl - ac.tokenRefreshWindow)
-		ticker := time.NewTicker(time.Second * nextRefreshSecond)
+		timer := time.NewTimer(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
 
-		for range ticker.C {
-			_, err := ac.Login()
-			if err != nil {
-				log.Printf("[ERROR]: login has error %s", err)
+		for {
+			select {
+			case <-t.C:
+				_, err := ac.Login()
+				if err != nil {
+					log.Printf("[ERROR]: login has error %s", err)
+				}
+				timer.Reset(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
 			}
 		}
 	}()
