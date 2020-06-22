@@ -179,11 +179,22 @@ func (sc *NamingClient) selectOneHealthyInstances(service model.Service) (*model
 		return nil, errors.New("instance list is empty!")
 	}
 	hosts := service.Hosts
-	if len(hosts) == 0 {
+	var result []model.Instance
+	mw := 0
+	for _, host := range hosts {
+		if host.Healthy && host.Enable && host.Weight > 0 {
+			cw := int(math.Ceil(host.Weight))
+			if cw > mw {
+				mw = cw
+			}
+			result = append(result, host)
+		}
+	}
+	if len(result) == 0 {
 		return nil, errors.New("healthy instance list is empty!")
 	}
 
-	chooser := newChooser(hosts)
+	chooser := newChooser(result)
 	namingClient := chooser.pick().(model.Instance)
 	return &namingClient, nil
 }
