@@ -195,7 +195,7 @@ func (sc *NamingClient) selectOneHealthyInstances(service model.Service) (*model
 	}
 
 	chooser := newChooser(result)
-	namingClient := chooser.pick().(model.Instance)
+	namingClient := chooser.pick()
 	return &namingClient, nil
 }
 
@@ -214,12 +214,23 @@ func random(instances []model.Instance, mw int) []model.Instance {
 	}
 	return result
 }
+type instance []model.Instance
+
+func (a instance) Len() int {
+	return len(a)
+}
+
+func (a instance) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a instance) Less(i, j int) bool {
+	return a[i].Weight < a[j].Weight
+}
 
 // NewChooser initializes a new Chooser for picking from the provided Choices.
 func newChooser(instances []model.Instance) Chooser {
-	sort.Slice(instances, func(i, j int) bool {
-		return instances[i].Weight < instances[j].Weight
-	})
+	sort.Sort(instance(instances))
 	totals := make([]int, len(instances))
 	runningTotal := 0
 	for i, c := range instances {
@@ -229,7 +240,7 @@ func newChooser(instances []model.Instance) Chooser {
 	return Chooser{data: instances, totals: totals, max: runningTotal}
 }
 
-func (chs Chooser) pick() interface{} {
+func (chs Chooser) pick() model.Instance {
 	r := rand.Intn(chs.max) + 1
 	i := sort.SearchInts(chs.totals, r)
 	return chs.data[i]
