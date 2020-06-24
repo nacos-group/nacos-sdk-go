@@ -19,4 +19,5 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/tebeka/strftime v0.1.3 // indirect
 	github.com/toolkits/concurrent v0.0.0-20150624120057-a4371d70e3e3
+	github.com/valyala/fastrand v1.0.0
 )
