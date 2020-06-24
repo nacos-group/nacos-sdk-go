@@ -9,11 +9,12 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/pkg/errors"
+	"github.com/valyala/fastrand"
 	"math"
-	"math/rand"
 	"os"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -227,7 +228,6 @@ func (a instance) Swap(i, j int) {
 func (a instance) Less(i, j int) bool {
 	return a[i].Weight < a[j].Weight
 }
-
 // NewChooser initializes a new Chooser for picking from the provided Choices.
 func newChooser(instances []model.Instance) Chooser {
 	sort.Sort(instance(instances))
@@ -241,8 +241,8 @@ func newChooser(instances []model.Instance) Chooser {
 }
 
 func (chs Chooser) pick() model.Instance {
-	r := rand.Intn(chs.max) + 1
-	i := sort.SearchInts(chs.totals, r)
+	r := fastrand.Uint32n(uint32(chs.max))+1
+	i := sort.SearchInts(chs.totals, int(r))
 	return chs.data[i]
 }
 
