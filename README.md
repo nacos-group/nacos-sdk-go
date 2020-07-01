@@ -11,9 +11,9 @@ constant.ClientConfig{
     ListenInterval: 30 * 1000, //监听间隔时间，单位毫秒（仅在ConfigClient中有效）
     BeatInterval:   5 * 1000, //心跳间隔时间，单位毫秒（仅在ServiceClient中有效）
     NamespaceId:       "public", //nacos命名空间
-    Endpoint:          "" //获取nacos节点ip的服务地址
+    Endpoint:          "", //获取nacos节点ip的服务地址
     CacheDir:         "/data/nacos/cache", //缓存目录
-    LogDIr:         "/data/nacos/log", //日志目录
+    LogDir:         "/data/nacos/log", //日志目录
     UpdateThreadNum:   20, //更新服务的线程数
     NotLoadCacheAtStart: true, //在启动时不读取本地缓存数据，true--不读取，false--读取
     UpdateCacheWhenEmpty: true, //当服务列表为空时是否更新本地缓存，true--更新,false--不更新
