@@ -585,8 +585,7 @@ func Test_AddConfigToListen(t *testing.T) {
 	assert.Equal(t, resultConfigs, client.localConfigs)
 }
 
-// ListenConfig
-
+// CancelListenConfig
 func TestCancelListenConfig(t *testing.T) {
 	client := cretateConfigClientTest()
 	var err error
