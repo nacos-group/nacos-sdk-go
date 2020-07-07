@@ -10,12 +10,13 @@ package vo
 **/
 
 type ConfigParam struct {
-	DataId   string `param:"dataId"`
-	Group    string `param:"group"`
-	Content  string `param:"content"`
-	Tag      string `param:"tag"`
-	AppName  string `param:"appName"`
-	OnChange func(namespace, group, dataId, data string)
+	DataId    string `param:"dataId"`
+	Group     string `param:"group"`
+	Content   string `param:"content"`
+	Tag       string `param:"tag"`
+	AppName   string `param:"appName"`
+	OnChange  func(namespace, group, dataId, data string)
+	CloseChan chan struct{}
 }
 
 type SearchConfigParm struct {
