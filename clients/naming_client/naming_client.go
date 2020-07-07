@@ -70,6 +70,9 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
+	if param.Metadata == nil {
+		param.Metadata = make(map[string]string)
+	}
 	instance := model.Instance{
 		Ip:          param.Ip,
 		Port:        param.Port,

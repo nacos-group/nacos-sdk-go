@@ -56,12 +56,16 @@ func (ac *AuthClient) AutoRefresh() {
 	}
 
 	go func() {
-		ticker := time.NewTicker(time.Millisecond * 5)
+		timer := time.NewTimer(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
 
-		for range ticker.C {
-			_, err := ac.Login()
-			if err != nil {
-				log.Printf("[ERROR]: login has error %s", err)
+		for {
+			select {
+			case <-timer.C:
+				_, err := ac.Login()
+				if err != nil {
+					log.Printf("[ERROR]: login has error %s", err)
+				}
+				timer.Reset(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
 			}
 		}
 	}()
@@ -138,7 +142,7 @@ func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 		if val, ok := result[constant.KEY_ACCESS_TOKEN]; ok {
 			ac.accessToken.Store(val)
 			ac.tokenTtl = int64(result[constant.KEY_TOKEN_TTL].(float64))
-			ac.lastRefreshTime = ac.tokenTtl / 10
+			ac.tokenRefreshWindow = ac.tokenTtl / 10
 		}
 	}
 	return true, nil
