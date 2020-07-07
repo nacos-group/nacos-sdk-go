@@ -58,7 +58,6 @@ func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
 		}
 		config.kmsClient = kmsClient
 	}
-
 	return config, err
 }
 
@@ -195,18 +194,30 @@ func (client *ConfigClient) AddConfigToListen(params []vo.ConfigParam) (err erro
 	return
 }
 
-func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
+func (client *ConfigClient) CancelListenConfig(param *vo.ConfigParam) error {
+	param.CloseChan <- struct{}{}
+	log.Printf("Cancel listen config DataId:%s Group:%s", param.DataId, param.Group)
+	return nil
+}
+
+func (client *ConfigClient) ListenConfig(param *vo.ConfigParam) (err error) {
 	go func() {
 		for {
-			clientConfig, _ := client.GetClientConfig()
-			client.listenConfigTask(clientConfig, param)
+			select {
+			case <-param.CloseChan:
+				return
+			default:
+				clientConfig, _ := client.GetClientConfig()
+				client.listenConfigTask(clientConfig, param)
+			}
+
 		}
 	}()
 
 	return nil
 }
 
-func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig, param vo.ConfigParam) {
+func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig, param *vo.ConfigParam) {
 	var listeningConfigs string
 	// 检查&拼接监听参数
 	client.mutex.Lock()
@@ -265,7 +276,7 @@ func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
 	}
 }
 
-func (client *ConfigClient) updateLocalConfig(changed string, param vo.ConfigParam) {
+func (client *ConfigClient) updateLocalConfig(changed string, param *vo.ConfigParam) {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
 	changedConfigs := strings.Split(changed, "%01")
