@@ -9,12 +9,10 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/pkg/errors"
-	"github.com/valyala/fastrand"
 	"math"
+	"math/rand"
 	"os"
-	"sort"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -25,12 +23,6 @@ type NamingClient struct {
 	subCallback  SubscribeCallback
 	beatReactor  BeatReactor
 	indexMap     cache.ConcurrentMap
-}
-
-type Chooser struct {
-	data   []model.Instance
-	totals []int
-	max    int
 }
 
 func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
@@ -69,6 +61,9 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, error) {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
+	}
+	if param.Metadata == nil {
+		param.Metadata = make(map[string]string)
 	}
 	instance := model.Instance{
 		Ip:          param.Ip,
@@ -195,9 +190,23 @@ func (sc *NamingClient) selectOneHealthyInstances(service model.Service) (*model
 		return nil, errors.New("healthy instance list is empty!")
 	}
 
-	chooser := newChooser(result)
-	namingClient := chooser.pick()
-	return &namingClient, nil
+	randomInstances := random(result, mw)
+	key := utils.GetServiceCacheKey(service.Name, service.Clusters)
+	i, indexOk := sc.indexMap.Get(key)
+	var index int
+
+	if !indexOk {
+		index = rand.Intn(len(randomInstances))
+	} else {
+		index = i.(int)
+		index += 1
+		if index >= len(randomInstances) {
+			index = index % len(randomInstances)
+		}
+	}
+
+	sc.indexMap.Set(key, index)
+	return &randomInstances[index], nil
 }
 
 func random(instances []model.Instance, mw int) []model.Instance {
@@ -214,36 +223,6 @@ func random(instances []model.Instance, mw int) []model.Instance {
 		}
 	}
 	return result
-}
-type instance []model.Instance
-
-func (a instance) Len() int {
-	return len(a)
-}
-
-func (a instance) Swap(i, j int) {
-	a[i], a[j] = a[j], a[i]
-}
-
-func (a instance) Less(i, j int) bool {
-	return a[i].Weight < a[j].Weight
-}
-// NewChooser initializes a new Chooser for picking from the provided Choices.
-func newChooser(instances []model.Instance) Chooser {
-	sort.Sort(instance(instances))
-	totals := make([]int, len(instances))
-	runningTotal := 0
-	for i, c := range instances {
-		runningTotal += int(c.Weight)
-		totals[i] = runningTotal
-	}
-	return Chooser{data: instances, totals: totals, max: runningTotal}
-}
-
-func (chs Chooser) pick() model.Instance {
-	r := fastrand.Uint32n(uint32(chs.max))+1
-	i := sort.SearchInts(chs.totals, int(r))
-	return chs.data[i]
 }
 
 // 服务监听
