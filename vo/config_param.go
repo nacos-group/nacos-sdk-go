@@ -16,7 +16,7 @@ type ConfigParam struct {
 	Tag       string `param:"tag"`
 	AppName   string `param:"appName"`
 	OnChange  func(namespace, group, dataId, data string)
-	CloseChan chan struct{}
+	ListenCloseChan chan struct{}
 }
 
 type SearchConfigParm struct {

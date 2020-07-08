@@ -598,7 +598,7 @@ func TestCancelListenConfig(t *testing.T) {
 			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
 			context = data
 		},
-		CloseChan: make(chan struct{}, 1),
+		ListenCloseChan: make(chan struct{}, 1),
 	}
 
 	listenConfigParam1 := vo.ConfigParam{
@@ -608,7 +608,7 @@ func TestCancelListenConfig(t *testing.T) {
 			fmt.Println("group1:" + group + ", dataId1:" + dataId + ", data:" + data)
 			context1 = data
 		},
-		CloseChan: make(chan struct{}, 1),
+		ListenCloseChan: make(chan struct{}, 1),
 	}
 	go func() {
 		err = client.ListenConfig(&listenConfigParam)

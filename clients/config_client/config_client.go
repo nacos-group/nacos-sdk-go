@@ -195,7 +195,7 @@ func (client *ConfigClient) AddConfigToListen(params []vo.ConfigParam) (err erro
 }
 
 func (client *ConfigClient) CancelListenConfig(param *vo.ConfigParam) error {
-	param.CloseChan <- struct{}{}
+	param.ListenCloseChan <- struct{}{}
 	log.Printf("Cancel listen config DataId:%s Group:%s", param.DataId, param.Group)
 	return nil
 }
@@ -204,7 +204,7 @@ func (client *ConfigClient) ListenConfig(param *vo.ConfigParam) (err error) {
 	go func() {
 		for {
 			select {
-			case <-param.CloseChan:
+			case <-param.ListenCloseChan:
 				return
 			default:
 				clientConfig, _ := client.GetClientConfig()
