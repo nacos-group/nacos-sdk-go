@@ -12,6 +12,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
 	"net/http"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -582,4 +583,63 @@ func Test_AddConfigToListen(t *testing.T) {
 	err := client.AddConfigToListen(addConfigs)
 	assert.Nil(t, err)
 	assert.Equal(t, resultConfigs, client.localConfigs)
+}
+
+// CancelListenConfig
+func TestCancelListenConfig(t *testing.T) {
+	client := cretateConfigClientTest()
+	var err error
+	var success bool
+	var context,context1 string
+	listenConfigParam := vo.ConfigParam{
+		DataId: "dataId",
+		Group:  "group",
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+			context = data
+		},
+		ListenCloseChan: make(chan struct{}, 1),
+	}
+
+	listenConfigParam1 := vo.ConfigParam{
+		DataId: "dataId1",
+		Group:  "group1",
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Println("group1:" + group + ", dataId1:" + dataId + ", data:" + data)
+			context1 = data
+		},
+		ListenCloseChan: make(chan struct{}, 1),
+	}
+	go func() {
+		err = client.ListenConfig(listenConfigParam)
+		assert.Nil(t, err)
+	}()
+
+	go func() {
+		err = client.ListenConfig(listenConfigParam1)
+		assert.Nil(t, err)
+	}()
+
+	fmt.Println("Start listening")
+	for i := 1; i <= 5; i++ {
+		time.Sleep(2 * time.Second)
+		success, err = client.PublishConfig(vo.ConfigParam{
+			DataId:  "dataId",
+			Group:   "group",
+			Content: "abcd" + strconv.Itoa(i)})
+
+		success, err = client.PublishConfig(vo.ConfigParam{
+			DataId:  "dataId1",
+			Group:   "group1",
+			Content: "abcd" + strconv.Itoa(i)})
+		if i == 3 {
+			client.CancelListenConfig(&listenConfigParam)
+			fmt.Println("Cancel listen config")
+		}
+		assert.Nil(t, err)
+		assert.Equal(t, true, success)
+	}
+	time.Sleep(2 * time.Second)
+	assert.Equal(t,"abcd3",context)
+	assert.Equal(t,"abcd5",context1)
 }
