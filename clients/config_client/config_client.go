@@ -200,7 +200,7 @@ func (client *ConfigClient) CancelListenConfig(param *vo.ConfigParam) error {
 	return nil
 }
 
-func (client *ConfigClient) ListenConfig(param *vo.ConfigParam) (err error) {
+func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	go func() {
 		for {
 			select {
@@ -217,7 +217,7 @@ func (client *ConfigClient) ListenConfig(param *vo.ConfigParam) (err error) {
 	return nil
 }
 
-func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig, param *vo.ConfigParam) {
+func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig, param vo.ConfigParam) {
 	var listeningConfigs string
 	// 检查&拼接监听参数
 	client.mutex.Lock()
@@ -276,7 +276,7 @@ func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
 	}
 }
 
-func (client *ConfigClient) updateLocalConfig(changed string, param *vo.ConfigParam) {
+func (client *ConfigClient) updateLocalConfig(changed string, param vo.ConfigParam) {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
 	changedConfigs := strings.Split(changed, "%01")

@@ -378,7 +378,7 @@ func TestListenConfig(t *testing.T) {
 	var success bool
 	ch := make(chan string)
 	go func() {
-		err = client.ListenConfig(&vo.ConfigParam{
+		err = client.ListenConfig(vo.ConfigParam{
 			DataId: "dataId",
 			Group:  "group",
 			OnChange: func(namespace, group, dataId, data string) {
@@ -426,7 +426,7 @@ func Test_listenConfigTask_NoChange(t *testing.T) {
 	).Times(1).Return(http_agent.FakeHttpResponse(200, ""), nil)
 
 	changeCount := 0
-	client.listenConfigTask(clientConfigTestWithTenant, &vo.ConfigParam{
+	client.listenConfigTask(clientConfigTestWithTenant, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "content",
@@ -468,7 +468,7 @@ func Test_listenConfigTask_Change_WithTenant(t *testing.T) {
 	_ = client.SetClientConfig(clientConfigTestWithTenant)
 	_ = client.SetServerConfig(serverConfigsTest)
 	configData := ""
-	client.listenConfigTask(clientConfigTestWithTenant, &vo.ConfigParam{
+	client.listenConfigTask(clientConfigTestWithTenant, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "content",
@@ -509,7 +509,7 @@ func Test_listenConfigTask_Change_NoTenant(t *testing.T) {
 	_ = client.SetClientConfig(clientConfigTest)
 	_ = client.SetServerConfig(serverConfigsTest)
 	configData := ""
-	client.listenConfigTask(clientConfigTest, &vo.ConfigParam{
+	client.listenConfigTask(clientConfigTest, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "content",
@@ -611,12 +611,12 @@ func TestCancelListenConfig(t *testing.T) {
 		ListenCloseChan: make(chan struct{}, 1),
 	}
 	go func() {
-		err = client.ListenConfig(&listenConfigParam)
+		err = client.ListenConfig(listenConfigParam)
 		assert.Nil(t, err)
 	}()
 
 	go func() {
-		err = client.ListenConfig(&listenConfigParam1)
+		err = client.ListenConfig(listenConfigParam1)
 		assert.Nil(t, err)
 	}()
 	
