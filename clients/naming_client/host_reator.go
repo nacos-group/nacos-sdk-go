@@ -87,13 +87,11 @@ func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string) model
 	key := utils.GetServiceCacheKey(serviceName, clusters)
 	cacheService, ok := hr.serviceInfoMap.Get(key)
 	if !ok {
-		cacheService = model.Service{Name: serviceName, Clusters: clusters}
-		hr.serviceInfoMap.Set(key, cacheService)
 		hr.updateServiceNow(serviceName, clusters)
+		cacheService,ok = hr.serviceInfoMap.Get(key)
 	}
-	newService, _ := hr.serviceInfoMap.Get(key)
 
-	return newService.(model.Service)
+	return cacheService.(model.Service)
 }
 
 func (hr *HostReactor) GetAllServiceInfo(nameSpace string, groupName string, clusters string) []model.Service {
