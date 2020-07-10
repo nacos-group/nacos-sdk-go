@@ -774,24 +774,31 @@ func TestNamingClient_GetAllServicesInfo(t *testing.T) {
 	assert.Equal(t, 0, len(reslut))
 }
 
-func TestNamingClient_ChooserPickResult(t *testing.T) {
+func TestNamingClient_selectOneHealthyInstanceResult(t *testing.T) {
 	services := model.Service(model.Service{
+		Name:            "DEFAULT_GROUP@@DEMO",
 		Hosts: []model.Instance{
 			{
 				Ip:          "127.0.0.1",
 				Weight:      1,
+				Enable:      true,
+				Healthy:     true,
 			},
 			{
 				Ip:          "127.0.0.2",
 				Weight:      9,
+				Enable:      true,
+				Healthy:     true,
 			},
 		}})
-
+	nc := nacos_client.NacosClient{}
+	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+	nc.SetClientConfig(clientConfigTest)
+	client, _ := NewNamingClient(&nc)
 	for i := 0; i < 10; i++ {
-		chooser := newChooser(services.Hosts)
-		fmt.Println(chooser.pick().Ip)
+		i,_:=client.selectOneHealthyInstances(services)
+		fmt.Println(i.Ip)
 	}
-
 }
 
 func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
