@@ -774,6 +774,26 @@ func TestNamingClient_GetAllServicesInfo(t *testing.T) {
 	assert.Equal(t, 0, len(reslut))
 }
 
+func TestNamingClient_ChooserPickResult(t *testing.T) {
+	services := model.Service(model.Service{
+		Hosts: []model.Instance{
+			{
+				Ip:          "127.0.0.1",
+				Weight:      1,
+			},
+			{
+				Ip:          "127.0.0.2",
+				Weight:      9,
+			},
+		}})
+
+	for i := 0; i < 10; i++ {
+		chooser := newChooser(services.Hosts)
+		fmt.Println(chooser.pick().Ip)
+	}
+
+}
+
 func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
 	services := model.Service(model.Service{
 		Name:            "DEFAULT_GROUP@@DEMO",
