@@ -198,8 +198,8 @@ func (sc *NamingClient) selectOneHealthyInstances(service model.Service) (*model
 	}
 
 	chooser := newChooser(result)
-	namingClient := chooser.pick()
-	return &namingClient, nil
+	instance := chooser.pick()
+	return &instance, nil
 }
 
 func random(instances []model.Instance, mw int) []model.Instance {
