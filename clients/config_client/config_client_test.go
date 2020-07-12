@@ -1,7 +1,9 @@
 package config_client
 
 import (
+	"errors"
 	"fmt"
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/golang/mock/gomock"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -10,6 +12,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
 	"net/http"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -27,6 +30,13 @@ var clientConfigTest = constant.ClientConfig{
 	TimeoutMs:      10000,
 	ListenInterval: 20000,
 	BeatInterval:   10000,
+}
+
+var clientConfigTestWithTenant = constant.ClientConfig{
+	TimeoutMs:      10000,
+	ListenInterval: 20000,
+	BeatInterval:   10000,
+	NamespaceId:    "tenant",
 }
 
 var serverConfigTest = constant.ServerConfig{
@@ -83,36 +93,13 @@ func cretateConfigClientHttpTest(mockHttpAgent http_agent.IHttpAgent) ConfigClie
 	return client
 }
 
-// sync
-
-func Test_SyncWithoutClientConfig(t *testing.T) {
-	client := cretateConfigClientTest()
-	_, _, _, err := client.sync()
-	assert.NotNil(t, err)
-}
-
-func Test_SyncWithoutServerConfig(t *testing.T) {
-	client := cretateConfigClientTest()
-	_ = client.SetClientConfig(clientConfigTest)
-	_, _, _, err := client.sync()
-	assert.NotNil(t, err)
-}
-
-func Test_SyncWithoutHttpAgent(t *testing.T) {
-	client := cretateConfigClientTest()
-	_ = client.SetServerConfig(serverConfigsTest)
-	_ = client.SetClientConfig(clientConfigTest)
-	_, _, _, err := client.sync()
-	assert.NotNil(t, err)
-}
-
-func Test_Sync(t *testing.T) {
-	client := cretateConfigClientTest()
-	_ = client.SetClientConfig(clientConfigTest)
-	_ = client.SetServerConfig(serverConfigsTest)
-	_ = client.SetHttpAgent(&httpAgentTest)
-	_, _, _, err := client.sync()
-	assert.Nil(t, err)
+func cretateConfigClientHttpTestWithTenant(mockHttpAgent http_agent.IHttpAgent) ConfigClient {
+	nc := nacos_client.NacosClient{}
+	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+	nc.SetClientConfig(clientConfigTestWithTenant)
+	nc.SetHttpAgent(mockHttpAgent)
+	client, _ := NewConfigClient(&nc)
+	return client
 }
 
 func Test_GetConfig(t *testing.T) {
@@ -144,7 +131,7 @@ func Test_SearchConfig(t *testing.T) {
 		PageSize: 10,
 	})
 	assert.Nil(t, err)
-	assert.Nil(t, configPage)
+	assert.NotEmpty(t, configPage)
 	assert.NotEmpty(t, configPage.PageItems)
 }
 
@@ -387,37 +374,22 @@ func Test_DeleteConfigWithoutGroup(t *testing.T) {
 
 func TestListenConfig(t *testing.T) {
 	client := cretateConfigClientTest()
+	var err error
+	var success bool
+	ch := make(chan string)
+	go func() {
+		err = client.ListenConfig(vo.ConfigParam{
+			DataId: "dataId",
+			Group:  "group",
+			OnChange: func(namespace, group, dataId, data string) {
+				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+				ch <- data
+			},
+		})
+		assert.Nil(t, err)
+	}()
 
-	success, err := client.PublishConfig(vo.ConfigParam{
-		DataId:  "dataId",
-		Group:   "group",
-		Content: "hello world!"})
-
-	assert.Nil(t, err)
-	assert.Equal(t, true, success)
-
-	content := ""
-
-	err = client.ListenConfig(vo.ConfigParam{
-		DataId: "dataId",
-		Group:  "group",
-		OnChange: func(namespace, group, dataId, data string) {
-			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
-			content = data
-		},
-	})
-
-	err = client.ListenConfig(vo.ConfigParam{
-		DataId: "abc",
-		Group:  "DEFAULT_GROUP",
-		OnChange: func(namespace, group, dataId, data string) {
-			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
-		},
-	})
-
-	time.Sleep(5 * time.Second)
-
-	assert.Equal(t, "hello world!", content)
+	time.Sleep(2 * time.Second)
 
 	success, err = client.PublishConfig(vo.ConfigParam{
 		DataId:  "dataId",
@@ -426,10 +398,13 @@ func TestListenConfig(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, true, success)
-
-	time.Sleep(10 * time.Second)
-
-	assert.Equal(t, "abc", content)
+	select {
+	case content := <-ch:
+		fmt.Println("content:" + content)
+	case <-time.After(10 * time.Second):
+		fmt.Println("timeout")
+		assert.Errorf(t, errors.New("timeout"), "timeout")
+	}
 }
 
 // listenConfigTask
@@ -437,20 +412,21 @@ func TestListenConfig(t *testing.T) {
 func Test_listenConfigTask_NoChange(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
+	//var headerTest = map[string][]string{}
 
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	client := cretateConfigClientHttpTest(mockHttpAgent)
-	mockHttpAgent.EXPECT().Post(
+	client := cretateConfigClientHttpTestWithTenant(mockHttpAgent)
+	mockHttpAgent.EXPECT().Request(gomock.Eq(requests.POST),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs/listener"),
-		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
+		gomock.AssignableToTypeOf(http.Header{}),
+		gomock.Eq(clientConfigTestWithTenant.ListenInterval),
 		gomock.Eq(map[string]string{
 			"Listening-Configs": "dataIdgroup9a0364b9e99bb480dd25e1f0284c8555tenant",
 		}),
 	).Times(1).Return(http_agent.FakeHttpResponse(200, ""), nil)
 
 	changeCount := 0
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent, vo.ConfigParam{
+	client.listenConfigTask(clientConfigTestWithTenant, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "content",
@@ -464,21 +440,23 @@ func Test_listenConfigTask_NoChange(t *testing.T) {
 func Test_listenConfigTask_Change_WithTenant(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
-	client := cretateConfigClientTest()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	mockHttpAgent.EXPECT().Post(
+	client := cretateConfigClientHttpTestWithTenant(mockHttpAgent)
+	mockHttpAgent.EXPECT().Request(
+		gomock.Eq(requests.POST),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs/listener"),
-		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
+		gomock.AssignableToTypeOf(http.Header{}),
+		gomock.Eq(clientConfigTestWithTenant.ListenInterval),
 		gomock.Eq(map[string]string{
 			"Listening-Configs": "dataIdgroup9a0364b9e99bb480dd25e1f0284c8555tenant",
 		}),
 	).Times(1).Return(http_agent.FakeHttpResponse(200, "dataId%02group%02tenant%01"), nil)
 
-	mockHttpAgent.EXPECT().Get(
+	mockHttpAgent.EXPECT().Request(
+		gomock.Eq(http.MethodGet),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
 		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
+		gomock.Eq(clientConfigTestWithTenant.TimeoutMs),
 		gomock.Eq(map[string]string{
 			"dataId": "dataId",
 			"group":  "group",
@@ -487,10 +465,10 @@ func Test_listenConfigTask_Change_WithTenant(t *testing.T) {
 	).Times(1).Return(http_agent.FakeHttpResponse(200, "content2"), nil)
 
 	_ = client.SetHttpAgent(mockHttpAgent)
-	_ = client.SetClientConfig(clientConfigTest)
+	_ = client.SetClientConfig(clientConfigTestWithTenant)
 	_ = client.SetServerConfig(serverConfigsTest)
 	configData := ""
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent, vo.ConfigParam{
+	client.listenConfigTask(clientConfigTestWithTenant, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "content",
@@ -504,18 +482,20 @@ func Test_listenConfigTask_Change_WithTenant(t *testing.T) {
 func Test_listenConfigTask_Change_NoTenant(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
-	client := cretateConfigClientTest()
 	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	mockHttpAgent.EXPECT().Post(
+	client := cretateConfigClientHttpTest(mockHttpAgent)
+	mockHttpAgent.EXPECT().Request(
+		gomock.Eq(http.MethodPost),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs/listener"),
 		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
+		gomock.Eq(clientConfigTest.ListenInterval),
 		gomock.Eq(map[string]string{
-			"Listening-Configs": "dataIdgroup9a0364b9e99bb480dd25e1f0284c8555",
+			"Listening-Configs": "dataIdgroup9a0364b9e99bb480dd25e1f0284c8555",
 		}),
 	).Times(1).Return(http_agent.FakeHttpResponse(200, "dataId%02group%01"), nil)
 
-	mockHttpAgent.EXPECT().Get(
+	mockHttpAgent.EXPECT().Request(
+		gomock.Eq(http.MethodGet),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/cs/configs"),
 		gomock.AssignableToTypeOf(headerTest),
 		gomock.Eq(clientConfigTest.TimeoutMs),
@@ -529,7 +509,7 @@ func Test_listenConfigTask_Change_NoTenant(t *testing.T) {
 	_ = client.SetClientConfig(clientConfigTest)
 	_ = client.SetServerConfig(serverConfigsTest)
 	configData := ""
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent, vo.ConfigParam{
+	client.listenConfigTask(clientConfigTest, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "content",
@@ -541,68 +521,6 @@ func Test_listenConfigTask_Change_NoTenant(t *testing.T) {
 	assert.Equal(t, "content2", configData)
 }
 
-func Test_listenConfigTaskWithoutLocalConfigs(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-	client := cretateConfigClientTest()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	client.listenConfigTask(clientConfigTest, serverConfigsTest, mockHttpAgent,
-		vo.ConfigParam{
-			DataId:  "dataId",
-			Group:   "group",
-			Content: "content",
-		})
-	//assert.Equal(t, false, client.listening)
-}
-
-// listen
-
-func Test_listen(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-	client := cretateConfigClientTest()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	path := "http://console.nacos.io:80/nacos/v1/cs/configs/listener"
-	param := map[string]string{
-		"Listening-Configs": "dataIdgroup9a0364b9e99bb480dd25e1f0284c8555tenant",
-	}
-	changedString := "dataId%02group%02tenant%01"
-	mockHttpAgent.EXPECT().Post(
-		gomock.Eq(path),
-		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(param),
-	).Times(1).Return(http_agent.FakeHttpResponse(200, changedString), nil)
-
-	_ = client.SetHttpAgent(mockHttpAgent)
-
-	changed, err := listen(mockHttpAgent, path, clientConfigTest.TimeoutMs, clientConfigTest.ListenInterval, param)
-	assert.Equal(t, changed, changedString)
-	assert.Nil(t, err)
-}
-
-func Test_listenWithErrorResponse_401(t *testing.T) {
-	controller := gomock.NewController(t)
-	defer controller.Finish()
-	client := cretateConfigClientTest()
-	mockHttpAgent := mock.NewMockIHttpAgent(controller)
-	path := "http://console.nacos.io:80/nacos/v1/cs/configs/listener"
-	param := map[string]string{
-		"Listening-Configs": "dataIdgroup9a0364b9e99bb480dd25e1f0284c8555tenant",
-	}
-	mockHttpAgent.EXPECT().Post(
-		gomock.Eq(path),
-		gomock.AssignableToTypeOf(headerTest),
-		gomock.Eq(clientConfigTest.TimeoutMs),
-		gomock.Eq(param),
-	).Times(1).Return(http_agent.FakeHttpResponse(401, "no security"), nil)
-
-	_ = client.SetHttpAgent(mockHttpAgent)
-
-	_, err := listen(mockHttpAgent, path, clientConfigTest.TimeoutMs, clientConfigTest.ListenInterval, param)
-	assert.NotNil(t, err)
-}
-
 // AddConfigToListen
 func Test_AddConfigToListenWithNotListening(t *testing.T) {
 	client := cretateConfigClientTest()
@@ -612,7 +530,7 @@ func Test_AddConfigToListenWithNotListening(t *testing.T) {
 		Content: "content",
 	}}
 	err := client.AddConfigToListen(configs)
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 }
 
 func Test_AddConfigToListenWithRepeatAdd(t *testing.T) {
@@ -665,4 +583,63 @@ func Test_AddConfigToListen(t *testing.T) {
 	err := client.AddConfigToListen(addConfigs)
 	assert.Nil(t, err)
 	assert.Equal(t, resultConfigs, client.localConfigs)
+}
+
+// CancelListenConfig
+func TestCancelListenConfig(t *testing.T) {
+	client := cretateConfigClientTest()
+	var err error
+	var success bool
+	var context,context1 string
+	listenConfigParam := vo.ConfigParam{
+		DataId: "dataId",
+		Group:  "group",
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+			context = data
+		},
+		ListenCloseChan: make(chan struct{}, 1),
+	}
+
+	listenConfigParam1 := vo.ConfigParam{
+		DataId: "dataId1",
+		Group:  "group1",
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Println("group1:" + group + ", dataId1:" + dataId + ", data:" + data)
+			context1 = data
+		},
+		ListenCloseChan: make(chan struct{}, 1),
+	}
+	go func() {
+		err = client.ListenConfig(listenConfigParam)
+		assert.Nil(t, err)
+	}()
+
+	go func() {
+		err = client.ListenConfig(listenConfigParam1)
+		assert.Nil(t, err)
+	}()
+
+	fmt.Println("Start listening")
+	for i := 1; i <= 5; i++ {
+		time.Sleep(2 * time.Second)
+		success, err = client.PublishConfig(vo.ConfigParam{
+			DataId:  "dataId",
+			Group:   "group",
+			Content: "abcd" + strconv.Itoa(i)})
+
+		success, err = client.PublishConfig(vo.ConfigParam{
+			DataId:  "dataId1",
+			Group:   "group1",
+			Content: "abcd" + strconv.Itoa(i)})
+		if i == 3 {
+			client.CancelListenConfig(&listenConfigParam)
+			fmt.Println("Cancel listen config")
+		}
+		assert.Nil(t, err)
+		assert.Equal(t, true, success)
+	}
+	time.Sleep(2 * time.Second)
+	assert.Equal(t,"abcd3",context)
+	assert.Equal(t,"abcd5",context1)
 }
