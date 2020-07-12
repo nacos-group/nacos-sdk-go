@@ -1050,5 +1050,4 @@ func BenchmarkNamingClient_ChooserPick(b *testing.B) {
 		chooser := newChooser(services.Hosts)
 		chooser.pick()
 	}
->>>>>>> develop
 }
