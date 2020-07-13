@@ -30,6 +30,23 @@ type ConfigClient struct {
 	configCacheDir string
 }
 
+var cacheMap cache.ConcurrentMap
+
+type cacheData struct {
+	isInitializing bool
+	dataId         string
+	group          string
+	tenant         string
+	listeners      []*listener
+	md5            string
+	appName        string
+}
+
+type listener struct {
+	listenerFunc func()
+	lastMd5      string
+}
+
 func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
 	config := ConfigClient{}
 	config.INacosClient = nc
@@ -217,6 +234,27 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	}()
 
 	return nil
+}
+
+func (client *ConfigClient) ListenConfig1(param vo.ConfigParam) (err error) {
+	if mResult, ok := cacheMap.Get(getKey(&param)); ok {
+		cData := mResult.(cacheData)
+		cData.isInitializing = true
+	} else {
+		cData := cacheData{
+			isInitializing: true,
+			appName: param.AppName,
+			dataId: param.DataId,
+			group: param.Group,
+
+		}
+	}
+	return nil
+}
+
+func getKey(param *vo.ConfigParam) (key string) {
+	key = param.DataId + "+" + param.Group
+	return
 }
 
 func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig, param vo.ConfigParam) {
