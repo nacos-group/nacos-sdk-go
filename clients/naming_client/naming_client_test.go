@@ -768,10 +768,12 @@ func TestNamingClient_GetAllServicesInfo(t *testing.T) {
 	client, _ := NewNamingClient(&nc)
 	reslut, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
 		GroupName: "DEFAULT_GROUP",
+		PageNo: 1,
+		PageSize: 20,
 	})
-	fmt.Println(len(reslut))
-	assert.Equal(t, err == nil, true)
-	assert.Equal(t, 0, len(reslut))
+	
+	assert.NotNil(t,reslut.Doms)
+	assert.Nil(t, err)
 }
 
 func TestNamingClient_selectOneHealthyInstanceResult(t *testing.T) {

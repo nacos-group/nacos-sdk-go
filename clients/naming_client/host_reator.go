@@ -96,22 +96,22 @@ func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string) model
 	return newService.(model.Service)
 }
 
-func (hr *HostReactor) GetAllServiceInfo(nameSpace string, groupName string, clusters string) []model.Service {
-	result, err := hr.serviceProxy.GetAllServiceInfoList(nameSpace, groupName, clusters)
+func (hr *HostReactor) GetAllServiceInfo(nameSpace, groupName string, pageNo, pageSize uint32) model.ServiceList {
+	data:=model.ServiceList{}
+	result, err := hr.serviceProxy.GetAllServiceInfoList(nameSpace, groupName, pageNo, pageSize)
 	if err != nil {
-		log.Printf("[ERROR]:query all services info return error!nameSpace:%s cluster:%s groupName:%s  err:%s \n", nameSpace, clusters, groupName, err.Error())
-		return nil
+		log.Printf("[ERROR]:query all services info return error!nameSpace:%s groupName:%s pageNo:%d, pageSize:%d err:%s \n", nameSpace, groupName, pageNo, pageSize, err.Error())
+		return data
 	}
 	if result == "" {
-		log.Printf("[ERROR]:query all services info is empty!nameSpace:%s cluster:%s groupName:%s \n", nameSpace, clusters, groupName)
-		return nil
+		log.Printf("[ERROR]:query all services info is empty!nameSpace:%s  groupName:%s pageNo:%d, pageSize:%d \n", nameSpace, groupName, pageNo, pageSize)
+		return data
 	}
 
-	var data []model.Service
 	err = json.Unmarshal([]byte(result), &data)
 	if err != nil {
-		log.Printf("[ERROR]: the result of quering all services info json.Unmarshal error !nameSpace:%s cluster:%s groupName:%s \n", nameSpace, clusters, groupName)
-		return nil
+		log.Printf("[ERROR]: the result of quering all services info json.Unmarshal error !nameSpace:%s groupName:%s pageNo:%d, pageSize:%d \n", nameSpace, groupName, pageNo, pageSize)
+		return data
 	}
 	return data
 }

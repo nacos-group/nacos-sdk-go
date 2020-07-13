@@ -125,15 +125,15 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, err
 	return service, nil
 }
 
-func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) ([]model.Service, error) {
+func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (model.ServiceList, error) {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
 	if param.NameSpace == "" {
 		param.NameSpace = constant.DEFAULT_NAMESPACE_ID
 	}
-	service := sc.hostReactor.GetAllServiceInfo(param.NameSpace, param.GroupName, strings.Join(param.Clusters, ","))
-	return service, nil
+	services := sc.hostReactor.GetAllServiceInfo(param.NameSpace, param.GroupName, param.PageNo,param.PageSize)
+	return services, nil
 }
 
 func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error) {
