@@ -36,7 +36,7 @@ type cacheData struct {
 	isInitializing bool
 	dataId         string
 	group          string
-	tenant         string
+	content        string
 	listeners      []*listener
 	md5            string
 	appName        string
@@ -243,10 +243,10 @@ func (client *ConfigClient) ListenConfig1(param vo.ConfigParam) (err error) {
 	} else {
 		cData := cacheData{
 			isInitializing: true,
-			appName: param.AppName,
-			dataId: param.DataId,
-			group: param.Group,
-
+			appName:        param.AppName,
+			dataId:         param.DataId,
+			group:          param.Group,
+			content:
 		}
 	}
 	return nil
