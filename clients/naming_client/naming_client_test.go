@@ -771,6 +771,7 @@ func TestNamingClient_GetAllServicesInfo(t *testing.T) {
 		PageNo: 1,
 		PageSize: 20,
 	})
+
 	assert.NotNil(t,reslut.Doms)
 	assert.Nil(t, err)
 }
