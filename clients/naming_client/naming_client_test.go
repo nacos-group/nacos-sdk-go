@@ -57,7 +57,7 @@ func Test_RegisterServiceInstance_withoutGroupeName(t *testing.T) {
 			"weight":      "0",
 			"enable":      "false",
 			"healthy":     "false",
-			"metadata":    "null",
+			"metadata":    "{}",
 			"ephemeral":   "true",
 		})).Times(1).
 		Return(http_agent.FakeHttpResponse(200, `ok`), nil)
@@ -87,9 +87,9 @@ func Test_RegisterServiceInstance_withGroupeName(t *testing.T) {
 	mockIHttpAgent.EXPECT().Request(gomock.Eq("POST"),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
 		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(20*1000)),
+		gomock.Eq(uint64(10*1000)),
 		gomock.Eq(map[string]string{
-			"namespaceId": "public",
+			"namespaceId": "",
 			"serviceName": "test_group@@DEMO",
 			"groupName":   "test_group",
 			"clusterName": "",
@@ -98,7 +98,7 @@ func Test_RegisterServiceInstance_withGroupeName(t *testing.T) {
 			"weight":      "0",
 			"enable":      "false",
 			"healthy":     "false",
-			"metadata":    "null",
+			"metadata":    "{}",
 			"ephemeral":   "true",
 		})).Times(1).
 		Return(http_agent.FakeHttpResponse(200, `ok`), nil)
@@ -140,7 +140,7 @@ func Test_RegisterServiceInstance_withCluster(t *testing.T) {
 			"weight":      "0",
 			"enable":      "false",
 			"healthy":     "false",
-			"metadata":    "null",
+			"metadata":    "{}",
 			"ephemeral":   "true",
 		})).Times(1).
 		Return(http_agent.FakeHttpResponse(200, `ok`), nil)
@@ -183,7 +183,7 @@ func Test_RegisterServiceInstance_401(t *testing.T) {
 			"weight":      "0",
 			"enable":      "false",
 			"healthy":     "false",
-			"metadata":    "null",
+			"metadata":    "{}",
 			"ephemeral":   "true",
 		})).Times(3).
 		Return(http_agent.FakeHttpResponse(401, `no security`), nil)
@@ -771,7 +771,7 @@ func TestNamingClient_GetAllServicesInfo(t *testing.T) {
 		PageNo: 1,
 		PageSize: 20,
 	})
-	
+
 	assert.NotNil(t,reslut.Doms)
 	assert.Nil(t, err)
 }
