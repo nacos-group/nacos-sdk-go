@@ -42,9 +42,10 @@ type GetServiceParam struct {
 }
 
 type GetAllServiceInfoParam struct {
-	Clusters  []string `param:"clusters"`
 	NameSpace string   `param:"nameSpace"`
 	GroupName string   `param:"groupName"`
+	PageNo    uint32   `param:"pageNo"`
+	PageSize  uint32   `param:"pageSize"`
 }
 
 type GetServiceListParam struct {
