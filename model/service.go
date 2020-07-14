@@ -2,29 +2,6 @@ package model
 
 import "time"
 
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-09 10:26
-**/
-
-//type ServiceInstance struct {
-//	InstanceId  string            `json:"instanceId"`
-//	Ip          string            `json:"ip"`
-//	Port        uint64            `json:"port"`
-//	Metadata    map[string]string `json:"metadata"`
-//	Service     string            `json:"service"`
-//	Healthy     bool              `json:"healthy"`
-//	ClusterName string            `json:"clusterName"`
-//	Weight      float64           `json:"weight"`
-//	ServiceName string            `json:"serviceName"`
-//	Enable      bool              `json:"enabled"`
-//	Ephemeral   bool              `json:"ephemeral"`
-//}
-
 type Instance struct {
 	Valid       bool              `json:"valid"`
 	Marked      bool              `json:"marked"`
