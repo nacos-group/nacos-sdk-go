@@ -2,6 +2,10 @@ package config_client
 
 import (
 	"errors"
+	"fmt"
+	"math"
+	"time"
+
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -13,12 +17,13 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 
-	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 )
 
 type ConfigClient struct {
@@ -30,21 +35,32 @@ type ConfigClient struct {
 	configCacheDir string
 }
 
+const perTaskConfigSize = 3000
+
+var currentTaskCount int
+
 var cacheMap cache.ConcurrentMap
 
 type cacheData struct {
-	isInitializing bool
-	dataId         string
-	group          string
-	content        string
-	listeners      []*listener
-	md5            string
-	appName        string
+	isInitializing    bool
+	dataId            string
+	group             string
+	content           string
+	cacheDataListener *cacheDataListener
+	md5               string
+	appName           string
 }
 
-type listener struct {
-	listenerFunc func()
-	lastMd5      string
+type cacheDataListener struct {
+	listener vo.Listener
+	lastMd5  string
+}
+
+var listenClient *ConfigClient
+
+func init() {
+	cacheMap = cache.NewConcurrentMap()
+	go listenConfigActuator()
 }
 
 func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
@@ -237,24 +253,136 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 }
 
 func (client *ConfigClient) ListenConfig1(param vo.ConfigParam) (err error) {
-	if mResult, ok := cacheMap.Get(getKey(&param)); ok {
-		cData := mResult.(cacheData)
+	if len(param.DataId) <= 0 {
+		log.Fatalf("[client.ListenConfig] DataId can not be empty")
+		return
+	}
+	if len(param.Group) <= 0 {
+		log.Fatalf("[client.ListenConfig] Group can not be empty")
+		return
+	}
+	clientConfig, err := client.GetClientConfig()
+	if err != nil {
+		log.Fatalf("[checkConfigInfo.GetClientConfig] failed.")
+		return
+	}
+	//todo 1: 未读取本地目录，是否有必要？ 2: 同步远程配置 3：监听onChange fun只支持一个
+	key := utils.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
+	var cData cacheData
+	if mResult, ok := cacheMap.Get(key); ok {
+		cData = mResult.(cacheData)
 		cData.isInitializing = true
 	} else {
-		cData := cacheData{
-			isInitializing: true,
-			appName:        param.AppName,
-			dataId:         param.DataId,
-			group:          param.Group,
-			content:
+		md5Str := util.Md5("")
+		cDListener := cacheDataListener{
+			listener: param.OnChange,
+			lastMd5:  md5Str,
+		}
+		cData = cacheData{
+			isInitializing:    true,
+			appName:           param.AppName,
+			dataId:            param.DataId,
+			group:             param.Group,
+			content:           "",
+			md5:               md5Str,
+			cacheDataListener: &cDListener,
 		}
 	}
+	listenClient = client
+	cacheMap.Set(key, cData)
 	return nil
 }
 
-func getKey(param *vo.ConfigParam) (key string) {
-	key = param.DataId + "+" + param.Group
-	return
+func listenConfigActuator() {
+	t := time.NewTimer(time.Millisecond * 1)
+	defer t.Stop()
+
+	for {
+		<-t.C
+		listenerSize := len(cacheMap.Keys())
+		taskCount := int(math.Ceil(float64(listenerSize) / float64(perTaskConfigSize)))
+		if taskCount > currentTaskCount {
+			for i := 0; i < taskCount; i++ {
+				go checkConfigInfo()
+			}
+			currentTaskCount = taskCount
+		}
+		// reset
+		t.Reset(time.Millisecond * 10)
+	}
+
+}
+
+func checkConfigInfo() {
+	var listeningConfigs string
+	clientConfig, err := listenClient.GetClientConfig()
+	if err != nil {
+		log.Fatalf("[checkConfigInfo.GetClientConfig] failed.")
+		return
+	}
+	tenant := clientConfig.NamespaceId
+	for _, key := range cacheMap.Keys() {
+		if value, ok := cacheMap.Get(key); ok {
+			cData := value.(cacheData)
+			if len(tenant) > 0 {
+				listeningConfigs += cData.dataId + constant.SPLIT_CONFIG_INNER + cData.group + constant.SPLIT_CONFIG_INNER +
+					cData.md5 + constant.SPLIT_CONFIG_INNER + tenant + constant.SPLIT_CONFIG
+			} else {
+				listeningConfigs += cData.dataId + constant.SPLIT_CONFIG_INNER + cData.group + constant.SPLIT_CONFIG_INNER +
+					cData.md5 + constant.SPLIT_CONFIG
+			}
+		}
+	}
+	// http 请求
+	params := make(map[string]string)
+	params[constant.KEY_LISTEN_CONFIGS] = listeningConfigs
+	var changed string
+	//todo 有
+	changedTmp, err := listenClient.configProxy.ListenConfig(params, tenant, clientConfig.AccessKey, clientConfig.SecretKey)
+	if err == nil {
+		changed = changedTmp
+	} else {
+		if _, ok := err.(*nacos_error.NacosError); ok {
+			changed = changedTmp
+		} else {
+			log.Println("[client.ListenConfig] listen config error:", err.Error())
+		}
+	}
+	if strings.ToLower(strings.Trim(changed, " ")) == "" {
+		log.Println("[client.ListenConfig] no change")
+	} else {
+		log.Print("[client.ListenConfig] config changed:" + changed)
+		listenClient.updateLocalConfig1(changed)
+	}
+}
+
+func (client *ConfigClient) updateLocalConfig1(changed string) {
+	changedConfigs := strings.Split(changed, "%01")
+	for _, config := range changedConfigs {
+		attrs := strings.Split(config, "%02")
+		if len(attrs) == 2 {
+			if value, ok := cacheMap.Get(utils.GetConfigCacheKey(attrs[0], attrs[1], "")); ok {
+				cData := value.(cacheData)
+				cData.cacheDataListener.listener("", attrs[1], attrs[0], "")
+			}
+			//todo 对比md5
+			content, err := client.getConfigInner(vo.ConfigParam{
+				DataId: attrs[0],
+				Group:  attrs[1],
+			})
+			fmt.Println(content, err)
+		} else if len(attrs) == 3 {
+			content, err := client.getConfigInner(vo.ConfigParam{
+				DataId: attrs[0],
+				Group:  attrs[1],
+			})
+			fmt.Println(content, err)
+			if value, ok := cacheMap.Get(utils.GetConfigCacheKey(attrs[0], attrs[1], attrs[2])); ok {
+				cData := value.(cacheData)
+				cData.cacheDataListener.listener(attrs[2], attrs[1], attrs[0], "")
+			}
+		}
+	}
 }
 
 func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig, param vo.ConfigParam) {
