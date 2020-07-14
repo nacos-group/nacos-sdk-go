@@ -60,7 +60,8 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 	return ns, nil
 }
 
-func (server *NacosServer) callConfigServer(api string, params map[string]string, newHeaders map[string]string, method string, curServer string, contextPath string) (result string, err error) {
+func (server *NacosServer) callConfigServer(api string, params map[string]string, newHeaders map[string]string,
+	method string, curServer string, contextPath string, timeoutMS uint64) (result string, err error) {
 	if contextPath == "" {
 		contextPath = constant.WEB_CONTEXT
 	}
@@ -69,22 +70,30 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 
 	url := "http://" + curServer + contextPath + api
 	headers := map[string][]string{}
+	for k, v := range newHeaders {
+		if k != "accessKey" && k != "secretKey" {
+			headers[k] = []string{v}
+		}
+	}
 	headers["Client-Version"] = []string{constant.CLIENT_VERSION}
 	headers["User-Agent"] = []string{constant.CLIENT_VERSION}
 	//headers["Accept-Encoding"] = []string{"gzip,deflate,sdch"}
 	headers["Connection"] = []string{"Keep-Alive"}
 	headers["exConfigInfo"] = []string{"true"}
-	headers["RequestId"] = []string{uuid.NewV4().String()}
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return
+	}
+	headers["RequestId"] = []string{uid.String()}
 	headers["Request-Module"] = []string{"Naming"}
-	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=UTF8"}
+	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=utf-8"}
 	headers["Spas-AccessKey"] = []string{newHeaders["accessKey"]}
 	headers["Timestamp"] = []string{signHeaders["timeStamp"]}
 	headers["Spas-Signature"] = []string{signHeaders["Spas-Signature"]}
-
 	injectSecurityInfo(server, params)
 
 	var response *http.Response
-	response, err = server.httpAgent.Request(method, url, headers, server.timeoutMs, params)
+	response, err = server.httpAgent.Request(method, url, headers, timeoutMS, params)
 	if err != nil {
 		return
 	}
@@ -114,9 +123,13 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 	headers["User-Agent"] = []string{constant.CLIENT_VERSION}
 	//headers["Accept-Encoding"] = []string{"gzip,deflate,sdch"}
 	headers["Connection"] = []string{"Keep-Alive"}
-	headers["RequestId"] = []string{uuid.NewV4().String()}
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return
+	}
+	headers["RequestId"] = []string{uid.String()}
 	headers["Request-Module"] = []string{"Naming"}
-	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=UTF8"}
+	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=utf-8"}
 
 	injectSecurityInfo(server, params)
 
@@ -140,7 +153,7 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 	}
 }
 
-func (server *NacosServer) ReqConfigApi(api string, params map[string]string, headers map[string]string, method string) (string, error) {
+func (server *NacosServer) ReqConfigApi(api string, params map[string]string, headers map[string]string, method string, timeoutMS uint64) (string, error) {
 	srvs := server.serverList
 	if srvs == nil || len(srvs) == 0 {
 		return "", errors.New("server list is empty")
@@ -153,7 +166,7 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 	var result string
 	if len(srvs) == 1 {
 		for i := 0; i < constant.REQUEST_DOMAIN_RETRY_TIME; i++ {
-			result, err = server.callConfigServer(api, params, headers, method, getAddress(srvs[0]), srvs[0].ContextPath)
+			result, err = server.callConfigServer(api, params, headers, method, getAddress(srvs[0]), srvs[0].ContextPath, timeoutMS)
 			if err == nil {
 				return result, nil
 			}
@@ -164,7 +177,7 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 		index := rand.Intn(len(srvs))
 		for i := 1; i <= len(srvs); i++ {
 			curServer := srvs[index]
-			result, err = server.callConfigServer(api, params, headers, method, getAddress(curServer), curServer.ContextPath)
+			result, err = server.callConfigServer(api, params, headers, method, getAddress(curServer), curServer.ContextPath, timeoutMS)
 			if err == nil {
 				return result, nil
 			}

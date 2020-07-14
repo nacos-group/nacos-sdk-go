@@ -57,7 +57,7 @@ func Test_RegisterServiceInstance_withoutGroupeName(t *testing.T) {
 			"weight":      "0",
 			"enable":      "false",
 			"healthy":     "false",
-			"metadata":    "null",
+			"metadata":    "{}",
 			"ephemeral":   "true",
 		})).Times(1).
 		Return(http_agent.FakeHttpResponse(200, `ok`), nil)
@@ -87,9 +87,9 @@ func Test_RegisterServiceInstance_withGroupeName(t *testing.T) {
 	mockIHttpAgent.EXPECT().Request(gomock.Eq("POST"),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
 		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(20*1000)),
+		gomock.Eq(uint64(10*1000)),
 		gomock.Eq(map[string]string{
-			"namespaceId": "public",
+			"namespaceId": "",
 			"serviceName": "test_group@@DEMO",
 			"groupName":   "test_group",
 			"clusterName": "",
@@ -98,7 +98,7 @@ func Test_RegisterServiceInstance_withGroupeName(t *testing.T) {
 			"weight":      "0",
 			"enable":      "false",
 			"healthy":     "false",
-			"metadata":    "null",
+			"metadata":    "{}",
 			"ephemeral":   "true",
 		})).Times(1).
 		Return(http_agent.FakeHttpResponse(200, `ok`), nil)
@@ -113,7 +113,7 @@ func Test_RegisterServiceInstance_withGroupeName(t *testing.T) {
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
-		Ephemeral:	 true,
+		Ephemeral:   true,
 	})
 	assert.Equal(t, nil, err)
 	assert.Equal(t, true, success)
@@ -140,7 +140,7 @@ func Test_RegisterServiceInstance_withCluster(t *testing.T) {
 			"weight":      "0",
 			"enable":      "false",
 			"healthy":     "false",
-			"metadata":    "null",
+			"metadata":    "{}",
 			"ephemeral":   "true",
 		})).Times(1).
 		Return(http_agent.FakeHttpResponse(200, `ok`), nil)
@@ -156,7 +156,7 @@ func Test_RegisterServiceInstance_withCluster(t *testing.T) {
 		Port:        80,
 		GroupName:   "test_group",
 		ClusterName: "test",
-		Ephemeral:	 true,
+		Ephemeral:   true,
 	})
 	assert.Equal(t, nil, err)
 	assert.Equal(t, true, success)
@@ -183,7 +183,7 @@ func Test_RegisterServiceInstance_401(t *testing.T) {
 			"weight":      "0",
 			"enable":      "false",
 			"healthy":     "false",
-			"metadata":    "null",
+			"metadata":    "{}",
 			"ephemeral":   "true",
 		})).Times(3).
 		Return(http_agent.FakeHttpResponse(401, `no security`), nil)
@@ -198,7 +198,7 @@ func Test_RegisterServiceInstance_401(t *testing.T) {
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
-		Ephemeral:	 true,
+		Ephemeral:   true,
 	})
 	assert.Equal(t, false, result)
 	assert.NotNil(t, err)
@@ -233,7 +233,7 @@ func TestNamingProxy_DeristerService_WithoutGroupName(t *testing.T) {
 		ServiceName: "DEMO",
 		Ip:          "10.0.0.10",
 		Port:        80,
-		Ephemeral:	 true,
+		Ephemeral:   true,
 	})
 }
 
@@ -267,7 +267,7 @@ func TestNamingProxy_DeristerService_WithGroupName(t *testing.T) {
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
-		Ephemeral:	 true,
+		Ephemeral:   true,
 	})
 }
 
@@ -301,7 +301,7 @@ func TestNamingProxy_DeristerService_401(t *testing.T) {
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
-		Ephemeral:	 true,
+		Ephemeral:   true,
 	})
 }
 
@@ -442,7 +442,7 @@ func TestNamingClient_SelectOneHealthyInstance_SameWeight(t *testing.T) {
 				Weight:      1,
 				Metadata:    map[string]string{},
 				ClusterName: "a",
-				ServiceName: "DEMO",
+				ServiceName: "DEMO1",
 				Enable:      true,
 				Healthy:     true,
 			},
@@ -758,4 +758,296 @@ func TestNamingClient_SelectInstances_Empty(t *testing.T) {
 	fmt.Println(utils.ToJsonString(instances))
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, len(instances))
+}
+
+func TestNamingClient_GetAllServicesInfo(t *testing.T) {
+	nc := nacos_client.NacosClient{}
+	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+	nc.SetClientConfig(clientConfigTest)
+	nc.SetHttpAgent(&http_agent.HttpAgent{})
+	client, _ := NewNamingClient(&nc)
+	reslut, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
+		GroupName: "DEFAULT_GROUP",
+		PageNo: 1,
+		PageSize: 20,
+	})
+
+	assert.NotNil(t,reslut.Doms)
+	assert.Nil(t, err)
+}
+
+func TestNamingClient_selectOneHealthyInstanceResult(t *testing.T) {
+	services := model.Service(model.Service{
+		Name:            "DEFAULT_GROUP@@DEMO",
+		Hosts: []model.Instance{
+			{
+				Ip:          "127.0.0.1",
+				Weight:      1,
+				Enable:      true,
+				Healthy:     true,
+			},
+			{
+				Ip:          "127.0.0.2",
+				Weight:      9,
+				Enable:      true,
+				Healthy:     true,
+			},
+		}})
+	nc := nacos_client.NacosClient{}
+	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+	nc.SetClientConfig(clientConfigTest)
+	client, _ := NewNamingClient(&nc)
+	for i := 0; i < 10; i++ {
+		i,_:=client.selectOneHealthyInstances(services)
+		fmt.Println(i.Ip)
+	}
+}
+
+func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
+	services := model.Service(model.Service{
+		Name:            "DEFAULT_GROUP@@DEMO",
+		CacheMillis:     1000,
+		UseSpecifiedURL: false,
+		Hosts: []model.Instance{
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.10-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.10",
+				Weight:      10,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO1",
+				Enable:      true,
+				Healthy:     true,
+			},
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.11-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.11",
+				Weight:      10,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO2",
+				Enable:      true,
+				Healthy:     true,
+			},
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.12-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.12",
+				Weight:      1,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO3",
+				Enable:      true,
+				Healthy:     false,
+			},
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.13-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.13",
+				Weight:      1,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO4",
+				Enable:      false,
+				Healthy:     true,
+			},
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.14-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.14",
+				Weight:      0,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO5",
+				Enable:      true,
+				Healthy:     true,
+			},
+		},
+		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
+		LastRefTime: 1528787794594, Env: "", Clusters: "a",
+		Metadata: map[string]string(nil)})
+	nc := nacos_client.NacosClient{}
+	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+	nc.SetClientConfig(clientConfigTest)
+	client, _ := NewNamingClient(&nc)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		client.selectOneHealthyInstances(services)
+	}
+
+}
+
+func BenchmarkNamingClient_Random(b *testing.B) {
+	services := model.Service(model.Service{
+		Name:            "DEFAULT_GROUP@@DEMO",
+		CacheMillis:     1000,
+		UseSpecifiedURL: false,
+		Hosts: []model.Instance{
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.10-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.10",
+				Weight:      10,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO1",
+				Enable:      true,
+				Healthy:     true,
+			},
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.11-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.11",
+				Weight:      9,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO",
+				Enable:      true,
+				Healthy:     true,
+			},
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.12-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.12",
+				Weight:      8,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO",
+				Enable:      true,
+				Healthy:     false,
+			},
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.13-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.13",
+				Weight:      8,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO",
+				Enable:      false,
+				Healthy:     true,
+			},
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.14-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.14",
+				Weight:      7,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO",
+				Enable:      true,
+				Healthy:     true,
+			},
+		},
+		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
+		LastRefTime: 1528787794594, Env: "", Clusters: "a",
+		Metadata: map[string]string(nil)})
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		random(services.Hosts, 10)
+	}
+}
+
+func BenchmarkNamingClient_ChooserPick(b *testing.B) {
+	services := model.Service(model.Service{
+		Name:            "DEFAULT_GROUP@@DEMO",
+		CacheMillis:     1000,
+		UseSpecifiedURL: false,
+		Hosts: []model.Instance{
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.10-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.10",
+				Weight:      10,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO1",
+				Enable:      true,
+				Healthy:     true,
+			},
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.11-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.11",
+				Weight:      9,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO",
+				Enable:      true,
+				Healthy:     true,
+			},
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.12-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.12",
+				Weight:      8,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO",
+				Enable:      true,
+				Healthy:     false,
+			},
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.13-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.13",
+				Weight:      7,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO",
+				Enable:      false,
+				Healthy:     true,
+			},
+			{
+				Valid:       true,
+				Marked:      false,
+				InstanceId:  "10.10.10.14-80-a-DEMO",
+				Port:        80,
+				Ip:          "10.10.10.14",
+				Weight:      6,
+				Metadata:    map[string]string{},
+				ClusterName: "a",
+				ServiceName: "DEMO",
+				Enable:      true,
+				Healthy:     true,
+			},
+		},
+		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
+		LastRefTime: 1528787794594, Env: "", Clusters: "a",
+		Metadata: map[string]string(nil)})
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		chooser := newChooser(services.Hosts)
+		chooser.pick()
+	}
 }
