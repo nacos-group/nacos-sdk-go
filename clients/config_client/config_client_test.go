@@ -3,6 +3,11 @@ package config_client
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"testing"
+	"time"
+
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/golang/mock/gomock"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
@@ -11,20 +16,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/mock"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"strconv"
-	"testing"
-	"time"
 )
-
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-16 21:01
-**/
 
 var clientConfigTest = constant.ClientConfig{
 	TimeoutMs:      10000,
@@ -590,7 +582,7 @@ func TestCancelListenConfig(t *testing.T) {
 	client := cretateConfigClientTest()
 	var err error
 	var success bool
-	var context,context1 string
+	var context, context1 string
 	listenConfigParam := vo.ConfigParam{
 		DataId: "dataId",
 		Group:  "group",
@@ -640,6 +632,6 @@ func TestCancelListenConfig(t *testing.T) {
 		assert.Equal(t, true, success)
 	}
 	time.Sleep(2 * time.Second)
-	assert.Equal(t,"abcd3",context)
-	assert.Equal(t,"abcd5",context1)
+	assert.Equal(t, "abcd3", context)
+	assert.Equal(t, "abcd5", context1)
 }

@@ -2,15 +2,6 @@ package vo
 
 import "github.com/nacos-group/nacos-sdk-go/model"
 
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-09 10:03
-**/
-
 type RegisterInstanceParam struct {
 	Ip          string            `param:"ip"`
 	Port        uint64            `param:"port"`
@@ -42,10 +33,10 @@ type GetServiceParam struct {
 }
 
 type GetAllServiceInfoParam struct {
-	NameSpace string   `param:"nameSpace"`
-	GroupName string   `param:"groupName"`
-	PageNo    uint32   `param:"pageNo"`
-	PageSize  uint32   `param:"pageSize"`
+	NameSpace string `param:"nameSpace"`
+	GroupName string `param:"groupName"`
+	PageNo    uint32 `param:"pageNo"`
+	PageSize  uint32 `param:"pageSize"`
 }
 
 type GetServiceListParam struct {

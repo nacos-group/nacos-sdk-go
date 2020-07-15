@@ -2,12 +2,13 @@ package naming_client
 
 import (
 	"encoding/json"
-	"github.com/nacos-group/nacos-sdk-go/clients/cache"
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/utils"
 	"log"
 	"reflect"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/clients/cache"
+	"github.com/nacos-group/nacos-sdk-go/model"
+	"github.com/nacos-group/nacos-sdk-go/utils"
 )
 
 type HostReactor struct {
@@ -97,7 +98,7 @@ func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string) model
 }
 
 func (hr *HostReactor) GetAllServiceInfo(nameSpace, groupName string, pageNo, pageSize uint32) model.ServiceList {
-	data:=model.ServiceList{}
+	data := model.ServiceList{}
 	result, err := hr.serviceProxy.GetAllServiceInfoList(nameSpace, groupName, pageNo, pageSize)
 	if err != nil {
 		log.Printf("[ERROR]:query all services info return error!nameSpace:%s groupName:%s pageNo:%d, pageSize:%d err:%s \n", nameSpace, groupName, pageNo, pageSize, err.Error())

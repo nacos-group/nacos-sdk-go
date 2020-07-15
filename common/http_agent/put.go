@@ -7,15 +7,6 @@ import (
 	"time"
 )
 
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-09 11:24
-**/
-
 func put(path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
 	client := http.Client{}
 	client.Timeout = time.Millisecond * time.Duration(timeoutMs)

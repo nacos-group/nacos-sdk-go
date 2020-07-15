@@ -8,15 +8,6 @@ import (
 	"strings"
 )
 
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-11 19:06
-**/
-
 func TransformObject2Param(object interface{}) (params map[string]string) {
 	params = make(map[string]string)
 	if object != nil {
