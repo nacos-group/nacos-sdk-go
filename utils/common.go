@@ -5,8 +5,6 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/model"
 	"io/ioutil"
 	"log"
 	"net"
@@ -14,6 +12,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/model"
 )
 
 func CurrentMillis() int64 {

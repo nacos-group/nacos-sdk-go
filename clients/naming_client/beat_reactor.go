@@ -1,14 +1,15 @@
 package naming_client
 
 import (
+	"log"
+	"strconv"
+	"time"
+
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	nsema "github.com/toolkits/concurrent/semaphore"
-	"log"
-	"strconv"
-	"time"
 )
 
 type BeatReactor struct {

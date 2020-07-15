@@ -3,16 +3,17 @@ package config_client
 import (
 	"encoding/json"
 	"errors"
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
 	"github.com/nacos-group/nacos-sdk-go/common/util"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-	"log"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 type ConfigProxy struct {

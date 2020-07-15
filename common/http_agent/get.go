@@ -6,15 +6,6 @@ import (
 	"time"
 )
 
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-07 15:13
-**/
-
 func get(path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
 	if !strings.HasSuffix(path, "?") {
 		path = path + "?"

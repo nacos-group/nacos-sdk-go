@@ -1,7 +1,7 @@
 package model
 
 type ConfigItem struct {
-	Id      int64  `param:"id"`
+	Id      string `param:"id"`
 	DataId  string `param:"dataId"`
 	Group   string `param:"group"`
 	Content string `param:"content"`

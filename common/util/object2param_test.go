@@ -1,18 +1,10 @@
 package util
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
-)
 
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-11 19:25
-**/
+	"github.com/stretchr/testify/assert"
+)
 
 type object struct {
 	Name     string            `param:"name"`

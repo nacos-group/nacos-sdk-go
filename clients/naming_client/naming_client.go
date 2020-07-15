@@ -1,6 +1,13 @@
 package naming_client
 
 import (
+	"math"
+	"math/rand"
+	"os"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -9,12 +16,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/pkg/errors"
-	"math"
-	"math/rand"
-	"os"
-	"sort"
-	"strings"
-	"time"
 )
 
 type NamingClient struct {
@@ -132,7 +133,7 @@ func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (mod
 	if param.NameSpace == "" {
 		param.NameSpace = constant.DEFAULT_NAMESPACE_ID
 	}
-	services := sc.hostReactor.GetAllServiceInfo(param.NameSpace, param.GroupName, param.PageNo,param.PageSize)
+	services := sc.hostReactor.GetAllServiceInfo(param.NameSpace, param.GroupName, param.PageNo, param.PageSize)
 	return services, nil
 }
 
@@ -245,6 +246,7 @@ func newChooser(instances []model.Instance) Chooser {
 }
 
 func (chs Chooser) pick() model.Instance {
+	rand.Seed(time.Now().Unix())
 	r := rand.Intn(chs.max) + 1
 	i := sort.SearchInts(chs.totals, r)
 	return chs.data[i]

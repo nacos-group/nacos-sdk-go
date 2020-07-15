@@ -5,15 +5,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/vo"
 )
 
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-08 10:03
-**/
-
 //go:generate mockgen -destination ../../mock/mock_config_client_interface.go -package mock -source=./config_client_interface.go
 
 type IConfigClient interface {
