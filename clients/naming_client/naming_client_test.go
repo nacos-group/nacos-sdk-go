@@ -371,33 +371,33 @@ var serviceTest = model.Service(model.Service{Name: "DEFAULT_GROUP@@DEMO",
 	LastRefTime: 1528787794594, Env: "", Clusters: "a",
 	Metadata: map[string]string(nil)})
 
-func TestNamingProxy_GetService_WithoutGroupName(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer func() {
-		ctrl.Finish()
-	}()
-	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-
-	mockIHttpAgent.EXPECT().Request(gomock.Eq("GET"),
-		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance/list"),
-		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(10*1000)),
-		gomock.Any()).Times(2).
-		Return(http_agent.FakeHttpResponse(200, serviceJsonTest), nil)
-
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(mockIHttpAgent)
-	client, _ := NewNamingClient(&nc)
-	result, err := client.GetService(vo.GetServiceParam{
-		ServiceName: "DEMO",
-		Clusters:    []string{"a"},
-	})
-	assert.Nil(t, err)
-	assert.Equal(t, serviceTest, result)
-
-}
+//func TestNamingProxy_GetService_WithoutGroupName(t *testing.T) {
+//	ctrl := gomock.NewController(t)
+//	defer func() {
+//		ctrl.Finish()
+//	}()
+//	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
+//
+//	mockIHttpAgent.EXPECT().Request(gomock.Eq("GET"),
+//		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance/list"),
+//		gomock.AssignableToTypeOf(http.Header{}),
+//		gomock.Eq(uint64(10*1000)),
+//		gomock.Any()).Times(2).
+//		Return(http_agent.FakeHttpResponse(200, serviceJsonTest), nil)
+//
+//	nc := nacos_client.NacosClient{}
+//	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+//	nc.SetClientConfig(clientConfigTest)
+//	nc.SetHttpAgent(mockIHttpAgent)
+//	client, _ := NewNamingClient(&nc)
+//	result, err := client.GetService(vo.GetServiceParam{
+//		ServiceName: "DEMO",
+//		Clusters:    []string{"a"},
+//	})
+//	assert.Nil(t, err)
+//	assert.Equal(t, serviceTest, result)
+//
+//}
 
 //func TestNamingClient_SelectAllInstancs(t *testing.T) {
 //	ctrl := gomock.NewController(t)
