@@ -2,15 +2,6 @@ package http_agent
 
 import "net/http"
 
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-10 11:07
-**/
-
 //go:generate mockgen -destination ../../mock/mock_http_agent_interface.go -package mock -source=./http_agent_interface.go
 
 type IHttpAgent interface {

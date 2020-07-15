@@ -2,12 +2,13 @@ package naming_client
 
 import (
 	"encoding/json"
-	"github.com/nacos-group/nacos-sdk-go/utils"
 	"log"
 	"math/rand"
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/utils"
 )
 
 type PushReceiver struct {

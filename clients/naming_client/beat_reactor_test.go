@@ -1,10 +1,11 @@
 package naming_client
 
 import (
+	"testing"
+
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestBeatReactor_AddBeatInfo(t *testing.T) {

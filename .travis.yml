@@ -5,6 +5,7 @@ sudo: required
 
 go:
   - 1.12.x
+
 env:
   - GO111MODULE=on
 
@@ -13,7 +14,7 @@ before_install: go get golang.org/x/tools/cmd/goimports
 script:
   - diff -u <(echo -n) <(gofmt -d -s .)
   - diff -u <(echo -n) <(goimports -d .)
-  - go test -v -race ./... -coverprofile=coverage.txt -covermode=atomic
+  - go test -v ./... -coverprofile=coverage.txt -covermode=atomic
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

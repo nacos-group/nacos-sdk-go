@@ -1,21 +1,14 @@
 package http_agent
 
 import (
-	"github.com/go-errors/errors"
-	"github.com/nacos-group/nacos-sdk-go/utils"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/go-errors/errors"
+	"github.com/nacos-group/nacos-sdk-go/utils"
 )
 
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-10 11:26
-**/
 type HttpAgent struct {
 }
 

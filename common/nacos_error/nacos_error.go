@@ -2,17 +2,9 @@ package nacos_error
 
 import (
 	"fmt"
+
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 )
-
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-14 11:22
-**/
 
 type NacosError struct {
 	errorCode   string
