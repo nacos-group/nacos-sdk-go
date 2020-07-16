@@ -217,17 +217,17 @@ func (client *ConfigClient) CancelListenConfig(param *vo.ConfigParam) (err error
 
 func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	if len(param.DataId) <= 0 {
-		log.Fatalf("[client.ListenConfig] DataId can not be empty")
-		return
+		err = errors.New("[client.ListenConfig] DataId can not be empty")
+		return err
 	}
 	if len(param.Group) <= 0 {
-		log.Fatalf("[client.ListenConfig] Group can not be empty")
-		return
+		err = errors.New("[client.ListenConfig] Group can not be empty")
+		return err
 	}
 	clientConfig, err := client.GetClientConfig()
 	if err != nil {
-		log.Fatalf("[checkConfigInfo.GetClientConfig] failed.")
-		return
+		err = errors.New("[checkConfigInfo.GetClientConfig] failed.")
+		return err
 	}
 	//todo 1：监听onChange fun只支持一个
 	key := utils.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
