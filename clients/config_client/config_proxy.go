@@ -3,16 +3,17 @@ package config_client
 import (
 	"encoding/json"
 	"errors"
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
 	"github.com/nacos-group/nacos-sdk-go/common/util"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-	"log"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 type ConfigProxy struct {
@@ -111,11 +112,18 @@ func (cp *ConfigProxy) DeleteConfigProxy(param vo.ConfigParam, tenant, accessKey
 	}
 }
 
-func (cp *ConfigProxy) ListenConfig(params map[string]string, tenant, accessKey, secretKey string) (string, error) {
+func (cp *ConfigProxy) ListenConfig(params map[string]string, isInitializing bool, accessKey, secretKey string) (string, error) {
+	if cp.clientConfig.ListenInterval == 0 {
+		cp.clientConfig.ListenInterval = 20000
+	}
 	headers := map[string]string{
 		"Content-Type":         "application/x-www-form-urlencoded;charset=utf-8",
 		"Long-Pulling-Timeout": strconv.FormatUint(cp.clientConfig.ListenInterval, 10),
 	}
+	if isInitializing {
+		headers["Long-Pulling-Timeout-No-Hangup"] = "true"
+	}
+
 	headers["accessKey"] = accessKey
 	headers["secretKey"] = secretKey
 	log.Printf("[client.ListenConfig] request params:%+v header:%+v \n", params, headers)
