@@ -1,12 +1,13 @@
 package logger
 
 import (
-	"github.com/lestrrat/go-file-rotatelogs"
-	"github.com/nacos-group/nacos-sdk-go/common/util"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
+
+	rotatelogs "github.com/lestrrat/go-file-rotatelogs"
+	"github.com/nacos-group/nacos-sdk-go/common/util"
 )
 
 func InitLog(logDir string) error {

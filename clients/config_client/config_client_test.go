@@ -8,27 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/utils"
-
-	"github.com/nacos-group/nacos-sdk-go/clients/cache"
-
 	"github.com/golang/mock/gomock"
+	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/mock"
+	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
 )
-
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-16 21:01
-**/
 
 var clientConfigTest = constant.ClientConfig{
 	TimeoutMs:      10000,
@@ -598,7 +587,6 @@ func TestCancelListenConfig(t *testing.T) {
 			time.Sleep(2 * time.Second)
 			assert.Nil(t, err)
 			assert.Equal(t, true, success)
-
 		}
 
 		assert.Equal(t, "abcd2", context)
@@ -647,7 +635,5 @@ func TestCancelListenConfig(t *testing.T) {
 		assert.Equal(t, true, success)
 
 		assert.Equal(t, localConfigTest.Content, context)
-
 	})
-
 }

@@ -1,18 +1,10 @@
 package util
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
-)
 
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-15 20:16
-**/
+	"github.com/stretchr/testify/assert"
+)
 
 func TestMd5(t *testing.T) {
 	md5 := Md5("demo")
