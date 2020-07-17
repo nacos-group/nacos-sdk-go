@@ -14,9 +14,3 @@ func TestMkdirIfNecessaryForAbsPath(t *testing.T) {
 	err := MkdirIfNecessary(path)
 	assert.Nil(t, err)
 }
-
-func TestMkdirIfNecessaryForNotAbsPath(t *testing.T) {
-	path := "/log"
-	err := MkdirIfNecessary(path)
-	assert.Nil(t, err)
-}
