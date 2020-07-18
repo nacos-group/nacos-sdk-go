@@ -581,7 +581,7 @@ func TestCancelListenConfig(t *testing.T) {
 			}()
 
 			if i == 3 {
-				client.CancelListenConfig(&listenConfigParam)
+				client.CancelListenConfig(listenConfigParam)
 				fmt.Println("Cancel listen config")
 			}
 			time.Sleep(2 * time.Second)
@@ -625,7 +625,7 @@ func TestCancelListenConfig(t *testing.T) {
 			assert.Equal(t, c, localConfigTest.Content)
 		}
 		//Cancel listen config
-		client.CancelListenConfig(&listenConfigParam)
+		client.CancelListenConfig(listenConfigParam)
 
 		success, err = client.PublishConfig(vo.ConfigParam{
 			DataId:  localConfigTest.DataId,
@@ -641,8 +641,9 @@ func TestCancelListenConfig(t *testing.T) {
 //TestDelayScheduler
 //Notice when the log is printed
 func TestDelayScheduler(t *testing.T) {
-	delayScheduler(1*time.Millisecond, 2*time.Second, func() {
+	go delayScheduler(1*time.Millisecond, 1*time.Second, func() {
 		fmt.Println(time.Now())
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 	})
+	time.Sleep(6 * time.Second)
 }
