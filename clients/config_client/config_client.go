@@ -2,6 +2,13 @@ package config_client
 
 import (
 	"errors"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
+
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -12,13 +19,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-
-	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
-	"log"
-	"os"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 type ConfigClient struct {
@@ -195,11 +195,24 @@ func (client *ConfigClient) AddConfigToListen(params []vo.ConfigParam) (err erro
 	return
 }
 
+//Cancel Listen Config
+func (client *ConfigClient) CancelListenConfig(param *vo.ConfigParam) error {
+	param.ListenCloseChan <- struct{}{}
+	log.Printf("Cancel listen config DataId:%s Group:%s", param.DataId, param.Group)
+	return nil
+}
+
 func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	go func() {
 		for {
-			clientConfig, _ := client.GetClientConfig()
-			client.listenConfigTask(clientConfig, param)
+			select {
+			case <-param.ListenCloseChan:
+				return
+			default:
+				clientConfig, _ := client.GetClientConfig()
+				client.listenConfigTask(clientConfig, param)
+			}
+
 		}
 	}()
 

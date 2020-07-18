@@ -2,10 +2,11 @@ package naming_client
 
 import (
 	"errors"
+	"log"
+
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
-	"log"
 )
 
 type SubscribeCallback struct {

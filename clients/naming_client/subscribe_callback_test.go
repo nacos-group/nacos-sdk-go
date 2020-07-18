@@ -2,14 +2,15 @@ package naming_client
 
 import (
 	"fmt"
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/utils"
-	"github.com/nacos-group/nacos-sdk-go/vo"
-	"github.com/stretchr/testify/assert"
 	"log"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/model"
+	"github.com/nacos-group/nacos-sdk-go/utils"
+	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {

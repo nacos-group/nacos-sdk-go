@@ -5,15 +5,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/vo"
 )
 
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-09 09:56
-**/
-
 //go:generate mockgen -destination ../../mock/mock_service_client_interface.go -package mock -source=./service_client_interface.go
 
 type INamingClient interface {
@@ -35,5 +26,5 @@ type INamingClient interface {
 	Unsubscribe(param *vo.SubscribeParam) error
 
 	//获取全部服务信息
-	GetAllServicesInfo(param vo.GetAllServiceInfoParam) ([]model.Service, error)
+	GetAllServicesInfo(param vo.GetAllServiceInfoParam) (model.ServiceList, error)
 }

@@ -2,22 +2,14 @@ package nacos_client
 
 import (
 	"errors"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/utils"
 	"log"
 	"os"
 	"strconv"
-)
 
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-09 16:39
-**/
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/utils"
+)
 
 type NacosClient struct {
 	clientConfigValid  bool

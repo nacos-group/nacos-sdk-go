@@ -7,14 +7,6 @@ import (
 	"strconv"
 )
 
-/**
-*
-* @description : mock http response
-*
-* @author : codezhang
-*
-* @create : 2019-01-11 12:10
-**/
 type fakeHttpResponseBody struct {
 	body io.ReadSeeker
 }

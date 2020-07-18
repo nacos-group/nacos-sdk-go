@@ -1,14 +1,5 @@
 package constant
 
-/**
-*
-* @description :
-*
-* @author : codezhang
-*
-* @create : 2019-01-07 15:13
-**/
-
 const (
 	KEY_USERNAME                = "username"
 	KEY_PASSWORD                = "password"
