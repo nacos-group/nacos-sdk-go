@@ -204,7 +204,7 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool,
 }
 
 //Cancel Listen Config
-func (client *ConfigClient) CancelListenConfig(param *vo.ConfigParam) (err error) {
+func (client *ConfigClient) CancelListenConfig(param vo.ConfigParam) (err error) {
 	clientConfig, err := client.GetClientConfig()
 	if err != nil {
 		log.Fatalf("[checkConfigInfo.GetClientConfig] failed.")
@@ -238,7 +238,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	} else {
 		content, err := cache.ReadConfigFromFile(key, client.configCacheDir)
 		if err != nil {
-			log.Printf("[cache.ReadConfigFromFile] error:[%s]", err.Error())
+			log.Printf("[cache.ReadConfigFromFile] error: %+v", err)
 			content = ""
 		}
 		md5Str := util.Md5(content)
@@ -319,7 +319,7 @@ func longPulling(taskId int) func() {
 		if len(listeningConfigs) > 0 {
 			clientConfig, err := client.GetClientConfig()
 			if err != nil {
-				log.Println("[checkConfigInfo.GetClientConfig] failed.")
+				log.Printf("[checkConfigInfo.GetClientConfig] err: %+v", err)
 				return
 			}
 			// http get
@@ -334,7 +334,7 @@ func longPulling(taskId int) func() {
 				if _, ok := err.(*nacos_error.NacosError); ok {
 					changed = changedTmp
 				} else {
-					log.Println("[client.ListenConfig] listen config error:", err.Error())
+					log.Printf("[client.ListenConfig] listen config error: %+v", err)
 				}
 			}
 			if strings.ToLower(strings.Trim(changed, " ")) == "" {
@@ -359,9 +359,7 @@ func (client *ConfigClient) callListener(changed, tenant string) {
 				if content, err := client.getConfigInner(vo.ConfigParam{
 					DataId: cData.dataId,
 					Group:  cData.group,
-				}); err != nil {
-					log.Printf("[client.getConfigInner] DataId:[%s] Group:[%s] Error:[%s]", cData.dataId, cData.group, err.Error())
-				} else {
+				}); err == nil {
 					cData.content = content
 					cData.md5 = util.Md5(content)
 					if cData.md5 != cData.cacheDataListener.lastMd5 {
@@ -370,6 +368,8 @@ func (client *ConfigClient) callListener(changed, tenant string) {
 						cData.isInitializing = false
 						cacheMap.Set(utils.GetConfigCacheKey(cData.dataId, cData.group, tenant), cData)
 					}
+				} else {
+					log.Printf("[client.getConfigInner] DataId:[%s] Group:[%s] Error:[%+v]", cData.dataId, cData.group, err)
 				}
 
 			}

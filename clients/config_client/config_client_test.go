@@ -381,8 +381,8 @@ func TestListen(t *testing.T) {
 	// ListenConfig
 	t.Run("TestListenConfig", func(t *testing.T) {
 		client := cretateConfigClientTest()
-		key := utils.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
-		cache.WriteConfigToFile(key, client.configCacheDir, "")
+		/*	key := utils.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
+			cache.WriteConfigToFile(key, client.configCacheDir, "")*/
 		var err error
 		var success bool
 		ch := make(chan string)
@@ -635,5 +635,14 @@ func TestCancelListenConfig(t *testing.T) {
 		assert.Equal(t, true, success)
 
 		assert.Equal(t, localConfigTest.Content, context)
+	})
+}
+
+//TestDelayScheduler
+//Notice when the log is printed
+func TestDelayScheduler(t *testing.T) {
+	delayScheduler(1*time.Millisecond, 2*time.Second, func() {
+		fmt.Println(time.Now())
+		time.Sleep(3 * time.Second)
 	})
 }

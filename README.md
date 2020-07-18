@@ -224,3 +224,13 @@ configClient.ListenConfig(vo.ConfigParam{
 })
 
 ```
+* 取消监听配置：CancelListenConfig
+
+```go
+
+configClient.CancelListenConfig(vo.ConfigParam{
+    DataId: "dataId",
+    Group:  "group",
+})
+
+```
