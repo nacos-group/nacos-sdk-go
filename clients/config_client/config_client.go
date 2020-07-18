@@ -37,6 +37,7 @@ const perTaskConfigSize = 3000
 var (
 	currentTaskCount int
 	cacheMap         cache.ConcurrentMap
+	schedulerMap     cache.ConcurrentMap
 )
 
 type cacheData struct {
@@ -86,7 +87,9 @@ func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
 		config.kmsClient = kmsClient
 	}
 	cacheMap = cache.NewConcurrentMap()
-	go delayScheduler(1*time.Millisecond, 10*time.Millisecond, listenConfigExecutor())
+	schedulerMap = cache.NewConcurrentMap()
+	schedulerMap.Set("root", true)
+	go delayScheduler(time.NewTimer(1*time.Millisecond), 10*time.Millisecond, "root", listenConfigExecutor())
 	return config, err
 }
 
@@ -212,7 +215,30 @@ func (client *ConfigClient) CancelListenConfig(param vo.ConfigParam) (err error)
 	}
 	cacheMap.Remove(utils.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId))
 	log.Printf("Cancel listen config DataId:%s Group:%s", param.DataId, param.Group)
+	remakeId := int(math.Ceil(float64(len(cacheMap.Keys())) / float64(perTaskConfigSize)))
+	if remakeId < currentTaskCount {
+		remakeCacheDataTaskId(remakeId)
+	}
+
 	return err
+}
+
+//Remake cache data taskId
+func remakeCacheDataTaskId(remakeId int) {
+	for i := 0; i < remakeId; i++ {
+		count := 0
+		for _, key := range cacheMap.Keys() {
+			if count == perTaskConfigSize {
+				break
+			}
+			if value, ok := cacheMap.Get(key); ok {
+				cData := value.(cacheData)
+				cData.taskId = i
+				cacheMap.Set(key, cData)
+			}
+			count++
+		}
+	}
 }
 
 func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
@@ -229,7 +255,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 		err = errors.New("[checkConfigInfo.GetClientConfig] failed.")
 		return err
 	}
-	//todo 1：监听onChange fun只支持一个
+
 	key := utils.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
 	var cData cacheData
 	if v, ok := cacheMap.Get(key); ok {
@@ -246,6 +272,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 			listener: param.OnChange,
 			lastMd5:  md5Str,
 		}
+
 		cData = cacheData{
 			isInitializing:    true,
 			appName:           param.AppName,
@@ -266,11 +293,13 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 //Delay Scheduler
 //initialDelay the time to delay first execution
 //delay the delay between the termination of one execution and the commencement of the next
-func delayScheduler(initialDelay, delay time.Duration, execute func()) {
-	t := time.NewTimer(initialDelay)
-	defer t.Stop()
-
+func delayScheduler(t *time.Timer, delay time.Duration, taskId string, execute func()) {
 	for {
+		if v, ok := schedulerMap.Get(taskId); ok {
+			if !v.(bool) {
+				return
+			}
+		}
 		<-t.C
 		execute()
 		t.Reset(delay)
@@ -282,11 +311,21 @@ func listenConfigExecutor() func() {
 	return func() {
 		listenerSize := len(cacheMap.Keys())
 		taskCount := int(math.Ceil(float64(listenerSize) / float64(perTaskConfigSize)))
+
 		if taskCount > currentTaskCount {
 			for i := currentTaskCount; i < taskCount; i++ {
-				go delayScheduler(1*time.Millisecond, 10*time.Millisecond, longPulling(i))
+				schedulerMap.Set(strconv.Itoa(i), true)
+				go delayScheduler(time.NewTimer(1*time.Millisecond), 10*time.Millisecond, strconv.Itoa(i), longPulling(i))
 			}
 			currentTaskCount = taskCount
+		} else if taskCount < currentTaskCount {
+			for i := currentTaskCount - taskCount; i < currentTaskCount; i++ {
+				if _, ok := schedulerMap.Get(strconv.Itoa(i)); ok {
+					schedulerMap.Set(strconv.Itoa(i), false)
+					currentTaskCount = taskCount
+				}
+			}
+
 		}
 	}
 }
@@ -296,15 +335,15 @@ func longPulling(taskId int) func() {
 	return func() {
 		var listeningConfigs string
 		var client *ConfigClient
-		isInitializing := false
+		initializationList := make([]cacheData, 0)
 		for _, key := range cacheMap.Keys() {
 			if value, ok := cacheMap.Get(key); ok {
 				cData := value.(cacheData)
 				client = cData.configClient
-				if cData.isInitializing {
-					isInitializing = true
-				}
 				if cData.taskId == taskId {
+					if cData.isInitializing {
+						initializationList = append(initializationList, cData)
+					}
 					if len(cData.tenant) > 0 {
 						listeningConfigs += cData.dataId + constant.SPLIT_CONFIG_INNER + cData.group + constant.SPLIT_CONFIG_INNER +
 							cData.md5 + constant.SPLIT_CONFIG_INNER + cData.tenant + constant.SPLIT_CONFIG
@@ -315,7 +354,6 @@ func longPulling(taskId int) func() {
 				}
 			}
 		}
-
 		if len(listeningConfigs) > 0 {
 			clientConfig, err := client.GetClientConfig()
 			if err != nil {
@@ -327,7 +365,7 @@ func longPulling(taskId int) func() {
 			params[constant.KEY_LISTEN_CONFIGS] = listeningConfigs
 
 			var changed string
-			changedTmp, err := client.configProxy.ListenConfig(params, isInitializing, clientConfig.AccessKey, clientConfig.SecretKey)
+			changedTmp, err := client.configProxy.ListenConfig(params, len(initializationList) > 0, clientConfig.AccessKey, clientConfig.SecretKey)
 			if err == nil {
 				changed = changedTmp
 			} else {
@@ -337,6 +375,10 @@ func longPulling(taskId int) func() {
 					log.Printf("[client.ListenConfig] listen config error: %+v", err)
 				}
 			}
+			for _, v := range initializationList {
+				v.isInitializing = false
+				cacheMap.Set(utils.GetConfigCacheKey(v.dataId, v.group, clientConfig.NamespaceId), v)
+			}
 			if strings.ToLower(strings.Trim(changed, " ")) == "" {
 				log.Println("[client.ListenConfig] no change")
 			} else {
@@ -344,6 +386,7 @@ func longPulling(taskId int) func() {
 				client.callListener(changed, clientConfig.NamespaceId)
 			}
 		}
+
 	}
 
 }
@@ -363,15 +406,13 @@ func (client *ConfigClient) callListener(changed, tenant string) {
 					cData.content = content
 					cData.md5 = util.Md5(content)
 					if cData.md5 != cData.cacheDataListener.lastMd5 {
-						cData.cacheDataListener.listener("", attrs[1], attrs[0], cData.content)
+						go cData.cacheDataListener.listener("", attrs[1], attrs[0], cData.content)
 						cData.cacheDataListener.lastMd5 = cData.md5
-						cData.isInitializing = false
 						cacheMap.Set(utils.GetConfigCacheKey(cData.dataId, cData.group, tenant), cData)
 					}
 				} else {
 					log.Printf("[client.getConfigInner] DataId:[%s] Group:[%s] Error:[%+v]", cData.dataId, cData.group, err)
 				}
-
 			}
 		}
 	}

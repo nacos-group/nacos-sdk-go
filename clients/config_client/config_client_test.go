@@ -381,8 +381,8 @@ func TestListen(t *testing.T) {
 	// ListenConfig
 	t.Run("TestListenConfig", func(t *testing.T) {
 		client := cretateConfigClientTest()
-		/*	key := utils.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
-			cache.WriteConfigToFile(key, client.configCacheDir, "")*/
+		key := utils.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
+		cache.WriteConfigToFile(key, client.configCacheDir, "")
 		var err error
 		var success bool
 		ch := make(chan string)
@@ -638,12 +638,93 @@ func TestCancelListenConfig(t *testing.T) {
 	})
 }
 
-//TestDelayScheduler
-//Notice when the log is printed
-func TestDelayScheduler(t *testing.T) {
-	go delayScheduler(1*time.Millisecond, 1*time.Second, func() {
-		fmt.Println(time.Now())
-		time.Sleep(1 * time.Second)
-	})
-	time.Sleep(6 * time.Second)
+//When the number of listeners is greater than perTaskConfigSize,watch goroutine go down
+func TestCancelDelayScheduler(t *testing.T) {
+	var err error
+	client := cretateConfigClientTest()
+	key := utils.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
+	cache.WriteConfigToFile(key, client.configCacheDir, "")
+	key = utils.GetConfigCacheKey(localConfigTest.DataId+"1", localConfigTest.Group, clientConfigTest.NamespaceId)
+	cache.WriteConfigToFile(key, client.configCacheDir, "")
+	key = utils.GetConfigCacheKey(localConfigTest.DataId+"2", localConfigTest.Group, clientConfigTest.NamespaceId)
+	cache.WriteConfigToFile(key, client.configCacheDir, "")
+	key = utils.GetConfigCacheKey(localConfigTest.DataId+"3", localConfigTest.Group, clientConfigTest.NamespaceId)
+	cache.WriteConfigToFile(key, client.configCacheDir, "")
+	listenConfigParam := vo.ConfigParam{
+		DataId: localConfigTest.DataId,
+		Group:  localConfigTest.Group,
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+		},
+	}
+	listenConfigParam1 := vo.ConfigParam{
+		DataId: localConfigTest.DataId + "1",
+		Group:  localConfigTest.Group,
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+		},
+	}
+	listenConfigParam2 := vo.ConfigParam{
+		DataId: localConfigTest.DataId + "2",
+		Group:  localConfigTest.Group,
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+		},
+	}
+	listenConfigParam3 := vo.ConfigParam{
+		DataId: localConfigTest.DataId + "3",
+		Group:  localConfigTest.Group,
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+		},
+	}
+	go func() {
+		err = client.ListenConfig(listenConfigParam)
+		assert.Nil(t, err)
+	}()
+
+	go func() {
+		err = client.ListenConfig(listenConfigParam1)
+		assert.Nil(t, err)
+	}()
+
+	go func() {
+		err = client.ListenConfig(listenConfigParam2)
+		assert.Nil(t, err)
+	}()
+
+	go func() {
+		err = client.ListenConfig(listenConfigParam3)
+		assert.Nil(t, err)
+	}()
+
+	success, err := client.PublishConfig(vo.ConfigParam{
+		DataId:  localConfigTest.DataId,
+		Group:   localConfigTest.Group,
+		Content: localConfigTest.Content})
+	assert.Nil(t, err)
+	assert.Equal(t, true, success)
+
+	success, err = client.PublishConfig(vo.ConfigParam{
+		DataId:  localConfigTest.DataId + "1",
+		Group:   localConfigTest.Group,
+		Content: localConfigTest.Content + "1"})
+
+	success, err = client.PublishConfig(vo.ConfigParam{
+		DataId:  localConfigTest.DataId + "2",
+		Group:   localConfigTest.Group,
+		Content: localConfigTest.Content + "2"})
+
+	success, err = client.PublishConfig(vo.ConfigParam{
+		DataId:  localConfigTest.DataId + "3",
+		Group:   localConfigTest.Group,
+		Content: localConfigTest.Content + "3"})
+	assert.Nil(t, err)
+	assert.Equal(t, true, success)
+
+	time.Sleep(3 * time.Second)
+	fmt.Println("CancelListenConfig")
+	//Cancel listen config
+	client.CancelListenConfig(listenConfigParam)
+	time.Sleep(10 * time.Second)
 }
