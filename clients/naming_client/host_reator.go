@@ -144,7 +144,6 @@ func (hr *HostReactor) asyncUpdateService() {
 	for {
 		for _, v := range hr.serviceInfoMap.Items() {
 			service := v.(model.Service)
-			key := utils.GetServiceCacheKey(service.Name, service.Clusters)
 			lastRefTime, ok := hr.updateTimeMap.Get(utils.GetServiceCacheKey(service.Name, service.Clusters))
 			if !ok {
 				lastRefTime = uint64(0)
@@ -152,12 +151,25 @@ func (hr *HostReactor) asyncUpdateService() {
 			if uint64(utils.CurrentMillis())-lastRefTime.(uint64) > service.CacheMillis {
 				sema.Acquire()
 				go func() {
-					hr.updateServiceNow(service.Name, service.Clusters, key)
+					hr.asyncUpdateServiceNow(service.Name, service.Clusters)
 					sema.Release()
 				}()
 			}
 		}
 		time.Sleep(1 * time.Second)
 	}
+}
 
+func (hr *HostReactor) asyncUpdateServiceNow(serviceName, clusters string) {
+	result, err := hr.serviceProxy.QueryList(serviceName, clusters, hr.pushReceiver.port, false)
+
+	if err != nil {
+		log.Printf("[ERROR]:query list return error!servieName:%s cluster:%s  err:%s \n", serviceName, clusters, err.Error())
+		return
+	}
+	if result == "" {
+		log.Printf("[ERROR]:query list is empty!servieName:%s cluster:%s \n", serviceName, clusters)
+		return
+	}
+	hr.ProcessServiceJson(result)
 }
