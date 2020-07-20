@@ -95,7 +95,7 @@ success, _ := namingClient.RegisterInstance(vo.RegisterInstanceParam{
 
 ```go
 
-success, _ := namingClient.DeregisterInstance(vo.RegisterInstanceParam{
+success, _ := namingClient.DeregisterInstance(vo.DeregisterInstanceParam{
     Ip:          "10.0.0.11",
     Port:        8848,
     ServiceName: "demo.go",
