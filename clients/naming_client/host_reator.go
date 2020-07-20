@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 	"reflect"
-	"sync"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
@@ -22,7 +21,6 @@ type HostReactor struct {
 	subCallback          SubscribeCallback
 	updateTimeMap        cache.ConcurrentMap
 	updateCacheWhenEmpty bool
-	lock                 *sync.Mutex
 }
 
 const Default_Update_Thread_Num = 20
@@ -39,7 +37,6 @@ func NewHostReactor(serviceProxy NamingProxy, cacheDir string, updateThreadNum i
 		subCallback:          subCallback,
 		updateTimeMap:        cache.NewConcurrentMap(),
 		updateCacheWhenEmpty: updateCacheWhenEmpty,
-		lock:                 new(sync.Mutex),
 	}
 	pr := NewPushRecevier(&hr)
 	hr.pushReceiver = *pr
@@ -92,7 +89,7 @@ func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string) (mode
 	key := utils.GetServiceCacheKey(serviceName, clusters)
 	cacheService, ok := hr.serviceInfoMap.Get(key)
 	if !ok {
-		hr.updateServiceNow(serviceName, clusters, key)
+		hr.updateServiceNow(serviceName, clusters)
 		if cacheService, ok = hr.serviceInfoMap.Get(key); !ok {
 			return model.Service{}, errors.New("get service info failed")
 		}
@@ -121,22 +118,18 @@ func (hr *HostReactor) GetAllServiceInfo(nameSpace, groupName string, pageNo, pa
 	return data
 }
 
-func (hr *HostReactor) updateServiceNow(serviceName, clusters, key string) {
-	hr.lock.Lock()
-	if _, ok := hr.serviceInfoMap.Get(key); !ok {
-		result, err := hr.serviceProxy.QueryList(serviceName, clusters, hr.pushReceiver.port, false)
+func (hr *HostReactor) updateServiceNow(serviceName, clusters string) {
+	result, err := hr.serviceProxy.QueryList(serviceName, clusters, hr.pushReceiver.port, false)
 
-		if err != nil {
-			log.Printf("[ERROR]:query list return error!servieName:%s cluster:%s  err:%s \n", serviceName, clusters, err.Error())
-			return
-		}
-		if result == "" {
-			log.Printf("[ERROR]:query list is empty!servieName:%s cluster:%s \n", serviceName, clusters)
-			return
-		}
-		hr.ProcessServiceJson(result)
+	if err != nil {
+		log.Printf("[ERROR]:query list return error!servieName:%s cluster:%s  err:%s \n", serviceName, clusters, err.Error())
+		return
 	}
-	hr.lock.Unlock()
+	if result == "" {
+		log.Printf("[ERROR]:query list is empty!servieName:%s cluster:%s \n", serviceName, clusters)
+		return
+	}
+	hr.ProcessServiceJson(result)
 }
 
 func (hr *HostReactor) asyncUpdateService() {
@@ -151,25 +144,11 @@ func (hr *HostReactor) asyncUpdateService() {
 			if uint64(utils.CurrentMillis())-lastRefTime.(uint64) > service.CacheMillis {
 				sema.Acquire()
 				go func() {
-					hr.asyncUpdateServiceNow(service.Name, service.Clusters)
+					hr.updateServiceNow(service.Name, service.Clusters)
 					sema.Release()
 				}()
 			}
 		}
 		time.Sleep(1 * time.Second)
 	}
-}
-
-func (hr *HostReactor) asyncUpdateServiceNow(serviceName, clusters string) {
-	result, err := hr.serviceProxy.QueryList(serviceName, clusters, hr.pushReceiver.port, false)
-
-	if err != nil {
-		log.Printf("[ERROR]:query list return error!servieName:%s cluster:%s  err:%s \n", serviceName, clusters, err.Error())
-		return
-	}
-	if result == "" {
-		log.Printf("[ERROR]:query list is empty!servieName:%s cluster:%s \n", serviceName, clusters)
-		return
-	}
-	hr.ProcessServiceJson(result)
 }
