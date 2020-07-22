@@ -650,6 +650,14 @@ func TestCancelDelayScheduler(t *testing.T) {
 	cache.WriteConfigToFile(key, client.configCacheDir, "")
 	key = utils.GetConfigCacheKey(localConfigTest.DataId+"3", localConfigTest.Group, clientConfigTest.NamespaceId)
 	cache.WriteConfigToFile(key, client.configCacheDir, "")
+	key = utils.GetConfigCacheKey(localConfigTest.DataId+"4", localConfigTest.Group, clientConfigTest.NamespaceId)
+	cache.WriteConfigToFile(key, client.configCacheDir, "")
+	key = utils.GetConfigCacheKey(localConfigTest.DataId+"5", localConfigTest.Group, clientConfigTest.NamespaceId)
+	cache.WriteConfigToFile(key, client.configCacheDir, "")
+	key = utils.GetConfigCacheKey(localConfigTest.DataId+"6", localConfigTest.Group, clientConfigTest.NamespaceId)
+	cache.WriteConfigToFile(key, client.configCacheDir, "")
+	key = utils.GetConfigCacheKey(localConfigTest.DataId+"7", localConfigTest.Group, clientConfigTest.NamespaceId)
+	cache.WriteConfigToFile(key, client.configCacheDir, "")
 	listenConfigParam := vo.ConfigParam{
 		DataId: localConfigTest.DataId,
 		Group:  localConfigTest.Group,
@@ -678,6 +686,34 @@ func TestCancelDelayScheduler(t *testing.T) {
 			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
 		},
 	}
+	listenConfigParam4 := vo.ConfigParam{
+		DataId: localConfigTest.DataId + "4",
+		Group:  localConfigTest.Group,
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+		},
+	}
+	listenConfigParam5 := vo.ConfigParam{
+		DataId: localConfigTest.DataId + "5",
+		Group:  localConfigTest.Group,
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+		},
+	}
+	listenConfigParam6 := vo.ConfigParam{
+		DataId: localConfigTest.DataId + "6",
+		Group:  localConfigTest.Group,
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+		},
+	}
+	listenConfigParam7 := vo.ConfigParam{
+		DataId: localConfigTest.DataId + "7",
+		Group:  localConfigTest.Group,
+		OnChange: func(namespace, group, dataId, data string) {
+			fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
+		},
+	}
 	go func() {
 		err = client.ListenConfig(listenConfigParam)
 		assert.Nil(t, err)
@@ -695,6 +731,26 @@ func TestCancelDelayScheduler(t *testing.T) {
 
 	go func() {
 		err = client.ListenConfig(listenConfigParam3)
+		assert.Nil(t, err)
+	}()
+
+	go func() {
+		err = client.ListenConfig(listenConfigParam4)
+		assert.Nil(t, err)
+	}()
+
+	go func() {
+		err = client.ListenConfig(listenConfigParam5)
+		assert.Nil(t, err)
+	}()
+
+	go func() {
+		err = client.ListenConfig(listenConfigParam6)
+		assert.Nil(t, err)
+	}()
+
+	go func() {
+		err = client.ListenConfig(listenConfigParam7)
 		assert.Nil(t, err)
 	}()
 
@@ -719,12 +775,35 @@ func TestCancelDelayScheduler(t *testing.T) {
 		DataId:  localConfigTest.DataId + "3",
 		Group:   localConfigTest.Group,
 		Content: localConfigTest.Content + "3"})
+	success, err = client.PublishConfig(vo.ConfigParam{
+		DataId:  localConfigTest.DataId + "4",
+		Group:   localConfigTest.Group,
+		Content: localConfigTest.Content + "4"})
+	success, err = client.PublishConfig(vo.ConfigParam{
+		DataId:  localConfigTest.DataId + "5",
+		Group:   localConfigTest.Group,
+		Content: localConfigTest.Content + "5"})
+	success, err = client.PublishConfig(vo.ConfigParam{
+		DataId:  localConfigTest.DataId + "6",
+		Group:   localConfigTest.Group,
+		Content: localConfigTest.Content + "6"})
+	success, err = client.PublishConfig(vo.ConfigParam{
+		DataId:  localConfigTest.DataId + "7",
+		Group:   localConfigTest.Group,
+		Content: localConfigTest.Content + "7"})
+
 	assert.Nil(t, err)
 	assert.Equal(t, true, success)
 
-	time.Sleep(3 * time.Second)
 	fmt.Println("CancelListenConfig")
 	//Cancel listen config
 	client.CancelListenConfig(listenConfigParam)
-	time.Sleep(10 * time.Second)
+	//Cancel listen config
+	client.CancelListenConfig(listenConfigParam7)
+	//Cancel listen config
+	client.CancelListenConfig(listenConfigParam6)
+	//Cancel listen config
+	client.CancelListenConfig(listenConfigParam3)
+	//Cancel listen config
+	client.CancelListenConfig(listenConfigParam2)
 }

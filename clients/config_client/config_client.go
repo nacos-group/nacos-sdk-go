@@ -319,13 +319,12 @@ func listenConfigExecutor() func() {
 			}
 			currentTaskCount = taskCount
 		} else if taskCount < currentTaskCount {
-			for i := currentTaskCount - taskCount; i < currentTaskCount; i++ {
+			for i := taskCount; i < currentTaskCount; i++ {
 				if _, ok := schedulerMap.Get(strconv.Itoa(i)); ok {
 					schedulerMap.Set(strconv.Itoa(i), false)
-					currentTaskCount = taskCount
 				}
 			}
-
+			currentTaskCount = taskCount
 		}
 	}
 }
