@@ -122,8 +122,8 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, err
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
-	return service, nil
+	service, err := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	return service, err
 }
 
 func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (model.ServiceList, error) {
@@ -141,18 +141,21 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	service, err := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
 	if service.Hosts == nil || len(service.Hosts) == 0 {
 		return []model.Instance{}, errors.New("instance list is empty!")
 	}
-	return service.Hosts, nil
+	return service.Hosts, err
 }
 
 func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.Instance, error) {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	service, err := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	if err != nil {
+		return nil, err
+	}
 	return sc.selectInstances(service, param.HealthyOnly)
 }
 
@@ -174,7 +177,10 @@ func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanc
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	service, err := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	if err != nil {
+		return nil, err
+	}
 	return sc.selectOneHealthyInstances(service)
 }
 

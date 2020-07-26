@@ -2,6 +2,7 @@ package naming_client
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"reflect"
 	"time"
@@ -84,17 +85,17 @@ func (hr *HostReactor) ProcessServiceJson(result string) {
 	}
 }
 
-func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string) model.Service {
+func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string) (model.Service, error) {
 	key := utils.GetServiceCacheKey(serviceName, clusters)
 	cacheService, ok := hr.serviceInfoMap.Get(key)
 	if !ok {
-		cacheService = model.Service{Name: serviceName, Clusters: clusters}
-		hr.serviceInfoMap.Set(key, cacheService)
 		hr.updateServiceNow(serviceName, clusters)
+		if cacheService, ok = hr.serviceInfoMap.Get(key); !ok {
+			return model.Service{}, errors.New("get service info failed")
+		}
 	}
-	newService, _ := hr.serviceInfoMap.Get(key)
 
-	return newService.(model.Service)
+	return cacheService.(model.Service), nil
 }
 
 func (hr *HostReactor) GetAllServiceInfo(nameSpace, groupName string, pageNo, pageSize uint32) model.ServiceList {
@@ -117,8 +118,9 @@ func (hr *HostReactor) GetAllServiceInfo(nameSpace, groupName string, pageNo, pa
 	return data
 }
 
-func (hr *HostReactor) updateServiceNow(serviceName string, clusters string) {
+func (hr *HostReactor) updateServiceNow(serviceName, clusters string) {
 	result, err := hr.serviceProxy.QueryList(serviceName, clusters, hr.pushReceiver.port, false)
+
 	if err != nil {
 		log.Printf("[ERROR]:query list return error!servieName:%s cluster:%s  err:%s \n", serviceName, clusters, err.Error())
 		return
@@ -149,5 +151,4 @@ func (hr *HostReactor) asyncUpdateService() {
 		}
 		time.Sleep(1 * time.Second)
 	}
-
 }

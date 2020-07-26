@@ -74,6 +74,22 @@ func main() {
 		Group:   "group",
 		Content: "abc"})
 
+	time.Sleep(2 * time.Second)
+	err = client.CancelListenConfig(vo.ConfigParam{
+		DataId: "dataId",
+		Group:  "group"})
+	if err == nil {
+		fmt.Println("cancel listen config")
+	}
+
+	time.Sleep(2 * time.Second)
+	ok, err := client.DeleteConfig(vo.ConfigParam{
+		DataId: "dataId",
+		Group:  "group"})
+	if ok && err == nil {
+		fmt.Printf("delete config dataId:[%s] group:[%s]", "dataId", "group")
+	}
+
 	select {}
 
 }

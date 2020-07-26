@@ -95,7 +95,7 @@ success, _ := namingClient.RegisterInstance(vo.RegisterInstanceParam{
 
 ```go
 
-success, _ := namingClient.DeregisterInstance(vo.RegisterInstanceParam{
+success, _ := namingClient.DeregisterInstance(vo.DeregisterInstanceParam{
     Ip:          "10.0.0.11",
     Port:        8848,
     ServiceName: "demo.go",
@@ -221,6 +221,16 @@ configClient.ListenConfig(vo.ConfigParam{
     OnChange: func(namespace, group, dataId, data string) {
         fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
 	},
+})
+
+```
+* 取消监听配置：CancelListenConfig
+
+```go
+
+configClient.CancelListenConfig(vo.ConfigParam{
+    DataId: "dataId",
+    Group:  "group",
 })
 
 ```
