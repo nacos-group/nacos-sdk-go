@@ -426,7 +426,7 @@ func Test_listenConfigTask_NoChange(t *testing.T) {
 	).Times(1).Return(http_agent.FakeHttpResponse(200, ""), nil)
 
 	changeCount := 0
-	client.listenConfigTask(clientConfigTestWithTenant, vo.ConfigParam{
+	_ = client.listenConfigTask(clientConfigTestWithTenant, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "content",
@@ -468,7 +468,7 @@ func Test_listenConfigTask_Change_WithTenant(t *testing.T) {
 	_ = client.SetClientConfig(clientConfigTestWithTenant)
 	_ = client.SetServerConfig(serverConfigsTest)
 	configData := ""
-	client.listenConfigTask(clientConfigTestWithTenant, vo.ConfigParam{
+	_ = client.listenConfigTask(clientConfigTestWithTenant, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "content",
@@ -509,7 +509,7 @@ func Test_listenConfigTask_Change_NoTenant(t *testing.T) {
 	_ = client.SetClientConfig(clientConfigTest)
 	_ = client.SetServerConfig(serverConfigsTest)
 	configData := ""
-	client.listenConfigTask(clientConfigTest, vo.ConfigParam{
+	_ = client.listenConfigTask(clientConfigTest, vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
 		Content: "content",
@@ -590,7 +590,7 @@ func TestCancelListenConfig(t *testing.T) {
 	client := cretateConfigClientTest()
 	var err error
 	var success bool
-	var context,context1 string
+	var context, context1 string
 	listenConfigParam := vo.ConfigParam{
 		DataId: "dataId",
 		Group:  "group",
@@ -640,6 +640,6 @@ func TestCancelListenConfig(t *testing.T) {
 		assert.Equal(t, true, success)
 	}
 	time.Sleep(2 * time.Second)
-	assert.Equal(t,"abcd3",context)
-	assert.Equal(t,"abcd5",context1)
+	assert.Equal(t, "abcd3", context)
+	assert.Equal(t, "abcd5", context1)
 }

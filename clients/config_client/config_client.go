@@ -12,6 +12,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/utils"
 	"github.com/nacos-group/nacos-sdk-go/vo"
+	"time"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 	"log"
@@ -209,17 +210,23 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 			case <-param.ListenCloseChan:
 				return
 			default:
-				clientConfig, _ := client.GetClientConfig()
-				client.listenConfigTask(clientConfig, param)
+				clientConfig, err := client.GetClientConfig()
+				if err != nil {
+					time.Sleep(time.Duration(clientConfig.ListenInterval) * time.Millisecond)
+					continue
+				}
+				err = client.listenConfigTask(clientConfig, param)
+				if err != nil {
+					time.Sleep(time.Duration(clientConfig.ListenInterval) * time.Millisecond)
+				}
 			}
-
 		}
 	}()
 
 	return nil
 }
 
-func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig, param vo.ConfigParam) {
+func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig, param vo.ConfigParam) (err error) {
 	var listeningConfigs string
 	// 检查&拼接监听参数
 	client.mutex.Lock()
@@ -276,6 +283,7 @@ func (client *ConfigClient) listenConfigTask(clientConfig constant.ClientConfig,
 		log.Print("[client.ListenConfig] config changed:" + changed)
 		client.updateLocalConfig(changed, param)
 	}
+	return err
 }
 
 func (client *ConfigClient) updateLocalConfig(changed string, param vo.ConfigParam) {
