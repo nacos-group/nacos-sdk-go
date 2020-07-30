@@ -10,6 +10,7 @@ Nacos-sdk-go是Nacos的Go语言客户端，它实现了服务发现和动态配�
 
 ## 使用限制
 支持Go>v1.12版本
+
 支持Nacos>1.x版本
 
 ## 安装
@@ -116,7 +117,7 @@ success, err := namingClient.RegisterInstance(vo.RegisterInstanceParam{
     Ephemeral:   true,
     Metadata:  map[string]string{"idc":"shanghai"},
     ClusterName: "cluster-a", //默认值DEFAULT
-	GroupName:   "group-a",  //默认值DEFAULT_GROUP
+    GroupName:   "group-a",  //默认值DEFAULT_GROUP
 })
 
 ```
@@ -131,7 +132,7 @@ success, err := namingClient.DeregisterInstance(vo.DeregisterInstanceParam{
     ServiceName: "demo.go",
     Ephemeral:   true,
     Cluster:     "cluster-a", //默认值DEFAULT
-	GroupName:   "group-a",  //默认值DEFAULT_GROUP
+    GroupName:   "group-a",  //默认值DEFAULT_GROUP
 })
 
 ```
@@ -223,8 +224,8 @@ err:=namingClient.Unsubscribe(vo.SubscribeParam{
 
 serviceInfos, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
     NameSpace: "0e83cc81-9d8c-4bb8-a28a-ff703187543f",
-	PageNo:   1,
-	ageSize: 10,
+    PageNo:   1,
+    PageSize: 10,
 	})),
 
 ```
@@ -290,10 +291,10 @@ err:=configClient.CancelListenConfig(vo.ConfigParam{
 ```go
 configPage,err:=configClient.SearchConfig(vo.SearchConfigParam{
     Search:   "blur",
-	DataId:   "",
-	Group:    "",
-	PageNo:   1,
-	PageSize: 10,
+    DataId:   "",
+    Group:    "",
+    PageNo:   1,
+    PageSize: 10,
 })
 ```
 ## 例子

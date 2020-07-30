@@ -10,6 +10,7 @@ Nacos-sdk-go for Go client allows you to access Nacos service,it supports servic
 
 ## Requirements
 Supported Go version over 1.12
+
 Supported Nacos version over 1.x
 
 ## Installation
@@ -116,7 +117,7 @@ success, err := namingClient.RegisterInstance(vo.RegisterInstanceParam{
     Ephemeral:   true,
     Metadata:  map[string]string{"idc":"shanghai"},
     ClusterName: "cluster-a", //default value is DEFAULT
-	GroupName:   "group-a",  //default value is DEFAULT_GROUP
+    GroupName:   "group-a",  //default value is DEFAULT_GROUP
 })
 
 ```
@@ -131,7 +132,7 @@ success, err := namingClient.DeregisterInstance(vo.DeregisterInstanceParam{
     ServiceName: "demo.go",
     Ephemeral:   true,
     Cluster:     "cluster-a", //default value is DEFAULT
-	GroupName:   "group-a",  //default value is DEFAULT_GROUP
+    GroupName:   "group-a",  //default value is DEFAULT_GROUP
 })
 
 ```
@@ -223,9 +224,9 @@ err:=namingClient.Unsubscribe(vo.SubscribeParam{
 
 serviceInfos, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
     NameSpace: "0e83cc81-9d8c-4bb8-a28a-ff703187543f",
-	PageNo:   1,
-	ageSize: 10,
-	})),
+    PageNo:   1,
+    PageSize: 10,
+    })),
 
 ```
 
