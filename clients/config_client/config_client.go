@@ -2,7 +2,6 @@ package config_client
 
 import (
 	"errors"
-	"log"
 	"math"
 	"os"
 	"strconv"
@@ -17,9 +16,8 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_error"
-	"github.com/nacos-group/nacos-sdk-go/common/util"
 	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/utils"
+	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 )
 
@@ -73,7 +71,12 @@ func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
 	if err != nil {
 		return config, err
 	}
-	err = logger.InitLog(clientConfig.LogDir)
+	err = logger.InitLogger(logger.Config{
+		Level:        clientConfig.LogLevel,
+		OutputPath:   clientConfig.LogDir,
+		RotationTime: clientConfig.RotateTime,
+		MaxAge:       clientConfig.MaxAge,
+	})
 	if err != nil {
 		return config, err
 	}
@@ -97,19 +100,18 @@ func (client *ConfigClient) sync() (clientConfig constant.ClientConfig,
 	serverConfigs []constant.ServerConfig, agent http_agent.IHttpAgent, err error) {
 	clientConfig, err = client.GetClientConfig()
 	if err != nil {
-		log.Println(err, ";do you call client.SetClientConfig()?")
+		logger.Errorf("getClientConfig catch error:%+v", err)
+		return
 	}
-	if err == nil {
-		serverConfigs, err = client.GetServerConfig()
-		if err != nil {
-			log.Println(err, ";do you call client.SetServerConfig()?")
-		}
+	serverConfigs, err = client.GetServerConfig()
+	if err != nil {
+		logger.Errorf("getServerConfig catch error:%+v", err)
+		return
 	}
-	if err == nil {
-		agent, err = client.GetHttpAgent()
-		if err != nil {
-			log.Println(err, ";do you call client.SetHttpAgent()?")
-		}
+
+	agent, err = client.GetHttpAgent()
+	if err != nil {
+		logger.Errorf("getHttpAgent catch error:%+v", err)
 	}
 	return
 }
@@ -151,11 +153,11 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 		return "", err
 	}
 	clientConfig, _ := client.GetClientConfig()
-	cacheKey := utils.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
+	cacheKey := util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
 	content, err = client.configProxy.GetConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
 
 	if err != nil {
-		log.Printf("[ERROR] get config from server error:%s ", err.Error())
+		logger.Infof("get config from server error:%s ", err.Error())
 		if _, ok := err.(*nacos_error.NacosError); ok {
 			nacosErr := err.(*nacos_error.NacosError)
 			if nacosErr.ErrorCode() == "404" {
@@ -168,7 +170,7 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 		}
 		content, err = cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
 		if err != nil {
-			log.Printf("[ERROR] get config from cache  error:%s ", err.Error())
+			logger.Errorf("get config from cache  error:%s ", err.Error())
 			return "", errors.New("read config from both server and cache fail")
 		}
 
@@ -193,8 +195,7 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	return client.configProxy.PublishConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
 }
 
-func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool,
-	err error) {
+func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, err error) {
 	if len(param.DataId) <= 0 {
 		err = errors.New("[client.DeleteConfig] param.dataId can not be empty")
 	}
@@ -210,16 +211,15 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool,
 func (client *ConfigClient) CancelListenConfig(param vo.ConfigParam) (err error) {
 	clientConfig, err := client.GetClientConfig()
 	if err != nil {
-		log.Fatalf("[checkConfigInfo.GetClientConfig] failed.")
+		logger.Errorf("[checkConfigInfo.GetClientConfig] failed,err:%+v", err.Error())
 		return
 	}
-	cacheMap.Remove(utils.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId))
-	log.Printf("Cancel listen config DataId:%s Group:%s", param.DataId, param.Group)
+	cacheMap.Remove(util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId))
+	logger.Infof("Cancel listen config DataId:%s Group:%s", param.DataId, param.Group)
 	remakeId := int(math.Ceil(float64(len(cacheMap.Keys())) / float64(perTaskConfigSize)))
 	if remakeId < currentTaskCount {
 		remakeCacheDataTaskId(remakeId)
 	}
-
 	return err
 }
 
@@ -252,11 +252,11 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	}
 	clientConfig, err := client.GetClientConfig()
 	if err != nil {
-		err = errors.New("[checkConfigInfo.GetClientConfig] failed.")
+		err = errors.New("[checkConfigInfo.GetClientConfig] failed")
 		return err
 	}
 
-	key := utils.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
+	key := util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
 	var cData cacheData
 	if v, ok := cacheMap.Get(key); ok {
 		cData = v.(cacheData)
@@ -264,7 +264,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	} else {
 		content, err := cache.ReadConfigFromFile(key, client.configCacheDir)
 		if err != nil {
-			log.Printf("[cache.ReadConfigFromFile] error: %+v", err)
+			logger.Errorf("[cache.ReadConfigFromFile] error: %+v", err)
 			content = ""
 		}
 		md5Str := util.Md5(content)
@@ -275,7 +275,6 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 
 		cData = cacheData{
 			isInitializing:    true,
-			appName:           param.AppName,
 			dataId:            param.DataId,
 			group:             param.Group,
 			tenant:            clientConfig.NamespaceId,
@@ -356,7 +355,7 @@ func longPulling(taskId int) func() {
 		if len(listeningConfigs) > 0 {
 			clientConfig, err := client.GetClientConfig()
 			if err != nil {
-				log.Printf("[checkConfigInfo.GetClientConfig] err: %+v", err)
+				logger.Errorf("[checkConfigInfo.GetClientConfig] err: %+v", err)
 				return
 			}
 			// http get
@@ -371,17 +370,17 @@ func longPulling(taskId int) func() {
 				if _, ok := err.(*nacos_error.NacosError); ok {
 					changed = changedTmp
 				} else {
-					log.Printf("[client.ListenConfig] listen config error: %+v", err)
+					logger.Errorf("[client.ListenConfig] listen config error: %+v", err)
 				}
 			}
 			for _, v := range initializationList {
 				v.isInitializing = false
-				cacheMap.Set(utils.GetConfigCacheKey(v.dataId, v.group, clientConfig.NamespaceId), v)
+				cacheMap.Set(util.GetConfigCacheKey(v.dataId, v.group, clientConfig.NamespaceId), v)
 			}
-			if strings.ToLower(strings.Trim(changed, " ")) == "" {
-				log.Println("[client.ListenConfig] no change")
+			if len(strings.ToLower(strings.Trim(changed, " "))) == 0 {
+				logger.Info("[client.ListenConfig] no change")
 			} else {
-				log.Print("[client.ListenConfig] config changed:" + changed)
+				logger.Info("[client.ListenConfig] config changed:" + changed)
 				client.callListener(changed, clientConfig.NamespaceId)
 			}
 		}
@@ -396,21 +395,22 @@ func (client *ConfigClient) callListener(changed, tenant string) {
 	for _, config := range changedConfigs {
 		attrs := strings.Split(config, "%02")
 		if len(attrs) >= 2 {
-			if value, ok := cacheMap.Get(utils.GetConfigCacheKey(attrs[0], attrs[1], tenant)); ok {
+			if value, ok := cacheMap.Get(util.GetConfigCacheKey(attrs[0], attrs[1], tenant)); ok {
 				cData := value.(cacheData)
-				if content, err := client.getConfigInner(vo.ConfigParam{
+				content, err := client.getConfigInner(vo.ConfigParam{
 					DataId: cData.dataId,
 					Group:  cData.group,
-				}); err == nil {
-					cData.content = content
-					cData.md5 = util.Md5(content)
-					if cData.md5 != cData.cacheDataListener.lastMd5 {
-						go cData.cacheDataListener.listener("", attrs[1], attrs[0], cData.content)
-						cData.cacheDataListener.lastMd5 = cData.md5
-						cacheMap.Set(utils.GetConfigCacheKey(cData.dataId, cData.group, tenant), cData)
-					}
-				} else {
-					log.Printf("[client.getConfigInner] DataId:[%s] Group:[%s] Error:[%+v]", cData.dataId, cData.group, err)
+				})
+				if err != nil {
+					logger.Errorf("[client.getConfigInner] DataId:[%s] Group:[%s] Error:[%+v]", cData.dataId, cData.group, err)
+					continue
+				}
+				cData.content = content
+				cData.md5 = util.Md5(content)
+				if cData.md5 != cData.cacheDataListener.lastMd5 {
+					go cData.cacheDataListener.listener("", attrs[1], attrs[0], cData.content)
+					cData.cacheDataListener.lastMd5 = cData.md5
+					cacheMap.Set(util.GetConfigCacheKey(cData.dataId, cData.group, tenant), cData)
 				}
 			}
 		}
@@ -440,7 +440,7 @@ func (client *ConfigClient) searchConfigInnter(param vo.SearchConfigParm) (*mode
 	clientConfig, _ := client.GetClientConfig()
 	configItems, err := client.configProxy.SearchConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
 	if err != nil {
-		log.Printf("[ERROR] search config from server error:%s ", err.Error())
+		logger.Errorf("search config from server error:%s ", err.Error())
 		if _, ok := err.(*nacos_error.NacosError); ok {
 			nacosErr := err.(*nacos_error.NacosError)
 			if nacosErr.ErrorCode() == "404" {

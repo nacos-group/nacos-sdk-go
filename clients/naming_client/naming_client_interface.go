@@ -8,23 +8,71 @@ import (
 //go:generate mockgen -destination ../../mock/mock_service_client_interface.go -package mock -source=./service_client_interface.go
 
 type INamingClient interface {
-	// 注册服务实例
+
+	//RegisterInstance use to register instance
+	//Ip  require
+	//Port  require
+	//Tenant optional
+	//Weight  require,it must be lager than 0
+	//Enable  require,the instance can be access or not
+	//Healthy  require,the instance is health or not
+	//Metadata  optional
+	//ClusterName  optional,default:DEFAULT
+	//ServiceName require
+	//GroupName optional,default:DEFAULT_GROUP
+	//Ephemeral optional
 	RegisterInstance(param vo.RegisterInstanceParam) (bool, error)
-	// 注销服务实例
+
+	//DeregisterInstance use to deregister instance
+	//Ip required
+	//Port required
+	//Tenant optional
+	//Cluster optional,default:DEFAULT
+	//ServiceName  require
+	//GroupName  optional,default:DEFAULT_GROUP
+	//Ephemeral optional
 	DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error)
-	// 获取服务信息
+
+	//GetService use to get service
+	//ServiceName require
+	//Clusters optional,default:DEFAULT
+	//GroupName optional,default:DEFAULT_GROUP
 	GetService(param vo.GetServiceParam) (model.Service, error)
-	//获取所有的实例列表
+
+	//SelectAllInstance return all instances,include healthy=false,enable=false,weight<=0
+	//ServiceName require
+	//Clusters optional,default:DEFAULT
+	//GroupName optional,default:DEFAULT_GROUP
 	SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error)
-	// 获取实例列表
+
+	//SelectInstances only return the instances of healthy=${HealthyOnly},enable=true and weight>0
+	//ServiceName require
+	//Clusters optional,default:DEFAULT
+	//GroupName optional,default:DEFAULT_GROUP
+	//HealthyOnly optional
 	SelectInstances(param vo.SelectInstancesParam) ([]model.Instance, error)
-	//获取一个健康的实例
+
+	//SelectInstances return one instance by WRR strategy for load balance
+	//And the instance should be health=true,enable=true and weight>0
+	//ServiceName require
+	//Clusters optional,default:DEFAULT
+	//GroupName optional,default:DEFAULT_GROUP
 	SelectOneHealthyInstance(param vo.SelectOneHealthInstanceParam) (*model.Instance, error)
-	// 服务监听
+
+	//Subscribe use to subscribe service change event
+	//ServiceName require
+	//Clusters optional,default:DEFAULT
+	//GroupName optional,default:DEFAULT_GROUP
+	//SubscribeCallback require
 	Subscribe(param *vo.SubscribeParam) error
-	//取消监听
+
+	//Unsubscribe use to unsubscribe service change event
+	//ServiceName require
+	//Clusters optional,default:DEFAULT
+	//GroupName optional,default:DEFAULT_GROUP
+	//SubscribeCallback require
 	Unsubscribe(param *vo.SubscribeParam) error
 
-	//获取全部服务信息
+	//GetAllServicesInfo use to get all service info by page
 	GetAllServicesInfo(param vo.GetAllServiceInfoParam) (model.ServiceList, error)
 }

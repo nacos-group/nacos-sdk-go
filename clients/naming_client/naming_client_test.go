@@ -11,7 +11,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/mock"
 	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/utils"
+	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
 )
@@ -514,11 +514,11 @@ func TestNamingClient_SelectOneHealthyInstance_SameWeight(t *testing.T) {
 	nc.SetHttpAgent(mockIHttpAgent)
 	client, _ := NewNamingClient(&nc)
 	instance1, err := client.selectOneHealthyInstances(services)
-	fmt.Println(utils.ToJsonString(instance1))
+	fmt.Println(util.ToJsonString(instance1))
 	assert.Nil(t, err)
 	assert.NotNil(t, instance1)
 	instance2, err := client.selectOneHealthyInstances(services)
-	fmt.Println(utils.ToJsonString(instance2))
+	fmt.Println(util.ToJsonString(instance2))
 	assert.Nil(t, err)
 	assert.NotNil(t, instance2)
 	//assert.NotEqual(t, instance1, instance2)
@@ -545,7 +545,7 @@ func TestNamingClient_SelectOneHealthyInstance_Empty(t *testing.T) {
 	nc.SetHttpAgent(mockIHttpAgent)
 	client, _ := NewNamingClient(&nc)
 	instance, err := client.selectOneHealthyInstances(services)
-	fmt.Println(utils.ToJsonString(instance))
+	fmt.Println(util.ToJsonString(instance))
 	assert.NotNil(t, err)
 	assert.Nil(t, instance)
 }
@@ -637,7 +637,7 @@ func TestNamingClient_SelectInstances_Healthy(t *testing.T) {
 	nc.SetHttpAgent(mockIHttpAgent)
 	client, _ := NewNamingClient(&nc)
 	instances, err := client.selectInstances(services, true)
-	fmt.Println(utils.ToJsonString(instances))
+	fmt.Println(util.ToJsonString(instances))
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(instances))
 }
@@ -729,7 +729,7 @@ func TestNamingClient_SelectInstances_Unhealthy(t *testing.T) {
 	nc.SetHttpAgent(mockIHttpAgent)
 	client, _ := NewNamingClient(&nc)
 	instances, err := client.selectInstances(services, false)
-	fmt.Println(utils.ToJsonString(instances))
+	fmt.Println(util.ToJsonString(instances))
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(instances))
 }
@@ -755,7 +755,7 @@ func TestNamingClient_SelectInstances_Empty(t *testing.T) {
 	nc.SetHttpAgent(mockIHttpAgent)
 	client, _ := NewNamingClient(&nc)
 	instances, err := client.selectInstances(services, false)
-	fmt.Println(utils.ToJsonString(instances))
+	fmt.Println(util.ToJsonString(instances))
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, len(instances))
 }

@@ -2,11 +2,11 @@ package naming_client
 
 import (
 	"errors"
-	"log"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/utils"
+	"github.com/nacos-group/nacos-sdk-go/util"
 )
 
 type SubscribeCallback struct {
@@ -20,8 +20,8 @@ func NewSubscribeCallback() SubscribeCallback {
 }
 
 func (ed *SubscribeCallback) AddCallbackFuncs(serviceName string, clusters string, callbackFunc *func(services []model.SubscribeService, err error)) {
-	log.Printf("[INFO] adding " + serviceName + " with " + clusters + " to listener map")
-	key := utils.GetServiceCacheKey(serviceName, clusters)
+	logger.Info("adding " + serviceName + " with " + clusters + " to listener map")
+	key := util.GetServiceCacheKey(serviceName, clusters)
 	var funcs []*func(services []model.SubscribeService, err error)
 	old, ok := ed.callbackFuncsMap.Get(key)
 	if ok {
@@ -32,8 +32,8 @@ func (ed *SubscribeCallback) AddCallbackFuncs(serviceName string, clusters strin
 }
 
 func (ed *SubscribeCallback) RemoveCallbackFuncs(serviceName string, clusters string, callbackFunc *func(services []model.SubscribeService, err error)) {
-	log.Printf("[INFO] removing " + serviceName + " with " + clusters + " to listener map")
-	key := utils.GetServiceCacheKey(serviceName, clusters)
+	logger.Info("removing " + serviceName + " with " + clusters + " to listener map")
+	key := util.GetServiceCacheKey(serviceName, clusters)
 	funcs, ok := ed.callbackFuncsMap.Get(key)
 	if ok && funcs != nil {
 		var newFuncs []*func(services []model.SubscribeService, err error)
@@ -51,7 +51,7 @@ func (ed *SubscribeCallback) ServiceChanged(service *model.Service) {
 	if service == nil || service.Name == "" {
 		return
 	}
-	key := utils.GetServiceCacheKey(service.Name, service.Clusters)
+	key := util.GetServiceCacheKey(service.Name, service.Clusters)
 	funcs, ok := ed.callbackFuncsMap.Get(key)
 	if ok {
 		for _, funcItem := range funcs.([]*func(services []model.SubscribeService, err error)) {

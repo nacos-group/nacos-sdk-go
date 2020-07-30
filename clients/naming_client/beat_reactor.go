@@ -1,14 +1,14 @@
 package naming_client
 
 import (
-	"log"
 	"strconv"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/utils"
+	"github.com/nacos-group/nacos-sdk-go/util"
 	nsema "github.com/toolkits/concurrent/semaphore"
 )
 
@@ -42,14 +42,14 @@ func buildKey(serviceName string, ip string, port uint64) string {
 }
 
 func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo model.BeatInfo) {
-	log.Printf("[INFO] adding beat: <%s> to beat map.\n", utils.ToJsonString(beatInfo))
+	logger.Infof("adding beat: <%s> to beat map", util.ToJsonString(beatInfo))
 	k := buildKey(serviceName, beatInfo.Ip, beatInfo.Port)
 	br.beatMap.Set(k, &beatInfo)
 	go br.sendInstanceBeat(k, &beatInfo)
 }
 
 func (br *BeatReactor) RemoveBeatInfo(serviceName string, ip string, port uint64) {
-	log.Printf("[INFO] remove beat: %s@%s:%d from beat map.\n", serviceName, ip, port)
+	logger.Infof("remove beat: %s@%s:%d from beat map", serviceName, ip, port)
 	k := buildKey(serviceName, ip, port)
 	data, exist := br.beatMap.Get(k)
 	if exist {
@@ -64,7 +64,7 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 		br.beatThreadSemaphore.Acquire()
 		//如果当前实例注销，则进行停止心跳
 		if beatInfo.Stopped {
-			log.Printf("[INFO] intance[%s] stop heartBeating\n", k)
+			logger.Infof("instance[%s] stop heartBeating", k)
 			br.beatThreadSemaphore.Release()
 			return
 		}
@@ -72,7 +72,7 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 		//进行心跳通信
 		beatInterval, err := br.serviceProxy.SendBeat(*beatInfo)
 		if err != nil {
-			log.Printf("[ERROR]:beat to server return error:%s \n", err.Error())
+			logger.Errorf("beat to server return error:%s", err.Error())
 			br.beatThreadSemaphore.Release()
 			t := time.NewTimer(beatInfo.Period)
 			<-t.C
@@ -82,7 +82,7 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 			beatInfo.Period = time.Duration(time.Millisecond.Nanoseconds() * beatInterval)
 		}
 
-		br.beatRecordMap.Set(k, utils.CurrentMillis())
+		br.beatRecordMap.Set(k, util.CurrentMillis())
 		br.beatThreadSemaphore.Release()
 
 		t := time.NewTimer(beatInfo.Period)

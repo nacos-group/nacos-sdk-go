@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/utils"
+	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,11 +41,11 @@ func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
 		Clusters:    []string{"default"},
 		GroupName:   "public",
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			fmt.Println(utils.ToJsonString(ed.callbackFuncsMap))
+			fmt.Println(util.ToJsonString(ed.callbackFuncsMap))
 		},
 	}
-	ed.AddCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
-	key := utils.GetServiceCacheKey(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	ed.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	key := util.GetServiceCacheKey(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
 	for k, v := range ed.callbackFuncsMap.Items() {
 		assert.Equal(t, key, k, "key should be equal!")
 		funcs := v.([]*func(services []model.SubscribeService, err error))
@@ -83,10 +83,10 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 		Clusters:    []string{"default"},
 		GroupName:   "public",
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			fmt.Printf("func1:%s \n", utils.ToJsonString(services))
+			fmt.Printf("func1:%s \n", util.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	ed.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 	assert.Equal(t, len(ed.callbackFuncsMap.Items()), 1, "callback funcs map length should be 1")
 
 	param2 := vo.SubscribeParam{
@@ -94,19 +94,19 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 		Clusters:    []string{"default"},
 		GroupName:   "public",
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			fmt.Printf("func2:%s \n", utils.ToJsonString(services))
+			fmt.Printf("func2:%s \n", util.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFuncs(utils.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	ed.AddCallbackFuncs(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
 	assert.Equal(t, len(ed.callbackFuncsMap.Items()), 1, "callback funcs map length should be 2")
 
 	for k, v := range ed.callbackFuncsMap.Items() {
 		log.Printf("key:%s,%d", k, len(v.([]*func(services []model.SubscribeService, err error))))
 	}
 
-	ed.RemoveCallbackFuncs(utils.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	ed.RemoveCallbackFuncs(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
 
-	key := utils.GetServiceCacheKey(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	key := util.GetServiceCacheKey(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
 	for k, v := range ed.callbackFuncsMap.Items() {
 		assert.Equal(t, key, k, "key should be equal!")
 		funcs := v.([]*func(services []model.SubscribeService, err error))
@@ -144,21 +144,21 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 		Clusters:    []string{"default"},
 		GroupName:   "public",
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			log.Printf("func1:%s \n", utils.ToJsonString(services))
+			log.Printf("func1:%s \n", util.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	ed.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 
 	param2 := vo.SubscribeParam{
 		ServiceName: "Test",
 		Clusters:    []string{"default"},
 		GroupName:   "public",
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			log.Printf("func2:%s \n", utils.ToJsonString(services))
+			log.Printf("func2:%s \n", util.ToJsonString(services))
 
 		},
 	}
-	ed.AddCallbackFuncs(utils.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	ed.AddCallbackFuncs(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
 
 	ed.ServiceChanged(&service)
 }

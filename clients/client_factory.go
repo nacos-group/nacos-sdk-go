@@ -10,35 +10,30 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 )
 
-// 创建配置相关的客户端
-func CreateConfigClient(properties map[string]interface{}) (iClient config_client.IConfigClient,
-	err error) {
-	nacosClient, errSetConfig := setConfig(properties)
-	if errSetConfig != nil {
-		err = errSetConfig
+// CreateConfigClient use to create config client
+func CreateConfigClient(properties map[string]interface{}) (iClient config_client.IConfigClient, err error) {
+	nacosClient, err := setConfig(properties)
+	if err != nil {
 		return
 	}
 	nacosClient.SetHttpAgent(&http_agent.HttpAgent{})
-	config, errNew := config_client.NewConfigClient(nacosClient)
-	if errNew != nil {
-		err = errNew
+	config, err := config_client.NewConfigClient(nacosClient)
+	if err != nil {
 		return
 	}
 	iClient = &config
 	return
 }
 
-// 创建服务发现相关的客户端
+//CreateNamingClient use to create a nacos naming client
 func CreateNamingClient(properties map[string]interface{}) (iClient naming_client.INamingClient, err error) {
-	nacosClient, errSetConfig := setConfig(properties)
-	if errSetConfig != nil {
-		err = errSetConfig
+	nacosClient, err := setConfig(properties)
+	if err != nil {
 		return
 	}
 	nacosClient.SetHttpAgent(&http_agent.HttpAgent{})
-	naming, errNew := naming_client.NewNamingClient(nacosClient)
-	if errNew != nil {
-		err = errNew
+	naming, err := naming_client.NewNamingClient(nacosClient)
+	if err != nil {
 		return
 	}
 	iClient = &naming
@@ -61,7 +56,6 @@ func setConfig(properties map[string]interface{}) (iClient nacos_client.INacosCl
 			BeatInterval:   5 * 1000,
 		})
 	}
-	// 设置 serverConfig
 	if serverConfigTmp, exist := properties[constant.KEY_SERVER_CONFIGS]; exist {
 		if serverConfigs, ok := serverConfigTmp.([]constant.ServerConfig); ok {
 			err = client.SetServerConfig(serverConfigs)

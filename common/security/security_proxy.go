@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 )
 
 type AuthClient struct {
@@ -64,7 +64,7 @@ func (ac *AuthClient) AutoRefresh() {
 			case <-timer.C:
 				_, err := ac.Login()
 				if err != nil {
-					log.Printf("[ERROR]: login has error %s", err)
+					logger.Errorf("login has error %+v", err)
 				}
 				timer.Reset(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
 			}

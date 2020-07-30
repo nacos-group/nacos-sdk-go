@@ -14,7 +14,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/mock"
-	"github.com/nacos-group/nacos-sdk-go/utils"
+	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
 )
@@ -381,7 +381,7 @@ func TestListen(t *testing.T) {
 	// ListenConfig
 	t.Run("TestListenConfig", func(t *testing.T) {
 		client := cretateConfigClientTest()
-		key := utils.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
+		key := util.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
 		cache.WriteConfigToFile(key, client.configCacheDir, "")
 		var err error
 		var success bool
@@ -429,7 +429,7 @@ func TestListen(t *testing.T) {
 	// ListenConfig no change
 	t.Run("TestListenConfigNoChange", func(t *testing.T) {
 		client := cretateConfigClientTest()
-		key := utils.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
+		key := util.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
 		cache.WriteConfigToFile(key, client.configCacheDir, localConfigTest.Content)
 		var err error
 		var success bool
@@ -469,7 +469,7 @@ func TestListen(t *testing.T) {
 			},
 		}
 		client := cretateConfigClientTest()
-		key := utils.GetConfigCacheKey(listenConfigParam.DataId, listenConfigParam.Group, clientConfigTest.NamespaceId)
+		key := util.GetConfigCacheKey(listenConfigParam.DataId, listenConfigParam.Group, clientConfigTest.NamespaceId)
 		cache.WriteConfigToFile(key, client.configCacheDir, "")
 		client.ListenConfig(listenConfigParam)
 
@@ -504,7 +504,7 @@ func TestListen(t *testing.T) {
 			},
 		}
 		client := cretateConfigClientTest()
-		key := utils.GetConfigCacheKey(listenConfigParam.DataId, listenConfigParam.Group, clientConfigTest.NamespaceId)
+		key := util.GetConfigCacheKey(listenConfigParam.DataId, listenConfigParam.Group, clientConfigTest.NamespaceId)
 		cache.WriteConfigToFile(key, client.configCacheDir, "")
 		client.ListenConfig(listenConfigParam)
 
@@ -598,7 +598,7 @@ func TestCancelListenConfig(t *testing.T) {
 		ch := make(chan string)
 		client := cretateConfigClientTest()
 		//
-		key := utils.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
+		key := util.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
 		cache.WriteConfigToFile(key, client.configCacheDir, "")
 		listenConfigParam := vo.ConfigParam{
 			DataId: localConfigTest.DataId,
@@ -642,21 +642,21 @@ func TestCancelListenConfig(t *testing.T) {
 func TestCancelDelayScheduler(t *testing.T) {
 	var err error
 	client := cretateConfigClientTest()
-	key := utils.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
+	key := util.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
 	cache.WriteConfigToFile(key, client.configCacheDir, "")
-	key = utils.GetConfigCacheKey(localConfigTest.DataId+"1", localConfigTest.Group, clientConfigTest.NamespaceId)
+	key = util.GetConfigCacheKey(localConfigTest.DataId+"1", localConfigTest.Group, clientConfigTest.NamespaceId)
 	cache.WriteConfigToFile(key, client.configCacheDir, "")
-	key = utils.GetConfigCacheKey(localConfigTest.DataId+"2", localConfigTest.Group, clientConfigTest.NamespaceId)
+	key = util.GetConfigCacheKey(localConfigTest.DataId+"2", localConfigTest.Group, clientConfigTest.NamespaceId)
 	cache.WriteConfigToFile(key, client.configCacheDir, "")
-	key = utils.GetConfigCacheKey(localConfigTest.DataId+"3", localConfigTest.Group, clientConfigTest.NamespaceId)
+	key = util.GetConfigCacheKey(localConfigTest.DataId+"3", localConfigTest.Group, clientConfigTest.NamespaceId)
 	cache.WriteConfigToFile(key, client.configCacheDir, "")
-	key = utils.GetConfigCacheKey(localConfigTest.DataId+"4", localConfigTest.Group, clientConfigTest.NamespaceId)
+	key = util.GetConfigCacheKey(localConfigTest.DataId+"4", localConfigTest.Group, clientConfigTest.NamespaceId)
 	cache.WriteConfigToFile(key, client.configCacheDir, "")
-	key = utils.GetConfigCacheKey(localConfigTest.DataId+"5", localConfigTest.Group, clientConfigTest.NamespaceId)
+	key = util.GetConfigCacheKey(localConfigTest.DataId+"5", localConfigTest.Group, clientConfigTest.NamespaceId)
 	cache.WriteConfigToFile(key, client.configCacheDir, "")
-	key = utils.GetConfigCacheKey(localConfigTest.DataId+"6", localConfigTest.Group, clientConfigTest.NamespaceId)
+	key = util.GetConfigCacheKey(localConfigTest.DataId+"6", localConfigTest.Group, clientConfigTest.NamespaceId)
 	cache.WriteConfigToFile(key, client.configCacheDir, "")
-	key = utils.GetConfigCacheKey(localConfigTest.DataId+"7", localConfigTest.Group, clientConfigTest.NamespaceId)
+	key = util.GetConfigCacheKey(localConfigTest.DataId+"7", localConfigTest.Group, clientConfigTest.NamespaceId)
 	cache.WriteConfigToFile(key, client.configCacheDir, "")
 	listenConfigParam := vo.ConfigParam{
 		DataId: localConfigTest.DataId,

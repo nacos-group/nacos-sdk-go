@@ -3,15 +3,12 @@ package naming_client
 import (
 	"testing"
 
-	"github.com/nacos-group/nacos-sdk-go/utils"
-
-	"github.com/stretchr/testify/assert"
-
-	"github.com/nacos-group/nacos-sdk-go/vo"
-
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/util"
+	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHostReactor_GetServiceInfo(t *testing.T) {
@@ -33,7 +30,7 @@ func TestHostReactor_GetServiceInfo(t *testing.T) {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	param.ServiceName = utils.GetGroupName(param.ServiceName, param.GroupName)
+	param.ServiceName = util.GetGroupName(param.ServiceName, param.GroupName)
 	client.RegisterInstance(param)
 	_, err := client.hostReactor.GetServiceInfo(param.ServiceName, param.ClusterName)
 	assert.Nil(t, err)
@@ -79,7 +76,7 @@ func TestHostReactor_GetServiceInfoConcurrent(t *testing.T) {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	param.ServiceName = utils.GetGroupName(param.ServiceName, param.GroupName)
+	param.ServiceName = util.GetGroupName(param.ServiceName, param.GroupName)
 	client.RegisterInstance(param)
 	for i := 0; i < 10000; i++ {
 		go func() {
@@ -109,7 +106,7 @@ func BenchmarkHostReactor_GetServiceInfoConcurrent(b *testing.B) {
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	param.ServiceName = utils.GetGroupName(param.ServiceName, param.GroupName)
+	param.ServiceName = util.GetGroupName(param.ServiceName, param.GroupName)
 	client.RegisterInstance(param)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

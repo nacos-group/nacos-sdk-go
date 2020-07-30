@@ -13,7 +13,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/utils"
+	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/pkg/errors"
 )
@@ -25,6 +25,7 @@ type NamingClient struct {
 	subCallback  SubscribeCallback
 	beatReactor  BeatReactor
 	indexMap     cache.ConcurrentMap
+	NamespaceId  string
 }
 
 type Chooser struct {
@@ -35,11 +36,11 @@ type Chooser struct {
 
 func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 	naming := NamingClient{}
-	clientConfig, err :=
-		nc.GetClientConfig()
+	clientConfig, err := nc.GetClientConfig()
 	if err != nil {
 		return naming, err
 	}
+	naming.NamespaceId = clientConfig.NamespaceId
 	serverConfig, err := nc.GetServerConfig()
 	if err != nil {
 		return naming, err
@@ -48,7 +49,12 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 	if err != nil {
 		return naming, err
 	}
-	err = logger.InitLog(clientConfig.LogDir)
+	err = logger.InitLogger(logger.Config{
+		Level:        clientConfig.LogLevel,
+		OutputPath:   clientConfig.LogDir,
+		RotationTime: clientConfig.RotateTime,
+		MaxAge:       clientConfig.MaxAge,
+	})
 	if err != nil {
 		return naming, err
 	}
@@ -67,7 +73,7 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 
 // 注册服务实例
 func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, error) {
-	if param.GroupName == "" {
+	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
 	if param.Metadata == nil {
@@ -87,17 +93,17 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 		Ip:          param.Ip,
 		Port:        param.Port,
 		Metadata:    param.Metadata,
-		ServiceName: utils.GetGroupName(param.ServiceName, param.GroupName),
+		ServiceName: util.GetGroupName(param.ServiceName, param.GroupName),
 		Cluster:     param.ClusterName,
 		Weight:      param.Weight,
-		Period:      utils.GetDurationWithDefault(param.Metadata, constant.HEART_BEAT_INTERVAL, time.Second*5),
+		Period:      util.GetDurationWithDefault(param.Metadata, constant.HEART_BEAT_INTERVAL, time.Second*5),
 	}
-	_, err := sc.serviceProxy.RegisterInstance(utils.GetGroupName(param.ServiceName, param.GroupName), param.GroupName, instance)
+	_, err := sc.serviceProxy.RegisterInstance(util.GetGroupName(param.ServiceName, param.GroupName), param.GroupName, instance)
 	if err != nil {
 		return false, err
 	}
 	if instance.Ephemeral {
-		sc.beatReactor.AddBeatInfo(utils.GetGroupName(param.ServiceName, param.GroupName), beatInfo)
+		sc.beatReactor.AddBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), beatInfo)
 	}
 	return true, nil
 
@@ -105,12 +111,12 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 
 // 注销服务实例
 func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error) {
-	if param.GroupName == "" {
+	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	sc.beatReactor.RemoveBeatInfo(utils.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port)
+	sc.beatReactor.RemoveBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port)
 
-	_, err := sc.serviceProxy.DeregisterInstance(utils.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port, param.Cluster, param.Ephemeral)
+	_, err := sc.serviceProxy.DeregisterInstance(util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port, param.Cluster, param.Ephemeral)
 	if err != nil {
 		return false, err
 	}
@@ -119,29 +125,33 @@ func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bo
 
 // 获取服务列表
 func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, error) {
-	if param.GroupName == "" {
+	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service, err := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
 	return service, err
 }
 
 func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (model.ServiceList, error) {
-	if param.GroupName == "" {
+	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	if param.NameSpace == "" {
-		param.NameSpace = constant.DEFAULT_NAMESPACE_ID
+	if len(param.NameSpace) == 0 {
+		if len(sc.NamespaceId) == 0 {
+			param.NameSpace = constant.DEFAULT_NAMESPACE_ID
+		} else {
+			param.NameSpace = sc.NamespaceId
+		}
 	}
 	services := sc.hostReactor.GetAllServiceInfo(param.NameSpace, param.GroupName, param.PageNo, param.PageSize)
 	return services, nil
 }
 
 func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error) {
-	if param.GroupName == "" {
+	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service, err := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
 	if service.Hosts == nil || len(service.Hosts) == 0 {
 		return []model.Instance{}, errors.New("instance list is empty!")
 	}
@@ -149,10 +159,10 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 }
 
 func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.Instance, error) {
-	if param.GroupName == "" {
+	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service, err := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
 	if err != nil {
 		return nil, err
 	}
@@ -174,10 +184,10 @@ func (sc *NamingClient) selectInstances(service model.Service, healthy bool) ([]
 }
 
 func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanceParam) (*model.Instance, error) {
-	if param.GroupName == "" {
+	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service, err := sc.hostReactor.GetServiceInfo(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +270,7 @@ func (chs Chooser) pick() model.Instance {
 
 // 服务监听
 func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
-	if param.GroupName == "" {
+	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
 	serviceParam := vo.GetServiceParam{
@@ -269,7 +279,7 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 		Clusters:    param.Clusters,
 	}
 
-	sc.subCallback.AddCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	sc.subCallback.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 	_, err := sc.GetService(serviceParam)
 	if err != nil {
 		return err
@@ -279,6 +289,6 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 
 //取消服务监听
 func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
-	sc.subCallback.RemoveCallbackFuncs(utils.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	sc.subCallback.RemoveCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 	return nil
 }

@@ -3,16 +3,16 @@ package config_client
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
-	"github.com/nacos-group/nacos-sdk-go/common/util"
 	"github.com/nacos-group/nacos-sdk-go/model"
+	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 )
 
@@ -126,7 +126,10 @@ func (cp *ConfigProxy) ListenConfig(params map[string]string, isInitializing boo
 
 	headers["accessKey"] = accessKey
 	headers["secretKey"] = secretKey
-	log.Printf("[client.ListenConfig] request params:%+v header:%+v \n", params, headers)
-	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_LISTEN_PATH, params, headers, http.MethodPost, cp.clientConfig.ListenInterval)
+	logger.Infof("[client.ListenConfig] request params:%+v header:%+v \n", params, headers)
+	// In order to prevent the server from handling the delay of the client's long task,
+	// increase the client's read timeout to avoid this problem.
+	timeout := cp.clientConfig.ListenInterval + cp.clientConfig.ListenInterval/10
+	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_LISTEN_PATH, params, headers, http.MethodPost, timeout)
 	return result, err
 }

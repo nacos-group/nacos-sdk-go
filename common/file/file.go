@@ -1,6 +1,7 @@
-package util
+package file
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -46,4 +47,13 @@ func MkdirIfNecessary(createDir string) (err error) {
 	}
 
 	return err
+}
+
+func GetCurrentPath() string {
+
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		log.Println("can not get current path")
+	}
+	return dir
 }
