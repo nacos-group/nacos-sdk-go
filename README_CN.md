@@ -13,7 +13,7 @@ Nacos-sdk-go是Nacos的Go语言客户端，它实现了服务发现和动态配�
 支持Nacos>1.x版本
 
 ## 安装
-Use `go get` to install SDK：
+使用`go get`安装SDK：
 ```sh
 $ go get -u github.com/nacos-group/nacos-sdk-go
 ```
@@ -48,7 +48,7 @@ constant.ClientConfig{
 
 ```go
 constant.ServerConfig{
-    ContextPath string //Nacos的ContextPath
+	ContextPath string //Nacos的ContextPath
 	IpAddr      string //Nacos的服务地址
 	Port        uint64 //Nacos的服务端口
 }
@@ -60,7 +60,7 @@ constant.ServerConfig{
 
 ```go
 clientConfig := constant.ClientConfig{
-    NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId
+	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId
 	TimeoutMs:           5000,
 	ListenInterval:      10000,
 	NotLoadCacheAtStart: true,
@@ -218,7 +218,7 @@ err:=namingClient.Unsubscribe(vo.SubscribeParam{
 
 ```
 
-* Get all services name:GetAllServicesInfo
+* 获取服务名列表:GetAllServicesInfo
 ```go
 
 serviceInfos, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
@@ -297,12 +297,13 @@ configPage,err:=configClient.SearchConfig(vo.SearchConfigParam{
 })
 ```
 ## 例子
-我们能从例子中学习如何使用Nacos go客户端
-* [动态配置例子](./example/config)
-* [服务发现例子](./example/service)
+我们能从示例中学习如何使用Nacos go客户端
+* [动态配置示例](./example/config)
+* [服务发现示例](./example/service)
 
 ## 文档
 Nacos open-api相关信息可以查看文档 [Nacos open-api wepsite](https://nacos.io/en-us/docs/open-api.html).
+
 Nacos产品了解可以查看 [Nacos website](https://nacos.io/en-us/docs/what-is-nacos.html).
 
 ## 贡献代码

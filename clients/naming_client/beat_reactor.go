@@ -88,7 +88,7 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 		//进行心跳通信
 		beatInterval, err := br.serviceProxy.SendBeat(*beatInfo)
 		if err != nil {
-			logger.Errorf("beat to server return error:%s", err.Error())
+			logger.Errorf("beat to server return error:%+v", err)
 			br.beatThreadSemaphore.Release()
 			t := time.NewTimer(beatInfo.Period)
 			<-t.C

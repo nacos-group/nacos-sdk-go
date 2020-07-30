@@ -57,13 +57,13 @@ func NewPushRecevier(hostReactor *HostReactor) *PushReceiver {
 func (us *PushReceiver) tryListen() (*net.UDPConn, bool) {
 	addr, err := net.ResolveUDPAddr("udp", us.host+":"+strconv.Itoa(us.port))
 	if err != nil {
-		logger.Errorf("can't resolve address,err: %s", err.Error())
+		logger.Errorf("can't resolve address,err: %+v", err)
 		return nil, false
 	}
 
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		logger.Errorf("error listening %s:%d,err:%s", us.host, us.port, err.Error())
+		logger.Errorf("error listening %s:%d,err:%+v", us.host, us.port, err)
 		return nil, false
 	}
 
@@ -100,7 +100,7 @@ func (us *PushReceiver) handleClient(conn *net.UDPConn) {
 	data := make([]byte, 4024)
 	n, remoteAddr, err := conn.ReadFromUDP(data)
 	if err != nil {
-		logger.Errorf("failed to read UDP msg because of %s", err.Error())
+		logger.Errorf("failed to read UDP msg because of %+v", err)
 		return
 	}
 
@@ -110,7 +110,7 @@ func (us *PushReceiver) handleClient(conn *net.UDPConn) {
 	var pushData PushData
 	err1 := json.Unmarshal([]byte(s), &pushData)
 	if err1 != nil {
-		logger.Infof("failed to process push data.err:%s", err1.Error())
+		logger.Infof("failed to process push data.err:%+v", err1)
 		return
 	}
 	ack := make(map[string]string)
@@ -147,7 +147,7 @@ func TryDecompressData(data []byte) string {
 	reader, err := gzip.NewReader(bytes.NewReader(data))
 
 	if err != nil {
-		logger.Errorf("failed to decompress gzip data,err:%s", err.Error())
+		logger.Errorf("failed to decompress gzip data,err:%+v", err)
 		return ""
 	}
 
@@ -155,7 +155,7 @@ func TryDecompressData(data []byte) string {
 	bs, err1 := ioutil.ReadAll(reader)
 
 	if err1 != nil {
-		logger.Errorf("failed to decompress gzip data,err:%s", err1.Error())
+		logger.Errorf("failed to decompress gzip data,err:%+v", err1)
 		return ""
 	}
 

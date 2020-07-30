@@ -173,7 +173,7 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 	content, err = client.configProxy.GetConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
 
 	if err != nil {
-		logger.Infof("get config from server error:%s ", err.Error())
+		logger.Infof("get config from server error:%+v ", err)
 		if _, ok := err.(*nacos_error.NacosError); ok {
 			nacosErr := err.(*nacos_error.NacosError)
 			if nacosErr.ErrorCode() == "404" {
@@ -186,7 +186,7 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 		}
 		content, err = cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
 		if err != nil {
-			logger.Errorf("get config from cache  error:%s ", err.Error())
+			logger.Errorf("get config from cache  error:%+v ", err)
 			return "", errors.New("read config from both server and cache fail")
 		}
 
@@ -227,7 +227,7 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, er
 func (client *ConfigClient) CancelListenConfig(param vo.ConfigParam) (err error) {
 	clientConfig, err := client.GetClientConfig()
 	if err != nil {
-		logger.Errorf("[checkConfigInfo.GetClientConfig] failed,err:%+v", err.Error())
+		logger.Errorf("[checkConfigInfo.GetClientConfig] failed,err:%+v", err)
 		return
 	}
 	cacheMap.Remove(util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId))
@@ -456,7 +456,7 @@ func (client *ConfigClient) searchConfigInnter(param vo.SearchConfigParm) (*mode
 	clientConfig, _ := client.GetClientConfig()
 	configItems, err := client.configProxy.SearchConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
 	if err != nil {
-		logger.Errorf("search config from server error:%s ", err.Error())
+		logger.Errorf("search config from server error:%+v ", err)
 		if _, ok := err.(*nacos_error.NacosError); ok {
 			nacosErr := err.(*nacos_error.NacosError)
 			if nacosErr.ErrorCode() == "404" {

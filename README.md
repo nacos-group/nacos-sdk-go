@@ -24,7 +24,6 @@ $ go get -u github.com/nacos-group/nacos-sdk-go
 constant.ClientConfig{
 	TimeoutMs            uint64 //timeout for requesting Nacos server, default value is 10000ms
 	ListenInterval       uint64 //the time interval for pulling config change,default value is 30000ms
-	BeatInterval         int64  //the time interval for sending beat to server,default value is 5000ms
 	NamespaceId          string //the namespaceId of Nacos
 	Endpoint             string //the endpoint for get Nacos server addresses
 	RegionId             string //the regionId for kms
@@ -49,7 +48,7 @@ constant.ClientConfig{
 
 ```go
 constant.ServerConfig{
-    ContextPath string //the nacos server contextpath
+	ContextPath string //the nacos server contextpath
 	IpAddr      string //the nacos server address
 	Port        uint64 //the nacos server port
 }
@@ -61,7 +60,7 @@ constant.ServerConfig{
 
 ```go
 clientConfig := constant.ClientConfig{
-    NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //we can create mutilple clients with different namespaceId to support multiple namespace
+	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //we can create mutilple clients with different namespaceId to support multiple namespace
 	TimeoutMs:           5000,
 	ListenInterval:      10000,
 	NotLoadCacheAtStart: true,
@@ -291,10 +290,10 @@ err:=configClient.CancelListenConfig(vo.ConfigParam{
 ```go
 configPage,err:=configClient.SearchConfig(vo.SearchConfigParam{
     Search:   "blur",
-	DataId:   "",
-	Group:    "",
-	PageNo:   1,
-	PageSize: 10,
+    DataId:   "",
+    Group:    "",
+    PageNo:   1,
+    PageSize: 10,
 })
 ```
 ## Example
@@ -304,6 +303,7 @@ We can run example to learn how to use nacos go client.
 
 ## Documentation
 You can view the open-api documentaion from the [Nacos open-api wepsite](https://nacos.io/en-us/docs/open-api.html).
+
 You can view the full documentation from the [Nacos website](https://nacos.io/en-us/docs/what-is-nacos.html).
 
 ## Contributing

@@ -53,7 +53,7 @@ func (agent *HttpAgent) RequestOnlyResult(method string, path string, header htt
 		logger.Errorf("request method[%s], path[%s],header:[%s],params:[%s], not avaliable method ", method, path, util.ToJsonString(header), util.ToJsonString(params))
 	}
 	if err != nil {
-		logger.Errorf("request method[%s],request path[%s],header:[%s],params:[%s],err:%s", method, path, util.ToJsonString(header), util.ToJsonString(params), err.Error())
+		logger.Errorf("request method[%s],request path[%s],header:[%s],params:[%s],err:%+v", method, path, util.ToJsonString(header), util.ToJsonString(params), err)
 		return ""
 	}
 	if response.StatusCode != 200 {
@@ -63,7 +63,7 @@ func (agent *HttpAgent) RequestOnlyResult(method string, path string, header htt
 	bytes, errRead := ioutil.ReadAll(response.Body)
 	defer response.Body.Close()
 	if errRead != nil {
-		logger.Errorf("request method[%s],request path[%s],header:[%s],params:[%s],read error:%s", method, path, util.ToJsonString(header), util.ToJsonString(params), errRead.Error())
+		logger.Errorf("request method[%s],request path[%s],header:[%s],params:[%s],read error:%+v", method, path, util.ToJsonString(header), util.ToJsonString(params), errRead)
 		return ""
 	}
 	return string(bytes)

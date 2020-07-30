@@ -67,7 +67,7 @@ func main() {
 		Content: "hello world!",
 	})
 	if err != nil {
-		fmt.Printf("PublishConfig err:%s \n", err.Error())
+		fmt.Printf("PublishConfig err:%+v \n", err)
 	}
 
 	//get config

@@ -41,7 +41,7 @@ func WriteServicesToFile(service model.Service, cacheDir string) {
 
 	err := ioutil.WriteFile(domFileName, sb, 0666)
 	if err != nil {
-		logger.Errorf("failed to write name cache:%s ,value:%s ,err:%s", domFileName, string(sb), err.Error())
+		logger.Errorf("failed to write name cache:%s ,value:%s ,err:%+v", domFileName, string(sb), err)
 	}
 
 }
@@ -49,7 +49,7 @@ func WriteServicesToFile(service model.Service, cacheDir string) {
 func ReadServicesFromFile(cacheDir string) map[string]model.Service {
 	files, err := ioutil.ReadDir(cacheDir)
 	if err != nil {
-		logger.Errorf("read cacheDir:%s failed!err:%s", cacheDir, err.Error())
+		logger.Errorf("read cacheDir:%s failed!err:%+v", cacheDir, err)
 		return nil
 	}
 	serviceMap := map[string]model.Service{}
@@ -57,7 +57,7 @@ func ReadServicesFromFile(cacheDir string) map[string]model.Service {
 		fileName := GetFileName(f.Name(), cacheDir)
 		b, err := ioutil.ReadFile(fileName)
 		if err != nil {
-			logger.Errorf("failed to read name cache file:%s,err:%s! ", fileName, err.Error())
+			logger.Errorf("failed to read name cache file:%s,err:%+v ", fileName, err)
 			continue
 		}
 
@@ -80,7 +80,7 @@ func WriteConfigToFile(cacheKey string, cacheDir string, content string) {
 	fileName := GetFileName(cacheKey, cacheDir)
 	err := ioutil.WriteFile(fileName, []byte(content), 0666)
 	if err != nil {
-		logger.Errorf("failed to write config  cache:%s ,value:%s ,err:%s", fileName, string(content), err.Error())
+		logger.Errorf("failed to write config  cache:%s ,value:%s ,err:%+v", fileName, content, err)
 	}
 }
 
@@ -88,7 +88,7 @@ func ReadConfigFromFile(cacheKey string, cacheDir string) (string, error) {
 	fileName := GetFileName(cacheKey, cacheDir)
 	b, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("failed to read config cache file:%s,err:%s! ", fileName, err.Error()))
+		return "", errors.New(fmt.Sprintf("failed to read config cache file:%s,err:%+v ", fileName, err))
 	}
 	return string(b), nil
 }

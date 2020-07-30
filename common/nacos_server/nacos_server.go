@@ -187,7 +187,7 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 			if err == nil {
 				return result, nil
 			}
-			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s>", api, method, util.ToJsonString(params), err.Error(), result)
+			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), err, result)
 		}
 		return "", err
 	} else {
@@ -198,7 +198,7 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 			if err == nil {
 				return result, nil
 			}
-			logger.Errorf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s> \n", api, method, util.ToJsonString(params), err.Error(), result)
+			logger.Errorf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s> \n", api, method, util.ToJsonString(params), err, result)
 			index = (index + i) % len(srvs)
 		}
 		return "", err
@@ -220,7 +220,7 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 			if err == nil {
 				return result, nil
 			}
-			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s>", api, method, util.ToJsonString(params), err.Error(), result)
+			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), err, result)
 		}
 		return "", errors.New("retry " + strconv.Itoa(constant.REQUEST_DOMAIN_RETRY_TIME) + " times request failed!")
 	} else {
@@ -231,7 +231,7 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 			if err == nil {
 				return result, nil
 			}
-			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s>", api, method, util.ToJsonString(params), err.Error(), result)
+			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), err, result)
 			index = (index + i) % len(srvs)
 		}
 		return "", errors.New("retry " + strconv.Itoa(constant.REQUEST_DOMAIN_RETRY_TIME) + " times request failed!")
@@ -270,7 +270,7 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 			if len(splitLine) == 2 {
 				port, err = strconv.Atoi(splitLine[1])
 				if err != nil {
-					logger.Errorf("get port from server:<%s>  error: <%s>", line, err.Error())
+					logger.Errorf("get port from server:<%s>  error: <%+v>", line, err)
 					continue
 				}
 			}

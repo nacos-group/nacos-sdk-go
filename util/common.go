@@ -35,7 +35,7 @@ func JsonToService(result string) *model.Service {
 	var service model.Service
 	err := json.Unmarshal([]byte(result), &service)
 	if err != nil {
-		logger.Errorf("failed to unmarshal json string:%s err:%v", result, err.Error())
+		logger.Errorf("failed to unmarshal json string:%s err:%+v", result, err)
 		return nil
 	}
 	if len(service.Hosts) == 0 {
@@ -70,7 +70,7 @@ func LocalIP() string {
 	if localIP == "" {
 		addrs, err := net.InterfaceAddrs()
 		if err != nil {
-			logger.Errorf("get InterfaceAddress failed,err:%s", err.Error())
+			logger.Errorf("get InterfaceAddress failed,err:%+v", err)
 			return ""
 		}
 		for _, address := range addrs {

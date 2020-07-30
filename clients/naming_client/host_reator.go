@@ -118,8 +118,8 @@ func (hr *HostReactor) GetAllServiceInfo(nameSpace, groupName string, pageNo, pa
 	data := model.ServiceList{}
 	result, err := hr.serviceProxy.GetAllServiceInfoList(nameSpace, groupName, pageNo, pageSize)
 	if err != nil {
-		logger.Errorf("GetAllServiceInfoList return error!nameSpace:%s groupName:%s pageNo:%d, pageSize:%d err:%s",
-			nameSpace, groupName, pageNo, pageSize, err.Error())
+		logger.Errorf("GetAllServiceInfoList return error!nameSpace:%s groupName:%s pageNo:%d, pageSize:%d err:%+v",
+			nameSpace, groupName, pageNo, pageSize, err)
 		return data
 	}
 	if result == "" {
@@ -141,7 +141,7 @@ func (hr *HostReactor) updateServiceNow(serviceName, clusters string) {
 	result, err := hr.serviceProxy.QueryList(serviceName, clusters, hr.pushReceiver.port, false)
 
 	if err != nil {
-		logger.Errorf("QueryList return error!serviceName:%s cluster:%s err:%s", serviceName, clusters, err.Error())
+		logger.Errorf("QueryList return error!serviceName:%s cluster:%s err:%+v", serviceName, clusters, err)
 		return
 	}
 	if result == "" {
