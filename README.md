@@ -1,51 +1,78 @@
-## nacos-go
-go语言版本的nacos client，支持服务发现和配置管理
+# Nacos-sdk-go [中文](./README_CN.md) #
 
-### 客户端配置
+[![Build Status](https://travis-ci.org/nacos-group/nacos-sdk-go.svg?branch=master)](https://travis-ci.org/nacos-group/nacos-sdk-go) [![Go Report Card](https://goreportcard.com/badge/github.com/nacos-group/nacos-sdk-go)](https://goreportcard.com/report/github.com/nacos-group/nacos-sdk-go) ![license](https://img.shields.io/badge/license-Apache--2.0-green.svg)
 
-* ClientConfig 客户端配置参数 
- 
+---
+
+## Nacos-sdk-go
+
+Nacos-sdk-go for Go client allows you to access Nacos service,it supports service discovery and dynamic configuration.
+
+## Requirements
+Supported Go version over 1.12
+Supported Nacos version over 1.x
+
+## Installation
+Use `go get` to install SDK：
+```sh
+$ go get -u github.com/nacos-group/nacos-sdk-go
+```
+## Quick Examples
+* ClientConfig
+
 ```go
 constant.ClientConfig{
-    TimeoutMs:      10 * 1000, //http请求超时时间，单位毫秒
-    ListenInterval: 30 * 1000, //监听间隔时间，单位毫秒（仅在ConfigClient中有效）
-    BeatInterval:   5 * 1000, //心跳间隔时间，单位毫秒（仅在ServiceClient中有效）
-    NamespaceId:       "public", //nacos命名空间
-    Endpoint:          "", //获取nacos节点ip的服务地址
-    CacheDir:         "/data/nacos/cache", //缓存目录
-    LogDir:         "/data/nacos/log", //日志目录
-    UpdateThreadNum:   20, //更新服务的线程数
-    NotLoadCacheAtStart: true, //在启动时不读取本地缓存数据，true--不读取，false--读取
-    UpdateCacheWhenEmpty: true, //当服务列表为空时是否更新本地缓存，true--更新,false--不更新
+	TimeoutMs            uint64 //timeout for requesting Nacos server, default value is 10000ms
+	ListenInterval       uint64 //the time interval for pulling config change,default value is 30000ms
+	BeatInterval         int64  //the time interval for sending beat to server,default value is 5000ms
+	NamespaceId          string //the namespaceId of Nacos
+	Endpoint             string //the endpoint for get Nacos server addresses
+	RegionId             string //the regionId for kms
+	AccessKey            string //the AccessKey for kms
+	SecretKey            string //the SecretKey for kms
+	OpenKMS              bool   //it's to open kms,default is false. https://help.aliyun.com/product/28933.html
+	CacheDir             string //the directory for persist nacos service info,default value is current path
+	UpdateThreadNum      int    //the number of gorutine for update nacos service info,default value is 20
+	NotLoadCacheAtStart  bool   //not to load persistent nacos service info in CacheDir at start time
+	UpdateCacheWhenEmpty bool   //update cache when get empty service instance from server
+	Username             string //the username for nacos auth
+	Password             string //the password for nacos auth
+	LogDir               string // the directory for log, default is current path
+	RotateTime           string //the rotate time for log, eg: 30m, 1h, 24h, default is 24h
+	MaxAge               int64  //the max age of a log file, default value is 3
+	LogLevel             string //the level of log, it's must be debug,info,warn,error, default value is info
 }
 ```
 
 
-* ServerConfig nacos服务信息配置参数
+* ServerConfig 
 
 ```go
 constant.ServerConfig{
-    IpAddr:      "console.nacos.io", //nacos服务的ip地址 
-    ContextPath: "/nacos", //nacos服务的上下文路径，默认是“/nacos” 
-    Port:        80, //nacos服务端口
+    ContextPath string //the nacos server contextpath
+	IpAddr      string //the nacos server address
+	Port        uint64 //the nacos server port
 }
 ```
 
-<b>注：ServerConfig支持配置多个，在请求出错时，自动切换</b>
+<b>Note：We can config multiple ServerConfig,the client will rotate request the servers</b>
 
-### 构造客户端
+### Create client
 
 ```go
-// 可以没有，采用默认值
 clientConfig := constant.ClientConfig{
-    TimeoutMs:      10 * 1000,
-    ListenInterval: 30 * 1000,
-    BeatInterval:   5 * 1000,
-    LogDir: "/nacos/logs",
-    CacheDir: "/nacos/cache",
+    NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //we can create mutilple clients with different namespaceId to support multiple namespace
+	TimeoutMs:           5000,
+	ListenInterval:      10000,
+	NotLoadCacheAtStart: true,
+	LogDir:              "/tmp/nacos/log",
+	CacheDir:            "/tmp/nacos/cache",
+	RotateTime:          "1h",
+	MaxAge:              3,
+	LogLevel:            "debug",
 } 
 
-// 至少一个
+// At least one serverconfig 
 serverConfigs := []constant.ServerConfig{
     {
         IpAddr:      "console1.nacos.io",
@@ -59,11 +86,13 @@ serverConfigs := []constant.ServerConfig{
     },
 }
 
+//create naming client for service discovery
 namingClient, err := clients.CreateNamingClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })
 
+//create config client for dynamic configuration
 configClient, err := clients.CreateConfigClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
@@ -72,91 +101,102 @@ configClient, err := clients.CreateConfigClient(map[string]interface{}{
 ```
 
 
-### 服务发现
+### Service Discovery
     
-* 注册服务实例：RegisterInstance
+* Register instance：RegisterInstance
 
 ```go
 
-success, _ := namingClient.RegisterInstance(vo.RegisterInstanceParam{
+success, err := namingClient.RegisterInstance(vo.RegisterInstanceParam{
     Ip:          "10.0.0.11",
     Port:        8848,
     ServiceName: "demo.go",
     Weight:      10,
-    ClusterName: "a",
     Enable:      true,
     Healthy:     true,
     Ephemeral:   true,
+    Metadata:  map[string]string{"idc":"shanghai"},
+    ClusterName: "cluster-a", //default value is DEFAULT
+	GroupName:   "group-a",  //default value is DEFAULT_GROUP
 })
 
 ```
   
-* 注销服务实例：DeregisterInstance
+* Deregister instance：DeregisterInstance
 
 ```go
 
-success, _ := namingClient.DeregisterInstance(vo.DeregisterInstanceParam{
+success, err := namingClient.DeregisterInstance(vo.DeregisterInstanceParam{
     Ip:          "10.0.0.11",
     Port:        8848,
     ServiceName: "demo.go",
-    ClusterName: "a",
     Ephemeral:   true,
+    Cluster:     "cluster-a", //default value is DEFAULT
+	GroupName:   "group-a",  //default value is DEFAULT_GROUP
 })
 
 ```
   
-* 获取服务：GetService
+* Get service：GetService
 
 ```go
 
-service, _ := namingClient.GetService(vo.GetServiceParam{
+services, err := namingClient.GetService(vo.GetServiceParam{
     ServiceName: "demo.go",
-    Clusters:    []string{"a"},
+    Clusters:    []string{"cluster-a"}, //default value is DEFAULT
+    GroupName:   "group-a",             //default value is DEFAULT_GROUP
 })
 
 ```
 
-* 获取所有的实例列表：SelectAllInstances
+* Get all instances：SelectAllInstances
 
 ```go
-
+//SelectAllInstance return all instances,include healthy=false,enable=false,weight<=0
 instances, err := namingClient.SelectAllInstances(vo.SelectAllInstancesParam{
     ServiceName: "demo.go",
-    Clusters:    []string{"a"},
+    GroupName:   "group-a",             //default value is DEFAULT_GROUP
+    Clusters:    []string{"cluster-a"}, //default value is DEFAULT
 })
 
 ```
  
-* 获取实例列表：SelectInstances
+* Get instances ：SelectInstances
 
 ```go
-
+//SelectInstances only return the instances of healthy=${HealthyOnly},enable=true and weight>0
 instances, err := namingClient.SelectInstances(vo.SelectInstancesParam{
     ServiceName: "demo.go",
-    Clusters:    []string{"a"},
+    GroupName:   "group-a",             //default value is DEFAULT_GROUP
+    Clusters:    []string{"cluster-a"}, //default value is DEFAULT
     HealthyOnly: true,
 })
 
 ```
 
-* 获取一个健康的实例（加权轮训负载均衡）：SelectOneHealthyInstance
+* Get one healthy instance（WRR）：SelectOneHealthyInstance
 
 ```go
-
+//SelectOneHealthyInstance return one instance by WRR strategy for load balance
+//And the instance should be health=true,enable=true and weight>0
 instance, err := namingClient.SelectOneHealthyInstance(vo.SelectOneHealthInstanceParam{
     ServiceName: "demo.go",
-    Clusters:    []string{"a"},
+    GroupName:   "group-a",             //default value is DEFAULT_GROUP
+    Clusters:    []string{"cluster-a"}, //default value is DEFAULT
 })
 
 ```
 
-* 服务监听：Subscribe
+* Listen service change event：Subscribe
 
 ```go
 
-namingClient.Subscribe(vo.SubscribeParam{
+//Subscribe key=serviceName+groupName+cluster
+//Note:We call add multiple SubscribeCallback with the same key.
+err:=namingClient.Subscribe(vo.SubscribeParam{
     ServiceName: "demo.go",
-    Clusters:    []string{"a"},
+    GroupName:   "group-a",             //default value is DEFAULT_GROUP
+    Clusters:    []string{"cluster-a"}, //default value is DEFAULT
     SubscribeCallback: func(services []model.SubscribeService, err error) {
         log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
     },
@@ -164,13 +204,14 @@ namingClient.Subscribe(vo.SubscribeParam{
 
 ```
 
-* 取消服务监听：Unsubscribe
+* Cancle the listen of service change event：Unsubscribe
 
 ```go
 
-namingClient.Unsubscribe(vo.SubscribeParam{
+err:=namingClient.Unsubscribe(vo.SubscribeParam{
     ServiceName: "demo.go",
-    Clusters:    []string{"a"},
+    GroupName:   "group-a",             //default value is DEFAULT_GROUP
+    Clusters:    []string{"cluster-a"}, //default value is DEFAULT
     SubscribeCallback: func(services []model.SubscribeService, err error) {
         log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
     },
@@ -178,9 +219,20 @@ namingClient.Unsubscribe(vo.SubscribeParam{
 
 ```
 
-### 配置管理
+* Get all services name:GetAllServicesInfo
+```go
 
-* 发布配置：PublishConfig
+serviceInfos, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
+    NameSpace: "0e83cc81-9d8c-4bb8-a28a-ff703187543f",
+	PageNo:   1,
+	ageSize: 10,
+	})),
+
+```
+
+### Dynamic configuration
+
+* publish config：PublishConfig
 
 ```go
 
@@ -191,7 +243,7 @@ success, err := configClient.PublishConfig(vo.ConfigParam{
 
 ```
 
-* 删除配置：DeleteConfig
+* delete config：DeleteConfig
 
 ```go
 
@@ -201,7 +253,7 @@ success, err = configClient.DeleteConfig(vo.ConfigParam{
 
 ```
 
-* 获取配置：GetConfig
+* get config info：GetConfig
 
 ```go
 
@@ -211,11 +263,11 @@ content, err := configClient.GetConfig(vo.ConfigParam{
 
 ```
 
-* 监听配置：ListenConfig
+* Listen config change event：ListenConfig
 
 ```go
 
-configClient.ListenConfig(vo.ConfigParam{
+err:=configClient.ListenConfig(vo.ConfigParam{
     DataId: "dataId",
     Group:  "group",
     OnChange: func(namespace, group, dataId, data string) {
@@ -224,13 +276,47 @@ configClient.ListenConfig(vo.ConfigParam{
 })
 
 ```
-* 取消监听配置：CancelListenConfig
+* Cancel the listening of config change event：CancelListenConfig
 
 ```go
 
-configClient.CancelListenConfig(vo.ConfigParam{
+err:=configClient.CancelListenConfig(vo.ConfigParam{
     DataId: "dataId",
     Group:  "group",
 })
 
 ```
+
+* Search config: SearchConfig
+```go
+configPage,err:=configClient.SearchConfig(vo.SearchConfigParam{
+    Search:   "blur",
+	DataId:   "",
+	Group:    "",
+	PageNo:   1,
+	PageSize: 10,
+})
+```
+## Example
+We can run example to learn how to use nacos go client.
+* [Config Example](./example/config)
+* [Naming Example](./example/service)
+
+## Documentation
+You can view the open-api documentaion from the [Nacos open-api wepsite](https://nacos.io/en-us/docs/open-api.html).
+You can view the full documentation from the [Nacos website](https://nacos.io/en-us/docs/what-is-nacos.html).
+
+## Contributing
+Contributors are welcomed to join Nacos-sdk-go project. Please check [CONTRIBUTING](./CONTRIBUTING.md) about how to contribute to this project.
+
+## Contact
+* Join us from DingDing Group(23191211). 
+* [Gitter](https://gitter.im/alibaba/nacos): Nacos's IM tool for community messaging, collaboration and discovery.
+* [Twitter](https://twitter.com/nacos2): Follow along for latest nacos news on Twitter.
+* [Weibo](https://weibo.com/u/6574374908): Follow along for latest nacos news on Weibo (Twitter of China version).
+* [Nacos Segmentfault](https://segmentfault.com/t/nacos): Get latest notice and prompt help from Segmentfault.
+* Email Group:
+     * users-nacos@googlegroups.com: Nacos usage general discussion.
+     * dev-nacos@googlegroups.com: Nacos developer discussion (APIs, feature design, etc).
+     * commits-nacos@googlegroups.com: Commits notice, very high frequency.
+

@@ -49,30 +49,10 @@ type GetServiceParam struct {
 }
 
 type GetAllServiceInfoParam struct {
-	NameSpace string `param:"nameSpace"`
-	GroupName string `param:"groupName"`
-	PageNo    uint32 `param:"pageNo"`
-	PageSize  uint32 `param:"pageSize"`
-}
-
-type GetServiceListParam struct {
-	StartPage   uint32 `param:"startPg"`
-	PageSize    uint32 `param:"pgSize"`
-	Keyword     string `param:"keyword"`
-	NamespaceId string `param:"namespaceId"`
-}
-
-type GetServiceInstanceParam struct {
-	Tenant      string `param:"tenant"`
-	HealthyOnly bool   `param:"healthyOnly"`
-	Cluster     string `param:"cluster"`
-	ServiceName string `param:"serviceName"`
-	Ip          string `param:"ip"`
-	Port        uint64 `param:"port"`
-}
-
-type GetServiceDetailParam struct {
-	ServiceName string `param:"serviceName"`
+	NameSpace string `param:"nameSpace"` //optional,default:public
+	GroupName string `param:"groupName"` //optional,default:DEFAULT_GROUP
+	PageNo    uint32 `param:"pageNo"`    //optional,default:1
+	PageSize  uint32 `param:"pageSize"`  //optional,default:10
 }
 
 type SubscribeParam struct {
@@ -89,14 +69,14 @@ type SelectAllInstancesParam struct {
 }
 
 type SelectInstancesParam struct {
-	Clusters    []string `param:"clusters"`
-	ServiceName string   `param:"serviceName"`
-	GroupName   string   `param:"groupName"`
-	HealthyOnly bool     `param:"healthyOnly"`
+	Clusters    []string `param:"clusters"`    //optional,default:DEFAULT
+	ServiceName string   `param:"serviceName"` //required
+	GroupName   string   `param:"groupName"`   //optional,default:DEFAULT_GROUP
+	HealthyOnly bool     `param:"healthyOnly"` //optional,return only healthy instance
 }
 
 type SelectOneHealthInstanceParam struct {
-	Clusters    []string `param:"clusters"`
-	ServiceName string   `param:"serviceName"`
-	GroupName   string   `param:"groupName"`
+	Clusters    []string `param:"clusters"`    //optional,default:DEFAULT
+	ServiceName string   `param:"serviceName"` //required
+	GroupName   string   `param:"groupName"`   //optional,default:DEFAULT_GROUP
 }

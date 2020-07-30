@@ -66,6 +66,7 @@ func main() {
 		Enable:      true,
 		Healthy:     true,
 		Ephemeral:   true,
+		Metadata:    map[string]string{"idc": "shanghai"},
 	})
 
 	//Register with cluster name
@@ -193,7 +194,7 @@ func main() {
 		ServiceName: "demo.go",
 	})
 
-	//SelectInstances return one instance by WRR strategy for load balance
+	//SelectOneHealthyInstance return one instance by WRR strategy for load balance
 	//And the instance should be health=true,enable=true and weight>0
 	//ClusterName=DEFAULT,GroupName=DEFAULT_GROUP
 	ExampleServiceClient_SelectOneHealthyInstance(client, vo.SelectOneHealthInstanceParam{

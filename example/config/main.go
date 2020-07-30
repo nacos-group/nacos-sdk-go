@@ -123,4 +123,13 @@ func main() {
 	})
 	time.Sleep(5 * time.Second)
 
+	searchPage, _ := client.SearchConfig(vo.SearchConfigParm{
+		Search:   "blur",
+		DataId:   "",
+		Group:    "",
+		PageNo:   1,
+		PageSize: 10,
+	})
+	fmt.Printf("Search config:%+v \n", searchPage)
+
 }
