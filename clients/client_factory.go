@@ -67,9 +67,8 @@ func setConfig(properties map[string]interface{}) (iClient nacos_client.INacosCl
 		}
 	} else {
 		_ = client.SetClientConfig(constant.ClientConfig{
-			TimeoutMs:      10 * 1000,
-			ListenInterval: 30 * 1000,
-			BeatInterval:   5 * 1000,
+			TimeoutMs:    10 * 1000,
+			BeatInterval: 5 * 1000,
 		})
 	}
 	if serverConfigTmp, exist := properties[constant.KEY_SERVER_CONFIGS]; exist {

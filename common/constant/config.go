@@ -24,7 +24,7 @@ type ServerConfig struct {
 
 type ClientConfig struct {
 	TimeoutMs            uint64 //timeout for requesting Nacos server, default value is 10000ms
-	ListenInterval       uint64 //the time interval for pulling config change,default value is 30000ms
+	ListenInterval       uint64 //Deprecated
 	BeatInterval         int64  //the time interval for sending beat to server,default value is 5000ms
 	NamespaceId          string //the namespaceId of Nacos
 	Endpoint             string //the endpoint for get Nacos server addresses
@@ -38,7 +38,7 @@ type ClientConfig struct {
 	UpdateCacheWhenEmpty bool   //update cache when get empty service instance from server
 	Username             string //the username for nacos auth
 	Password             string //the password for nacos auth
-	LogDir               string // the directory for log, default is current path
+	LogDir               string //the directory for log, default is current path
 	RotateTime           string //the rotate time for log, eg: 30m, 1h, 24h, default is 24h
 	MaxAge               int64  //the max age of a log file, default value is 3
 	LogLevel             string //the level of log, it's must be debug,info,warn,error, default value is info

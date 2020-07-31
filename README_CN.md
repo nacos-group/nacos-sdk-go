@@ -24,7 +24,6 @@ $ go get -u github.com/nacos-group/nacos-sdk-go
 ```go
 constant.ClientConfig{
 	TimeoutMs            uint64 //请求Nacos服务端的超时时间，默认是10000ms
-	ListenInterval       uint64 //监听配置变更的轮训间隔时间，默认是30000ms
 	NamespaceId          string //Nacos的命名空间
 	Endpoint             string //获取Nacos服务列表的endpoint地址
 	RegionId             string //kms的regionId，用于配置中心的鉴权
@@ -63,7 +62,6 @@ constant.ServerConfig{
 clientConfig := constant.ClientConfig{
 	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId
 	TimeoutMs:           5000,
-	ListenInterval:      10000,
 	NotLoadCacheAtStart: true,
 	LogDir:              "/tmp/nacos/log",
 	CacheDir:            "/tmp/nacos/cache",

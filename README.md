@@ -24,7 +24,6 @@ $ go get -u github.com/nacos-group/nacos-sdk-go
 ```go
 constant.ClientConfig{
 	TimeoutMs            uint64 //timeout for requesting Nacos server, default value is 10000ms
-	ListenInterval       uint64 //the time interval for pulling config change,default value is 30000ms
 	NamespaceId          string //the namespaceId of Nacos
 	Endpoint             string //the endpoint for get Nacos server addresses
 	RegionId             string //the regionId for kms
@@ -63,7 +62,6 @@ constant.ServerConfig{
 clientConfig := constant.ClientConfig{
 	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //we can create mutilple clients with different namespaceId to support multiple namespace
 	TimeoutMs:           5000,
-	ListenInterval:      10000,
 	NotLoadCacheAtStart: true,
 	LogDir:              "/tmp/nacos/log",
 	CacheDir:            "/tmp/nacos/cache",

@@ -25,7 +25,7 @@ import (
 
 type INacosClient interface {
 
-	//SetClientConfig is use to set nacos client Config
+	//SetClientConfig is use to set nacos client config
 	SetClientConfig(constant.ClientConfig) error
 	//SetServerConfig is use to set nacos server config
 	SetServerConfig([]constant.ServerConfig) error

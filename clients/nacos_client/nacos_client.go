@@ -46,10 +46,6 @@ func (client *NacosClient) SetClientConfig(config constant.ClientConfig) (err er
 		config.BeatInterval = 5 * 1000
 	}
 
-	if config.ListenInterval < 10*1000 {
-		config.ListenInterval = 10 * 1000
-	}
-
 	if config.UpdateThreadNum <= 0 {
 		config.UpdateThreadNum = 20
 	}

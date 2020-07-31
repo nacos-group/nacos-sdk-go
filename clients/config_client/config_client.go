@@ -424,7 +424,7 @@ func (client *ConfigClient) callListener(changed, tenant string) {
 				cData.content = content
 				cData.md5 = util.Md5(content)
 				if cData.md5 != cData.cacheDataListener.lastMd5 {
-					go cData.cacheDataListener.listener("", attrs[1], attrs[0], cData.content)
+					go cData.cacheDataListener.listener(tenant, attrs[1], attrs[0], cData.content)
 					cData.cacheDataListener.lastMd5 = cData.md5
 					cacheMap.Set(util.GetConfigCacheKey(cData.dataId, cData.group, tenant), cData)
 				}
@@ -440,12 +440,12 @@ func (client *ConfigClient) buildBasePath(serverConfig constant.ServerConfig) (b
 }
 
 func (client *ConfigClient) SearchConfig(param vo.SearchConfigParm) (*model.ConfigPage, error) {
-	return client.searchConfigInnter(param)
+	return client.searchConfigInner(param)
 }
 
-func (client *ConfigClient) searchConfigInnter(param vo.SearchConfigParm) (*model.ConfigPage, error) {
+func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParm) (*model.ConfigPage, error) {
 	if param.Search != "accurate" && param.Search != "blur" {
-		return nil, errors.New("[client.searchConfigInnter] param.search must be accurate or blur")
+		return nil, errors.New("[client.searchConfigInner] param.search must be accurate or blur")
 	}
 	if param.PageNo <= 0 {
 		param.PageNo = 1

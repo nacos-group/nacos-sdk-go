@@ -152,10 +152,10 @@ func TryDecompressData(data []byte) string {
 	}
 
 	defer reader.Close()
-	bs, err1 := ioutil.ReadAll(reader)
+	bs, err := ioutil.ReadAll(reader)
 
-	if err1 != nil {
-		logger.Errorf("failed to decompress gzip data,err:%+v", err1)
+	if err != nil {
+		logger.Errorf("failed to decompress gzip data,err:%+v", err)
 		return ""
 	}
 

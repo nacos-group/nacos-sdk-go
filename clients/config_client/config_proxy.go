@@ -129,12 +129,11 @@ func (cp *ConfigProxy) DeleteConfigProxy(param vo.ConfigParam, tenant, accessKey
 }
 
 func (cp *ConfigProxy) ListenConfig(params map[string]string, isInitializing bool, accessKey, secretKey string) (string, error) {
-	if cp.clientConfig.ListenInterval == 0 {
-		cp.clientConfig.ListenInterval = 20000
-	}
+	//fixed at 30000ms，avoid frequent request on the server
+	var listenInterval uint64 = 30000
 	headers := map[string]string{
 		"Content-Type":         "application/x-www-form-urlencoded;charset=utf-8",
-		"Long-Pulling-Timeout": strconv.FormatUint(cp.clientConfig.ListenInterval, 10),
+		"Long-Pulling-Timeout": strconv.FormatUint(listenInterval, 10),
 	}
 	if isInitializing {
 		headers["Long-Pulling-Timeout-No-Hangup"] = "true"
@@ -145,7 +144,7 @@ func (cp *ConfigProxy) ListenConfig(params map[string]string, isInitializing boo
 	logger.Infof("[client.ListenConfig] request params:%+v header:%+v \n", params, headers)
 	// In order to prevent the server from handling the delay of the client's long task,
 	// increase the client's read timeout to avoid this problem.
-	timeout := cp.clientConfig.ListenInterval + cp.clientConfig.ListenInterval/10
+	timeout := listenInterval + listenInterval/10
 	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_LISTEN_PATH, params, headers, http.MethodPost, timeout)
 	return result, err
 }
