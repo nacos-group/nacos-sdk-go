@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
-package constant
+package logger
 
-const (
-	HEART_BEAT_TIMEOUT  = "preserved.heart.beat.timeout"
-	IP_DELETE_TIMEOUT   = "preserved.ip.delete.timeout"
-	HEART_BEAT_INTERVAL = "preserved.heart.beat.interval"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestInitLogger(t *testing.T) {
+	config := Config{
+		Level:        "degug",
+		OutputPath:   "/tmp/nacos",
+		RotationTime: "1h",
+		MaxAge:       2,
+	}
+	err := InitLogger(config)
+	assert.NoError(t, err)
+}

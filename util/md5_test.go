@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
-package constant
+package util
 
-const (
-	HEART_BEAT_TIMEOUT  = "preserved.heart.beat.timeout"
-	IP_DELETE_TIMEOUT   = "preserved.ip.delete.timeout"
-	HEART_BEAT_INTERVAL = "preserved.heart.beat.interval"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestMd5(t *testing.T) {
+	md5 := Md5("demo")
+	assert.Equal(t, "fe01ce2a7fbac8fafaed7c982a04e229", md5)
+}

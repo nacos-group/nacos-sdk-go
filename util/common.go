@@ -1,19 +1,29 @@
-package utils
+/*
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package util
 
 import (
-	"bytes"
-	"compress/gzip"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"log"
 	"net"
-	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/model"
 )
 
@@ -21,54 +31,15 @@ func CurrentMillis() int64 {
 	return time.Now().UnixNano() / 1e6
 }
 
-var (
-	GZIP_MAGIC = []byte("\x1F\x8B")
-)
-
-func TryDecompressData(data []byte) string {
-
-	if !IsGzipFile(data) {
-		//fmt.Println("data format: plain text")
-		return string(data)
-	}
-
-	//fmt.Println("data format: gzip")
-
-	reader, err := gzip.NewReader(bytes.NewReader(data))
-
-	if err != nil {
-		log.Printf("[ERROR]:failed to decompress gzip data,err:%s \n", err.Error())
-		return ""
-	}
-
-	defer reader.Close()
-	bs, err1 := ioutil.ReadAll(reader)
-
-	if err1 != nil {
-		log.Printf("[ERROR]:failed to decompress gzip data,err:%s \n", err1.Error())
-		return ""
-	}
-
-	return string(bs)
-}
-
-func IsGzipFile(data []byte) bool {
-	if len(data) < 2 {
-		return false
-	}
-
-	return bytes.HasPrefix(data, GZIP_MAGIC)
-}
-
 func JsonToService(result string) *model.Service {
 	var service model.Service
 	err := json.Unmarshal([]byte(result), &service)
 	if err != nil {
-		log.Printf("[ERROR]:failed to unmarshal json string:%s err:%v \n", result, err.Error())
+		logger.Errorf("failed to unmarshal json string:%s err:%+v", result, err)
 		return nil
 	}
 	if len(service.Hosts) == 0 {
-		log.Printf("[WARN]:instance list is empty,json string:%s \n", result)
+		logger.Warnf("instance list is empty,json string:%s", result)
 	}
 	return &service
 
@@ -76,17 +47,6 @@ func JsonToService(result string) *model.Service {
 func ToJsonString(object interface{}) string {
 	js, _ := json.Marshal(object)
 	return string(js)
-}
-
-func GetCurrentPath() string {
-
-	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		fmt.Println("can not get current path, exit!!")
-		os.Exit(1)
-	}
-
-	return dir
 }
 
 func GetGroupName(serviceName string, groupName string) string {
@@ -110,14 +70,14 @@ func LocalIP() string {
 	if localIP == "" {
 		addrs, err := net.InterfaceAddrs()
 		if err != nil {
-			log.Printf("[ERROR]:get InterfaceAddres failed,err:%s \n", err.Error())
+			logger.Errorf("get InterfaceAddress failed,err:%+v", err)
 			return ""
 		}
 		for _, address := range addrs {
 			if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 				if ipnet.IP.To4() != nil {
 					localIP = ipnet.IP.String()
-					log.Printf("InitLocalIp, LocalIp:%s \n", localIP)
+					logger.Infof("InitLocalIp, LocalIp:%s", localIP)
 					break
 				}
 			}
@@ -131,7 +91,7 @@ func GetDurationWithDefault(metadata map[string]string, key string, defaultDurat
 	if ok {
 		value, err := strconv.ParseInt(data, 10, 64)
 		if err != nil {
-			log.Printf("key:%s is not a number \n", key)
+			logger.Errorf("key:%s is not a number", key)
 			return defaultDuration
 		}
 		return time.Duration(value)

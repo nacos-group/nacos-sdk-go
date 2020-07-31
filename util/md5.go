@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
-package constant
+package util
 
-const (
-	HEART_BEAT_TIMEOUT  = "preserved.heart.beat.timeout"
-	IP_DELETE_TIMEOUT   = "preserved.ip.delete.timeout"
-	HEART_BEAT_INTERVAL = "preserved.heart.beat.interval"
+import (
+	"crypto/md5"
+	"fmt"
+	"io"
 )
+
+func Md5(content string) (md string) {
+	h := md5.New()
+	_, _ = io.WriteString(h, content)
+	md = fmt.Sprintf("%x", h.Sum(nil))
+	return
+}

@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package nacos_server
 
 import (
@@ -7,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"net/http"
 	"reflect"
@@ -18,10 +33,11 @@ import (
 
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_error"
 	"github.com/nacos-group/nacos-sdk-go/common/security"
 	"github.com/nacos-group/nacos-sdk-go/inner/uuid"
-	"github.com/nacos-group/nacos-sdk-go/utils"
+	"github.com/nacos-group/nacos-sdk-go/util"
 )
 
 type NacosServer struct {
@@ -171,7 +187,7 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 			if err == nil {
 				return result, nil
 			}
-			log.Printf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s> \n", api, method, utils.ToJsonString(params), err.Error(), result)
+			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), err, result)
 		}
 		return "", err
 	} else {
@@ -182,7 +198,7 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 			if err == nil {
 				return result, nil
 			}
-			log.Printf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s> \n", api, method, utils.ToJsonString(params), err.Error(), result)
+			logger.Errorf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s> \n", api, method, util.ToJsonString(params), err, result)
 			index = (index + i) % len(srvs)
 		}
 		return "", err
@@ -204,7 +220,7 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 			if err == nil {
 				return result, nil
 			}
-			log.Printf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s> \n", api, method, utils.ToJsonString(params), err.Error(), result)
+			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), err, result)
 		}
 		return "", errors.New("retry " + strconv.Itoa(constant.REQUEST_DOMAIN_RETRY_TIME) + " times request failed!")
 	} else {
@@ -215,7 +231,7 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 			if err == nil {
 				return result, nil
 			}
-			log.Printf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s> \n", api, method, utils.ToJsonString(params), err.Error(), result)
+			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), err, result)
 			index = (index + i) % len(srvs)
 		}
 		return "", errors.New("retry " + strconv.Itoa(constant.REQUEST_DOMAIN_RETRY_TIME) + " times request failed!")
@@ -235,7 +251,7 @@ func (server *NacosServer) initRefreshSrvIfNeed() {
 }
 
 func (server *NacosServer) refreshServerSrvIfNeed() {
-	if utils.CurrentMillis()-server.lastSrvRefTime < server.vipSrvRefInterMills && len(server.serverList) > 0 {
+	if util.CurrentMillis()-server.lastSrvRefTime < server.vipSrvRefInterMills && len(server.serverList) > 0 {
 		return
 	}
 
@@ -243,7 +259,7 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 	urlString := "http://" + server.endpoint + "/nacos/serverlist"
 	result := server.httpAgent.RequestOnlyResult(http.MethodGet, urlString, nil, server.timeoutMs, nil)
 	list = strings.Split(result, "\n")
-	log.Printf("[info] http nacos server list: <%s> \n", result)
+	logger.Infof("http nacos server list: <%s>", result)
 
 	var servers []constant.ServerConfig
 	for _, line := range list {
@@ -254,7 +270,7 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 			if len(splitLine) == 2 {
 				port, err = strconv.Atoi(splitLine[1])
 				if err != nil {
-					log.Printf("[ERROR] get port from server:<%s>  error: <%s> \n", line, err.Error())
+					logger.Errorf("get port from server:<%s>  error: <%+v>", line, err)
 					continue
 				}
 			}
@@ -264,9 +280,9 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 	if len(servers) > 0 {
 		if !reflect.DeepEqual(server.serverList, servers) {
 			server.Lock()
-			log.Printf("[info] server list is updated, old: <%v>,new:<%v> \n", server.serverList, servers)
+			logger.Infof("server list is updated, old: <%v>,new:<%v>", server.serverList, servers)
 			server.serverList = servers
-			server.lastSrvRefTime = utils.CurrentMillis()
+			server.lastSrvRefTime = util.CurrentMillis()
 			server.Unlock()
 		}
 

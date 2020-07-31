@@ -18,5 +18,6 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/tebeka/strftime v0.1.3 // indirect
 	github.com/toolkits/concurrent v0.0.0-20150624120057-a4371d70e3e3
-	gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405
+	go.uber.org/zap v1.15.0
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 )

@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
-package constant
+package file
 
-const (
-	HEART_BEAT_TIMEOUT  = "preserved.heart.beat.timeout"
-	IP_DELETE_TIMEOUT   = "preserved.ip.delete.timeout"
-	HEART_BEAT_INTERVAL = "preserved.heart.beat.interval"
+import (
+	"os"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestMkdirIfNecessaryForAbsPath(t *testing.T) {
+	path := GetCurrentPath() + string(os.PathSeparator) + "log"
+	err := MkdirIfNecessary(path)
+	assert.Nil(t, err)
+}
