@@ -46,7 +46,10 @@ type ConfigClient struct {
 	configCacheDir string
 }
 
-const perTaskConfigSize = 3000
+const (
+	perTaskConfigSize = 3000
+	executorErrDelay  = 5 * time.Second
+)
 
 var (
 	currentTaskCount int
@@ -308,7 +311,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 //Delay Scheduler
 //initialDelay the time to delay first execution
 //delay the delay between the termination of one execution and the commencement of the next
-func delayScheduler(t *time.Timer, delay time.Duration, taskId string, execute func()) {
+func delayScheduler(t *time.Timer, delay time.Duration, taskId string, execute func() error) {
 	for {
 		if v, ok := schedulerMap.Get(taskId); ok {
 			if !v.(bool) {
@@ -316,14 +319,17 @@ func delayScheduler(t *time.Timer, delay time.Duration, taskId string, execute f
 			}
 		}
 		<-t.C
-		execute()
-		t.Reset(delay)
+		d := delay
+		if err := execute(); err != nil {
+			d = executorErrDelay
+		}
+		t.Reset(d)
 	}
 }
 
 //Listen for the configuration executor
-func listenConfigExecutor() func() {
-	return func() {
+func listenConfigExecutor() func() error {
+	return func() error {
 		listenerSize := len(cacheMap.Keys())
 		taskCount := int(math.Ceil(float64(listenerSize) / float64(perTaskConfigSize)))
 
@@ -341,12 +347,13 @@ func listenConfigExecutor() func() {
 			}
 			currentTaskCount = taskCount
 		}
+		return nil
 	}
 }
 
 //Long polling listening configuration
-func longPulling(taskId int) func() {
-	return func() {
+func longPulling(taskId int) func() error {
+	return func() error {
 		var listeningConfigs string
 		var client *ConfigClient
 		initializationList := make([]cacheData, 0)
@@ -372,7 +379,7 @@ func longPulling(taskId int) func() {
 			clientConfig, err := client.GetClientConfig()
 			if err != nil {
 				logger.Errorf("[checkConfigInfo.GetClientConfig] err: %+v", err)
-				return
+				return err
 			}
 			// http get
 			params := make(map[string]string)
@@ -388,6 +395,7 @@ func longPulling(taskId int) func() {
 				} else {
 					logger.Errorf("[client.ListenConfig] listen config error: %+v", err)
 				}
+				return err
 			}
 			for _, v := range initializationList {
 				v.isInitializing = false
@@ -400,7 +408,7 @@ func longPulling(taskId int) func() {
 				client.callListener(changed, clientConfig.NamespaceId)
 			}
 		}
-
+		return nil
 	}
 
 }
