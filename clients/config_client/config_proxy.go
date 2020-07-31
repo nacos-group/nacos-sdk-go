@@ -1,18 +1,35 @@
+/*
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package config_client
 
 import (
 	"encoding/json"
 	"errors"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
-	"github.com/nacos-group/nacos-sdk-go/common/util"
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/vo"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
+	"github.com/nacos-group/nacos-sdk-go/model"
+	"github.com/nacos-group/nacos-sdk-go/util"
+	"github.com/nacos-group/nacos-sdk-go/vo"
 )
 
 type ConfigProxy struct {
@@ -88,7 +105,7 @@ func (cp *ConfigProxy) PublishConfigProxy(param vo.ConfigParam, tenant, accessKe
 	if strings.ToLower(strings.Trim(result, " ")) == "true" {
 		return true, nil
 	} else {
-		return false, errors.New("[client.PublishConfig] publish config failed:" + string(result))
+		return false, errors.New("[client.PublishConfig] publish config failed:" + result)
 	}
 }
 
@@ -111,14 +128,23 @@ func (cp *ConfigProxy) DeleteConfigProxy(param vo.ConfigParam, tenant, accessKey
 	}
 }
 
-func (cp *ConfigProxy) ListenConfig(params map[string]string, tenant, accessKey, secretKey string) (string, error) {
+func (cp *ConfigProxy) ListenConfig(params map[string]string, isInitializing bool, accessKey, secretKey string) (string, error) {
+	//fixed at 30000ms，avoid frequent request on the server
+	var listenInterval uint64 = 30000
 	headers := map[string]string{
 		"Content-Type":         "application/x-www-form-urlencoded;charset=utf-8",
-		"Long-Pulling-Timeout": strconv.FormatUint(cp.clientConfig.ListenInterval, 10),
+		"Long-Pulling-Timeout": strconv.FormatUint(listenInterval, 10),
 	}
+	if isInitializing {
+		headers["Long-Pulling-Timeout-No-Hangup"] = "true"
+	}
+
 	headers["accessKey"] = accessKey
 	headers["secretKey"] = secretKey
-	log.Printf("[client.ListenConfig] request params:%+v header:%+v \n", params, headers)
-	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_LISTEN_PATH, params, headers, http.MethodPost, cp.clientConfig.ListenInterval)
+	logger.Infof("[client.ListenConfig] request params:%+v header:%+v \n", params, headers)
+	// In order to prevent the server from handling the delay of the client's long task,
+	// increase the client's read timeout to avoid this problem.
+	timeout := listenInterval + listenInterval/10
+	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_LISTEN_PATH, params, headers, http.MethodPost, timeout)
 	return result, err
 }
