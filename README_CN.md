@@ -113,7 +113,7 @@ success, err := namingClient.RegisterInstance(vo.RegisterInstanceParam{
     Enable:      true,
     Healthy:     true,
     Ephemeral:   true,
-    Metadata:  map[string]string{"idc":"shanghai"},
+    Metadata:    map[string]string{"idc":"shanghai"},
     ClusterName: "cluster-a", //默认值DEFAULT
     GroupName:   "group-a",  //默认值DEFAULT_GROUP
 })
@@ -224,7 +224,7 @@ serviceInfos, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
     NameSpace: "0e83cc81-9d8c-4bb8-a28a-ff703187543f",
     PageNo:   1,
     PageSize: 10,
-	})),
+	}),
 
 ```
 
