@@ -85,11 +85,12 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 
 	signHeaders := getSignHeaders(params, newHeaders)
 
+	//接受配置协议头（http,https）
 	if strings.Index(curServer, "//") <= -1 {
 		curServer = "http://" + curServer
 	}
 	url := curServer + contextPath + api
-	//url := "http://" + curServer + contextPath + api
+
 	headers := map[string][]string{}
 	for k, v := range newHeaders {
 		if k != "accessKey" && k != "secretKey" {
@@ -138,11 +139,12 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 		contextPath = constant.WEB_CONTEXT
 	}
 
+	//接受配置协议头（http,https）
 	if strings.Index(curServer, "//") <= -1 {
 		curServer = "http://" + curServer
 	}
 	url := curServer + contextPath + api
-	//url := "http://" + curServer + contextPath + api
+
 	headers := map[string][]string{}
 	headers["Client-Version"] = []string{constant.CLIENT_VERSION}
 	headers["User-Agent"] = []string{constant.CLIENT_VERSION}
