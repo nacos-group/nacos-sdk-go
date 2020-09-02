@@ -21,7 +21,6 @@ import "github.com/nacos-group/nacos-sdk-go/model"
 type RegisterInstanceParam struct {
 	Ip          string            `param:"ip"`          //required
 	Port        uint64            `param:"port"`        //required
-	Tenant      string            `param:"tenant"`      //optional
 	Weight      float64           `param:"weight"`      //required,it must be lager than 0
 	Enable      bool              `param:"enabled"`     //required,the instance can be access or not
 	Healthy     bool              `param:"healthy"`     //required,the instance is health or not
@@ -35,7 +34,6 @@ type RegisterInstanceParam struct {
 type DeregisterInstanceParam struct {
 	Ip          string `param:"ip"`          //required
 	Port        uint64 `param:"port"`        //required
-	Tenant      string `param:"tenant"`      //optional
 	Cluster     string `param:"cluster"`     //optional,default:DEFAULT
 	ServiceName string `param:"serviceName"` //required
 	GroupName   string `param:"groupName"`   //optional,default:DEFAULT_GROUP
