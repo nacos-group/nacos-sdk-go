@@ -23,23 +23,23 @@ $ go get -u github.com/nacos-group/nacos-sdk-go
 
 ```go
 constant.ClientConfig{
-	TimeoutMs            uint64 //请求Nacos服务端的超时时间，默认是10000ms
-	NamespaceId          string //Nacos的命名空间
-	Endpoint             string //获取Nacos服务列表的endpoint地址
-	RegionId             string //kms的regionId，用于配置中心的鉴权
-	AccessKey            string //kms的AccessKey，用于配置中心的鉴权
-	SecretKey            string //kms的SecretKey，用于配置中心的鉴权
-	OpenKMS              bool   //是否开启kms，默认不开启，kms可以参考文档 https://help.aliyun.com/product/28933.html
-	CacheDir             string //缓存service信息的目录，默认是当前运行目录
-	UpdateThreadNum      int    //监听service变化的并发数，默认20
-	NotLoadCacheAtStart  bool   //在启动的时候不读取缓存在CacheDir的service信息
-	UpdateCacheWhenEmpty bool   //当service返回的实例列表为空时，不更新缓存，用于推空保护
-	Username             string //Nacos服务端的API鉴权Username
-	Password             string //Nacos服务端的API鉴权Password
-	LogDir               string //日志存储路径
-	RotateTime           string //日志轮转周期，比如：30m, 1h, 24h, 默认是24h
-	MaxAge               int64  //日志最大文件数，默认3
-	LogLevel             string //日志默认级别，值必须是：debug,info,warn,error，默认值是info
+	TimeoutMs            uint64 // 请求Nacos服务端的超时时间，默认是10000ms
+	NamespaceId          string // Nacos的命名空间
+	Endpoint             string // 获取Nacos服务列表的endpoint地址
+	RegionId             string // kms的regionId，用于配置中心的鉴权
+	AccessKey            string // kms的AccessKey，用于配置中心的鉴权
+	SecretKey            string // kms的SecretKey，用于配置中心的鉴权
+	OpenKMS              bool   // 是否开启kms，默认不开启，kms可以参考文档 https://help.aliyun.com/product/28933.html
+	CacheDir             string // 缓存service信息的目录，默认是当前运行目录
+	UpdateThreadNum      int    // 监听service变化的并发数，默认20
+	NotLoadCacheAtStart  bool   // 在启动的时候不读取缓存在CacheDir的service信息
+	UpdateCacheWhenEmpty bool   // 当service返回的实例列表为空时，不更新缓存，用于推空保护
+	Username             string // Nacos服务端的API鉴权Username
+	Password             string // Nacos服务端的API鉴权Password
+	LogDir               string // 日志存储路径
+	RotateTime           string // 日志轮转周期，比如：30m, 1h, 24h, 默认是24h
+	MaxAge               int64  // 日志最大文件数，默认3
+	LogLevel             string // 日志默认级别，值必须是：debug,info,warn,error，默认值是info
 }
 ```
 
@@ -48,9 +48,9 @@ constant.ClientConfig{
 
 ```go
 constant.ServerConfig{
-	ContextPath string //Nacos的ContextPath
-	IpAddr      string //Nacos的服务地址
-	Port        uint64 //Nacos的服务端口
+	ContextPath string // Nacos的ContextPath
+	IpAddr      string // Nacos的服务地址
+	Port        uint64 // Nacos的服务端口
 }
 ```
 
@@ -60,7 +60,7 @@ constant.ServerConfig{
 
 ```go
 clientConfig := constant.ClientConfig{
-	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId
+	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", // 如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId
 	TimeoutMs:           5000,
 	NotLoadCacheAtStart: true,
 	LogDir:              "/tmp/nacos/log",
@@ -70,7 +70,7 @@ clientConfig := constant.ClientConfig{
 	LogLevel:            "debug",
 } 
 
-//至少一个ServerConfig
+// 至少一个ServerConfig
 serverConfigs := []constant.ServerConfig{
     {
         IpAddr:      "console1.nacos.io",
@@ -84,13 +84,13 @@ serverConfigs := []constant.ServerConfig{
     },
 }
 
-//创建服务发现客户端
+// 创建服务发现客户端
 namingClient, err := clients.CreateNamingClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })
 
-//创建动态配置客户端
+// 创建动态配置客户端
 configClient, err := clients.CreateConfigClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
@@ -113,9 +113,9 @@ success, err := namingClient.RegisterInstance(vo.RegisterInstanceParam{
     Enable:      true,
     Healthy:     true,
     Ephemeral:   true,
-    Metadata:  map[string]string{"idc":"shanghai"},
-    ClusterName: "cluster-a", //默认值DEFAULT
-    GroupName:   "group-a",  //默认值DEFAULT_GROUP
+    Metadata:    map[string]string{"idc":"shanghai"},
+    ClusterName: "cluster-a", // 默认值DEFAULT
+    GroupName:   "group-a",  // 默认值DEFAULT_GROUP
 })
 
 ```
@@ -129,8 +129,8 @@ success, err := namingClient.DeregisterInstance(vo.DeregisterInstanceParam{
     Port:        8848,
     ServiceName: "demo.go",
     Ephemeral:   true,
-    Cluster:     "cluster-a", //默认值DEFAULT
-    GroupName:   "group-a",  //默认值DEFAULT_GROUP
+    Cluster:     "cluster-a", // 默认值DEFAULT
+    GroupName:   "group-a",  // 默认值DEFAULT_GROUP
 })
 
 ```
@@ -141,8 +141,8 @@ success, err := namingClient.DeregisterInstance(vo.DeregisterInstanceParam{
 
 services, err := namingClient.GetService(vo.GetServiceParam{
     ServiceName: "demo.go",
-    Clusters:    []string{"cluster-a"}, //默认值DEFAULT
-    GroupName:   "group-a",             //默认值DEFAULT_GROUP
+    Clusters:    []string{"cluster-a"}, // 默认值DEFAULT
+    GroupName:   "group-a",             // 默认值DEFAULT_GROUP
 })
 
 ```
@@ -150,11 +150,11 @@ services, err := namingClient.GetService(vo.GetServiceParam{
 * 获取所有的实例列表：SelectAllInstances
 
 ```go
-//SelectAllInstance可以返回全部实例列表,包括healthy=false,enable=false,weight<=0
+// SelectAllInstance可以返回全部实例列表,包括healthy=false,enable=false,weight<=0
 instances, err := namingClient.SelectAllInstances(vo.SelectAllInstancesParam{
     ServiceName: "demo.go",
-    GroupName:   "group-a",             //默认值DEFAULT_GROUP
-    Clusters:    []string{"cluster-a"}, //默认值DEFAULT
+    GroupName:   "group-a",             // 默认值DEFAULT_GROUP
+    Clusters:    []string{"cluster-a"}, // 默认值DEFAULT
 })
 
 ```
@@ -162,11 +162,11 @@ instances, err := namingClient.SelectAllInstances(vo.SelectAllInstancesParam{
 * 获取实例列表 ：SelectInstances
 
 ```go
-//SelectInstances 只返回满足这些条件的实例列表：healthy=${HealthyOnly},enable=true 和weight>0
+// SelectInstances 只返回满足这些条件的实例列表：healthy=${HealthyOnly},enable=true 和weight>0
 instances, err := namingClient.SelectInstances(vo.SelectInstancesParam{
     ServiceName: "demo.go",
-    GroupName:   "group-a",             //默认值DEFAULT_GROUP
-    Clusters:    []string{"cluster-a"}, //默认值DEFAULT
+    GroupName:   "group-a",             // 默认值DEFAULT_GROUP
+    Clusters:    []string{"cluster-a"}, // 默认值DEFAULT
     HealthyOnly: true,
 })
 
@@ -175,12 +175,12 @@ instances, err := namingClient.SelectInstances(vo.SelectInstancesParam{
 * 获取一个健康的实例（加权随机轮训）：SelectOneHealthyInstance
 
 ```go
-//SelectOneHealthyInstance将会按加权随机轮训的负载均衡策略返回一个健康的实例
-//实例必须满足的条件：health=true,enable=true and weight>0
+// SelectOneHealthyInstance将会按加权随机轮训的负载均衡策略返回一个健康的实例
+// 实例必须满足的条件：health=true,enable=true and weight>0
 instance, err := namingClient.SelectOneHealthyInstance(vo.SelectOneHealthInstanceParam{
     ServiceName: "demo.go",
-    GroupName:   "group-a",             //默认值DEFAULT_GROUP
-    Clusters:    []string{"cluster-a"}, //默认值DEFAULT
+    GroupName:   "group-a",             // 默认值DEFAULT_GROUP
+    Clusters:    []string{"cluster-a"}, // 默认值DEFAULT
 })
 
 ```
@@ -189,12 +189,12 @@ instance, err := namingClient.SelectOneHealthyInstance(vo.SelectOneHealthInstanc
 
 ```go
 
-//Subscribe key=serviceName+groupName+cluster
-//注意:我们可以在相同的key添加多个SubscribeCallback.
-err:=namingClient.Subscribe(vo.SubscribeParam{
+// Subscribe key=serviceName+groupName+cluster
+// 注意:我们可以在相同的key添加多个SubscribeCallback.
+err := namingClient.Subscribe(vo.SubscribeParam{
     ServiceName: "demo.go",
-    GroupName:   "group-a",             //默认值DEFAULT_GROUP
-    Clusters:    []string{"cluster-a"}, //默认值DEFAULT
+    GroupName:   "group-a",             // 默认值DEFAULT_GROUP
+    Clusters:    []string{"cluster-a"}, // 默认值DEFAULT
     SubscribeCallback: func(services []model.SubscribeService, err error) {
         log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
     },
@@ -206,10 +206,10 @@ err:=namingClient.Subscribe(vo.SubscribeParam{
 
 ```go
 
-err:=namingClient.Unsubscribe(vo.SubscribeParam{
+err := namingClient.Unsubscribe(vo.SubscribeParam{
     ServiceName: "demo.go",
-    GroupName:   "group-a",             //默认值DEFAULT_GROUP
-    Clusters:    []string{"cluster-a"}, //默认值DEFAULT
+    GroupName:   "group-a",             // 默认值DEFAULT_GROUP
+    Clusters:    []string{"cluster-a"}, // 默认值DEFAULT
     SubscribeCallback: func(services []model.SubscribeService, err error) {
         log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
     },
@@ -224,7 +224,7 @@ serviceInfos, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
     NameSpace: "0e83cc81-9d8c-4bb8-a28a-ff703187543f",
     PageNo:   1,
     PageSize: 10,
-	})),
+	}),
 
 ```
 
@@ -265,7 +265,7 @@ content, err := configClient.GetConfig(vo.ConfigParam{
 
 ```go
 
-err:=configClient.ListenConfig(vo.ConfigParam{
+err := configClient.ListenConfig(vo.ConfigParam{
     DataId: "dataId",
     Group:  "group",
     OnChange: func(namespace, group, dataId, data string) {
@@ -278,7 +278,7 @@ err:=configClient.ListenConfig(vo.ConfigParam{
 
 ```go
 
-err:=configClient.CancelListenConfig(vo.ConfigParam{
+err := configClient.CancelListenConfig(vo.ConfigParam{
     DataId: "dataId",
     Group:  "group",
 })
@@ -287,7 +287,7 @@ err:=configClient.CancelListenConfig(vo.ConfigParam{
 
 * 搜索配置: SearchConfig
 ```go
-configPage,err:=configClient.SearchConfig(vo.SearchConfigParam{
+configPage,err := configClient.SearchConfig(vo.SearchConfigParam{
     Search:   "blur",
     DataId:   "",
     Group:    "",
@@ -306,14 +306,14 @@ Nacos open-api相关信息可以查看文档 [Nacos open-api wepsite](https://na
 Nacos产品了解可以查看 [Nacos website](https://nacos.io/en-us/docs/what-is-nacos.html).
 
 ## 贡献代码
-我们非常欢迎大家为Nacos-sdk-go贡献代码. 贡献前请查看[CONTRIBUTING](./CONTRIBUTING.md) 
+我们非常欢迎大家为Nacos-sdk-go贡献代码. 贡献前请查看[CONTRIBUTING.md](./CONTRIBUTING.md) 
 
 ## 联系我们
 * 加入Nacos-sdk-go钉钉群(23191211). 
 * [Gitter](https://gitter.im/alibaba/nacos): Nacos即时聊天工具.
 * [Twitter](https://twitter.com/nacos2): 在Twitter上关注Nacos的最新动态.
 * [Weibo](https://weibo.com/u/6574374908): 在微博上关注Nacos的最新动态.
-* [Nacos Segmentfault](https://segmentfault.com/t/nacos): Segmentfault可以获得最新的推送和帮助.
+* [Nacos SegmentFault](https://segmentfault.com/t/nacos): SegmentFault可以获得最新的推送和帮助.
 * Email Group:
      * users-nacos@googlegroups.com: Nacos用户讨论组.
      * dev-nacos@googlegroups.com: Nacos开发者讨论组 (APIs, feature design, etc).
