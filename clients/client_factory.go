@@ -18,6 +18,7 @@ package clients
 
 import (
 	"errors"
+	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
@@ -27,13 +28,13 @@ import (
 )
 
 // CreateConfigClient use to create config client
-func CreateConfigClient(properties map[string]interface{}) (iClient config_client.IConfigClient, err error) {
+func CreateConfigClient(properties map[string]interface{}, delay time.Duration) (iClient config_client.IConfigClient, err error) {
 	nacosClient, err := setConfig(properties)
 	if err != nil {
 		return
 	}
 	nacosClient.SetHttpAgent(&http_agent.HttpAgent{})
-	config, err := config_client.NewConfigClient(nacosClient)
+	config, err := config_client.NewConfigClient(nacosClient, delay)
 	if err != nil {
 		return
 	}

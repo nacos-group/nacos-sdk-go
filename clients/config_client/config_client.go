@@ -75,7 +75,7 @@ type cacheDataListener struct {
 	lastMd5  string
 }
 
-func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
+func NewConfigClient(nc nacos_client.INacosClient, delay time.Duration) (ConfigClient, error) {
 	config := ConfigClient{}
 	config.INacosClient = nc
 	clientConfig, err := nc.GetClientConfig()
@@ -111,7 +111,7 @@ func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
 	cacheMap = cache.NewConcurrentMap()
 	schedulerMap = cache.NewConcurrentMap()
 	schedulerMap.Set("root", true)
-	go delayScheduler(time.NewTimer(1*time.Millisecond), 10*time.Millisecond, "root", listenConfigExecutor())
+	go delayScheduler(time.NewTimer(1*time.Millisecond), delay, "root", listenConfigExecutor())
 	return config, err
 }
 
