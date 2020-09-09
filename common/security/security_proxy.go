@@ -102,8 +102,6 @@ func (ac *AuthClient) Login() (bool, error) {
 
 func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 	if ac.username != "" {
-		query := map[string]string{"username": ac.username, "password": ac.password}
-
 		contextPath := server.ContextPath
 
 		if !strings.HasPrefix(contextPath, "/") {
@@ -114,23 +112,19 @@ func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 			contextPath = contextPath[0 : len(contextPath)-1]
 		}
 
-		reqUrl := "http://" + server.IpAddr + ":" + strconv.FormatInt(int64(server.Port), 10) + contextPath + "/v1/auth/users/login"
-
-		queryInfo := ""
-
-		for key, value := range query {
-			if len(value) > 0 {
-				queryInfo += key + "=" + value + "&"
-			}
-		}
-		if strings.HasSuffix(queryInfo, "&") {
-			queryInfo = queryInfo[:len(queryInfo)-1]
+		if server.Scheme == "" {
+			server.Scheme = "http"
 		}
 
-		reqUrl += "?" + queryInfo
+		reqUrl := server.Scheme + "://" + server.IpAddr + ":" + strconv.FormatInt(int64(server.Port), 10) + contextPath + "/v1/auth/users/login"
 
-		header := http.Header{}
-		resp, err := ac.agent.Post(reqUrl, header, ac.clientCfg.TimeoutMs, map[string]string{})
+		header := http.Header{
+			"content-type": []string{"application/x-www-form-urlencoded"},
+		}
+		resp, err := ac.agent.Post(reqUrl, header, ac.clientCfg.TimeoutMs, map[string]string{
+			"username": ac.username,
+			"password": ac.password,
+		})
 
 		if err != nil {
 			return false, err
