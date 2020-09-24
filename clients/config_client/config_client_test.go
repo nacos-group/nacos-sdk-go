@@ -554,7 +554,7 @@ func TestCancelListenConfig(t *testing.T) {
 		var success bool
 		var context, context1 string
 		listenConfigParam := vo.ConfigParam{
-			DataId: "dataId",
+			DataId: "CancelOne",
 			Group:  "group",
 			OnChange: func(namespace, group, dataId, data string) {
 				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
@@ -563,7 +563,7 @@ func TestCancelListenConfig(t *testing.T) {
 		}
 
 		listenConfigParam1 := vo.ConfigParam{
-			DataId: "dataId1",
+			DataId: "CancelOne1",
 			Group:  "group1",
 			OnChange: func(namespace, group, dataId, data string) {
 				fmt.Println("group1:" + group + ", dataId1:" + dataId + ", data:" + data)
@@ -582,14 +582,14 @@ func TestCancelListenConfig(t *testing.T) {
 		for i := 1; i <= 5; i++ {
 			go func() {
 				success, err = client.PublishConfig(vo.ConfigParam{
-					DataId:  "dataId",
+					DataId:  "CancelOne",
 					Group:   "group",
 					Content: "abcd" + strconv.Itoa(i)})
 			}()
 
 			go func() {
 				success, err = client.PublishConfig(vo.ConfigParam{
-					DataId:  "dataId1",
+					DataId:  "CancelOne1",
 					Group:   "group1",
 					Content: "abcd" + strconv.Itoa(i)})
 			}()
