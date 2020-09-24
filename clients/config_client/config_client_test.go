@@ -477,7 +477,7 @@ func TestListen(t *testing.T) {
 	t.Run("TestListenConfigWithMultipleClients", func(t *testing.T) {
 		ch := make(chan string)
 		listenConfigParam := vo.ConfigParam{
-			DataId: localConfigTest.DataId,
+			DataId: "MultipleClients",
 			Group:  localConfigTest.Group,
 			OnChange: func(namespace, group, dataId, data string) {
 				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
@@ -512,7 +512,7 @@ func TestListen(t *testing.T) {
 	t.Run("TestListenConfigWithMultipleClientsMultipleConfig", func(t *testing.T) {
 		ch := make(chan string)
 		listenConfigParam := vo.ConfigParam{
-			DataId: localConfigTest.DataId,
+			DataId: "MultipleClientsMultipleConfig",
 			Group:  localConfigTest.Group,
 			OnChange: func(namespace, group, dataId, data string) {
 				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
