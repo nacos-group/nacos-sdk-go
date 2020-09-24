@@ -493,7 +493,7 @@ func TestListen(t *testing.T) {
 		client1.ListenConfig(listenConfigParam)
 
 		success, err := client.PublishConfig(vo.ConfigParam{
-			DataId:  localConfigTest.DataId,
+			DataId:  "MultipleClients",
 			Group:   localConfigTest.Group,
 			Content: localConfigTest.Content})
 
@@ -528,7 +528,7 @@ func TestListen(t *testing.T) {
 		client1.ListenConfig(listenConfigParam)
 
 		success, err := client.PublishConfig(vo.ConfigParam{
-			DataId:  localConfigTest.DataId,
+			DataId:  "MultipleClientsMultipleConfig",
 			Group:   localConfigTest.Group,
 			Content: localConfigTest.Content})
 
