@@ -552,13 +552,12 @@ func TestCancelListenConfig(t *testing.T) {
 		client := cretateConfigClientTest()
 		var err error
 		var success bool
-		var context, context1 string
+		var context string
 		listenConfigParam := vo.ConfigParam{
 			DataId: "CancelOne",
 			Group:  "group",
 			OnChange: func(namespace, group, dataId, data string) {
 				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
-				context = data
 			},
 		}
 
@@ -567,7 +566,7 @@ func TestCancelListenConfig(t *testing.T) {
 			Group:  "group1",
 			OnChange: func(namespace, group, dataId, data string) {
 				fmt.Println("group1:" + group + ", dataId1:" + dataId + ", data:" + data)
-				context1 = data
+				context = data
 			},
 		}
 		go func() {
@@ -602,7 +601,7 @@ func TestCancelListenConfig(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, true, success)
 		}
-		assert.Equal(t, "abcd5", context1)
+		assert.Equal(t, "abcd5", context)
 	})
 	t.Run("TestCancelListenConfig", func(t *testing.T) {
 		var context string
