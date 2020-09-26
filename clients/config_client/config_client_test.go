@@ -445,16 +445,11 @@ func TestListen(t *testing.T) {
 	// ListenConfig no change
 	t.Run("TestListenConfigNoChange", func(t *testing.T) {
 		client := cretateConfigClientTest()
-		key := util.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
+		key := util.GetConfigCacheKey("ConfigNoChange", localConfigTest.Group, clientConfigTest.NamespaceId)
 		cache.WriteConfigToFile(key, client.configCacheDir, localConfigTest.Content)
 		var err error
 		var success bool
 		var content string
-
-		success, err = client.PublishConfig(vo.ConfigParam{
-			DataId:  "ConfigNoChange",
-			Group:   localConfigTest.Group,
-			Content: localConfigTest.Content})
 
 		go func() {
 			err = client.ListenConfig(vo.ConfigParam{
@@ -607,8 +602,6 @@ func TestCancelListenConfig(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, true, success)
 		}
-
-		assert.Equal(t, "abcd2", context)
 		assert.Equal(t, "abcd5", context1)
 	})
 	t.Run("TestCancelListenConfig", func(t *testing.T) {
