@@ -453,7 +453,7 @@ func TestListen(t *testing.T) {
 
 		go func() {
 			err = client.ListenConfig(vo.ConfigParam{
-				DataId: localConfigTest.DataId,
+				DataId: "ConfigNoChange",
 				Group:  localConfigTest.Group,
 				OnChange: func(namespace, group, dataId, data string) {
 					content = "data"
@@ -465,7 +465,7 @@ func TestListen(t *testing.T) {
 		time.Sleep(2 * time.Second)
 
 		success, err = client.PublishConfig(vo.ConfigParam{
-			DataId:  localConfigTest.DataId,
+			DataId:  "ConfigNoChange",
 			Group:   localConfigTest.Group,
 			Content: localConfigTest.Content})
 
