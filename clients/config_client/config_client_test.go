@@ -451,6 +451,11 @@ func TestListen(t *testing.T) {
 		var success bool
 		var content string
 
+		success, err = client.PublishConfig(vo.ConfigParam{
+			DataId:  "ConfigNoChange",
+			Group:   localConfigTest.Group,
+			Content: localConfigTest.Content})
+
 		go func() {
 			err = client.ListenConfig(vo.ConfigParam{
 				DataId: "ConfigNoChange",
