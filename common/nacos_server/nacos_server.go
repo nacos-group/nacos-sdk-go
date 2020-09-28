@@ -109,6 +109,8 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 	headers["Spas-Signature"] = []string{signHeaders["Spas-Signature"]}
 	injectSecurityInfo(server, params)
 
+	params = util.EncodingParams(params)
+
 	var response *http.Response
 	response, err = server.httpAgent.Request(method, url, headers, timeoutMS, params)
 	if err != nil {
