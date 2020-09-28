@@ -281,13 +281,18 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 		cData = v.(cacheData)
 		cData.isInitializing = true
 	} else {
-		content, err := cache.ReadConfigFromFile(key, client.configCacheDir)
+		var (
+			content string
+			md5Str  string
+		)
+		content, err = cache.ReadConfigFromFile(key, client.configCacheDir)
 		if err != nil {
 			logger.Errorf("[cache.ReadConfigFromFile] error: %+v", err)
-			content = ""
 		}
-		md5Str := util.Md5(content)
-		listener := cacheDataListener{
+		if len(content) > 0 {
+			md5Str = util.Md5(content)
+		}
+		listener := &cacheDataListener{
 			listener: param.OnChange,
 			lastMd5:  md5Str,
 		}
@@ -299,7 +304,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 			tenant:            clientConfig.NamespaceId,
 			content:           content,
 			md5:               md5Str,
-			cacheDataListener: &listener,
+			cacheDataListener: listener,
 			taskId:            len(cacheMap.Keys()) / perTaskConfigSize,
 			configClient:      client,
 		}
