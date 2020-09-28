@@ -823,3 +823,23 @@ func TestCancelDelayScheduler(t *testing.T) {
 	//Cancel listen config
 	client.CancelListenConfig(listenConfigParam2)
 }
+
+func Test_GetConfigWithSpecialSymbols(t *testing.T) {
+	contentWithSpecialSymbols := "hello world!!@#$%^&*()-+"
+
+	client := cretateConfigClientTest()
+	success, err := client.PublishConfig(vo.ConfigParam{
+		DataId:  "dataId",
+		Group:   "group",
+		Content: contentWithSpecialSymbols})
+
+	assert.Nil(t, err)
+	assert.True(t, success)
+
+	content, err := client.GetConfig(vo.ConfigParam{
+		DataId: "dataId",
+		Group:  "group"})
+
+	assert.Nil(t, err)
+	assert.Equal(t, contentWithSpecialSymbols, content)
+}
