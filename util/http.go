@@ -18,10 +18,8 @@ package util
 
 import "net/url"
 
-func EncodingParams(params map[string]string) map[string]string {
-	encodedParams := make(map[string]string, len(params))
+func EncodingParams(params map[string]string) {
 	for param, value := range params {
-		encodedParams[param] = url.QueryEscape(value)
+		params[param] = url.QueryEscape(value)
 	}
-	return encodedParams
 }

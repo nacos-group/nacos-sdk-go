@@ -31,7 +31,7 @@ func TestEncodingParams(t *testing.T) {
 	params["tag"] = tag
 	params["content"] = content
 
-	params = EncodingParams(params)
+	EncodingParams(params)
 
 	encodedTag := url.QueryEscape(tag)
 	encodedContent := url.QueryEscape(content)
