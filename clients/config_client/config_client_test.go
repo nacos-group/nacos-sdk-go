@@ -125,12 +125,13 @@ func cretateConfigClientHttpTestWithTenant(mockHttpAgent http_agent.IHttpAgent) 
 }
 
 func Test_GetConfig(t *testing.T) {
+	contentStr := "hello world!!@#$%^&&*()"
 
 	client := cretateConfigClientTest()
 	success, err := client.PublishConfig(vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
-		Content: "hello world!222222"})
+		Content: contentStr})
 
 	assert.Nil(t, err)
 	assert.True(t, success)
@@ -140,7 +141,7 @@ func Test_GetConfig(t *testing.T) {
 		Group:  "group"})
 
 	assert.Nil(t, err)
-	assert.Equal(t, "hello world!222222", content)
+	assert.Equal(t, contentStr, content)
 }
 
 func Test_SearchConfig(t *testing.T) {
@@ -647,25 +648,4 @@ func TestCancelListenConfig(t *testing.T) {
 
 		assert.Equal(t, localConfigTest.Content, context)
 	})
-}
-
-// Test get config with special symbol
-func Test_GetConfig_With_SpecialSymbol(t *testing.T) {
-	contentWithSymbol := "hello world!!@#$%^&&*()"
-
-	client := cretateConfigClientTest()
-	success, err := client.PublishConfig(vo.ConfigParam{
-		DataId:  "dataId",
-		Group:   "group",
-		Content: contentWithSymbol})
-
-	assert.Nil(t, err)
-	assert.True(t, success)
-
-	content, err := client.GetConfig(vo.ConfigParam{
-		DataId: "dataId",
-		Group:  "group"})
-
-	assert.Nil(t, err)
-	assert.Equal(t, contentWithSymbol, content)
 }
