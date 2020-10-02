@@ -71,7 +71,6 @@ func (agent *HttpAgent) RequestOnlyResult(method string, path string, header htt
 }
 
 func (agent *HttpAgent) Request(method string, path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
-
 	switch method {
 	case http.MethodGet:
 		response, err = agent.Get(path, header, timeoutMs, params)
