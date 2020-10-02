@@ -648,3 +648,24 @@ func TestCancelListenConfig(t *testing.T) {
 		assert.Equal(t, localConfigTest.Content, context)
 	})
 }
+
+// Test get config with special symbol
+func Test_GetConfig_With_SpecialSymbol(t *testing.T) {
+	contentWithSymbol := "hello world!!@#$%^&&*()"
+
+	client := cretateConfigClientTest()
+	success, err := client.PublishConfig(vo.ConfigParam{
+		DataId:  "dataId",
+		Group:   "group",
+		Content: contentWithSymbol})
+
+	assert.Nil(t, err)
+	assert.True(t, success)
+
+	content, err := client.GetConfig(vo.ConfigParam{
+		DataId: "dataId",
+		Group:  "group"})
+
+	assert.Nil(t, err)
+	assert.Equal(t, contentWithSymbol, content)
+}

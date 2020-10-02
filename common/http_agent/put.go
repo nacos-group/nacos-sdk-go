@@ -17,6 +17,7 @@
 package http_agent
 
 import (
+	"github.com/nacos-group/nacos-sdk-go/util"
 	"log"
 	"net/http"
 	"strings"
@@ -27,6 +28,8 @@ func put(path string, header http.Header, timeoutMs uint64, params map[string]st
 	client := http.Client{}
 	client.Timeout = time.Millisecond * time.Duration(timeoutMs)
 	var body string
+
+	util.EncodingParams(params)
 	for key, value := range params {
 		if len(value) > 0 {
 			body += key + "=" + value + "&"
