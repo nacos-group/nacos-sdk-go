@@ -26,7 +26,6 @@ func post(path string, header http.Header, timeoutMs uint64, params map[string]s
 	client.Timeout = time.Millisecond * time.Duration(timeoutMs)
 	var body string
 
-	//util.EncodingParams(params)
 	for key, value := range params {
 		if len(value) > 0 {
 			body += key + "=" + value + "&"
