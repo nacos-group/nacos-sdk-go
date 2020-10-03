@@ -612,7 +612,7 @@ func TestCancelListenConfig(t *testing.T) {
 		key := util.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
 		cache.WriteConfigToFile(key, client.configCacheDir, "")
 		listenConfigParam := vo.ConfigParam{
-			DataId: localConfigTest.DataId,
+			DataId: "cancel_listen_config",
 			Group:  localConfigTest.Group,
 			OnChange: func(namespace, group, dataId, data string) {
 				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
@@ -625,7 +625,7 @@ func TestCancelListenConfig(t *testing.T) {
 			assert.Nil(t, err)
 		}()
 		success, err := client.PublishConfig(vo.ConfigParam{
-			DataId:  localConfigTest.DataId,
+			DataId:  "cancel_listen_config",
 			Group:   localConfigTest.Group,
 			Content: localConfigTest.Content})
 		assert.Nil(t, err)
@@ -639,7 +639,7 @@ func TestCancelListenConfig(t *testing.T) {
 		client.CancelListenConfig(listenConfigParam)
 
 		success, err = client.PublishConfig(vo.ConfigParam{
-			DataId:  localConfigTest.DataId,
+			DataId:  "cancel_listen_config",
 			Group:   localConfigTest.Group,
 			Content: "abcd"})
 		assert.Nil(t, err)
