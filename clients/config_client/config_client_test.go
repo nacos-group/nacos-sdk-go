@@ -654,16 +654,16 @@ func TestGetConfigWithSpecialSymbol(t *testing.T) {
 
 	client := cretateConfigClientTest()
 	success, err := client.PublishConfig(vo.ConfigParam{
-		DataId:  "dataId",
-		Group:   "group",
+		DataId:  "special_symbol",
+		Group:   localConfigTest.Group,
 		Content: contentStr})
 
 	assert.Nil(t, err)
 	assert.True(t, success)
 
 	content, err := client.GetConfig(vo.ConfigParam{
-		DataId: "dataId",
-		Group:  "group"})
+		DataId: "special_symbol",
+		Group:  localConfigTest.Group,})
 
 	assert.Nil(t, err)
 	assert.Equal(t, contentStr, content)
