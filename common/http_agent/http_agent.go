@@ -92,6 +92,7 @@ func (agent *HttpAgent) Request(method string, path string, header http.Header, 
 }
 func (agent *HttpAgent) Post(path string, header http.Header, timeoutMs uint64,
 	params map[string]string) (response *http.Response, err error) {
+	util.EncodingParams(params)
 	return post(path, header, timeoutMs, params)
 }
 func (agent *HttpAgent) Delete(path string, header http.Header, timeoutMs uint64,
