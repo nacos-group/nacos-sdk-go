@@ -445,7 +445,7 @@ func TestListen(t *testing.T) {
 	// ListenConfig no change
 	t.Run("TestListenConfigNoChange", func(t *testing.T) {
 		client := cretateConfigClientTest()
-		key := util.GetConfigCacheKey(localConfigTest.DataId, localConfigTest.Group, clientConfigTest.NamespaceId)
+		key := util.GetConfigCacheKey("ConfigNoChange", localConfigTest.Group, clientConfigTest.NamespaceId)
 		cache.WriteConfigToFile(key, client.configCacheDir, localConfigTest.Content)
 		var err error
 		var success bool
@@ -453,7 +453,7 @@ func TestListen(t *testing.T) {
 
 		go func() {
 			err = client.ListenConfig(vo.ConfigParam{
-				DataId: localConfigTest.DataId,
+				DataId: "ConfigNoChange",
 				Group:  localConfigTest.Group,
 				OnChange: func(namespace, group, dataId, data string) {
 					content = "data"
@@ -465,7 +465,7 @@ func TestListen(t *testing.T) {
 		time.Sleep(2 * time.Second)
 
 		success, err = client.PublishConfig(vo.ConfigParam{
-			DataId:  localConfigTest.DataId,
+			DataId:  "ConfigNoChange",
 			Group:   localConfigTest.Group,
 			Content: localConfigTest.Content})
 
@@ -477,7 +477,7 @@ func TestListen(t *testing.T) {
 	t.Run("TestListenConfigWithMultipleClients", func(t *testing.T) {
 		ch := make(chan string)
 		listenConfigParam := vo.ConfigParam{
-			DataId: localConfigTest.DataId,
+			DataId: "MultipleClients",
 			Group:  localConfigTest.Group,
 			OnChange: func(namespace, group, dataId, data string) {
 				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
@@ -493,7 +493,7 @@ func TestListen(t *testing.T) {
 		client1.ListenConfig(listenConfigParam)
 
 		success, err := client.PublishConfig(vo.ConfigParam{
-			DataId:  localConfigTest.DataId,
+			DataId:  "MultipleClients",
 			Group:   localConfigTest.Group,
 			Content: localConfigTest.Content})
 
@@ -512,7 +512,7 @@ func TestListen(t *testing.T) {
 	t.Run("TestListenConfigWithMultipleClientsMultipleConfig", func(t *testing.T) {
 		ch := make(chan string)
 		listenConfigParam := vo.ConfigParam{
-			DataId: localConfigTest.DataId,
+			DataId: "MultipleClientsMultipleConfig",
 			Group:  localConfigTest.Group,
 			OnChange: func(namespace, group, dataId, data string) {
 				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
@@ -528,7 +528,7 @@ func TestListen(t *testing.T) {
 		client1.ListenConfig(listenConfigParam)
 
 		success, err := client.PublishConfig(vo.ConfigParam{
-			DataId:  localConfigTest.DataId,
+			DataId:  "MultipleClientsMultipleConfig",
 			Group:   localConfigTest.Group,
 			Content: localConfigTest.Content})
 
@@ -552,22 +552,21 @@ func TestCancelListenConfig(t *testing.T) {
 		client := cretateConfigClientTest()
 		var err error
 		var success bool
-		var context, context1 string
+		var context string
 		listenConfigParam := vo.ConfigParam{
-			DataId: "dataId",
+			DataId: "CancelOne",
 			Group:  "group",
 			OnChange: func(namespace, group, dataId, data string) {
 				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
-				context = data
 			},
 		}
 
 		listenConfigParam1 := vo.ConfigParam{
-			DataId: "dataId1",
+			DataId: "CancelOne1",
 			Group:  "group1",
 			OnChange: func(namespace, group, dataId, data string) {
 				fmt.Println("group1:" + group + ", dataId1:" + dataId + ", data:" + data)
-				context1 = data
+				context = data
 			},
 		}
 		go func() {
@@ -582,14 +581,14 @@ func TestCancelListenConfig(t *testing.T) {
 		for i := 1; i <= 5; i++ {
 			go func() {
 				success, err = client.PublishConfig(vo.ConfigParam{
-					DataId:  "dataId",
+					DataId:  "CancelOne",
 					Group:   "group",
 					Content: "abcd" + strconv.Itoa(i)})
 			}()
 
 			go func() {
 				success, err = client.PublishConfig(vo.ConfigParam{
-					DataId:  "dataId1",
+					DataId:  "CancelOne1",
 					Group:   "group1",
 					Content: "abcd" + strconv.Itoa(i)})
 			}()
@@ -602,9 +601,7 @@ func TestCancelListenConfig(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, true, success)
 		}
-
-		assert.Equal(t, "abcd2", context)
-		assert.Equal(t, "abcd5", context1)
+		assert.Equal(t, "abcd5", context)
 	})
 	t.Run("TestCancelListenConfig", func(t *testing.T) {
 		var context string
