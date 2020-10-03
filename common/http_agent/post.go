@@ -16,7 +16,6 @@
 package http_agent
 
 import (
-	"github.com/nacos-group/nacos-sdk-go/util"
 	"net/http"
 	"strings"
 	"time"
@@ -27,7 +26,7 @@ func post(path string, header http.Header, timeoutMs uint64, params map[string]s
 	client.Timeout = time.Millisecond * time.Duration(timeoutMs)
 	var body string
 
-	util.EncodingParams(params)
+	//util.EncodingParams(params)
 	for key, value := range params {
 		if len(value) > 0 {
 			body += key + "=" + value + "&"
