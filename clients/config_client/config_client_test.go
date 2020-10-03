@@ -579,19 +579,19 @@ func TestCancelListenConfig(t *testing.T) {
 
 		fmt.Println("Start listening")
 		for i := 1; i <= 5; i++ {
-			go func() {
-				success, err = client.PublishConfig(vo.ConfigParam{
-					DataId:  "CancelOne",
-					Group:   "group",
-					Content: "abcd" + strconv.Itoa(i)})
-			}()
+			//go func() {
+			success, err = client.PublishConfig(vo.ConfigParam{
+				DataId:  "CancelOne",
+				Group:   "group",
+				Content: "abcd" + strconv.Itoa(i)})
+			//}()
 
-			go func() {
-				success, err = client.PublishConfig(vo.ConfigParam{
-					DataId:  "CancelOne1",
-					Group:   "group1",
-					Content: "abcd" + strconv.Itoa(i)})
-			}()
+			//go func() {
+			success, err = client.PublishConfig(vo.ConfigParam{
+				DataId:  "CancelOne1",
+				Group:   "group1",
+				Content: "abcd" + strconv.Itoa(i)})
+			//}()
 
 			if i == 3 {
 				client.CancelListenConfig(listenConfigParam)
