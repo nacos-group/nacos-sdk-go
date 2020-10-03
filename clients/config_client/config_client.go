@@ -53,8 +53,8 @@ const (
 
 var (
 	currentTaskCount int
-	cacheMap         cache.ConcurrentMap
-	schedulerMap     cache.ConcurrentMap
+	cacheMap         = cache.NewConcurrentMap()
+	schedulerMap     = cache.NewConcurrentMap()
 )
 
 type cacheData struct {
@@ -73,6 +73,11 @@ type cacheData struct {
 type cacheDataListener struct {
 	listener vo.Listener
 	lastMd5  string
+}
+
+func init() {
+	schedulerMap.Set("root", true)
+	go delayScheduler(time.NewTimer(1*time.Millisecond), 10*time.Millisecond, "root", listenConfigExecutor())
 }
 
 func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
@@ -108,10 +113,6 @@ func NewConfigClient(nc nacos_client.INacosClient) (ConfigClient, error) {
 		}
 		config.kmsClient = kmsClient
 	}
-	cacheMap = cache.NewConcurrentMap()
-	schedulerMap = cache.NewConcurrentMap()
-	schedulerMap.Set("root", true)
-	go delayScheduler(time.NewTimer(1*time.Millisecond), 10*time.Millisecond, "root", listenConfigExecutor())
 	return config, err
 }
 
