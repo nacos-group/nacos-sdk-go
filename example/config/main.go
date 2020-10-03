@@ -131,5 +131,4 @@ func main() {
 		PageSize: 10,
 	})
 	fmt.Printf("Search config:%+v \n", searchPage)
-
 }
