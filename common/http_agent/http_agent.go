@@ -76,7 +76,6 @@ func (agent *HttpAgent) Request(method string, path string, header http.Header, 
 		response, err = agent.Get(path, header, timeoutMs, params)
 		return
 	case http.MethodPost:
-		util.EncodingParams(params)
 		response, err = agent.Post(path, header, timeoutMs, params)
 		return
 	case http.MethodPut:
