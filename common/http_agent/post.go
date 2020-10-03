@@ -17,18 +17,17 @@ package http_agent
 
 import (
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/util"
 )
 
 func post(path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
 	client := http.Client{}
 	client.Timeout = time.Millisecond * time.Duration(timeoutMs)
 	var body string
-	for param, value := range params {
-		params[param] = url.QueryEscape(value)
-	}
+	util.EncodingParams(params)
 	for key, value := range params {
 		if len(value) > 0 {
 			body += key + "=" + value + "&"
