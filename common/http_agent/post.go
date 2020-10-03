@@ -16,10 +16,11 @@
 package http_agent
 
 import (
-	"github.com/nacos-group/nacos-sdk-go/util"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/util"
 )
 
 func post(path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
