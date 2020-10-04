@@ -16,10 +16,11 @@
 package http_agent
 
 import (
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils"
 )
 
 func post(path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
