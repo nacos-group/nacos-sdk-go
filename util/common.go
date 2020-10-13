@@ -19,6 +19,7 @@ package util
 import (
 	"encoding/json"
 	"net"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -97,4 +98,13 @@ func GetDurationWithDefault(metadata map[string]string, key string, defaultDurat
 		return time.Duration(value)
 	}
 	return defaultDuration
+}
+
+func GetUrlFormedMap(source map[string]string) (urlEncoded string) {
+	urlEncoder := url.Values{}
+	for key, value := range source {
+		urlEncoder.Add(key, value)
+	}
+	urlEncoded = urlEncoder.Encode()
+	return
 }
