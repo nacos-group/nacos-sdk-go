@@ -128,7 +128,7 @@ func (cp *ConfigProxy) DeleteConfigProxy(param vo.ConfigParam, tenant, accessKey
 	}
 }
 
-func (cp *ConfigProxy) ListenConfig(params map[string]string, isInitializing bool, accessKey, secretKey string) (string, error) {
+func (cp *ConfigProxy) ListenConfig(params map[string]string, isInitializing bool, tenant, accessKey, secretKey string) (string, error) {
 	//fixed at 30000ms，avoid frequent request on the server
 	var listenInterval uint64 = 30000
 	headers := map[string]string{
@@ -141,6 +141,10 @@ func (cp *ConfigProxy) ListenConfig(params map[string]string, isInitializing boo
 
 	headers["accessKey"] = accessKey
 	headers["secretKey"] = secretKey
+
+	if len(tenant) > 0 {
+		params["tenant"] = tenant
+	}
 	logger.Infof("[client.ListenConfig] request params:%+v header:%+v \n", params, headers)
 	// In order to prevent the server from handling the delay of the client's long task,
 	// increase the client's read timeout to avoid this problem.
