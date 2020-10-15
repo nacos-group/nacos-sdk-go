@@ -392,7 +392,7 @@ func longPulling(taskId int) func() error {
 			params[constant.KEY_LISTEN_CONFIGS] = listeningConfigs
 
 			var changed string
-			changedTmp, err := client.configProxy.ListenConfig(params, len(initializationList) > 0, clientConfig.AccessKey, clientConfig.SecretKey)
+			changedTmp, err := client.configProxy.ListenConfig(params, len(initializationList) > 0, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
 			if err == nil {
 				changed = changedTmp
 			} else {
