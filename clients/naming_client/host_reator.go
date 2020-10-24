@@ -54,7 +54,7 @@ func NewHostReactor(serviceProxy NamingProxy, cacheDir string, updateThreadNum i
 		updateTimeMap:        cache.NewConcurrentMap(),
 		updateCacheWhenEmpty: updateCacheWhenEmpty,
 	}
-	pr := NewPushRecevier(&hr)
+	pr := NewPushReceiver(&hr)
 	hr.pushReceiver = *pr
 	if !notLoadCacheAtStart {
 		hr.loadCacheFromDisk()
