@@ -50,7 +50,7 @@ func NewPushRecevier(hostReactor *HostReactor) *PushReceiver {
 	pr := PushReceiver{
 		hostReactor: hostReactor,
 	}
-	go pr.startServer()
+	pr.startServer()
 	return &pr
 }
 
