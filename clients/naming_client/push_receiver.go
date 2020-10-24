@@ -91,9 +91,12 @@ func (us *PushReceiver) startServer() {
 	}
 
 	defer conn.Close()
-	for {
-		us.handleClient(conn)
-	}
+
+	go func() {
+		for {
+			us.handleClient(conn)
+		}
+	}()
 }
 
 func (us *PushReceiver) handleClient(conn *net.UDPConn) {
