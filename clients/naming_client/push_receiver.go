@@ -46,11 +46,11 @@ var (
 	GZIP_MAGIC = []byte("\x1F\x8B")
 )
 
-func NewPushRecevier(hostReactor *HostReactor) *PushReceiver {
+func NewPushReceiver(hostReactor *HostReactor) *PushReceiver {
 	pr := PushReceiver{
 		hostReactor: hostReactor,
 	}
-	go pr.startServer()
+	pr.startServer()
 	return &pr
 }
 
@@ -90,10 +90,12 @@ func (us *PushReceiver) startServer() {
 		}
 	}
 
-	defer conn.Close()
-	for {
-		us.handleClient(conn)
-	}
+	go func() {
+		defer conn.Close()
+		for {
+			us.handleClient(conn)
+		}
+	}()
 }
 
 func (us *PushReceiver) handleClient(conn *net.UDPConn) {
