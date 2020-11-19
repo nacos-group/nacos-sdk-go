@@ -97,22 +97,6 @@ func cretateConfigClientTest() ConfigClient {
 	return client
 }
 
-func createConfigClientWithScheme() ConfigClient {
-	var serverConfigWithScheme = constant.ServerConfig{
-		ContextPath: "/nacos",
-		Port:        80,
-		IpAddr:      "console.nacos.io",
-		Scheme:      "http",
-	}
-
-	nc := nacos_client.NacosClient{}
-	_ = nc.SetServerConfig([]constant.ServerConfig{serverConfigWithScheme})
-	_ = nc.SetClientConfig(clientConfigTest)
-	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
-	client, _ := NewConfigClient(&nc)
-	return client
-}
-
 func cretateConfigClientTestWithTenant() ConfigClient {
 	nc := nacos_client.NacosClient{}
 	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
@@ -143,25 +127,6 @@ func cretateConfigClientHttpTestWithTenant(mockHttpAgent http_agent.IHttpAgent) 
 func Test_GetConfig(t *testing.T) {
 
 	client := cretateConfigClientTest()
-	success, err := client.PublishConfig(vo.ConfigParam{
-		DataId:  "dataId",
-		Group:   "group",
-		Content: "hello world!222222"})
-
-	assert.Nil(t, err)
-	assert.True(t, success)
-
-	content, err := client.GetConfig(vo.ConfigParam{
-		DataId: "dataId",
-		Group:  "group"})
-
-	assert.Nil(t, err)
-	assert.Equal(t, "hello world!222222", content)
-}
-
-func Test_GetConfigWithScheme(t *testing.T) {
-
-	client := createConfigClientWithScheme()
 	success, err := client.PublishConfig(vo.ConfigParam{
 		DataId:  "dataId",
 		Group:   "group",
