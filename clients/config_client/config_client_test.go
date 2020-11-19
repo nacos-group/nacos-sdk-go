@@ -97,7 +97,7 @@ func cretateConfigClientTest() ConfigClient {
 	return client
 }
 
-func createConfigClientWithScheme() *ConfigClient {
+func createConfigClientWithScheme() ConfigClient {
 	var serverConfigWithScheme = constant.ServerConfig{
 		ContextPath: "/nacos",
 		Port:        80,
@@ -110,7 +110,7 @@ func createConfigClientWithScheme() *ConfigClient {
 	_ = nc.SetClientConfig(clientConfigTest)
 	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
 	client, _ := NewConfigClient(&nc)
-	return &client
+	return client
 }
 
 func cretateConfigClientTestWithTenant() ConfigClient {
