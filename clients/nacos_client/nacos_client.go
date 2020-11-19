@@ -93,7 +93,7 @@ func (client *NacosClient) SetServerConfig(configs []constant.ServerConfig) (err
 		if len(configs[i].ContextPath) <= 0 {
 			configs[i].ContextPath = constant.DEFAULT_CONTEXT_PATH
 		}
-		if configs[i].Scheme == "" {
+		if len(configs[i].Scheme) <= 0 {
 			configs[i].Scheme = constant.DEFAULT_SERVER_SCHEME
 		}
 	}
