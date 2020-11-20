@@ -36,7 +36,7 @@ func main() {
 	}
 
 	cc := constant.ClientConfig{
-		NamespaceId:         "test-lzp", //namespace id
+		NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //namespace id
 		TimeoutMs:           5000,
 		ListenInterval:      10000,
 		NotLoadCacheAtStart: true,

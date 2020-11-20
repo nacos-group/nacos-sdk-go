@@ -1,17 +1,34 @@
+/*
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package security
 
 import (
 	"encoding/json"
 	"errors"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 )
 
 type AuthClient struct {
@@ -63,7 +80,7 @@ func (ac *AuthClient) AutoRefresh() {
 			case <-timer.C:
 				_, err := ac.Login()
 				if err != nil {
-					log.Printf("[ERROR]: login has error %s", err)
+					logger.Errorf("login has error %+v", err)
 				}
 				timer.Reset(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
 			}
@@ -85,8 +102,6 @@ func (ac *AuthClient) Login() (bool, error) {
 
 func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 	if ac.username != "" {
-		query := map[string]string{"username": ac.username, "password": ac.password}
-
 		contextPath := server.ContextPath
 
 		if !strings.HasPrefix(contextPath, "/") {
@@ -97,23 +112,19 @@ func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 			contextPath = contextPath[0 : len(contextPath)-1]
 		}
 
-		reqUrl := "http://" + server.IpAddr + ":" + strconv.FormatInt(int64(server.Port), 10) + contextPath + "/v1/auth/users/login"
-
-		queryInfo := ""
-
-		for key, value := range query {
-			if len(value) > 0 {
-				queryInfo += key + "=" + value + "&"
-			}
-		}
-		if strings.HasSuffix(queryInfo, "&") {
-			queryInfo = queryInfo[:len(queryInfo)-1]
+		if server.Scheme == "" {
+			server.Scheme = "http"
 		}
 
-		reqUrl += "?" + queryInfo
+		reqUrl := server.Scheme + "://" + server.IpAddr + ":" + strconv.FormatInt(int64(server.Port), 10) + contextPath + "/v1/auth/users/login"
 
-		header := http.Header{}
-		resp, err := ac.agent.Post(reqUrl, header, ac.clientCfg.TimeoutMs, map[string]string{})
+		header := http.Header{
+			"content-type": []string{"application/x-www-form-urlencoded"},
+		}
+		resp, err := ac.agent.Post(reqUrl, header, ac.clientCfg.TimeoutMs, map[string]string{
+			"username": ac.username,
+			"password": ac.password,
+		})
 
 		if err != nil {
 			return false, err
