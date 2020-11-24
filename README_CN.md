@@ -51,6 +51,7 @@ constant.ServerConfig{
 	ContextPath string // Nacos的ContextPath
 	IpAddr      string // Nacos的服务地址
 	Port        uint64 // Nacos的服务端口
+	Scheme      string // Nacos的服务地址前缀
 }
 ```
 
@@ -76,11 +77,13 @@ serverConfigs := []constant.ServerConfig{
         IpAddr:      "console1.nacos.io",
         ContextPath: "/nacos",
         Port:        80,
+        Scheme:      "http",
     },
     {
     	IpAddr:      "console2.nacos.io",
     	ContextPath: "/nacos",
     	Port:        80,
+        Scheme:      "http",
     },
 }
 
