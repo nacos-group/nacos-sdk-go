@@ -33,3 +33,16 @@ func Test_getAddressWithScheme(t *testing.T) {
 	address := getAddress(serverConfigTest)
 	assert.Equal(t, "https://console.nacos.io:80", address)
 }
+
+func Test_getAddressWithoutScheme(t *testing.T) {
+	serverConfigTest := constant.ServerConfig{
+		ContextPath: "/nacos",
+		Port:        80,
+		IpAddr:      "http://console.nacos.io",
+	}
+	assert.Equal(t, "http://console.nacos.io:80", getAddress(serverConfigTest))
+
+	serverConfigTest.IpAddr = "https://console.nacos.io"
+	assert.Equal(t, "https://console.nacos.io:80", getAddress(serverConfigTest))
+
+}

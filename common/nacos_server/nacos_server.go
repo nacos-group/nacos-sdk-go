@@ -305,6 +305,9 @@ func injectSecurityInfo(server *NacosServer, param map[string]string) {
 }
 
 func getAddress(cfg constant.ServerConfig) string {
+	if strings.Index(cfg.IpAddr, "http://") >= 0 || strings.Index(cfg.IpAddr, "https://") >= 0 {
+		return cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
+	}
 	return cfg.Scheme + "://" + cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
 }
 
