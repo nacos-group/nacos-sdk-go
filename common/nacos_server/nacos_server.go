@@ -85,10 +85,6 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 
 	signHeaders := getSignHeaders(params, newHeaders)
 
-	//接受配置协议头（http,https）
-	if strings.Index(curServer, "//") <= -1 {
-		curServer = "http://" + curServer
-	}
 	url := curServer + contextPath + api
 
 	headers := map[string][]string{}
@@ -139,10 +135,6 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 		contextPath = constant.WEB_CONTEXT
 	}
 
-	//接受配置协议头（http,https）
-	if strings.Index(curServer, "//") <= -1 {
-		curServer = "http://" + curServer
-	}
 	url := curServer + contextPath + api
 
 	headers := map[string][]string{}
@@ -313,7 +305,10 @@ func injectSecurityInfo(server *NacosServer, param map[string]string) {
 }
 
 func getAddress(cfg constant.ServerConfig) string {
-	return cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
+	if strings.Index(cfg.IpAddr, "http://") >= 0 || strings.Index(cfg.IpAddr, "https://") >= 0 {
+		return cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
+	}
+	return cfg.Scheme + "://" + cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
 }
 
 func getSignHeaders(params map[string]string, newHeaders map[string]string) map[string]string {

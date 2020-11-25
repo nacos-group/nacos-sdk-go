@@ -73,4 +73,5 @@ const (
 	DEFAULT_GROUP               = "DEFAULT_GROUP"
 	NAMING_INSTANCE_ID_SPLITTER = "#"
 	DefaultClientErrorCode      = "SDK.NacosError"
+	DEFAULT_SERVER_SCHEME       = "http"
 )

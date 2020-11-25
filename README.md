@@ -51,6 +51,7 @@ constant.ServerConfig{
 	ContextPath string // the nacos server context path
 	IpAddr      string // the nacos server address
 	Port        uint64 // the nacos server port
+	Scheme      string // the nacos server scheme
 }
 ```
 
@@ -76,11 +77,13 @@ serverConfigs := []constant.ServerConfig{
         IpAddr:      "console1.nacos.io",
         ContextPath: "/nacos",
         Port:        80,
+        Scheme:      "http",
     },
     {
     	IpAddr:      "console2.nacos.io",
     	ContextPath: "/nacos",
     	Port:        80,
+        Scheme:      "http",
     },
 }
 
