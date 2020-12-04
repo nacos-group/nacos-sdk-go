@@ -18,7 +18,6 @@ package new
 
 import (
 	"errors"
-
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
@@ -32,7 +31,7 @@ func CreateConfigClient(configs *constant.Config) (iClient config_client.IConfig
 	if err != nil {
 		return
 	}
-	nacosClient.SetHttpAgent(&http_agent.HttpAgent{})
+	_ = nacosClient.SetHttpAgent(&http_agent.HttpAgent{})
 	config, err := config_client.NewConfigClient(nacosClient)
 	if err != nil {
 		return
@@ -47,7 +46,7 @@ func CreateNamingClient(configs *constant.Config) (iClient naming_client.INaming
 	if err != nil {
 		return
 	}
-	nacosClient.SetHttpAgent(&http_agent.HttpAgent{})
+	_ = nacosClient.SetHttpAgent(&http_agent.HttpAgent{})
 	naming, err := naming_client.NewNamingClient(nacosClient)
 	if err != nil {
 		return
@@ -61,6 +60,9 @@ func setConfig(configs *constant.Config) (iClient nacos_client.INacosClient, err
 
 	if configs.ClientConfig == nil {
 		err = client.SetClientConfig(*configs.ClientConfig)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		_ = client.SetClientConfig(constant.ClientConfig{
 			TimeoutMs:    10 * 1000,
@@ -70,6 +72,9 @@ func setConfig(configs *constant.Config) (iClient nacos_client.INacosClient, err
 
 	if configs.ServerConfigs != nil {
 		err = client.SetServerConfig(*configs.ServerConfigs)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		clientConfig, _ := client.GetClientConfig()
 		if len(clientConfig.Endpoint) <= 0 {
