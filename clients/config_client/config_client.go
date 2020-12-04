@@ -336,7 +336,7 @@ func delayScheduler(t *time.Timer, delay time.Duration, taskId string, execute f
 //Listen for the configuration executor
 func listenConfigExecutor() func() error {
 	return func() error {
-		listenerSize := len(cacheMap.Keys())
+		listenerSize := cacheMap.Count()
 		taskCount := int(math.Ceil(float64(listenerSize) / float64(perTaskConfigSize)))
 
 		if taskCount > currentTaskCount {
