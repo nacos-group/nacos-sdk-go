@@ -18,12 +18,17 @@ package new
 
 import (
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestCreateNameClient(t *testing.T) {
+func TestCreateNamingClient(t *testing.T) {
 	serverConfigs := &[]constant.ServerConfig{
-		*constant.NewServerConfig("console.nacos.io", 80),
+		{
+			IpAddr: "console.nacos.io",
+			Port:   80,
+		},
 	}
 
 	clientConfig := &constant.ClientConfig{
@@ -38,12 +43,68 @@ func TestCreateNameClient(t *testing.T) {
 		LogLevel:            "debug",
 	}
 
-	_, err := CreateNamingClient(&constant.Config{
+	client, err := CreateNamingClient(&constant.Config{
+		ServerConfigs: serverConfigs,
+		ClientConfig:  clientConfig},
+	)
+	assert.Nil(t, err)
+
+	success, err := client.RegisterInstance(vo.RegisterInstanceParam{
+		ServiceName: "DEMO",
+		Ip:          "10.0.0.10",
+		Port:        80,
+		Ephemeral:   false,
+	})
+	assert.Equal(t, nil, err)
+	assert.Equal(t, true, success)
+
+	servers, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
+		PageNo:   1,
+		PageSize: 10,
+	})
+	assert.Nil(t, err)
+	assert.NotEmpty(t, servers)
+}
+
+func TestCreateConfigClient(t *testing.T) {
+	serverConfigs := &[]constant.ServerConfig{
+		{
+			IpAddr: "console.nacos.io",
+			Port:   80,
+		},
+	}
+
+	clientConfig := &constant.ClientConfig{
+		NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //namespace id
+		TimeoutMs:           5000,
+		ListenInterval:      10000,
+		NotLoadCacheAtStart: true,
+		LogDir:              "/tmp/nacos/log",
+		CacheDir:            "/tmp/nacos/cache",
+		RotateTime:          "1h",
+		MaxAge:              3,
+		LogLevel:            "debug",
+	}
+
+	client, err := CreateConfigClient(&constant.Config{
 		ServerConfigs: serverConfigs,
 		ClientConfig:  clientConfig},
 	)
 
-	if err != nil {
-		panic(err)
-	}
+	assert.Nil(t, err)
+
+	success, err := client.PublishConfig(vo.ConfigParam{
+		DataId:  "dataId",
+		Group:   "group",
+		Content: "hello world"})
+
+	assert.Nil(t, err)
+	assert.True(t, success)
+
+	content, err := client.GetConfig(vo.ConfigParam{
+		DataId: "dataId",
+		Group:  "group"})
+
+	assert.Nil(t, err)
+	assert.Equal(t, "hello world", content)
 }
