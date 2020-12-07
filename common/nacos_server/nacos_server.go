@@ -51,9 +51,9 @@ type NacosServer struct {
 	vipSrvRefInterMills int64
 }
 
-func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (NacosServer, error) {
+func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
 	if len(serverList) == 0 && endpoint == "" {
-		return NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
+		return &NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
 	}
 
 	securityLogin := security.NewAuthClient(clientCfg, serverList, httpAgent)
@@ -70,11 +70,11 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 	_, err := securityLogin.Login()
 
 	if err != nil {
-		return ns, err
+		return &ns, err
 	}
 
 	securityLogin.AutoRefresh()
-	return ns, nil
+	return &ns, nil
 }
 
 func (server *NacosServer) callConfigServer(api string, params map[string]string, newHeaders map[string]string,

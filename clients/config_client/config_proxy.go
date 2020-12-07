@@ -33,7 +33,7 @@ import (
 )
 
 type ConfigProxy struct {
-	nacosServer  nacos_server.NacosServer
+	nacosServer  *nacos_server.NacosServer
 	clientConfig constant.ClientConfig
 }
 
