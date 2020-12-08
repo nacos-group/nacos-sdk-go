@@ -181,7 +181,6 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 }
 
 func (server *NacosServer) ReqConfigApi(api string, params map[string]string, headers map[string]string, method string, timeoutMS uint64) (string, error) {
-	logger.Infof("serverlist:%+v", server.serverList)
 	srvs := server.serverList
 	if srvs == nil || len(srvs) == 0 {
 		return "", errors.New("server list is empty")
@@ -300,7 +299,6 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 		}
 
 	}
-	logger.Infof("refresh serverlist:%+v", server.serverList)
 	return
 }
 
