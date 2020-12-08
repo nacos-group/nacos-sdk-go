@@ -33,7 +33,7 @@ import (
 
 type NamingProxy struct {
 	clientConfig constant.ClientConfig
-	nacosServer  nacos_server.NacosServer
+	nacosServer  *nacos_server.NacosServer
 }
 
 func NewNamingProxy(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig, httpAgent http_agent.IHttpAgent) (NamingProxy, error) {
