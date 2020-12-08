@@ -19,13 +19,15 @@ package naming_client
 import (
 	"testing"
 
+	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
+
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestBeatReactor_AddBeatInfo(t *testing.T) {
-	br := NewBeatReactor(NamingProxy{}, 5000)
+	br := NewBeatReactor(NamingProxy{nacosServer: &nacos_server.NacosServer{}}, 5000)
 	serviceName := "Test"
 	groupName := "public"
 	beatInfo := model.BeatInfo{
@@ -44,7 +46,7 @@ func TestBeatReactor_AddBeatInfo(t *testing.T) {
 }
 
 func TestBeatReactor_RemoveBeatInfo(t *testing.T) {
-	br := NewBeatReactor(NamingProxy{}, 5000)
+	br := NewBeatReactor(NamingProxy{nacosServer: &nacos_server.NacosServer{}}, 5000)
 	serviceName := "Test"
 	groupName := "public"
 	beatInfo1 := model.BeatInfo{
