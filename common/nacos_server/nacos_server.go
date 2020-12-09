@@ -278,7 +278,7 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 					continue
 				}
 			}
-			servers = append(servers, constant.ServerConfig{IpAddr: splitLine[0], Port: uint64(port), ContextPath: constant.WEB_CONTEXT})
+			servers = append(servers, constant.ServerConfig{Scheme: constant.DEFAULT_SERVER_SCHEME, IpAddr: splitLine[0], Port: uint64(port), ContextPath: constant.WEB_CONTEXT})
 		}
 	}
 	if len(servers) > 0 {
