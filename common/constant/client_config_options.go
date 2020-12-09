@@ -16,8 +16,26 @@
 
 package constant
 
+import (
+	"os"
+
+	"github.com/nacos-group/nacos-sdk-go/common/file"
+)
+
 func NewClientConfig(opts ...ClientOption) *ClientConfig {
-	clientConfig := &ClientConfig{}
+	clientConfig := &ClientConfig{
+		TimeoutMs:            10 * 1000,
+		BeatInterval:         5 * 1000,
+		OpenKMS:              false,
+		CacheDir:             file.GetCurrentPath() + string(os.PathSeparator) + "cache",
+		UpdateThreadNum:      20,
+		NotLoadCacheAtStart:  false,
+		UpdateCacheWhenEmpty: false,
+		LogDir:               file.GetCurrentPath() + string(os.PathSeparator) + "log",
+		RotateTime:           "24h",
+		MaxAge:               3,
+		LogLevel:             "info",
+	}
 
 	for _, opt := range opts {
 		opt(clientConfig)
