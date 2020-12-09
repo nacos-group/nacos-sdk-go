@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package new
+package factoryv2
 
 import (
 	"testing"
