@@ -236,7 +236,7 @@ func (client *ConfigClient) CancelListenConfig(param vo.ConfigParam) (err error)
 	}
 	cacheMap.Remove(util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId))
 	logger.Infof("Cancel listen config DataId:%s Group:%s", param.DataId, param.Group)
-	remakeId := int(math.Ceil(float64(len(cacheMap.Keys())) / float64(perTaskConfigSize)))
+	remakeId := int(math.Ceil(float64(cacheMap.Count()) / float64(perTaskConfigSize)))
 	if remakeId < currentTaskCount {
 		remakeCacheDataTaskId(remakeId)
 	}
@@ -306,7 +306,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 			content:           content,
 			md5:               md5Str,
 			cacheDataListener: listener,
-			taskId:            len(cacheMap.Keys()) / perTaskConfigSize,
+			taskId:            cacheMap.Count() / perTaskConfigSize,
 			configClient:      client,
 		}
 	}
