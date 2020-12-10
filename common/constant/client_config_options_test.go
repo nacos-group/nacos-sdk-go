@@ -20,10 +20,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewClientConfig(t *testing.T) {
 	config := NewClientConfig()
+
+	jsonStr, _ := json.Marshal(config)
+	fmt.Printf("client cofing: %s", jsonStr)
+}
+
+func TestNewClientConfigWithOptions(t *testing.T) {
+	config := NewClientConfig(
+		WithLogLevel("error"),
+		WithEndpoint("http://console.nacos.io:80"),
+	)
+	assert.Equal(t, config.LogLevel, "error")
+	assert.Equal(t, config.Endpoint, "http://console.nacos.io:80")
 
 	jsonStr, _ := json.Marshal(config)
 	fmt.Printf("client cofing: %s", jsonStr)
