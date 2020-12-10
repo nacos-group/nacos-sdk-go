@@ -46,3 +46,136 @@ func NewClientConfig(opts ...ClientOption) *ClientConfig {
 
 // ClientOption ...
 type ClientOption func(*ClientConfig)
+
+// WithTimeoutMs ...
+func WithTimeoutMs(timeoutMs uint64) ClientOption {
+	return func(config *ClientConfig) {
+		config.TimeoutMs = timeoutMs
+	}
+}
+
+// WithListenInterval ...
+func WithListenInterval(listenInterval uint64) ClientOption {
+	return func(config *ClientConfig) {
+		config.ListenInterval = listenInterval
+	}
+}
+
+// WithBeatInterval ...
+func WithBeatInterval(beatInterval int64) ClientOption {
+	return func(config *ClientConfig) {
+		config.BeatInterval = beatInterval
+	}
+}
+
+// WithNamespaceId ...
+func WithNamespaceId(namespaceId string) ClientOption {
+	return func(config *ClientConfig) {
+		config.NamespaceId = namespaceId
+	}
+}
+
+// WithEndpoint ...
+func WithEndpoint(endpoint string) ClientOption {
+	return func(config *ClientConfig) {
+		config.Endpoint = endpoint
+	}
+}
+
+// WithRegionId ...
+func WithRegionId(regionId string) ClientOption {
+	return func(config *ClientConfig) {
+		config.RegionId = regionId
+	}
+}
+
+// WithAccessKey ...
+func WithAccessKey(accessKey string) ClientOption {
+	return func(config *ClientConfig) {
+		config.AccessKey = accessKey
+	}
+}
+
+// WithSecretKey ...
+func WithSecretKey(secretKey string) ClientOption {
+	return func(config *ClientConfig) {
+		config.SecretKey = secretKey
+	}
+}
+
+// WithOpenKMS ...
+func WithOpenKMS(openKMS bool) ClientOption {
+	return func(config *ClientConfig) {
+		config.OpenKMS = openKMS
+	}
+}
+
+// WithCacheDir ...
+func WithCacheDir(cacheDir string) ClientOption {
+	return func(config *ClientConfig) {
+		config.CacheDir = cacheDir
+	}
+}
+
+// WithUpdateThreadNum ...
+func WithUpdateThreadNum(updateThreadNum int) ClientOption {
+	return func(config *ClientConfig) {
+		config.UpdateThreadNum = updateThreadNum
+	}
+}
+
+// WithNotLoadCacheAtStart ...
+func WithNotLoadCacheAtStart(notLoadCacheAtStart bool) ClientOption {
+	return func(config *ClientConfig) {
+		config.NotLoadCacheAtStart = notLoadCacheAtStart
+	}
+}
+
+// WithUpdateCacheWhenEmpty ...
+func WithUpdateCacheWhenEmpty(updateCacheWhenEmpty bool) ClientOption {
+	return func(config *ClientConfig) {
+		config.UpdateCacheWhenEmpty = updateCacheWhenEmpty
+	}
+}
+
+// WithUsername ...
+func WithUsername(username string) ClientOption {
+	return func(config *ClientConfig) {
+		config.Username = username
+	}
+}
+
+// WithPassword ...
+func WithPassword(password string) ClientOption {
+	return func(config *ClientConfig) {
+		config.Password = password
+	}
+}
+
+// WithLogDir ...
+func WithLogDir(logDir string) ClientOption {
+	return func(config *ClientConfig) {
+		config.LogDir = logDir
+	}
+}
+
+// WithRotateTime ...
+func WithRotateTime(rotateTime string) ClientOption {
+	return func(config *ClientConfig) {
+		config.RotateTime = rotateTime
+	}
+}
+
+// WithMaxAge ...
+func WithMaxAge(maxAge int64) ClientOption {
+	return func(config *ClientConfig) {
+		config.MaxAge = maxAge
+	}
+}
+
+// WithLogLevel ...
+func WithLogLevel(logLevel string) ClientOption {
+	return func(config *ClientConfig) {
+		config.LogLevel = logLevel
+	}
+}
