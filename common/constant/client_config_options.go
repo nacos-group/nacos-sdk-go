@@ -54,13 +54,6 @@ func WithTimeoutMs(timeoutMs uint64) ClientOption {
 	}
 }
 
-// WithListenInterval ...
-func WithListenInterval(listenInterval uint64) ClientOption {
-	return func(config *ClientConfig) {
-		config.ListenInterval = listenInterval
-	}
-}
-
 // WithBeatInterval ...
 func WithBeatInterval(beatInterval int64) ClientOption {
 	return func(config *ClientConfig) {

@@ -54,6 +54,10 @@ var serverConfigTest = constant.ServerConfig{
 	IpAddr:      "console.nacos.io",
 }
 
+var serverConfigWithOptions = constant.NewServerConfig("console.nacos.io", 80, constant.WithContextPath("/nacos"))
+
+var clientConfigWithOptions = constant.NewClientConfig()
+
 var configParamMapTest = map[string]string{
 	"dataId": "dataId",
 	"group":  "group",
@@ -90,8 +94,8 @@ var httpAgentTest = mock.MockIHttpAgent{}
 
 func createConfigClientTest() ConfigClient {
 	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
+	nc.SetServerConfig([]constant.ServerConfig{*serverConfigWithOptions})
+	nc.SetClientConfig(*clientConfigWithOptions)
 	nc.SetHttpAgent(&http_agent.HttpAgent{})
 	client, _ := NewConfigClient(&nc)
 	return client
