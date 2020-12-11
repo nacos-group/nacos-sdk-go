@@ -56,7 +56,11 @@ var serverConfigTest = constant.ServerConfig{
 
 var serverConfigWithOptions = constant.NewServerConfig("console.nacos.io", 80, constant.WithContextPath("/nacos"))
 
-var clientConfigWithOptions = constant.NewClientConfig()
+var clientConfigWithOptions = constant.NewClientConfig(
+	constant.WithTimeoutMs(10*1000),
+	constant.WithBeatInterval(2*1000),
+	constant.WithNotLoadCacheAtStart(true),
+)
 
 var configParamMapTest = map[string]string{
 	"dataId": "dataId",
