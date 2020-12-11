@@ -32,18 +32,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var clientConfigTest = constant.ClientConfig{
-	TimeoutMs:           10 * 1000,
-	BeatInterval:        5 * 1000,
-	ListenInterval:      30 * 1000,
-	NotLoadCacheAtStart: true,
-}
+var clientConfigTest = *constant.NewClientConfig(
+	constant.WithTimeoutMs(10*1000),
+	constant.WithBeatInterval(5*1000),
+	constant.WithNotLoadCacheAtStart(true),
+)
 
-var serverConfigTest = constant.ServerConfig{
-	IpAddr:      "console.nacos.io",
-	Port:        80,
-	ContextPath: "/nacos",
-}
+var serverConfigTest = *constant.NewServerConfig("console.nacos.io", 80, constant.WithContextPath("/nacos"))
 
 var headers = map[string][]string{
 	"Client-Version":  {constant.CLIENT_VERSION},
