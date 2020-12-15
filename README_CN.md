@@ -60,6 +60,7 @@ constant.ServerConfig{
 ### Create client
 
 ```go
+//创建clientConfig
 clientConfig := constant.ClientConfig{
 	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", // 如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId
 	TimeoutMs:           5000,
@@ -70,6 +71,18 @@ clientConfig := constant.ClientConfig{
 	MaxAge:              3,
 	LogLevel:            "debug",
 } 
+
+//创建clientConfig的另一种方式
+clientConfig := constant.NewClientConfig(
+    constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"),
+    constant.WithTimeoutMs(5000),
+    constant.WithNotLoadCacheAtStart(true),
+    constant.WithLogDir("/tmp/nacos/log"),
+    constant.WithCacheDir("/tmp/nacos/cache"),
+    constant.WithRotateTime("1h"),
+    constant.WithMaxAge(3),
+    constant.WithLogLevel("debug"),
+)
 
 // 至少一个ServerConfig
 serverConfigs := []constant.ServerConfig{
@@ -85,6 +98,22 @@ serverConfigs := []constant.ServerConfig{
     	Port:        80,
         Scheme:      "http",
     },
+}
+
+//创建serverConfig的另一种方式
+serverConfigs := []constant.ServerConfig{
+    *constant.NewServerConfig(
+        "console1.nacos.io",
+        80,
+        constant.WithScheme("http"),
+        constant.WithContextPath("/nacos")
+    ),
+    *constant.NewServerConfig(
+        "console2.nacos.io",
+        80,
+        constant.WithScheme("http"),
+        constant.WithContextPath("/nacos")
+    ), 
 }
 
 // 创建服务发现客户端

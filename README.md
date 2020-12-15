@@ -60,6 +60,7 @@ constant.ServerConfig{
 ### Create client
 
 ```go
+//create clientConfig
 clientConfig := constant.ClientConfig{
 	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //we can create multiple clients with different namespaceId to support multiple namespace
 	TimeoutMs:           5000,
@@ -69,7 +70,18 @@ clientConfig := constant.ClientConfig{
 	RotateTime:          "1h",
 	MaxAge:              3,
 	LogLevel:            "debug",
-} 
+}
+//Another way of create clientConfig
+clientConfig := constant.NewClientConfig(
+    constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"),
+    constant.WithTimeoutMs(5000),
+    constant.WithNotLoadCacheAtStart(true),
+    constant.WithLogDir("/tmp/nacos/log"),
+    constant.WithCacheDir("/tmp/nacos/cache"),
+    constant.WithRotateTime("1h"),
+    constant.WithMaxAge(3),
+    constant.WithLogLevel("debug"),
+)
 
 // At least one ServerConfig 
 serverConfigs := []constant.ServerConfig{
@@ -86,6 +98,22 @@ serverConfigs := []constant.ServerConfig{
         Scheme:      "http",
     },
 }
+//Another way of create serverConfigs
+serverConfigs := []constant.ServerConfig{
+    *constant.NewServerConfig(
+        "console1.nacos.io",
+        80,
+        constant.WithScheme("http"),
+        constant.WithContextPath("/nacos")
+    ),
+    *constant.NewServerConfig(
+        "console2.nacos.io",
+        80,
+        constant.WithScheme("http"),
+        constant.WithContextPath("/nacos")
+    ),
+}
+
 
 // Create naming client for service discovery
 namingClient, err := clients.CreateNamingClient(map[string]interface{}{

@@ -34,11 +34,14 @@ func main() {
 			Port:   80,
 		},
 	}
+	//or a more graceful way to create ServerConfig
+	_ = []constant.ServerConfig{
+		*constant.NewServerConfig("console.nacos.io", 80),
+	}
 
 	cc := constant.ClientConfig{
 		NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //namespace id
 		TimeoutMs:           5000,
-		ListenInterval:      10000,
 		NotLoadCacheAtStart: true,
 		LogDir:              "/tmp/nacos/log",
 		CacheDir:            "/tmp/nacos/cache",
@@ -46,6 +49,17 @@ func main() {
 		MaxAge:              3,
 		LogLevel:            "debug",
 	}
+	//or a more graceful way to create ClientConfig
+	_ = constant.NewClientConfig(
+		constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"),
+		constant.WithTimeoutMs(5000),
+		constant.WithNotLoadCacheAtStart(true),
+		constant.WithLogDir("/tmp/nacos/log"),
+		constant.WithCacheDir("/tmp/nacos/cache"),
+		constant.WithRotateTime("1h"),
+		constant.WithMaxAge(3),
+		constant.WithLogLevel("debug"),
+	)
 
 	client, err := clients.CreateNamingClient(map[string]interface{}{
 		"serverConfigs": sc,
