@@ -50,7 +50,7 @@ func main() {
 		LogLevel:            "debug",
 	}
 	//or a more graceful way to create ClientConfig
-	_ = constant.NewClientConfig(
+	_ = *constant.NewClientConfig(
 		constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"),
 		constant.WithTimeoutMs(5000),
 		constant.WithNotLoadCacheAtStart(true),
@@ -65,6 +65,14 @@ func main() {
 		"serverConfigs": sc,
 		"clientConfig":  cc,
 	})
+
+	//or a more graceful way to create naming client
+	_, _ = clients.NewNamingClient(
+		vo.NacosClientParam{
+			ClientConfig:  &cc,
+			ServerConfigs: sc,
+		},
+	)
 
 	if err != nil {
 		panic(err)
