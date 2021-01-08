@@ -117,12 +117,6 @@ serverConfigs := []constant.ServerConfig{
 }
 
 // 创建服务发现客户端
-namingClient, err := clients.CreateNamingClient(map[string]interface{}{
-	"serverConfigs": serverConfigs,
-	"clientConfig":  clientConfig,
-})
-
-//创建服务发现客户端的另一种方式
 namingClient, err := clients.NewNamingClient(
     vo.NacosClientParam{
         ClientConfig:  &clientConfig,
@@ -131,12 +125,6 @@ namingClient, err := clients.NewNamingClient(
 )
 
 // 创建动态配置客户端
-configClient, err := clients.CreateConfigClient(map[string]interface{}{
-	"serverConfigs": serverConfigs,
-	"clientConfig":  clientConfig,
-})
-
-// 创建动态配置客户端的另一种方式
 configClient, err := clients.NewConfigClient(
     vo.NacosClientParam{
         ClientConfig:  &clientConfig,

@@ -61,13 +61,8 @@ func main() {
 		constant.WithLogLevel("debug"),
 	)
 
-	client, err := clients.CreateNamingClient(map[string]interface{}{
-		"serverConfigs": sc,
-		"clientConfig":  cc,
-	})
-
-	//or a more graceful way to create naming client
-	_, _ = clients.NewNamingClient(
+	// a more graceful way to create naming client
+	client, err := clients.NewNamingClient(
 		vo.NacosClientParam{
 			ClientConfig:  &cc,
 			ServerConfigs: sc,

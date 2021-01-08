@@ -114,15 +114,8 @@ serverConfigs := []constant.ServerConfig{
     ),
 }
 
-
 // Create naming client for service discovery
-namingClient, err := clients.CreateNamingClient(map[string]interface{}{
-	"serverConfigs": serverConfigs,
-	"clientConfig":  clientConfig,
-})
-
-//or a more graceful way to create naming client
-namingClient, err = clients.NewNamingClient(
+namingClient, err := clients.NewNamingClient(
     vo.NacosClientParam{
         ClientConfig:  &clientConfig,
         ServerConfigs: serverConfigs,
@@ -130,13 +123,7 @@ namingClient, err = clients.NewNamingClient(
 )
 
 // Create config client for dynamic configuration
-configClient, err := clients.CreateConfigClient(map[string]interface{}{
-	"serverConfigs": serverConfigs,
-	"clientConfig":  clientConfig,
-})
-
-//or a more graceful way to create config client
-configClient, err = clients.NewConfigClient(
+configClient, err := clients.NewConfigClient(
     vo.NacosClientParam{
         ClientConfig:  &clientConfig,
         ServerConfigs: serverConfigs,

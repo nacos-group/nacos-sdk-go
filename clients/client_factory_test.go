@@ -1,27 +1,26 @@
 package clients
 
 import (
-	"errors"
 	"testing"
 
-	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewNocosClientError(t *testing.T) {
-	_, herr := setConfigHistory(map[string]interface{}{})
 	_, err := setConfig(vo.NacosClientParam{})
-	assert.Equal(t, herr.Error(), err.Error())
+	assert.Equal(t, "server configs not found in properties", err.Error())
 }
 
 func TestSetConfigClient(t *testing.T) {
 	sc, cc := getTestScAndCC()
-	hnocosClient, err := setConfigHistory(map[string]interface{}{
+	// use map params setConfig
+	param := getConfigParam(map[string]interface{}{
 		"serverConfigs": sc,
 		"clientConfig":  cc,
 	})
+	hnocosClient, err := setConfig(param)
 	if err != nil {
 		assert.Error(t, err)
 	}
@@ -29,31 +28,19 @@ func TestSetConfigClient(t *testing.T) {
 		ClientConfig:  &cc,
 		ServerConfigs: sc,
 	})
-	if err != nil {
-		assert.Error(t, err)
-	}
-
-	// test client config Equal
-	hcc, err := hnocosClient.GetClientConfig()
-	if err != nil {
-		assert.Error(t, err)
-	}
+	assert.Nil(t, err)
 	ncc, err := nacosClient.GetClientConfig()
-	if err != nil {
-		assert.Error(t, err)
-	}
+	assert.Nil(t, err)
+	hcc, err := hnocosClient.GetClientConfig()
+	assert.Nil(t, err)
 	assertEquelClientConfig(t, ncc, cc)
 	assertEquelClientConfig(t, hcc, ncc)
 
 	// test server config Equal
 	hsc, err := hnocosClient.GetServerConfig()
-	if err != nil {
-		assert.Error(t, err)
-	}
+	assert.Nil(t, err)
 	nsc, err := nacosClient.GetServerConfig()
-	if err != nil {
-		assert.Error(t, err)
-	}
+	assert.Nil(t, err)
 	assertEquelServerConfigs(t, nsc, sc)
 	assertEquelServerConfigs(t, hsc, nsc)
 }
@@ -113,40 +100,4 @@ func assertEquelServerConfigs(t *testing.T, hsc, sc []constant.ServerConfig) {
 		assert.Equal(t, hsc[i].ContextPath, sc[i].ContextPath)
 		assert.Equal(t, hsc[i].Scheme, sc[i].Scheme)
 	}
-}
-
-func setConfigHistory(properties map[string]interface{}) (iClient nacos_client.INacosClient, err error) {
-	client := nacos_client.NacosClient{}
-	if clientConfigTmp, exist := properties[constant.KEY_CLIENT_CONFIG]; exist {
-		if clientConfig, ok := clientConfigTmp.(constant.ClientConfig); ok {
-			err = client.SetClientConfig(clientConfig)
-			if err != nil {
-				return nil, err
-			}
-		}
-	} else {
-		_ = client.SetClientConfig(constant.ClientConfig{
-			TimeoutMs:    10 * 1000,
-			BeatInterval: 5 * 1000,
-		})
-	}
-	if serverConfigTmp, exist := properties[constant.KEY_SERVER_CONFIGS]; exist {
-		if serverConfigs, ok := serverConfigTmp.([]constant.ServerConfig); ok {
-			err = client.SetServerConfig(serverConfigs)
-			if err != nil {
-				return nil, err
-			}
-		}
-	} else {
-		clientConfig, _ := client.GetClientConfig()
-		if len(clientConfig.Endpoint) <= 0 {
-			err = errors.New("server configs not found in properties")
-			return
-		}
-		client.SetServerConfig([]constant.ServerConfig{})
-	}
-
-	iClient = &client
-
-	return
 }
