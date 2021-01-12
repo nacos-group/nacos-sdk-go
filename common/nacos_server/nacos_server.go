@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package nacos_server
 
 import (
@@ -6,14 +22,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/common/nacos_error"
-	"github.com/nacos-group/nacos-sdk-go/common/security"
-	"github.com/nacos-group/nacos-sdk-go/utils"
-	"github.com/satori/go.uuid"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"net/http"
 	"reflect"
@@ -21,6 +30,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/common/nacos_error"
+	"github.com/nacos-group/nacos-sdk-go/common/security"
+	"github.com/nacos-group/nacos-sdk-go/inner/uuid"
+	"github.com/nacos-group/nacos-sdk-go/util"
 )
 
 type NacosServer struct {
@@ -34,9 +51,9 @@ type NacosServer struct {
 	vipSrvRefInterMills int64
 }
 
-func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (NacosServer, error) {
+func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
 	if len(serverList) == 0 && endpoint == "" {
-		return NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
+		return &NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
 	}
 
 	securityLogin := security.NewAuthClient(clientCfg, serverList, httpAgent)
@@ -53,38 +70,48 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 	_, err := securityLogin.Login()
 
 	if err != nil {
-		return ns, err
+		return &ns, err
 	}
 
 	securityLogin.AutoRefresh()
-	return ns, nil
+	return &ns, nil
 }
 
-func (server *NacosServer) callConfigServer(api string, params map[string]string, newHeaders map[string]string, method string, curServer string, contextPath string) (result string, err error) {
+func (server *NacosServer) callConfigServer(api string, params map[string]string, newHeaders map[string]string,
+	method string, curServer string, contextPath string, timeoutMS uint64) (result string, err error) {
 	if contextPath == "" {
 		contextPath = constant.WEB_CONTEXT
 	}
 
 	signHeaders := getSignHeaders(params, newHeaders)
 
-	url := "http://" + curServer + contextPath + api
+	url := curServer + contextPath + api
+
 	headers := map[string][]string{}
+	for k, v := range newHeaders {
+		if k != "accessKey" && k != "secretKey" {
+			headers[k] = []string{v}
+		}
+	}
 	headers["Client-Version"] = []string{constant.CLIENT_VERSION}
 	headers["User-Agent"] = []string{constant.CLIENT_VERSION}
 	//headers["Accept-Encoding"] = []string{"gzip,deflate,sdch"}
 	headers["Connection"] = []string{"Keep-Alive"}
 	headers["exConfigInfo"] = []string{"true"}
-	headers["RequestId"] = []string{uuid.NewV4().String()}
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return
+	}
+	headers["RequestId"] = []string{uid.String()}
 	headers["Request-Module"] = []string{"Naming"}
-	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=UTF8"}
+	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=utf-8"}
 	headers["Spas-AccessKey"] = []string{newHeaders["accessKey"]}
 	headers["Timestamp"] = []string{signHeaders["timeStamp"]}
 	headers["Spas-Signature"] = []string{signHeaders["Spas-Signature"]}
-
 	injectSecurityInfo(server, params)
 
 	var response *http.Response
-	response, err = server.httpAgent.Request(method, url, headers, server.timeoutMs, params)
+	response, err = server.httpAgent.Request(method, url, headers, timeoutMS, params)
 	if err != nil {
 		return
 	}
@@ -108,15 +135,20 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 		contextPath = constant.WEB_CONTEXT
 	}
 
-	url := "http://" + curServer + contextPath + api
+	url := curServer + contextPath + api
+
 	headers := map[string][]string{}
 	headers["Client-Version"] = []string{constant.CLIENT_VERSION}
 	headers["User-Agent"] = []string{constant.CLIENT_VERSION}
 	//headers["Accept-Encoding"] = []string{"gzip,deflate,sdch"}
 	headers["Connection"] = []string{"Keep-Alive"}
-	headers["RequestId"] = []string{uuid.NewV4().String()}
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return
+	}
+	headers["RequestId"] = []string{uid.String()}
 	headers["Request-Module"] = []string{"Naming"}
-	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=UTF8"}
+	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=utf-8"}
 
 	injectSecurityInfo(server, params)
 
@@ -140,7 +172,7 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 	}
 }
 
-func (server *NacosServer) ReqConfigApi(api string, params map[string]string, headers map[string]string, method string) (string, error) {
+func (server *NacosServer) ReqConfigApi(api string, params map[string]string, headers map[string]string, method string, timeoutMS uint64) (string, error) {
 	srvs := server.serverList
 	if srvs == nil || len(srvs) == 0 {
 		return "", errors.New("server list is empty")
@@ -153,22 +185,22 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 	var result string
 	if len(srvs) == 1 {
 		for i := 0; i < constant.REQUEST_DOMAIN_RETRY_TIME; i++ {
-			result, err = server.callConfigServer(api, params, headers, method, getAddress(srvs[0]), srvs[0].ContextPath)
+			result, err = server.callConfigServer(api, params, headers, method, getAddress(srvs[0]), srvs[0].ContextPath, timeoutMS)
 			if err == nil {
 				return result, nil
 			}
-			log.Printf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s> \n", api, method, utils.ToJsonString(params), err.Error(), result)
+			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), err, result)
 		}
 		return "", err
 	} else {
 		index := rand.Intn(len(srvs))
 		for i := 1; i <= len(srvs); i++ {
 			curServer := srvs[index]
-			result, err = server.callConfigServer(api, params, headers, method, getAddress(curServer), curServer.ContextPath)
+			result, err = server.callConfigServer(api, params, headers, method, getAddress(curServer), curServer.ContextPath, timeoutMS)
 			if err == nil {
 				return result, nil
 			}
-			log.Printf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s> \n", api, method, utils.ToJsonString(params), err.Error(), result)
+			logger.Errorf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s> \n", api, method, util.ToJsonString(params), err, result)
 			index = (index + i) % len(srvs)
 		}
 		return "", err
@@ -190,7 +222,7 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 			if err == nil {
 				return result, nil
 			}
-			log.Printf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s> \n", api, method, utils.ToJsonString(params), err.Error(), result)
+			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), err, result)
 		}
 		return "", errors.New("retry " + strconv.Itoa(constant.REQUEST_DOMAIN_RETRY_TIME) + " times request failed!")
 	} else {
@@ -201,7 +233,7 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 			if err == nil {
 				return result, nil
 			}
-			log.Printf("[ERROR] api<%s>,method:<%s>, params:<%s>, call domain error:<%s> , result:<%s> \n", api, method, utils.ToJsonString(params), err.Error(), result)
+			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), err, result)
 			index = (index + i) % len(srvs)
 		}
 		return "", errors.New("retry " + strconv.Itoa(constant.REQUEST_DOMAIN_RETRY_TIME) + " times request failed!")
@@ -214,14 +246,16 @@ func (server *NacosServer) initRefreshSrvIfNeed() {
 	}
 	server.refreshServerSrvIfNeed()
 	go func() {
-		time.Sleep(time.Duration(1) * time.Second)
-		server.refreshServerSrvIfNeed()
+		for {
+			time.Sleep(time.Duration(1) * time.Second)
+			server.refreshServerSrvIfNeed()
+		}
 	}()
 
 }
 
 func (server *NacosServer) refreshServerSrvIfNeed() {
-	if utils.CurrentMillis()-server.lastSrvRefTime < server.vipSrvRefInterMills && len(server.serverList) > 0 {
+	if util.CurrentMillis()-server.lastSrvRefTime < server.vipSrvRefInterMills && len(server.serverList) > 0 {
 		return
 	}
 
@@ -229,7 +263,7 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 	urlString := "http://" + server.endpoint + "/nacos/serverlist"
 	result := server.httpAgent.RequestOnlyResult(http.MethodGet, urlString, nil, server.timeoutMs, nil)
 	list = strings.Split(result, "\n")
-	log.Printf("[info] http nacos server list: <%s> \n", result)
+	logger.Infof("http nacos server list: <%s>", result)
 
 	var servers []constant.ServerConfig
 	for _, line := range list {
@@ -240,24 +274,23 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 			if len(splitLine) == 2 {
 				port, err = strconv.Atoi(splitLine[1])
 				if err != nil {
-					log.Printf("[ERROR] get port from server:<%s>  error: <%s> \n", line, err.Error())
+					logger.Errorf("get port from server:<%s>  error: <%+v>", line, err)
 					continue
 				}
 			}
-			servers = append(servers, constant.ServerConfig{IpAddr: splitLine[0], Port: uint64(port), ContextPath: constant.WEB_CONTEXT})
+			servers = append(servers, constant.ServerConfig{Scheme: constant.DEFAULT_SERVER_SCHEME, IpAddr: splitLine[0], Port: uint64(port), ContextPath: constant.WEB_CONTEXT})
 		}
 	}
 	if len(servers) > 0 {
 		if !reflect.DeepEqual(server.serverList, servers) {
 			server.Lock()
-			log.Printf("[info] server list is updated, old: <%v>,new:<%v> \n", server.serverList, servers)
+			logger.Infof("server list is updated, old: <%v>,new:<%v>", server.serverList, servers)
 			server.serverList = servers
-			server.lastSrvRefTime = utils.CurrentMillis()
+			server.lastSrvRefTime = util.CurrentMillis()
 			server.Unlock()
 		}
 
 	}
-
 	return
 }
 
@@ -273,7 +306,10 @@ func injectSecurityInfo(server *NacosServer, param map[string]string) {
 }
 
 func getAddress(cfg constant.ServerConfig) string {
-	return cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
+	if strings.Index(cfg.IpAddr, "http://") >= 0 || strings.Index(cfg.IpAddr, "https://") >= 0 {
+		return cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
+	}
+	return cfg.Scheme + "://" + cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
 }
 
 func getSignHeaders(params map[string]string, newHeaders map[string]string) map[string]string {

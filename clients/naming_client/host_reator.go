@@ -1,13 +1,31 @@
+/*
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package naming_client
 
 import (
 	"encoding/json"
-	"github.com/nacos-group/nacos-sdk-go/clients/cache"
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/utils"
-	"log"
+	"errors"
 	"reflect"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/clients/cache"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/model"
+	"github.com/nacos-group/nacos-sdk-go/util"
 )
 
 type HostReactor struct {
@@ -36,7 +54,7 @@ func NewHostReactor(serviceProxy NamingProxy, cacheDir string, updateThreadNum i
 		updateTimeMap:        cache.NewConcurrentMap(),
 		updateCacheWhenEmpty: updateCacheWhenEmpty,
 	}
-	pr := NewPushRecevier(&hr)
+	pr := NewPushReceiver(&hr)
 	hr.pushReceiver = *pr
 	if !notLoadCacheAtStart {
 		hr.loadCacheFromDisk()
@@ -56,89 +74,93 @@ func (hr *HostReactor) loadCacheFromDisk() {
 }
 
 func (hr *HostReactor) ProcessServiceJson(result string) {
-	service := utils.JsonToService(result)
+	service := util.JsonToService(result)
 	if service == nil {
 		return
 	}
-	cacheKey := utils.GetServiceCacheKey(service.Name, service.Clusters)
+	cacheKey := util.GetServiceCacheKey(service.Name, service.Clusters)
 
 	oldDomain, ok := hr.serviceInfoMap.Get(cacheKey)
 	if ok && !hr.updateCacheWhenEmpty {
 		//if instance list is empty,not to update cache
 		if service.Hosts == nil || len(service.Hosts) == 0 {
-			log.Printf("[ERROR]:do not have useful host, ignore it, name:%s \n", service.Name)
+			logger.Errorf("do not have useful host, ignore it, name:%s", service.Name)
 			return
 		}
 	}
-	hr.updateTimeMap.Set(cacheKey, uint64(utils.CurrentMillis()))
+	hr.updateTimeMap.Set(cacheKey, uint64(util.CurrentMillis()))
 	hr.serviceInfoMap.Set(cacheKey, *service)
 	if !ok || ok && !reflect.DeepEqual(service.Hosts, oldDomain.(model.Service).Hosts) {
 		if !ok {
-			log.Println("[INFO] service not found in cache " + cacheKey)
+			logger.Info("service not found in cache " + cacheKey)
 		} else {
-			log.Printf("[INFO] service key:%s was updated to:%s \n", cacheKey, utils.ToJsonString(service))
+			logger.Info("service key:%s was updated to:%s", cacheKey, util.ToJsonString(service))
 		}
 		cache.WriteServicesToFile(*service, hr.cacheDir)
 		hr.subCallback.ServiceChanged(service)
 	}
 }
 
-func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string) model.Service {
-	key := utils.GetServiceCacheKey(serviceName, clusters)
+func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string) (model.Service, error) {
+	key := util.GetServiceCacheKey(serviceName, clusters)
 	cacheService, ok := hr.serviceInfoMap.Get(key)
 	if !ok {
-		cacheService = model.Service{Name: serviceName, Clusters: clusters}
-		hr.serviceInfoMap.Set(key, cacheService)
 		hr.updateServiceNow(serviceName, clusters)
+		if cacheService, ok = hr.serviceInfoMap.Get(key); !ok {
+			return model.Service{}, errors.New("get service info failed")
+		}
 	}
-	newService, _ := hr.serviceInfoMap.Get(key)
 
-	return newService.(model.Service)
+	return cacheService.(model.Service), nil
 }
 
-func (hr *HostReactor) GetAllServiceInfo(nameSpace string, groupName string, clusters string) []model.Service {
-	result, err := hr.serviceProxy.GetAllServiceInfoList(nameSpace, groupName, clusters)
+func (hr *HostReactor) GetAllServiceInfo(nameSpace, groupName string, pageNo, pageSize uint32) model.ServiceList {
+	data := model.ServiceList{}
+	result, err := hr.serviceProxy.GetAllServiceInfoList(nameSpace, groupName, pageNo, pageSize)
 	if err != nil {
-		log.Printf("[ERROR]:query all services info return error!nameSpace:%s cluster:%s groupName:%s  err:%s \n", nameSpace, clusters, groupName, err.Error())
-		return nil
+		logger.Errorf("GetAllServiceInfoList return error!nameSpace:%s groupName:%s pageNo:%d, pageSize:%d err:%+v",
+			nameSpace, groupName, pageNo, pageSize, err)
+		return data
 	}
 	if result == "" {
-		log.Printf("[ERROR]:query all services info is empty!nameSpace:%s cluster:%s groupName:%s \n", nameSpace, clusters, groupName)
-		return nil
+		logger.Errorf("GetAllServiceInfoList result is empty!nameSpace:%s  groupName:%s pageNo:%d, pageSize:%d",
+			nameSpace, groupName, pageNo, pageSize)
+		return data
 	}
 
-	var data []model.Service
 	err = json.Unmarshal([]byte(result), &data)
 	if err != nil {
-		log.Printf("[ERROR]: the result of quering all services info json.Unmarshal error !nameSpace:%s cluster:%s groupName:%s \n", nameSpace, clusters, groupName)
-		return nil
+		logger.Errorf("GetAllServiceInfoList result json.Unmarshal error!nameSpace:%s groupName:%s pageNo:%d, pageSize:%d",
+			nameSpace, groupName, pageNo, pageSize)
+		return data
 	}
 	return data
 }
 
-func (hr *HostReactor) updateServiceNow(serviceName string, clusters string) {
+func (hr *HostReactor) updateServiceNow(serviceName, clusters string) {
 	result, err := hr.serviceProxy.QueryList(serviceName, clusters, hr.pushReceiver.port, false)
+
 	if err != nil {
-		log.Printf("[ERROR]:query list return error!servieName:%s cluster:%s  err:%s \n", serviceName, clusters, err.Error())
+		logger.Errorf("QueryList return error!serviceName:%s cluster:%s err:%+v", serviceName, clusters, err)
 		return
 	}
 	if result == "" {
-		log.Printf("[ERROR]:query list is empty!servieName:%s cluster:%s \n", serviceName, clusters)
+		logger.Errorf("QueryList result is empty!serviceName:%s cluster:%s", serviceName, clusters)
 		return
 	}
 	hr.ProcessServiceJson(result)
 }
 
 func (hr *HostReactor) asyncUpdateService() {
-	sema := utils.NewSemaphore(hr.updateThreadNum)
+	sema := util.NewSemaphore(hr.updateThreadNum)
 	for {
 		for _, v := range hr.serviceInfoMap.Items() {
 			service := v.(model.Service)
-			lastRefTime, ok := hr.updateTimeMap.Get(utils.GetServiceCacheKey(service.Name, service.Clusters))
+			lastRefTime, ok := hr.updateTimeMap.Get(util.GetServiceCacheKey(service.Name, service.Clusters))
 			if !ok {
 				lastRefTime = uint64(0)
 			}
-			if uint64(utils.CurrentMillis())-lastRefTime.(uint64) > service.CacheMillis {
+			if uint64(util.CurrentMillis())-lastRefTime.(uint64) > service.CacheMillis {
 				sema.Acquire()
 				go func() {
 					hr.updateServiceNow(service.Name, service.Clusters)
@@ -148,5 +170,4 @@ func (hr *HostReactor) asyncUpdateService() {
 		}
 		time.Sleep(1 * time.Second)
 	}
-
 }
