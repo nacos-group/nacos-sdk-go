@@ -44,7 +44,7 @@ const (
 	WEB_CONTEXT                 = "/nacos"
 	CONFIG_BASE_PATH            = "/v1/cs"
 	CONFIG_PATH                 = CONFIG_BASE_PATH + "/configs"
-	CONFIG_AGG_PATH             = "/diamond-server/datum.do"
+	CONFIG_AGG_PATH             = "/datum.do"
 	CONFIG_LISTEN_PATH          = CONFIG_BASE_PATH + "/configs/listener"
 	SERVICE_BASE_PATH           = "/v1/ns"
 	SERVICE_PATH                = SERVICE_BASE_PATH + "/instance"
