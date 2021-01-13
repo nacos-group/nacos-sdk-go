@@ -49,6 +49,7 @@ type NacosServer struct {
 	endpoint            string
 	lastSrvRefTime      int64
 	vipSrvRefInterMills int64
+	contextPath         string
 }
 
 func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
@@ -65,6 +66,7 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 		timeoutMs:           timeoutMs,
 		endpoint:            endpoint,
 		vipSrvRefInterMills: 10000,
+		contextPath:         clientCfg.ContextPath,
 	}
 	ns.initRefreshSrvIfNeed()
 	_, err := securityLogin.Login()
@@ -266,6 +268,10 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 	logger.Infof("http nacos server list: <%s>", result)
 
 	var servers []constant.ServerConfig
+	contextPath := server.contextPath
+	if len(contextPath) == 0 {
+		contextPath = constant.WEB_CONTEXT
+	}
 	for _, line := range list {
 		if line != "" {
 			splitLine := strings.Split(strings.TrimSpace(line), ":")
@@ -278,7 +284,8 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 					continue
 				}
 			}
-			servers = append(servers, constant.ServerConfig{Scheme: constant.DEFAULT_SERVER_SCHEME, IpAddr: splitLine[0], Port: uint64(port), ContextPath: constant.WEB_CONTEXT})
+
+			servers = append(servers, constant.ServerConfig{Scheme: constant.DEFAULT_SERVER_SCHEME, IpAddr: splitLine[0], Port: uint64(port), ContextPath: contextPath})
 		}
 	}
 	if len(servers) > 0 {
