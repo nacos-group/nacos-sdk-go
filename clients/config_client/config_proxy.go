@@ -118,15 +118,11 @@ func (cp *ConfigProxy) PublishAggProxy(param vo.ConfigParam, tenant, accessKey, 
 	var headers = map[string]string{}
 	headers["accessKey"] = accessKey
 	headers["secretKey"] = secretKey
-	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_AGG_PATH, params, headers, http.MethodPost, cp.clientConfig.TimeoutMs)
+	_, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_AGG_PATH, params, headers, http.MethodPost, cp.clientConfig.TimeoutMs)
 	if err != nil {
 		return false, errors.New("[client.PublishAggProxy] publish agg failed:" + err.Error())
 	}
-	if strings.ToLower(strings.Trim(result, " ")) == "true" {
-		return true, nil
-	} else {
-		return false, errors.New("[client.PublishAggProxy] publish agg failed:" + result)
-	}
+	return true, nil
 }
 
 func (cp *ConfigProxy) DeleteConfigProxy(param vo.ConfigParam, tenant, accessKey, secretKey string) (bool, error) {
