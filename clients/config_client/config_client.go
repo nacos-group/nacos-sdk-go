@@ -457,6 +457,24 @@ func (client *ConfigClient) SearchConfig(param vo.SearchConfigParm) (*model.Conf
 	return client.searchConfigInner(param)
 }
 
+func (client *ConfigClient) PublishAggr(param vo.ConfigParam) (published bool,
+	err error) {
+	if len(param.DataId) <= 0 {
+		err = errors.New("[client.PublishAggr] param.dataId can not be empty")
+	}
+	if len(param.Group) <= 0 {
+		err = errors.New("[client.PublishAggr] param.group can not be empty")
+	}
+	if len(param.Content) <= 0 {
+		err = errors.New("[client.PublishAggr] param.content can not be empty")
+	}
+	if len(param.DatumId) <= 0 {
+		err = errors.New("[client.PublishAggr] param.DatumId can not be empty")
+	}
+	clientConfig, _ := client.GetClientConfig()
+	return client.configProxy.PublishAggProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
+}
+
 func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParm) (*model.ConfigPage, error) {
 	if param.Search != "accurate" && param.Search != "blur" {
 		return nil, errors.New("[client.searchConfigInner] param.search must be accurate or blur")
