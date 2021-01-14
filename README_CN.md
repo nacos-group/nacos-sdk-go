@@ -73,7 +73,7 @@ clientConfig := constant.ClientConfig{
 } 
 
 //创建clientConfig的另一种方式
-clientConfig := constant.NewClientConfig(
+clientConfig := *constant.NewClientConfig(
     constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"),
     constant.WithTimeoutMs(5000),
     constant.WithNotLoadCacheAtStart(true),
@@ -117,17 +117,32 @@ serverConfigs := []constant.ServerConfig{
 }
 
 // 创建服务发现客户端
-namingClient, err := clients.CreateNamingClient(map[string]interface{}{
+_, _ := clients.CreateNamingClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })
 
 // 创建动态配置客户端
-configClient, err := clients.CreateConfigClient(map[string]interface{}{
+_, _ := clients.CreateConfigClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })
-    
+
+// 创建服务发现客户端的另一种方式 (推荐)
+namingClient, err := clients.NewNamingClient(
+    vo.NacosClientParam{
+        ClientConfig:  &clientConfig,
+        ServerConfigs: serverConfigs,
+    },
+)
+
+// 创建动态配置客户端的另一种方式 (推荐)
+configClient, err := clients.NewConfigClient(
+    vo.NacosClientParam{
+        ClientConfig:  &clientConfig,
+        ServerConfigs: serverConfigs,
+    },
+)
 ```
 
 

@@ -72,7 +72,7 @@ clientConfig := constant.ClientConfig{
 	LogLevel:            "debug",
 }
 //Another way of create clientConfig
-clientConfig := constant.NewClientConfig(
+clientConfig := *constant.NewClientConfig(
     constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"),
     constant.WithTimeoutMs(5000),
     constant.WithNotLoadCacheAtStart(true),
@@ -114,18 +114,33 @@ serverConfigs := []constant.ServerConfig{
     ),
 }
 
-
 // Create naming client for service discovery
-namingClient, err := clients.CreateNamingClient(map[string]interface{}{
+_, _ := clients.CreateNamingClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })
 
 // Create config client for dynamic configuration
-configClient, err := clients.CreateConfigClient(map[string]interface{}{
+_, _ := clients.CreateConfigClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })
+
+// Another way of create naming client for service discovery (recommend)
+namingClient, err := clients.NewNamingClient(
+    vo.NacosClientParam{
+        ClientConfig:  &clientConfig,
+        ServerConfigs: serverConfigs,
+    },
+)
+
+// Another way of create config client for dynamic configuration (recommend)
+configClient, err := clients.NewConfigClient(
+    vo.NacosClientParam{
+        ClientConfig:  &clientConfig,
+        ServerConfigs: serverConfigs,
+    },
+)
     
 ```
 
