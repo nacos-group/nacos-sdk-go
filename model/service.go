@@ -18,6 +18,11 @@ package model
 
 import "time"
 
+const (
+	StateRunning = iota
+	StateShutdown
+)
+
 type Instance struct {
 	Valid       bool              `json:"valid"`
 	Marked      bool              `json:"marked"`
@@ -100,7 +105,7 @@ type BeatInfo struct {
 	Metadata    map[string]string `json:"metadata"`
 	Scheduled   bool              `json:"scheduled"`
 	Period      time.Duration     `json:"-"`
-	Stopped     bool              `json:"-"`
+	State       int32             `json:"-"`
 }
 
 type ExpressionSelector struct {
