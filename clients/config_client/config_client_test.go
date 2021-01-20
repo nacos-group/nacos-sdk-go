@@ -167,6 +167,10 @@ func Test_GetConfig(t *testing.T) {
 
 func Test_SearchConfig(t *testing.T) {
 	client := createConfigClientTest()
+	client.PublishConfig(vo.ConfigParam{
+		DataId:  dataIdKey,
+		Group:   "groDEFAULT_GROUPup",
+		Content: "hello world!222222"})
 	configPage, err := client.SearchConfig(vo.SearchConfigParm{
 		Search:   "accurate",
 		DataId:   "",
@@ -176,7 +180,7 @@ func Test_SearchConfig(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, configPage)
-	assert.True(t, len(configPage.PageItems) == 0)
+	assert.NotEmpty(t, configPage.PageItems)
 }
 
 func Test_GetConfigWithErrorResponse_401(t *testing.T) {
