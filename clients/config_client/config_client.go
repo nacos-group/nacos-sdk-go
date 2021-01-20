@@ -17,7 +17,9 @@
 package config_client
 
 import (
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"math"
 	"os"
 	"strconv"
@@ -147,7 +149,7 @@ func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err
 }
 
 func (client *ConfigClient) decrypt(dataId, content string) (string, error) {
-	if strings.HasPrefix(dataId, "cipher-") && client.kmsClient != nil {
+	if client.kmsClient != nil && strings.HasPrefix(dataId, "cipher-") {
 		request := kms.CreateDecryptRequest()
 		request.Method = "POST"
 		request.Scheme = "https"
@@ -155,11 +157,31 @@ func (client *ConfigClient) decrypt(dataId, content string) (string, error) {
 		request.CiphertextBlob = content
 		response, err := client.kmsClient.Decrypt(request)
 		if err != nil {
-			return "", errors.New("kms decrypt failed")
+			return "", fmt.Errorf("kms decrypt failed: %v", err)
 		}
-		content = response.Plaintext
+		data, err := base64.StdEncoding.DecodeString(response.Plaintext)
+		if err != nil {
+			return "", fmt.Errorf("kms decrypt failed: %v", err)
+		}
+		content = string(data)
 	}
+	return content, nil
+}
 
+func (client *ConfigClient) encrypt(dataId, content string) (string, error) {
+	if client.kmsClient != nil && strings.HasPrefix(dataId, "cipher-") {
+		request := kms.CreateEncryptRequest()
+		request.Method = "POST"
+		request.Scheme = "https"
+		request.AcceptFormat = "json"
+		request.KeyId = "alias/acs/acm" // use default key
+		request.Plaintext = base64.StdEncoding.EncodeToString([]byte(content))
+		response, err := client.kmsClient.Encrypt(request)
+		if err != nil {
+			return "", fmt.Errorf("kms encrypt failed: %v", err)
+		}
+		content = response.CiphertextBlob
+	}
 	return content, nil
 }
 
@@ -210,6 +232,11 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	}
 	if len(param.Content) <= 0 {
 		err = errors.New("[client.PublishConfig] param.content can not be empty")
+	}
+
+	param.Content, err = client.encrypt(param.DataId, param.Content)
+	if err != nil {
+		return false, err
 	}
 	clientConfig, _ := client.GetClientConfig()
 	return client.configProxy.PublishConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)

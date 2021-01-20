@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	rotatelogs "github.com/lestrrat/go-file-rotatelogs"
@@ -29,7 +30,8 @@ import (
 )
 
 var (
-	logger Logger
+	logger  Logger
+	logLock sync.RWMutex
 )
 
 var levelMap = map[string]zapcore.Level{
@@ -79,20 +81,28 @@ func init() {
 	}
 	zapLoggerConfig.EncoderConfig = zapLoggerEncoderConfig
 	zapLogger, _ := zapLoggerConfig.Build(zap.AddCallerSkip(1))
-	logger = &NacosLogger{zapLogger.Sugar()}
+	SetLogger(&NacosLogger{zapLogger.Sugar()})
 }
 
+// InitLogger is init global logger for nacos
 func InitLogger(config Config) (err error) {
+	logLock.Lock()
+	defer logLock.Unlock()
+	logger, err = InitNacosLogger(config)
+	return
+}
+
+// InitNacosLogger is init nacos default logger
+func InitNacosLogger(config Config) (Logger, error) {
 	logLevel := getLogLevel(config.Level)
 	encoder := getEncoder()
 	writer, err := getWriter(config.OutputPath, config.RotationTime, config.MaxAge)
 	if err != nil {
-		return
+		return nil, err
 	}
 	core := zapcore.NewCore(zapcore.NewConsoleEncoder(encoder), zapcore.AddSync(writer), logLevel)
 	zaplogger := zap.New(core, zap.AddCallerSkip(1))
-	logger = &NacosLogger{zaplogger.Sugar()}
-	return
+	return &NacosLogger{zaplogger.Sugar()}, nil
 }
 
 func getLogLevel(level string) zapcore.Level {
@@ -132,9 +142,13 @@ func getWriter(outputPath string, rotateTime string, maxAge int64) (writer io.Wr
 
 //SetLogger sets logger for sdk
 func SetLogger(log Logger) {
+	logLock.Lock()
+	defer logLock.Unlock()
 	logger = log
 }
 
 func GetLogger() Logger {
+	logLock.RLock()
+	defer logLock.RUnlock()
 	return logger
 }

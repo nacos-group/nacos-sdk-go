@@ -24,12 +24,13 @@ $ go get -u github.com/nacos-group/nacos-sdk-go
 ```go
 constant.ClientConfig{
 	TimeoutMs            uint64 // 请求Nacos服务端的超时时间，默认是10000ms
-	NamespaceId          string // Nacos的命名空间
-	Endpoint             string // 获取Nacos服务列表的endpoint地址
-	RegionId             string // kms的regionId，用于配置中心的鉴权
-	AccessKey            string // kms的AccessKey，用于配置中心的鉴权
-	SecretKey            string // kms的SecretKey，用于配置中心的鉴权
+	NamespaceId          string // ACM的命名空间
+	Endpoint             string // 当使用ACM时，需要该配置. https://help.aliyun.com/document_detail/130146.html
+	RegionId             string // ACM&KMS的regionId，用于配置中心的鉴权
+	AccessKey            string // ACM&KMS的AccessKey，用于配置中心的鉴权
+	SecretKey            string // ACM&KMS的SecretKey，用于配置中心的鉴权
 	OpenKMS              bool   // 是否开启kms，默认不开启，kms可以参考文档 https://help.aliyun.com/product/28933.html
+	                            // 同时DataId必须以"cipher-"作为前缀才会启动加解密逻辑
 	CacheDir             string // 缓存service信息的目录，默认是当前运行目录
 	UpdateThreadNum      int    // 监听service变化的并发数，默认20
 	NotLoadCacheAtStart  bool   // 在启动的时候不读取缓存在CacheDir的service信息
@@ -43,8 +44,7 @@ constant.ClientConfig{
 }
 ```
 
-
-* ServerConfig 
+* ServerConfig
 
 ```go
 constant.ServerConfig{
@@ -70,10 +70,10 @@ clientConfig := constant.ClientConfig{
 	RotateTime:          "1h",
 	MaxAge:              3,
 	LogLevel:            "debug",
-} 
+}
 
 //创建clientConfig的另一种方式
-clientConfig := constant.NewClientConfig(
+clientConfig := *constant.NewClientConfig(
     constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"),
     constant.WithTimeoutMs(5000),
     constant.WithNotLoadCacheAtStart(true),
@@ -113,26 +113,64 @@ serverConfigs := []constant.ServerConfig{
         80,
         constant.WithScheme("http"),
         constant.WithContextPath("/nacos")
-    ), 
+    ),
 }
 
 // 创建服务发现客户端
-namingClient, err := clients.CreateNamingClient(map[string]interface{}{
+_, _ := clients.CreateNamingClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })
 
 // 创建动态配置客户端
-configClient, err := clients.CreateConfigClient(map[string]interface{}{
+_, _ := clients.CreateConfigClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })
-    
+
+// 创建服务发现客户端的另一种方式 (推荐)
+namingClient, err := clients.NewNamingClient(
+    vo.NacosClientParam{
+        ClientConfig:  &clientConfig,
+        ServerConfigs: serverConfigs,
+    },
+)
+
+// 创建动态配置客户端的另一种方式 (推荐)
+configClient, err := clients.NewConfigClient(
+    vo.NacosClientParam{
+        ClientConfig:  &clientConfig,
+        ServerConfigs: serverConfigs,
+    },
+)
+```
+
+### Create client for ACM
+https://help.aliyun.com/document_detail/130146.html
+
+```go
+cc := constant.ClientConfig{
+  Endpoint:    "acm.aliyun.com:8080",
+  NamespaceId: "e525eafa-f7d7-4029-83d9-008937f9d468",
+  RegionId:    "cn-shanghai",
+  AccessKey:   "LTAI4G8KxxxxxxxxxxxxxbwZLBr",
+  SecretKey:   "n5jTL9YxxxxxxxxxxxxaxmPLZV9",
+  OpenKMS:     true,
+  TimeoutMs:   5000,
+  LogLevel:    "debug",
+}
+
+// a more graceful way to create config client
+client, err := clients.NewConfigClient(
+  vo.NacosClientParam{
+    ClientConfig: &cc,
+  },
+)
 ```
 
 
 ### 服务发现
-    
+
 * 注册实例：RegisterInstance
 
 ```go
@@ -151,7 +189,7 @@ success, err := namingClient.RegisterInstance(vo.RegisterInstanceParam{
 })
 
 ```
-  
+
 * 注销实例：DeregisterInstance
 
 ```go
@@ -166,7 +204,7 @@ success, err := namingClient.DeregisterInstance(vo.DeregisterInstanceParam{
 })
 
 ```
-  
+
 * 获取服务信息：GetService
 
 ```go
@@ -190,7 +228,7 @@ instances, err := namingClient.SelectAllInstances(vo.SelectAllInstancesParam{
 })
 
 ```
- 
+
 * 获取实例列表 ：SelectInstances
 
 ```go
@@ -338,10 +376,10 @@ Nacos open-api相关信息可以查看文档 [Nacos open-api wepsite](https://na
 Nacos产品了解可以查看 [Nacos website](https://nacos.io/en-us/docs/what-is-nacos.html).
 
 ## 贡献代码
-我们非常欢迎大家为Nacos-sdk-go贡献代码. 贡献前请查看[CONTRIBUTING.md](./CONTRIBUTING.md) 
+我们非常欢迎大家为Nacos-sdk-go贡献代码. 贡献前请查看[CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## 联系我们
-* 加入Nacos-sdk-go钉钉群(23191211). 
+* 加入Nacos-sdk-go钉钉群(23191211).
 * [Gitter](https://gitter.im/alibaba/nacos): Nacos即时聊天工具.
 * [Twitter](https://twitter.com/nacos2): 在Twitter上关注Nacos的最新动态.
 * [Weibo](https://weibo.com/u/6574374908): 在微博上关注Nacos的最新动态.

@@ -176,7 +176,7 @@ func Test_SearchConfig(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, configPage)
-	assert.NotEmpty(t, configPage.PageItems)
+	assert.True(t, len(configPage.PageItems) == 0)
 }
 
 func Test_GetConfigWithErrorResponse_401(t *testing.T) {
