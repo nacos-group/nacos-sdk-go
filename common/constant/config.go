@@ -43,4 +43,5 @@ type ClientConfig struct {
 	RotateTime           string //the rotate time for log, eg: 30m, 1h, 24h, default is 24h
 	MaxAge               int64  //the max age of a log file, default value is 3
 	LogLevel             string //the level of log, it's must be debug,info,warn,error, default value is info
+	ContextPath          string //the nacos server contextpath
 }

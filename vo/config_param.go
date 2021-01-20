@@ -22,6 +22,7 @@ type ConfigParam struct {
 	DataId   string `param:"dataId"`  //required
 	Group    string `param:"group"`   //required
 	Content  string `param:"content"` //required
+	DatumId  string `param:"datumId"`
 	OnChange func(namespace, group, dataId, data string)
 }
 
