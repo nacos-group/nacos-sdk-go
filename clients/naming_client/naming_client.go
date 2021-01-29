@@ -169,11 +169,8 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 		param.GroupName = constant.DEFAULT_GROUP
 	}
 	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
-	if err != nil {
-		return nil, err
-	}
-	if len(service.Hosts) <= 0 {
-		return []model.Instance{}, errors.New("instance list is empty!")
+	if err != nil || service.Hosts == nil || len(service.Hosts) == 0 {
+		return []model.Instance{}, err
 	}
 	return service.Hosts, err
 }
