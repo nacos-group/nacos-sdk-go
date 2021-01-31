@@ -17,7 +17,6 @@
 package config_client
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"math"
@@ -159,11 +158,7 @@ func (client *ConfigClient) decrypt(dataId, content string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("kms decrypt failed: %v", err)
 		}
-		data, err := base64.StdEncoding.DecodeString(response.Plaintext)
-		if err != nil {
-			return "", fmt.Errorf("kms decrypt failed: %v", err)
-		}
-		content = string(data)
+		content = response.Plaintext
 	}
 	return content, nil
 }
@@ -175,7 +170,7 @@ func (client *ConfigClient) encrypt(dataId, content string) (string, error) {
 		request.Scheme = "https"
 		request.AcceptFormat = "json"
 		request.KeyId = "alias/acs/acm" // use default key
-		request.Plaintext = base64.StdEncoding.EncodeToString([]byte(content))
+		request.Plaintext = content
 		response, err := client.kmsClient.Encrypt(request)
 		if err != nil {
 			return "", fmt.Errorf("kms encrypt failed: %v", err)
