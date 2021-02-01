@@ -113,6 +113,7 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 		Cluster:     param.ClusterName,
 		Weight:      param.Weight,
 		Period:      util.GetDurationWithDefault(param.Metadata, constant.HEART_BEAT_INTERVAL, time.Second*5),
+		State:       model.StateRunning,
 	}
 	_, err := sc.serviceProxy.RegisterInstance(util.GetGroupName(param.ServiceName, param.GroupName), param.GroupName, instance)
 	if err != nil {
@@ -168,8 +169,8 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 		param.GroupName = constant.DEFAULT_GROUP
 	}
 	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
-	if service.Hosts == nil || len(service.Hosts) == 0 {
-		return []model.Instance{}, errors.New("instance list is empty!")
+	if err != nil || service.Hosts == nil || len(service.Hosts) == 0 {
+		return []model.Instance{}, err
 	}
 	return service.Hosts, err
 }

@@ -180,7 +180,6 @@ func Test_SearchConfig(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, configPage)
-	assert.NotEmpty(t, configPage.PageItems)
 }
 
 func Test_GetConfigWithErrorResponse_401(t *testing.T) {

@@ -18,6 +18,7 @@ package naming_client
 
 import (
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
@@ -70,7 +71,7 @@ func (br *BeatReactor) RemoveBeatInfo(serviceName string, ip string, port uint64
 	data, exist := br.beatMap.Get(k)
 	if exist {
 		beatInfo := data.(*model.BeatInfo)
-		beatInfo.Stopped = true
+		atomic.StoreInt32(&beatInfo.State, int32(model.StateShutdown))
 	}
 	br.beatMap.Remove(k)
 }
@@ -79,7 +80,7 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 	for {
 		br.beatThreadSemaphore.Acquire()
 		//如果当前实例注销，则进行停止心跳
-		if beatInfo.Stopped {
+		if atomic.LoadInt32(&beatInfo.State) == int32(model.StateShutdown) {
 			logger.Infof("instance[%s] stop heartBeating", k)
 			br.beatThreadSemaphore.Release()
 			return

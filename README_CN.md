@@ -55,12 +55,12 @@ constant.ServerConfig{
 }
 ```
 
-<b>Note：我们可以配置多个ServerConfig，客户端会对这些服务端做轮训请求</b>
+<b>Note：我们可以配置多个ServerConfig，客户端会对这些服务端做轮询请求</b>
 
 ### Create client
 
 ```go
-//创建clientConfig
+// 创建clientConfig
 clientConfig := constant.ClientConfig{
 	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", // 如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId
 	TimeoutMs:           5000,
@@ -72,7 +72,7 @@ clientConfig := constant.ClientConfig{
 	LogLevel:            "debug",
 }
 
-//创建clientConfig的另一种方式
+// 创建clientConfig的另一种方式
 clientConfig := *constant.NewClientConfig(
     constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"),
     constant.WithTimeoutMs(5000),
@@ -100,7 +100,7 @@ serverConfigs := []constant.ServerConfig{
     },
 }
 
-//创建serverConfig的另一种方式
+// 创建serverConfig的另一种方式
 serverConfigs := []constant.ServerConfig{
     *constant.NewServerConfig(
         "console1.nacos.io",
@@ -185,7 +185,7 @@ success, err := namingClient.RegisterInstance(vo.RegisterInstanceParam{
     Ephemeral:   true,
     Metadata:    map[string]string{"idc":"shanghai"},
     ClusterName: "cluster-a", // 默认值DEFAULT
-    GroupName:   "group-a",  // 默认值DEFAULT_GROUP
+    GroupName:   "group-a",   // 默认值DEFAULT_GROUP
 })
 
 ```
@@ -200,7 +200,7 @@ success, err := namingClient.DeregisterInstance(vo.DeregisterInstanceParam{
     ServiceName: "demo.go",
     Ephemeral:   true,
     Cluster:     "cluster-a", // 默认值DEFAULT
-    GroupName:   "group-a",  // 默认值DEFAULT_GROUP
+    GroupName:   "group-a",   // 默认值DEFAULT_GROUP
 })
 
 ```
@@ -242,10 +242,10 @@ instances, err := namingClient.SelectInstances(vo.SelectInstancesParam{
 
 ```
 
-* 获取一个健康的实例（加权随机轮训）：SelectOneHealthyInstance
+* 获取一个健康的实例（加权随机轮询）：SelectOneHealthyInstance
 
 ```go
-// SelectOneHealthyInstance将会按加权随机轮训的负载均衡策略返回一个健康的实例
+// SelectOneHealthyInstance将会按加权随机轮询的负载均衡策略返回一个健康的实例
 // 实例必须满足的条件：health=true,enable=true and weight>0
 instance, err := namingClient.SelectOneHealthyInstance(vo.SelectOneHealthInstanceParam{
     ServiceName: "demo.go",
