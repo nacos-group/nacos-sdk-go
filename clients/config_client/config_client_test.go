@@ -173,8 +173,8 @@ func Test_SearchConfig(t *testing.T) {
 		Content: "hello world!222222"})
 	configPage, err := client.SearchConfig(vo.SearchConfigParm{
 		Search:   "accurate",
-		DataId:   "",
-		Group:    "DEFAULT_GROUP",
+		DataId:   dataIdKey,
+		Group:    "groDEFAULT_GROUPup",
 		PageNo:   1,
 		PageSize: 10,
 	})
