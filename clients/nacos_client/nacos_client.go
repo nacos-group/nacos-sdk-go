@@ -38,8 +38,7 @@ type NacosClient struct {
 //SetClientConfig is use to set nacos client Config
 func (client *NacosClient) SetClientConfig(config constant.ClientConfig) (err error) {
 	if config.TimeoutMs <= 0 {
-		err = errors.New("[client.SetClientConfig] config.TimeoutMs should > 0")
-		return
+		config.TimeoutMs = 10 * 1000
 	}
 
 	if config.BeatInterval <= 0 {
