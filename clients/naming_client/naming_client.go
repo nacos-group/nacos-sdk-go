@@ -297,10 +297,11 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	}
 
 	sc.subCallback.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
-	_, err := sc.GetService(serviceParam)
+	svc, err := sc.GetService(serviceParam)
 	if err != nil {
 		return err
 	}
+	sc.subCallback.ServiceChanged(&svc)
 	return nil
 }
 
