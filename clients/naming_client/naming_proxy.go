@@ -56,6 +56,7 @@ func (proxy *NamingProxy) RegisterInstance(serviceName string, groupName string,
 	params["namespaceId"] = proxy.clientConfig.NamespaceId
 	params["serviceName"] = serviceName
 	params["groupName"] = groupName
+	params["app"] = proxy.clientConfig.AppName
 	params["clusterName"] = instance.ClusterName
 	params["ip"] = instance.Ip
 	params["port"] = strconv.Itoa(int(instance.Port))
@@ -170,10 +171,11 @@ func (proxy *NamingProxy) QueryList(serviceName string, clusters string, udpPort
 	param := make(map[string]string)
 	param["namespaceId"] = proxy.clientConfig.NamespaceId
 	param["serviceName"] = serviceName
+	param["app"] = proxy.clientConfig.AppName
 	param["clusters"] = clusters
 	param["udpPort"] = strconv.Itoa(udpPort)
 	param["healthyOnly"] = strconv.FormatBool(healthyOnly)
-	param["clientIp"] = util.LocalIP()
+	param["clientIP"] = util.LocalIP()
 	api := constant.SERVICE_PATH + "/list"
 	return proxy.nacosServer.ReqApi(api, param, http.MethodGet)
 }
