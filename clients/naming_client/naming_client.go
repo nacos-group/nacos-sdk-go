@@ -301,7 +301,9 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	if err != nil {
 		return err
 	}
-	sc.subCallback.ServiceChanged(&svc)
+	if !sc.hostReactor.serviceProxy.clientConfig.NotLoadCacheAtStart {
+		sc.subCallback.ServiceChanged(&svc)
+	}
 	return nil
 }
 
