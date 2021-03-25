@@ -49,7 +49,7 @@ var headers = map[string][]string{
 	"Content-Type":    {"application/x-www-form-urlencoded"},
 }
 
-func Test_RegisterServiceInstance_withoutGroupeName(t *testing.T) {
+func Test_RegisterServiceInstance_withoutGroupName(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer func() {
 		ctrl.Finish()
@@ -63,6 +63,7 @@ func Test_RegisterServiceInstance_withoutGroupeName(t *testing.T) {
 			"namespaceId": "",
 			"serviceName": "DEFAULT_GROUP@@DEMO",
 			"groupName":   "DEFAULT_GROUP",
+			"app":         "DEFAULT_APP",
 			"clusterName": "",
 			"ip":          "10.0.0.10",
 			"port":        "80",
@@ -88,7 +89,7 @@ func Test_RegisterServiceInstance_withoutGroupeName(t *testing.T) {
 	assert.Equal(t, true, success)
 }
 
-func Test_RegisterServiceInstance_withGroupeName(t *testing.T) {
+func Test_RegisterServiceInstance_withGroupName(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer func() {
 		ctrl.Finish()
@@ -103,6 +104,7 @@ func Test_RegisterServiceInstance_withGroupeName(t *testing.T) {
 			"namespaceId": "",
 			"serviceName": "test_group@@DEMO2",
 			"groupName":   "test_group",
+			"app":         "test_app",
 			"clusterName": "",
 			"ip":          "10.0.0.10",
 			"port":        "80",
@@ -145,6 +147,7 @@ func Test_RegisterServiceInstance_withCluster(t *testing.T) {
 			"namespaceId": "",
 			"serviceName": "test_group@@DEMO3",
 			"groupName":   "test_group",
+			"app":         "test_app",
 			"clusterName": "test",
 			"ip":          "10.0.0.10",
 			"port":        "80",
@@ -188,6 +191,7 @@ func Test_RegisterServiceInstance_401(t *testing.T) {
 			"namespaceId": "",
 			"serviceName": "test_group@@DEMO4",
 			"groupName":   "test_group",
+			"app":         "test_app",
 			"clusterName": "",
 			"ip":          "10.0.0.10",
 			"port":        "80",
@@ -215,7 +219,7 @@ func Test_RegisterServiceInstance_401(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestNamingProxy_DeristerService_WithoutGroupName(t *testing.T) {
+func TestNamingProxy_DeregisterService_WithoutGroupName(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer func() {
 		ctrl.Finish()
@@ -248,7 +252,7 @@ func TestNamingProxy_DeristerService_WithoutGroupName(t *testing.T) {
 	})
 }
 
-func TestNamingProxy_DeristerService_WithGroupName(t *testing.T) {
+func TestNamingProxy_DeregisterService_WithGroupName(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer func() {
 		ctrl.Finish()
@@ -282,7 +286,7 @@ func TestNamingProxy_DeristerService_WithGroupName(t *testing.T) {
 	})
 }
 
-func TestNamingProxy_DeristerService_401(t *testing.T) {
+func TestNamingProxy_DeregisterService_401(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer func() {
 		ctrl.Finish()
