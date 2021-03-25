@@ -28,6 +28,7 @@ type ClientConfig struct {
 	ListenInterval       uint64 //Deprecated
 	BeatInterval         int64  //the time interval for sending beat to server,default value is 5000ms
 	NamespaceId          string //the namespaceId of Nacos
+	AppName              string //the appName
 	Endpoint             string //the endpoint for get Nacos server addresses
 	RegionId             string //the regionId for kms
 	AccessKey            string //the AccessKey for kms
