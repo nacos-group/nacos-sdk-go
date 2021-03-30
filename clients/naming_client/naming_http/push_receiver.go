@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package naming_client
+package naming_http
 
 import (
 	"bytes"
@@ -26,14 +26,15 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/nacos-group/nacos-sdk-go/clients/naming_client/naming_cache"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/util"
 )
 
 type PushReceiver struct {
-	port        int
-	host        string
-	hostReactor *HostReactor
+	port              int
+	host              string
+	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
 type PushData struct {
@@ -46,9 +47,9 @@ var (
 	GZIP_MAGIC = []byte("\x1F\x8B")
 )
 
-func NewPushReceiver(hostReactor *HostReactor) *PushReceiver {
+func NewPushReceiver(serviceInfoHolder *naming_cache.ServiceInfoHolder) *PushReceiver {
 	pr := PushReceiver{
-		hostReactor: hostReactor,
+		serviceInfoHolder: serviceInfoHolder,
 	}
 	pr.startServer()
 	return &pr
@@ -118,7 +119,7 @@ func (us *PushReceiver) handleClient(conn *net.UDPConn) {
 	ack := make(map[string]string)
 
 	if pushData.PushType == "dom" || pushData.PushType == "service" {
-		us.hostReactor.ProcessServiceJson(pushData.Data)
+		us.serviceInfoHolder.ProcessServiceJson(pushData.Data)
 
 		ack["type"] = "push-ack"
 		ack["lastRefTime"] = strconv.FormatInt(pushData.LastRefTime, 10)
@@ -127,7 +128,7 @@ func (us *PushReceiver) handleClient(conn *net.UDPConn) {
 	} else if pushData.PushType == "dump" {
 		ack["type"] = "dump-ack"
 		ack["lastRefTime"] = strconv.FormatInt(pushData.LastRefTime, 10)
-		ack["data"] = util.ToJsonString(us.hostReactor.serviceInfoMap)
+		ack["data"] = util.ToJsonString(us.serviceInfoHolder.ServiceInfoMap)
 	} else {
 		ack["type"] = "unknow-ack"
 		ack["lastRefTime"] = strconv.FormatInt(pushData.LastRefTime, 10)

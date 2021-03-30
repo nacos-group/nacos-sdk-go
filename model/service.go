@@ -49,6 +49,7 @@ type Service struct {
 	Clusters        string            `json:"clusters"`
 	Metadata        map[string]string `json:"metadata"`
 	Name            string            `json:"name"`
+	GroupName       string            `json:"groupName"`
 }
 
 type ServiceDetail struct {

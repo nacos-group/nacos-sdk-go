@@ -20,6 +20,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+
 	"github.com/go-errors/errors"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/util"
@@ -56,7 +58,7 @@ func (agent *HttpAgent) RequestOnlyResult(method string, path string, header htt
 		logger.Errorf("request method[%s],request path[%s],header:[%s],params:[%s],err:%+v", method, path, util.ToJsonString(header), util.ToJsonString(params), err)
 		return ""
 	}
-	if response.StatusCode != 200 {
+	if response.StatusCode != constant.RESPONSE_CODE_SUCCESS {
 		logger.Errorf("request method[%s],request path[%s],header:[%s],params:[%s],status code error:%d", method, path, util.ToJsonString(header), util.ToJsonString(params), response.StatusCode)
 		return ""
 	}

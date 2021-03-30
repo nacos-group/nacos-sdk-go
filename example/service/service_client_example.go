@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
+
 	"github.com/nacos-group/nacos-sdk-go/vo"
 )
 
@@ -50,7 +51,7 @@ func ExampleServiceClient_SelectInstances(client naming_client.INamingClient, pa
 
 func ExampleServiceClient_SelectOneHealthyInstance(client naming_client.INamingClient, param vo.SelectOneHealthInstanceParam) {
 	instances, _ := client.SelectOneHealthyInstance(param)
-	fmt.Printf("SelectInstances,param:%+v, result:%+v \n\n", param, instances)
+	fmt.Printf("SelectOneHealthyInstance,param:%+v, result:%+v \n\n", param, instances)
 }
 
 func ExampleServiceClient_Subscribe(client naming_client.INamingClient, param *vo.SubscribeParam) {

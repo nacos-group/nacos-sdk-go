@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package naming_client
+package naming_http
 
 import (
+	"errors"
+	"fmt"
+	"net/http"
 	"strconv"
 	"sync/atomic"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/util"
 	nsema "github.com/toolkits/concurrent/semaphore"
@@ -31,23 +36,20 @@ import (
 
 type BeatReactor struct {
 	beatMap             cache.ConcurrentMap
-	serviceProxy        NamingProxy
-	clientBeatInterval  int64
+	nacosServer         *nacos_server.NacosServer
 	beatThreadCount     int
 	beatThreadSemaphore *nsema.Semaphore
 	beatRecordMap       cache.ConcurrentMap
+	clientCfg           constant.ClientConfig
 }
 
 const Default_Beat_Thread_Num = 20
 
-func NewBeatReactor(serviceProxy NamingProxy, clientBeatInterval int64) BeatReactor {
+func NewBeatReactor(clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer) BeatReactor {
 	br := BeatReactor{}
-	if clientBeatInterval <= 0 {
-		clientBeatInterval = 5 * 1000
-	}
 	br.beatMap = cache.NewConcurrentMap()
-	br.serviceProxy = serviceProxy
-	br.clientBeatInterval = clientBeatInterval
+	br.nacosServer = nacosServer
+	br.clientCfg = clientCfg
 	br.beatThreadCount = Default_Beat_Thread_Num
 	br.beatRecordMap = cache.NewConcurrentMap()
 	br.beatThreadSemaphore = nsema.NewSemaphore(br.beatThreadCount)
@@ -87,7 +89,7 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 		}
 
 		//进行心跳通信
-		beatInterval, err := br.serviceProxy.SendBeat(*beatInfo)
+		beatInterval, err := br.SendBeat(*beatInfo)
 		if err != nil {
 			logger.Errorf("beat to server return error:%+v", err)
 			br.beatThreadSemaphore.Release()
@@ -105,4 +107,27 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 		t := time.NewTimer(beatInfo.Period)
 		<-t.C
 	}
+}
+
+func (br *BeatReactor) SendBeat(info model.BeatInfo) (int64, error) {
+	logger.Infof("namespaceId:<%s> sending beat to server:<%s>",
+		br.clientCfg.NamespaceId, util.ToJsonString(info))
+	params := map[string]string{}
+	params["namespaceId"] = br.clientCfg.NamespaceId
+	params["serviceName"] = info.ServiceName
+	params["beat"] = util.ToJsonString(info)
+	api := constant.SERVICE_BASE_PATH + "/instance/beat"
+	result, err := br.nacosServer.ReqApi(api, params, http.MethodPut)
+	if err != nil {
+		return 0, err
+	}
+	if result != "" {
+		interVal, err := jsonparser.GetInt([]byte(result), "clientBeatInterval")
+		if err != nil {
+			return 0, errors.New(fmt.Sprintf("namespaceId:<%s> sending beat to server:<%s> get 'clientBeatInterval' from <%s> error:<%+v>", br.clientCfg.NamespaceId, util.ToJsonString(info), result, err))
+		} else {
+			return interVal, nil
+		}
+	}
+	return 0, nil
 }

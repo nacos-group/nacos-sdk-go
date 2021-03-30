@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package naming_client
+package naming_cache
 
 import (
 	"fmt"
@@ -57,12 +57,12 @@ func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
 		Clusters:    []string{"default"},
 		GroupName:   "public",
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			fmt.Println(util.ToJsonString(ed.callbackFuncsMap))
+			fmt.Println(util.ToJsonString(ed.callbackFuncMap))
 		},
 	}
-	ed.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 	key := util.GetServiceCacheKey(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
-	for k, v := range ed.callbackFuncsMap.Items() {
+	for k, v := range ed.callbackFuncMap.Items() {
 		assert.Equal(t, key, k, "key should be equal!")
 		funcs := v.([]*func(services []model.SubscribeService, err error))
 		assert.Equal(t, len(funcs), 1)
@@ -102,8 +102,8 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 			fmt.Printf("func1:%s \n", util.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
-	assert.Equal(t, len(ed.callbackFuncsMap.Items()), 1, "callback funcs map length should be 1")
+	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	assert.Equal(t, len(ed.callbackFuncMap.Items()), 1, "callback funcs map length should be 1")
 
 	param2 := vo.SubscribeParam{
 		ServiceName: "Test",
@@ -113,17 +113,17 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 			fmt.Printf("func2:%s \n", util.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFuncs(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
-	assert.Equal(t, len(ed.callbackFuncsMap.Items()), 1, "callback funcs map length should be 2")
+	ed.AddCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	assert.Equal(t, len(ed.callbackFuncMap.Items()), 1, "callback funcs map length should be 2")
 
-	for k, v := range ed.callbackFuncsMap.Items() {
+	for k, v := range ed.callbackFuncMap.Items() {
 		log.Printf("key:%s,%d", k, len(v.([]*func(services []model.SubscribeService, err error))))
 	}
 
-	ed.RemoveCallbackFuncs(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	ed.RemoveCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
 
 	key := util.GetServiceCacheKey(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
-	for k, v := range ed.callbackFuncsMap.Items() {
+	for k, v := range ed.callbackFuncMap.Items() {
 		assert.Equal(t, key, k, "key should be equal!")
 		funcs := v.([]*func(services []model.SubscribeService, err error))
 		assert.Equal(t, len(funcs), 1)
@@ -163,7 +163,7 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 			log.Printf("func1:%s \n", util.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 
 	param2 := vo.SubscribeParam{
 		ServiceName: "Test",
@@ -174,7 +174,7 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 
 		},
 	}
-	ed.AddCallbackFuncs(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	ed.AddCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
 
 	ed.ServiceChanged(&service)
 }

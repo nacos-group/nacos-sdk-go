@@ -137,7 +137,7 @@ func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 			return false, err
 		}
 
-		if resp.StatusCode != 200 {
+		if resp.StatusCode != constant.RESPONSE_CODE_SUCCESS {
 			errMsg := string(bytes)
 			return false, errors.New(errMsg)
 		}
