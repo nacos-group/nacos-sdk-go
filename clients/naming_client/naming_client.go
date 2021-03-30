@@ -89,6 +89,9 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 
 // 注册服务实例
 func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, error) {
+	if param.ServiceName == "" {
+		return false, errors.New("serviceName cannot be empty!")
+	}
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
