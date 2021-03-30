@@ -63,7 +63,7 @@ constant.ServerConfig{
 ```go
 //create clientConfig
 clientConfig := constant.ClientConfig{
-	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //we can create multiple clients with different namespaceId to support multiple namespace
+	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //we can create multiple clients with different namespaceId to support multiple namespace.When namespace is public, fill in the blank string here.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
 	TimeoutMs:           5000,
 	NotLoadCacheAtStart: true,
 	LogDir:              "/tmp/nacos/log",
@@ -74,7 +74,7 @@ clientConfig := constant.ClientConfig{
 }
 //Another way of create clientConfig
 clientConfig := *constant.NewClientConfig(
-    constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"),
+    constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"), //When namespace is public, fill in the blank string here.
     constant.WithTimeoutMs(5000),
     constant.WithNotLoadCacheAtStart(true),
     constant.WithLogDir("/tmp/nacos/log"),
