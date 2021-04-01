@@ -27,7 +27,7 @@ type ClientConfig struct {
 	TimeoutMs            uint64 //timeout for requesting Nacos server, default value is 10000ms
 	ListenInterval       uint64 //Deprecated
 	BeatInterval         int64  //the time interval for sending beat to server,default value is 5000ms
-	NamespaceId          string //the namespaceId of Nacos
+	NamespaceId          string //the namespaceId of Nacos.When namespace is public, fill in the blank string here.
 	AppName              string //the appName
 	Endpoint             string //the endpoint for get Nacos server addresses
 	RegionId             string //the regionId for kms

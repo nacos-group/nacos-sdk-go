@@ -24,7 +24,7 @@ $ go get -u github.com/nacos-group/nacos-sdk-go
 ```go
 constant.ClientConfig{
 	TimeoutMs            uint64 // 请求Nacos服务端的超时时间，默认是10000ms
-	NamespaceId          string // ACM的命名空间
+	NamespaceId          string // ACM的命名空间Id
 	Endpoint             string // 当使用ACM时，需要该配置. https://help.aliyun.com/document_detail/130146.html
 	RegionId             string // ACM&KMS的regionId，用于配置中心的鉴权
 	AccessKey            string // ACM&KMS的AccessKey，用于配置中心的鉴权
@@ -62,7 +62,7 @@ constant.ServerConfig{
 ```go
 // 创建clientConfig
 clientConfig := constant.ClientConfig{
-	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", // 如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId
+	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", // 如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId。当namespace是public时，此处填空字符串。
 	TimeoutMs:           5000,
 	NotLoadCacheAtStart: true,
 	LogDir:              "/tmp/nacos/log",
@@ -74,7 +74,7 @@ clientConfig := constant.ClientConfig{
 
 // 创建clientConfig的另一种方式
 clientConfig := *constant.NewClientConfig(
-    constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"),
+    constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"), //当namespace是public时，此处填空字符串。
     constant.WithTimeoutMs(5000),
     constant.WithNotLoadCacheAtStart(true),
     constant.WithLogDir("/tmp/nacos/log"),
