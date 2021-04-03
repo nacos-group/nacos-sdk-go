@@ -21,9 +21,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/go-errors/errors"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/file"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/model"
@@ -31,6 +34,11 @@ import (
 )
 
 func GetFileName(cacheKey string, cacheDir string) string {
+
+	if runtime.GOOS == "windows" {
+		cacheKey = strings.ReplaceAll(cacheKey, ":", constant.WINDOWS_LEGAL_NAME_SPLITER)
+	}
+
 	return cacheDir + string(os.PathSeparator) + cacheKey
 }
 
