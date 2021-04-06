@@ -84,15 +84,9 @@ func setConfig(param vo.NacosClientParam) (iClient nacos_client.INacosClient, er
 	client := &nacos_client.NacosClient{}
 	if param.ClientConfig == nil {
 		// default clientConfig
-		_ = client.SetClientConfig(constant.ClientConfig{
-			TimeoutMs:    10 * 1000,
-			BeatInterval: 5 * 1000,
-		})
+		client.SetClientConfig(constant.ClientConfig{})
 	} else {
-		err = client.SetClientConfig(*param.ClientConfig)
-		if err != nil {
-			return nil, err
-		}
+		client.SetClientConfig(*param.ClientConfig)
 	}
 
 	if len(param.ServerConfigs) == 0 {
