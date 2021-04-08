@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,8 +28,8 @@ func TestGetFileName(t *testing.T) {
 
 	name := GetFileName("nacos@@providers:org.apache.dubbo.UserProvider:hangzhou", "tmp")
 
-	if runtime.GOOS == "windows" {
-		assert.Equal(t, name, "tmp\\nacos@@providers&org.apache.dubbo.UserProvider&hangzhou")
+	if runtime.GOOS == constant.OS_WINDOWS {
+		assert.Equal(t, name, "tmp\\nacos@@providers&&org.apache.dubbo.UserProvider&&hangzhou")
 	} else {
 		assert.Equal(t, name, "tmp/nacos@@providers:org.apache.dubbo.UserProvider:hangzhou")
 	}

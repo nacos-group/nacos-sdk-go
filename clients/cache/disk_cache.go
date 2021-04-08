@@ -35,7 +35,7 @@ import (
 
 func GetFileName(cacheKey string, cacheDir string) string {
 
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == constant.OS_WINDOWS {
 		cacheKey = strings.ReplaceAll(cacheKey, ":", constant.WINDOWS_LEGAL_NAME_SPLITER)
 	}
 
