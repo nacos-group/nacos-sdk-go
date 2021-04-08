@@ -75,4 +75,6 @@ const (
 	NAMING_INSTANCE_ID_SPLITTER = "#"
 	DefaultClientErrorCode      = "SDK.NacosError"
 	DEFAULT_SERVER_SCHEME       = "http"
+	WINDOWS_LEGAL_NAME_SPLITER  = "&&"
+	OS_WINDOWS                  = "windows"
 )
