@@ -433,16 +433,17 @@ func longPulling(taskId int) func() error {
 				logger.Info("[client.ListenConfig] no change")
 			} else {
 				logger.Info("[client.ListenConfig] config changed:" + changed)
-				client.callListener(changed, clientConfig.NamespaceId)
+				if err = client.callListener(changed, clientConfig.NamespaceId); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
 	}
-
 }
 
 //Execute the Listener callback func()
-func (client *ConfigClient) callListener(changed, tenant string) {
+func (client *ConfigClient) callListener(changed, tenant string) error {
 	changedConfigs := strings.Split(changed, "%01")
 	for _, config := range changedConfigs {
 		attrs := strings.Split(config, "%02")
@@ -455,7 +456,7 @@ func (client *ConfigClient) callListener(changed, tenant string) {
 				})
 				if err != nil {
 					logger.Errorf("[client.getConfigInner] DataId:[%s] Group:[%s] Error:[%+v]", cData.dataId, cData.group, err)
-					continue
+					return err
 				}
 				cData.content = content
 				cData.md5 = util.Md5(content)
@@ -467,6 +468,8 @@ func (client *ConfigClient) callListener(changed, tenant string) {
 			}
 		}
 	}
+
+	return nil
 }
 
 func (client *ConfigClient) buildBasePath(serverConfig constant.ServerConfig) (basePath string) {
