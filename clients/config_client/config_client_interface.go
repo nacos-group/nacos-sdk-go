@@ -17,8 +17,8 @@
 package config_client
 
 import (
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/fanghongbo/nacos-sdk-go/model"
+	"github.com/fanghongbo/nacos-sdk-go/vo"
 )
 
 //go:generate mockgen -destination ../../mock/mock_config_client_interface.go -package mock -source=./config_client_interface.go

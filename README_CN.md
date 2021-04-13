@@ -1,6 +1,6 @@
 # Nacos-sdk-go [English](./README.md) #
 
-[![Build Status](https://travis-ci.org/nacos-group/nacos-sdk-go.svg?branch=master)](https://travis-ci.org/nacos-group/nacos-sdk-go) [![Go Report Card](https://goreportcard.com/badge/github.com/nacos-group/nacos-sdk-go)](https://goreportcard.com/report/github.com/nacos-group/nacos-sdk-go) ![license](https://img.shields.io/badge/license-Apache--2.0-green.svg)
+[![Build Status](https://travis-ci.org/nacos-group/nacos-sdk-go.svg?branch=master)](https://travis-ci.org/nacos-group/nacos-sdk-go) [![Go Report Card](https://goreportcard.com/badge/github.com/fanghongbo/nacos-sdk-go)](https://goreportcard.com/report/github.com/fanghongbo/nacos-sdk-go) ![license](https://img.shields.io/badge/license-Apache--2.0-green.svg)
 
 ---
 
@@ -16,7 +16,7 @@ Nacos-sdk-go是Nacos的Go语言客户端，它实现了服务发现和动态配�
 ## 安装
 使用`go get`安装SDK：
 ```sh
-$ go get -u github.com/nacos-group/nacos-sdk-go
+$ go get -u github.com/fanghongbo/nacos-sdk-go
 ```
 ## 快速使用
 * ClientConfig

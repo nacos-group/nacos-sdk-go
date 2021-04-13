@@ -23,13 +23,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/util"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/fanghongbo/nacos-sdk-go/common/constant"
+	"github.com/fanghongbo/nacos-sdk-go/common/http_agent"
+	"github.com/fanghongbo/nacos-sdk-go/common/logger"
+	"github.com/fanghongbo/nacos-sdk-go/common/nacos_server"
+	"github.com/fanghongbo/nacos-sdk-go/model"
+	"github.com/fanghongbo/nacos-sdk-go/util"
+	"github.com/fanghongbo/nacos-sdk-go/vo"
 )
 
 type ConfigProxy struct {

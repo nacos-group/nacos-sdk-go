@@ -22,9 +22,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/file"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/fanghongbo/nacos-sdk-go/common/constant"
+	"github.com/fanghongbo/nacos-sdk-go/common/file"
+	"github.com/fanghongbo/nacos-sdk-go/common/http_agent"
 )
 
 type NacosClient struct {

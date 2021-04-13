@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/util"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/fanghongbo/nacos-sdk-go/model"
+	"github.com/fanghongbo/nacos-sdk-go/util"
+	"github.com/fanghongbo/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
 )
 

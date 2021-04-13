@@ -22,13 +22,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/mock"
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/util"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/fanghongbo/nacos-sdk-go/clients/nacos_client"
+	"github.com/fanghongbo/nacos-sdk-go/common/constant"
+	"github.com/fanghongbo/nacos-sdk-go/common/http_agent"
+	"github.com/fanghongbo/nacos-sdk-go/mock"
+	"github.com/fanghongbo/nacos-sdk-go/model"
+	"github.com/fanghongbo/nacos-sdk-go/util"
+	"github.com/fanghongbo/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
 )
 
