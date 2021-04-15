@@ -210,9 +210,8 @@ func Test_GetConfigWithErrorResponse_404(t *testing.T) {
 		gomock.Eq(configParamMapTest),
 	).Times(3).Return(http_agent.FakeHttpResponse(404, ""), nil)
 	reslut, err := client.GetConfig(configParamTest)
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	assert.Equal(t, "", reslut)
-	fmt.Println(err.Error())
 }
 
 func Test_GetConfigWithErrorResponse_403(t *testing.T) {

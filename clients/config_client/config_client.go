@@ -199,7 +199,8 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 			nacosErr := err.(*nacos_error.NacosError)
 			if nacosErr.ErrorCode() == "404" {
 				cache.WriteConfigToFile(cacheKey, client.configCacheDir, "")
-				return "", errors.New("config not found")
+				logger.Warnf("[client.GetConfig] config not found, dataId: %s, group: %s, namespaceId: %s.", param.DataId, param.Group, clientConfig.NamespaceId)
+				return "", nil
 			}
 			if nacosErr.ErrorCode() == "403" {
 				return "", errors.New("get config forbidden")
@@ -532,7 +533,7 @@ func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParm) (*model
 		if _, ok := err.(*nacos_error.NacosError); ok {
 			nacosErr := err.(*nacos_error.NacosError)
 			if nacosErr.ErrorCode() == "404" {
-				return nil, errors.New("config not found")
+				return nil, nil
 			}
 			if nacosErr.ErrorCode() == "403" {
 				return nil, errors.New("get config forbidden")
