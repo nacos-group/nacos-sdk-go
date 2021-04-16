@@ -91,7 +91,11 @@ func (us *PushReceiver) startServer() {
 	}
 
 	go func() {
-		defer conn.Close()
+		defer func() {
+			if conn != nil {
+				conn.Close()
+			}
+		}()
 		for {
 			us.handleClient(conn)
 		}
