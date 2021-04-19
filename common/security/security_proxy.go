@@ -50,7 +50,7 @@ func NewAuthClient(clientCfg constant.ClientConfig, serverCfgs []constant.Server
 		serverCfgs:  serverCfgs,
 		clientCfg:   clientCfg,
 		agent:       agent,
-		tokenTtl:    3, // default refresh token 3 second, if first login error
+		tokenTtl:    5, // default refresh token 5 second, if first login error
 		accessToken: &atomic.Value{},
 	}
 
