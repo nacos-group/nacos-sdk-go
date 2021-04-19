@@ -72,7 +72,7 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 	_, err := securityLogin.Login()
 
 	if err != nil {
-		return &ns, err
+		logger.Errorf("login has error %+v", err)
 	}
 
 	securityLogin.AutoRefresh()
