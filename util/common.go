@@ -65,37 +65,91 @@ func GetConfigCacheKey(dataId string, group string, tenant string) string {
 	return dataId + constant.CONFIG_INFO_SPLITER + group + constant.CONFIG_INFO_SPLITER + tenant
 }
 
-var localIP = ""
+var (
+	localIP     = ""
+	privateCIDR []*net.IPNet
+)
 
 func LocalIP() string {
-	if localIP == "" {
-		netInterfaces, err := net.Interfaces()
+	if localIP != "" {
+		return localIP
+	}
+
+	faces, err := getFaces()
+	if err != nil {
+		return ""
+	}
+
+	for _, address := range faces {
+		ipNet, ok := address.(*net.IPNet)
+		if !ok || ipNet.IP.To4() == nil || isFilteredIP(ipNet.IP) {
+			continue
+		}
+
+		localIP = ipNet.IP.String()
+		break
+	}
+
+	if localIP != "" {
+		logger.Infof("Local IP:%s", localIP)
+	}
+
+	return localIP
+}
+
+// SetFilterNetNumberAndMask ipMask like 127.0.0.0/8
+func SetFilterNetNumberAndMask(ipMask ...string) error {
+	var (
+		err   error
+		ipNet *net.IPNet
+	)
+	for _, b := range ipMask {
+		_, ipNet, err = net.ParseCIDR(b)
 		if err != nil {
-			logger.Errorf("get Interfaces failed,err:%+v", err)
-			return ""
+			return err
+		}
+		privateCIDR = append(privateCIDR, ipNet)
+	}
+	return err
+}
+
+// getFaces return addresses from interfaces that is up
+func getFaces() ([]net.Addr, error) {
+	var upAddrs []net.Addr
+
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		logger.Errorf("get Interfaces failed,err:%+v", err)
+		return nil, err
+	}
+
+	for _, iface := range interfaces {
+		if iface.Flags&net.FlagUp == 0 {
+			continue
+		}
+		if (iface.Flags & net.FlagLoopback) != 0 {
+			continue
 		}
 
-		for i := 0; i < len(netInterfaces); i++ {
-			if ((netInterfaces[i].Flags & net.FlagUp) != 0) && ((netInterfaces[i].Flags & net.FlagLoopback) == 0) {
-				addrs, err := netInterfaces[i].Addrs()
-				if err != nil {
-					logger.Errorf("get InterfaceAddress failed,err:%+v", err)
-					return ""
-				}
-				for _, address := range addrs {
-					if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
-						localIP = ipnet.IP.String()
-						break
-					}
-				}
-			}
+		addresses, err := iface.Addrs()
+		if err != nil {
+			logger.Errorf("get InterfaceAddress failed,err:%+v", err)
+			return nil, err
 		}
 
-		if len(localIP) > 0 {
-			logger.Infof("Local IP:%s", localIP)
+		upAddrs = append(upAddrs, addresses...)
+	}
+
+	return upAddrs, nil
+}
+
+func isFilteredIP(ip net.IP) bool {
+	for _, privateIP := range privateCIDR {
+		if privateIP.Contains(ip) {
+			return true
 		}
 	}
-	return localIP
+	return false
 }
 
 func GetDurationWithDefault(metadata map[string]string, key string, defaultDuration time.Duration) time.Duration {
