@@ -746,7 +746,7 @@ func TestNamingClient_SelectInstances_Unhealthy(t *testing.T) {
 	instances, err := client.selectInstances(services, false)
 	fmt.Println(util.ToJsonString(instances))
 	assert.Nil(t, err)
-	assert.Equal(t, 1, len(instances))
+	assert.Equal(t, 3, len(instances))
 }
 
 func TestNamingClient_SelectInstances_Empty(t *testing.T) {

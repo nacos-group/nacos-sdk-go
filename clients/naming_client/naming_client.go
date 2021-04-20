@@ -196,7 +196,9 @@ func (sc *NamingClient) selectInstances(service model.Service, healthy bool) ([]
 	hosts := service.Hosts
 	var result []model.Instance
 	for _, host := range hosts {
-		if host.Healthy == healthy && host.Enable && host.Weight > 0 {
+		if healthy && host.Healthy == healthy && host.Enable && host.Weight > 0 {
+			result = append(result, host)
+		} else if !healthy && host.Enable && host.Weight > 0 {
 			result = append(result, host)
 		}
 	}

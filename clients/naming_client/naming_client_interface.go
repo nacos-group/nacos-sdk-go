@@ -60,7 +60,8 @@ type INamingClient interface {
 	//GroupName optional,default:DEFAULT_GROUP
 	SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error)
 
-	//SelectInstances only return the instances of healthy=${HealthyOnly},enable=true and weight>0
+	//SelectInstances when healthy state is true only return the instances of healthy=true,enable=true and weight>0
+	// When the healthy state is false, all instances with enable = true and weight > 0 are returned
 	//ServiceName require
 	//Clusters optional,default:DEFAULT
 	//GroupName optional,default:DEFAULT_GROUP
