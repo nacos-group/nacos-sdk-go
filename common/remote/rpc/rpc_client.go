@@ -319,6 +319,7 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 	if onRequestFail && r.sendHealthCheck() {
 		logger.Infof("%s Server check success,currentServer is %+v", r.name, r.currentConnection.getServerInfo())
 		atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
+		return
 	}
 	serverInfoFlag := false
 	if (serverInfo == ServerInfo{}) {
@@ -467,35 +468,31 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 	start := util.CurrentMillis()
 	var currentErr error
 	for retryTimes < constant.REQUEST_DOMAIN_RETRY_TIME && util.CurrentMillis() < start+timeoutMills {
-		waitReconnect := false
 		if r.currentConnection == nil || !r.IsRunning() {
-			waitReconnect = true
-			return nil, errors.New(fmt.Sprintf("Client not connected,current status:%v", atomic.LoadInt32((*int32)(&r.rpcClientStatus))))
+			currentErr = waitReconnect(timeoutMills, &retryTimes, request, errors.New(fmt.Sprintf(
+				"Client not connected,current status:%v", atomic.LoadInt32((*int32)(&r.rpcClientStatus)))))
+			continue
 		}
 		response, err := r.currentConnection.request(request, timeoutMills, r)
 		if err == nil {
-			if response.GetErrorCode() == constant.UN_REGISTER {
-				r.mux.Lock()
-				waitReconnect = true
-				if atomic.CompareAndSwapInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING), (int32)(UNHEALTHY)) {
-					logger.Infof("Connection is unregistered, switch server,connectionId=%s,request=%s",
-						r.currentConnection.getConnectionId(), request.GetRequestType())
-					r.switchServerAsync(ServerInfo{}, false)
+			if response, ok := response.(*rpc_response.ErrorResponse); ok {
+				if response.GetErrorCode() == constant.UN_REGISTER {
+					r.mux.Lock()
+					if atomic.CompareAndSwapInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING), (int32)(UNHEALTHY)) {
+						logger.Infof("Connection is unregistered, switch server,connectionId=%s,request=%s",
+							r.currentConnection.getConnectionId(), request.GetRequestType())
+						r.switchServerAsync(ServerInfo{}, false)
+					}
+					r.mux.Unlock()
 				}
-			}
-			if response.GetErrorCode() > 0 {
-				return response, errors.New(fmt.Sprintf("Server response error,response:%+v,err:%+v", response, err))
+				currentErr = waitReconnect(timeoutMills, &retryTimes, request, errors.New(response.GetMessage()))
+				continue
 			}
 			r.lastActiveTimeStamp = time.Now()
 			return response, nil
 		} else {
-			currentErr = err
-			if waitReconnect {
-				time.Sleep(time.Duration(math.Min(100, float64(timeoutMills/3))))
-			}
-			logger.Errorf("Send request fail, request=%+v, retryTimes=%v,error=%+v", request, retryTimes, currentErr)
+			currentErr = waitReconnect(timeoutMills, &retryTimes, request, err)
 		}
-		retryTimes++
 	}
 
 	if atomic.CompareAndSwapInt32((*int32)(&r.rpcClientStatus), int32(RUNNING), int32(UNHEALTHY)) {
@@ -504,5 +501,12 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 	if currentErr != nil {
 		return nil, currentErr
 	}
-	return nil, errors.New("Request fail,Unknown Error")
+	return nil, errors.New("request fail, unknown error")
+}
+
+func waitReconnect(timeoutMills int64, retryTimes *int, request rpc_request.IRequest, err error) error {
+	logger.Errorf("Send request fail, request=%+v, retryTimes=%v,error=%+v", request, retryTimes, err)
+	time.Sleep(time.Duration(math.Min(100, float64(timeoutMills/3))))
+	*retryTimes++
+	return err
 }

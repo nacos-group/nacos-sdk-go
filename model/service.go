@@ -24,32 +24,32 @@ const (
 )
 
 type Instance struct {
-	Valid       bool              `json:"valid"`
-	Marked      bool              `json:"marked"`
-	InstanceId  string            `json:"instanceId"`
-	Port        uint64            `json:"port"`
-	Ip          string            `json:"ip"`
-	Weight      float64           `json:"weight"`
-	Metadata    map[string]string `json:"metadata"`
-	ClusterName string            `json:"clusterName"`
-	ServiceName string            `json:"serviceName"`
-	Enable      bool              `json:"enabled"`
-	Healthy     bool              `json:"healthy"`
-	Ephemeral   bool              `json:"ephemeral"`
+	InstanceId                string            `json:"instanceId"`
+	Ip                        string            `json:"ip"`
+	Port                      uint64            `json:"port"`
+	Weight                    float64           `json:"weight"`
+	Healthy                   bool              `json:"healthy"`
+	Enable                    bool              `json:"enabled"`
+	Ephemeral                 bool              `json:"ephemeral"`
+	ClusterName               string            `json:"clusterName"`
+	ServiceName               string            `json:"serviceName"`
+	Metadata                  map[string]string `json:"metadata"`
+	InstanceHeartBeatInterval int               `json:"instanceHeartBeatInterval"`
+	IpDeleteTimeout           int               `json:"ipDeleteTimeout"`
+	InstanceHeartBeatTimeOut  int               `json:"instanceHeartBeatTimeOut"`
 }
 
 type Service struct {
-	Dom             string            `json:"dom"`
-	CacheMillis     uint64            `json:"cacheMillis"`
-	UseSpecifiedURL bool              `json:"useSpecifiedUrl"`
-	Hosts           []Instance        `json:"hosts"`
-	Checksum        string            `json:"checksum"`
-	LastRefTime     uint64            `json:"lastRefTime"`
-	Env             string            `json:"env"`
-	Clusters        string            `json:"clusters"`
-	Metadata        map[string]string `json:"metadata"`
-	Name            string            `json:"name"`
-	GroupName       string            `json:"groupName"`
+	CacheMillis              uint64     `json:"cacheMillis"`
+	Hosts                    []Instance `json:"hosts"`
+	Checksum                 string     `json:"checksum"`
+	LastRefTime              uint64     `json:"lastRefTime"`
+	Clusters                 string     `json:"clusters"`
+	Name                     string     `json:"name"`
+	GroupName                string     `json:"groupName"`
+	Valid                    bool       `json:"valid"`
+	AllIPs                   bool       `json:"allIPs"`
+	ReachProtectionThreshold bool       `json:"reachProtectionThreshold"`
 }
 
 type ServiceDetail struct {
@@ -83,18 +83,6 @@ type Cluster struct {
 
 type ClusterHealthChecker struct {
 	Type string `json:"type"`
-}
-
-type SubscribeService struct {
-	ClusterName string            `json:"clusterName"`
-	Enable      bool              `json:"enable"`
-	InstanceId  string            `json:"instanceId"`
-	Ip          string            `json:"ip"`
-	Metadata    map[string]string `json:"metadata"`
-	Port        uint64            `json:"port"`
-	ServiceName string            `json:"serviceName"`
-	Valid       bool              `json:"valid"`
-	Weight      float64           `json:"weight"`
 }
 
 type BeatInfo struct {

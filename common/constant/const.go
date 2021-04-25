@@ -16,6 +16,8 @@
 
 package constant
 
+import "time"
+
 const (
 	KEY_USERNAME                = "username"
 	KEY_PASSWORD                = "password"
@@ -84,4 +86,5 @@ const (
 	UN_REGISTER                 = 301
 	KEEP_ALIVE_TIME             = 5
 	DEFAULT_TIMEOUT_MILLS       = 3000
+	ALL_SYNC_INTERNAL           = 5 * time.Minute
 )
