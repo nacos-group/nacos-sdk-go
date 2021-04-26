@@ -428,7 +428,7 @@ func longPulling(taskId int) func() error {
 			}
 			for _, v := range initializationList {
 				v.isInitializing = false
-				cacheMap.Set(util.GetConfigCacheKey(v.dataId, v.group, clientConfig.NamespaceId), v)
+				cacheMap.Set(util.GetConfigCacheKey(v.dataId, v.group, v.tenant), v)
 			}
 			if len(strings.ToLower(strings.Trim(changed, " "))) == 0 {
 				logger.Info("[client.ListenConfig] no change")
