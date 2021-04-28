@@ -67,6 +67,7 @@ var clientConfigWithOptions = constant.NewClientConfig(
 
 var (
 	dataIdKey                         = goVersion + "dataId"
+	groupKey                          = goVersion + "group:env"
 	configNoChangeKey                 = goVersion + "ConfigNoChange"
 	multipleClientsKey                = goVersion + "MultipleClients"
 	multipleClientsMultipleConfigsKey = goVersion + "MultipleClientsMultipleConfig"
@@ -78,23 +79,23 @@ var (
 
 var configParamMapTest = map[string]string{
 	"dataId": dataIdKey,
-	"group":  "group",
+	"group":  groupKey,
 }
 
 var configParamTest = vo.ConfigParam{
 	DataId: dataIdKey,
-	Group:  "group",
+	Group:  groupKey,
 }
 
 var localConfigTest = vo.ConfigParam{
 	DataId:  dataIdKey,
-	Group:   "group",
+	Group:   groupKey,
 	Content: "content",
 }
 
 var localConfigMapTest = map[string]string{
 	"dataId":  dataIdKey,
-	"group":   "group",
+	"group":   groupKey,
 	"content": "content",
 }
 

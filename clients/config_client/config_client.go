@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -444,9 +445,10 @@ func longPulling(taskId int) func() error {
 
 //Execute the Listener callback func()
 func (client *ConfigClient) callListener(changed, tenant string) {
-	changedConfigs := strings.Split(changed, "%01")
+	changedDecoded, _ := url.QueryUnescape(changed)
+	changedConfigs := strings.Split(changedDecoded, "\u0001")
 	for _, config := range changedConfigs {
-		attrs := strings.Split(config, "%02")
+		attrs := strings.Split(config, "\u0002")
 		if len(attrs) >= 2 {
 			if value, ok := cacheMap.Get(util.GetConfigCacheKey(attrs[0], attrs[1], tenant)); ok {
 				cData := value.(cacheData)
