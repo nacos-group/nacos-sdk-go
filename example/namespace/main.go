@@ -34,6 +34,7 @@ func main() {
 		panic(err)
 	}
 
+	//查询所有命名空间
 	namespacesInfo, err := client.GetAllNamespacesInfo()
 	if err != nil {
 		return
@@ -43,5 +44,27 @@ func main() {
 		return
 	}
 	fmt.Println(string(jsonStr))
+
+	for _, ns := range namespacesInfo {
+		if ns.NamespaceShowName == "mynamespace" {
+			delSuccess, err := client.DeleteNamespace(vo.DeleteNamespaceParam{NamespaceId: ns.Namespace})
+			fmt.Printf("delete namespace: %s, %s %v\n", ns.Namespace, delSuccess, err)
+		}
+	}
+
+	hasNamespace, err := client.CreateNamespace(vo.CreateNamespaceParam{
+		CustomNamespaceId: "9d6afb07-b039-4b34-a941-1a65af7c6ecb",
+		NamespaceName:     "mynamespace",
+		NamespaceDesc:     "my namespace",
+	})
+	fmt.Printf("create namespace : %s %v\n", hasNamespace, err)
+
+	modifySuccess, err := client.ModifyNamespace(vo.ModifyNamespaceParam{
+		NamespaceId:   "9d6afb07-b039-4b34-a941-1a65af7c6ecb",
+		NamespaceName: "开发环境2",
+		NamespaceDesc: "modify my namespace",
+	})
+
+	fmt.Printf("modify namespace : %s %v\n", modifySuccess, err)
 
 }

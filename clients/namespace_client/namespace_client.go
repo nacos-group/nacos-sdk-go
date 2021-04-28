@@ -4,6 +4,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/model"
+	"github.com/nacos-group/nacos-sdk-go/vo"
 )
 
 type NamespaceClient struct {
@@ -44,4 +45,16 @@ func NewNamespaceClient(nc nacos_client.INacosClient) (NamespaceClient, error) {
 
 func (n NamespaceClient) GetAllNamespacesInfo() ([]model.NamespaceItem, error) {
 	return n.serviceProxy.GetAllNamespacesInfo()
+}
+
+func (n NamespaceClient) CreateNamespace(param vo.CreateNamespaceParam) (bool, error) {
+	return n.serviceProxy.CreateNamespace(param)
+}
+
+func (n NamespaceClient) ModifyNamespace(param vo.ModifyNamespaceParam) (bool, error) {
+	return n.serviceProxy.ModifyNamespace(param)
+}
+
+func (n NamespaceClient) DeleteNamespace(param vo.DeleteNamespaceParam) (bool, error) {
+	return n.serviceProxy.DeleteNamespace(param)
 }
