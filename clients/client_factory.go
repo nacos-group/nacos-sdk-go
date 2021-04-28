@@ -18,6 +18,7 @@ package clients
 
 import (
 	"errors"
+	"github.com/nacos-group/nacos-sdk-go/clients/namespace_client"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
@@ -49,6 +50,19 @@ func NewConfigClient(param vo.NacosClientParam) (iClient config_client.IConfigCl
 		return
 	}
 	iClient = &config
+	return
+}
+
+func NewNamespaceClient(param vo.NacosClientParam) (iClient namespace_client.INamespaceClient, err error) {
+	nacosClient, err := setConfig(param)
+	if err != nil {
+		return
+	}
+	namespace, err := namespace_client.NewNamespaceClient(nacosClient)
+	if err != nil {
+		return
+	}
+	iClient = &namespace
 	return
 }
 
