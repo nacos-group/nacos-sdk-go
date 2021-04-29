@@ -56,8 +56,8 @@ func WithIpAddr(ipAddr string) ServerOption {
 }
 
 //WithPort set port for server
-func WithPort(port string) ServerOption {
+func WithPort(port uint64) ServerOption {
 	return func(config *ServerConfig) {
-		config.IpAddr = port
+		config.Port = port
 	}
 }
