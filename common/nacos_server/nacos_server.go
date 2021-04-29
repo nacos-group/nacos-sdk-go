@@ -29,6 +29,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -50,6 +51,7 @@ type NacosServer struct {
 	lastSrvRefTime      int64
 	vipSrvRefInterMills int64
 	contextPath         string
+	currentIndex        int32
 }
 
 func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
@@ -67,6 +69,7 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 		endpoint:            endpoint,
 		vipSrvRefInterMills: 10000,
 		contextPath:         clientCfg.ContextPath,
+		currentIndex:        rand.Int31n((int32)(len(serverList))),
 	}
 	ns.initRefreshSrvIfNeed()
 	_, err := securityLogin.Login()
@@ -110,7 +113,7 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 	headers["Spas-AccessKey"] = []string{newHeaders["accessKey"]}
 	headers["Timestamp"] = []string{signHeaders["timeStamp"]}
 	headers["Spas-Signature"] = []string{signHeaders["Spas-Signature"]}
-	injectSecurityInfo(server, params)
+	server.InjectSecurityInfo(params)
 
 	var response *http.Response
 	response, err = server.httpAgent.Request(method, url, headers, timeoutMS, params)
@@ -124,7 +127,7 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 		return
 	}
 	result = string(bytes)
-	if response.StatusCode == 200 {
+	if response.StatusCode == constant.RESPONSE_CODE_SUCCESS {
 		return
 	} else {
 		err = nacos_error.NewNacosError(strconv.Itoa(response.StatusCode), string(bytes), nil)
@@ -152,7 +155,7 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 	headers["Request-Module"] = []string{"Naming"}
 	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=utf-8"}
 
-	injectSecurityInfo(server, params)
+	server.InjectSecurityInfo(params)
 
 	var response *http.Response
 	response, err = server.httpAgent.Request(method, url, headers, server.timeoutMs, params)
@@ -166,7 +169,7 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 		return
 	}
 	result = string(bytes)
-	if response.StatusCode == 200 {
+	if response.StatusCode == constant.RESPONSE_CODE_SUCCESS {
 		return
 	} else {
 		err = errors.New(fmt.Sprintf("request return error code %d", response.StatusCode))
@@ -180,7 +183,7 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 		return "", errors.New("server list is empty")
 	}
 
-	injectSecurityInfo(server, params)
+	server.InjectSecurityInfo(params)
 
 	//only one server,retry request when error
 	var err error
@@ -215,7 +218,7 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 		return "", errors.New("server list is empty")
 	}
 
-	injectSecurityInfo(server, params)
+	server.InjectSecurityInfo(params)
 
 	//only one server,retry request when error
 	if len(srvs) == 1 {
@@ -305,7 +308,7 @@ func (server *NacosServer) GetServerList() []constant.ServerConfig {
 	return server.serverList
 }
 
-func injectSecurityInfo(server *NacosServer, param map[string]string) {
+func (server *NacosServer) InjectSecurityInfo(param map[string]string) {
 	accessToken := server.securityLogin.GetAccessToken()
 	if accessToken != "" {
 		param[constant.KEY_ACCESS_TOKEN] = accessToken
@@ -330,7 +333,7 @@ func getSignHeaders(params map[string]string, newHeaders map[string]string) map[
 
 	headers := map[string]string{}
 
-	timeStamp := strconv.FormatInt(time.Now().UnixNano()/1e6, 10)
+	timeStamp := strconv.FormatInt(util.CurrentMillis(), 10)
 	headers["timeStamp"] = timeStamp
 
 	signature := ""
@@ -353,4 +356,9 @@ func signWithhmacSHA1Encrypt(encryptText, encryptKey string) string {
 	mac.Write([]byte(encryptText))
 
 	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
+}
+
+func (server *NacosServer) GetNextServer() constant.ServerConfig {
+	index := atomic.AddInt32(&server.currentIndex, 1) % (int32)(len(server.GetServerList()))
+	return server.GetServerList()[index]
 }

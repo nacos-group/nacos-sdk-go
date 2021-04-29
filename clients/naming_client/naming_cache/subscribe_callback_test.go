@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package naming_client
+package naming_cache
 
 import (
 	"fmt"
@@ -31,7 +31,6 @@ import (
 
 func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
 	service := model.Service{
-		Dom:         "public@@Test",
 		Clusters:    strings.Join([]string{"default"}, ","),
 		CacheMillis: 10000,
 		Checksum:    "abcd",
@@ -39,7 +38,6 @@ func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
 	}
 	var hosts []model.Instance
 	host := model.Instance{
-		Valid:       true,
 		Enable:      true,
 		InstanceId:  "123",
 		Port:        8080,
@@ -56,15 +54,15 @@ func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
 		ServiceName: "Test",
 		Clusters:    []string{"default"},
 		GroupName:   "public",
-		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			fmt.Println(util.ToJsonString(ed.callbackFuncsMap))
+		SubscribeCallback: func(services []model.Instance, err error) {
+			fmt.Println(util.ToJsonString(ed.callbackFuncMap))
 		},
 	}
-	ed.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 	key := util.GetServiceCacheKey(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
-	for k, v := range ed.callbackFuncsMap.Items() {
+	for k, v := range ed.callbackFuncMap.Items() {
 		assert.Equal(t, key, k, "key should be equal!")
-		funcs := v.([]*func(services []model.SubscribeService, err error))
+		funcs := v.([]*func(services []model.Instance, err error))
 		assert.Equal(t, len(funcs), 1)
 		assert.Equal(t, funcs[0], &param.SubscribeCallback, "callback function must be equal!")
 
@@ -73,7 +71,6 @@ func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
 
 func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 	service := model.Service{
-		Dom:         "public@@Test",
 		Clusters:    strings.Join([]string{"default"}, ","),
 		CacheMillis: 10000,
 		Checksum:    "abcd",
@@ -81,7 +78,6 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 	}
 	var hosts []model.Instance
 	host := model.Instance{
-		Valid:       true,
 		Enable:      true,
 		InstanceId:  "123",
 		Port:        8080,
@@ -98,34 +94,34 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 		ServiceName: "Test",
 		Clusters:    []string{"default"},
 		GroupName:   "public",
-		SubscribeCallback: func(services []model.SubscribeService, err error) {
+		SubscribeCallback: func(services []model.Instance, err error) {
 			fmt.Printf("func1:%s \n", util.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
-	assert.Equal(t, len(ed.callbackFuncsMap.Items()), 1, "callback funcs map length should be 1")
+	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	assert.Equal(t, len(ed.callbackFuncMap.Items()), 1, "callback funcs map length should be 1")
 
 	param2 := vo.SubscribeParam{
 		ServiceName: "Test",
 		Clusters:    []string{"default"},
 		GroupName:   "public",
-		SubscribeCallback: func(services []model.SubscribeService, err error) {
+		SubscribeCallback: func(services []model.Instance, err error) {
 			fmt.Printf("func2:%s \n", util.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFuncs(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
-	assert.Equal(t, len(ed.callbackFuncsMap.Items()), 1, "callback funcs map length should be 2")
+	ed.AddCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	assert.Equal(t, len(ed.callbackFuncMap.Items()), 1, "callback funcs map length should be 2")
 
-	for k, v := range ed.callbackFuncsMap.Items() {
-		log.Printf("key:%s,%d", k, len(v.([]*func(services []model.SubscribeService, err error))))
+	for k, v := range ed.callbackFuncMap.Items() {
+		log.Printf("key:%s,%d", k, len(v.([]*func(services []model.Instance, err error))))
 	}
 
-	ed.RemoveCallbackFuncs(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	ed.RemoveCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
 
 	key := util.GetServiceCacheKey(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
-	for k, v := range ed.callbackFuncsMap.Items() {
+	for k, v := range ed.callbackFuncMap.Items() {
 		assert.Equal(t, key, k, "key should be equal!")
-		funcs := v.([]*func(services []model.SubscribeService, err error))
+		funcs := v.([]*func(services []model.Instance, err error))
 		assert.Equal(t, len(funcs), 1)
 		assert.Equal(t, funcs[0], &param.SubscribeCallback, "callback function must be equal!")
 
@@ -142,7 +138,6 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 	}
 	var hosts []model.Instance
 	host := model.Instance{
-		Valid:       true,
 		Enable:      true,
 		InstanceId:  "123",
 		Port:        8080,
@@ -159,22 +154,22 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 		ServiceName: "Test",
 		Clusters:    []string{"default"},
 		GroupName:   "public",
-		SubscribeCallback: func(services []model.SubscribeService, err error) {
+		SubscribeCallback: func(services []model.Instance, err error) {
 			log.Printf("func1:%s \n", util.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 
 	param2 := vo.SubscribeParam{
 		ServiceName: "Test",
 		Clusters:    []string{"default"},
 		GroupName:   "public",
-		SubscribeCallback: func(services []model.SubscribeService, err error) {
+		SubscribeCallback: func(services []model.Instance, err error) {
 			log.Printf("func2:%s \n", util.ToJsonString(services))
 
 		},
 	}
-	ed.AddCallbackFuncs(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	ed.AddCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
 
 	ed.ServiceChanged(&service)
 }

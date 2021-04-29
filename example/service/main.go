@@ -223,7 +223,7 @@ func main() {
 	param := &vo.SubscribeParam{
 		ServiceName: "demo.go",
 		Clusters:    []string{"cluster-b"},
-		SubscribeCallback: func(services []model.SubscribeService, err error) {
+		SubscribeCallback: func(services []model.Instance, err error) {
 			fmt.Printf("callback111 return services:%s \n\n", util.ToJsonString(services))
 		},
 	}
@@ -231,7 +231,7 @@ func main() {
 	param2 := &vo.SubscribeParam{
 		ServiceName: "demo.go",
 		Clusters:    []string{"cluster-b"},
-		SubscribeCallback: func(services []model.SubscribeService, err error) {
+		SubscribeCallback: func(services []model.Instance, err error) {
 			fmt.Printf("callback222 return services:%s \n\n", util.ToJsonString(services))
 		},
 	}

@@ -18,14 +18,11 @@ package naming_client
 
 import (
 	"math"
-	"math/rand"
-	"os"
-	"sort"
 	"strings"
-	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
+	"github.com/nacos-group/nacos-sdk-go/clients/naming_client/naming_cache"
+	"github.com/nacos-group/nacos-sdk-go/clients/naming_client/naming_proxy"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/model"
@@ -36,18 +33,9 @@ import (
 
 type NamingClient struct {
 	nacos_client.INacosClient
-	hostReactor  HostReactor
-	serviceProxy NamingProxy
-	subCallback  SubscribeCallback
-	beatReactor  BeatReactor
-	indexMap     cache.ConcurrentMap
-	NamespaceId  string
-}
-
-type Chooser struct {
-	data   []model.Instance
-	totals []int
-	max    int
+	serviceProxy      naming_proxy.INamingProxy
+	NamespaceId       string
+	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
 func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
@@ -56,35 +44,43 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 	if err != nil {
 		return naming, err
 	}
-	naming.NamespaceId = clientConfig.NamespaceId
+
 	serverConfig, err := nc.GetServerConfig()
 	if err != nil {
 		return naming, err
 	}
+
 	httpAgent, err := nc.GetHttpAgent()
 	if err != nil {
 		return naming, err
 	}
-	err = logger.InitLogger(logger.Config{
+
+	if initLogger(clientConfig) != nil {
+		return naming, err
+	}
+
+	naming.NamespaceId = clientConfig.NamespaceId
+
+	naming.serviceInfoHolder = naming_cache.NewServiceInfoHolder(naming.NamespaceId, clientConfig.CacheDir,
+		clientConfig.UpdateCacheWhenEmpty, clientConfig.NotLoadCacheAtStart)
+
+	naming.serviceProxy, err = naming_proxy.NewNamingProxyDelegate(clientConfig, serverConfig, httpAgent, naming.serviceInfoHolder)
+
+	go NewServiceInfoUpdater(naming.serviceInfoHolder, clientConfig.UpdateThreadNum, naming.serviceProxy).asyncUpdateService()
+	if err != nil {
+		return naming, err
+	}
+
+	return naming, nil
+}
+
+func initLogger(clientConfig constant.ClientConfig) error {
+	return logger.InitLogger(logger.Config{
 		Level:        clientConfig.LogLevel,
 		OutputPath:   clientConfig.LogDir,
 		RotationTime: clientConfig.RotateTime,
 		MaxAge:       clientConfig.MaxAge,
 	})
-	if err != nil {
-		return naming, err
-	}
-	naming.subCallback = NewSubscribeCallback()
-	naming.serviceProxy, err = NewNamingProxy(clientConfig, serverConfig, httpAgent)
-	if err != nil {
-		return naming, err
-	}
-	naming.hostReactor = NewHostReactor(naming.serviceProxy, clientConfig.CacheDir+string(os.PathSeparator)+"naming",
-		clientConfig.UpdateThreadNum, clientConfig.NotLoadCacheAtStart, naming.subCallback, clientConfig.UpdateCacheWhenEmpty)
-	naming.beatReactor = NewBeatReactor(naming.serviceProxy, clientConfig.BeatInterval)
-	naming.indexMap = cache.NewConcurrentMap()
-
-	return naming, nil
 }
 
 // 注册服务实例
@@ -108,24 +104,8 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 		Weight:      param.Weight,
 		Ephemeral:   param.Ephemeral,
 	}
-	beatInfo := model.BeatInfo{
-		Ip:          param.Ip,
-		Port:        param.Port,
-		Metadata:    param.Metadata,
-		ServiceName: util.GetGroupName(param.ServiceName, param.GroupName),
-		Cluster:     param.ClusterName,
-		Weight:      param.Weight,
-		Period:      util.GetDurationWithDefault(param.Metadata, constant.HEART_BEAT_INTERVAL, time.Second*5),
-		State:       model.StateRunning,
-	}
-	_, err := sc.serviceProxy.RegisterInstance(util.GetGroupName(param.ServiceName, param.GroupName), param.GroupName, instance)
-	if err != nil {
-		return false, err
-	}
-	if instance.Ephemeral {
-		sc.beatReactor.AddBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), beatInfo)
-	}
-	return true, nil
+
+	return sc.serviceProxy.RegisterInstance(param.ServiceName, param.GroupName, instance)
 
 }
 
@@ -134,21 +114,26 @@ func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bo
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	sc.beatReactor.RemoveBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port)
-
-	_, err := sc.serviceProxy.DeregisterInstance(util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port, param.Cluster, param.Ephemeral)
-	if err != nil {
-		return false, err
+	instance := model.Instance{
+		Ip:          param.Ip,
+		Port:        param.Port,
+		ClusterName: param.Cluster,
+		Ephemeral:   param.Ephemeral,
 	}
-	return true, nil
+	return sc.serviceProxy.DeregisterInstance(param.ServiceName, param.GroupName, instance)
 }
 
 // 获取服务列表
-func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, error) {
+func (sc *NamingClient) GetService(param vo.GetServiceParam) (service model.Service, err error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	var ok bool
+	clusters := strings.Join(param.Clusters, ",")
+	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
+	if !ok {
+		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
+	}
 	return service, err
 }
 
@@ -163,15 +148,25 @@ func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (mod
 			param.NameSpace = sc.NamespaceId
 		}
 	}
-	services := sc.hostReactor.GetAllServiceInfo(param.NameSpace, param.GroupName, param.PageNo, param.PageSize)
-	return services, nil
+	services, err := sc.serviceProxy.GetServiceList(param.PageNo, param.PageSize, param.GroupName, &model.ExpressionSelector{})
+	return services, err
 }
 
 func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	clusters := strings.Join(param.Clusters, ",")
+	var (
+		service model.Service
+		ok      bool
+		err     error
+	)
+
+	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
+	if !ok {
+		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
+	}
 	if err != nil || service.Hosts == nil || len(service.Hosts) == 0 {
 		return []model.Instance{}, err
 	}
@@ -182,9 +177,18 @@ func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
-	if err != nil {
-		return nil, err
+	var (
+		service model.Service
+		ok      bool
+		err     error
+	)
+	clusters := strings.Join(param.Clusters, ",")
+	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
+	if !ok {
+		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return sc.selectInstances(service, param.HealthyOnly)
 }
@@ -207,10 +211,20 @@ func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanc
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
-	if err != nil {
-		return nil, err
+	var (
+		service model.Service
+		ok      bool
+		err     error
+	)
+	clusters := strings.Join(param.Clusters, ",")
+	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
+	if !ok {
+		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	return sc.selectOneHealthyInstances(service)
 }
 
@@ -234,58 +248,8 @@ func (sc *NamingClient) selectOneHealthyInstances(service model.Service) (*model
 		return nil, errors.New("healthy instance list is empty!")
 	}
 
-	chooser := newChooser(result)
-	instance := chooser.pick()
+	instance := newChooser(result).pick()
 	return &instance, nil
-}
-
-func random(instances []model.Instance, mw int) []model.Instance {
-	if len(instances) <= 1 || mw <= 1 {
-		return instances
-	}
-	//实例交叉插入列表，避免列表中是连续的实例
-	var result = make([]model.Instance, 0)
-	for i := 1; i <= mw; i++ {
-		for _, host := range instances {
-			if int(math.Ceil(host.Weight)) >= i {
-				result = append(result, host)
-			}
-		}
-	}
-	return result
-}
-
-type instance []model.Instance
-
-func (a instance) Len() int {
-	return len(a)
-}
-
-func (a instance) Swap(i, j int) {
-	a[i], a[j] = a[j], a[i]
-}
-
-func (a instance) Less(i, j int) bool {
-	return a[i].Weight < a[j].Weight
-}
-
-// NewChooser initializes a new Chooser for picking from the provided Choices.
-func newChooser(instances []model.Instance) Chooser {
-	sort.Sort(instance(instances))
-	totals := make([]int, len(instances))
-	runningTotal := 0
-	for i, c := range instances {
-		runningTotal += int(c.Weight)
-		totals[i] = runningTotal
-	}
-	return Chooser{data: instances, totals: totals, max: runningTotal}
-}
-
-func (chs Chooser) pick() model.Instance {
-	rand.Seed(time.Now().Unix())
-	r := rand.Intn(chs.max) + 1
-	i := sort.SearchInts(chs.totals, r)
-	return chs.data[i]
 }
 
 // 服务监听
@@ -293,25 +257,20 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	serviceParam := vo.GetServiceParam{
-		ServiceName: param.ServiceName,
-		GroupName:   param.GroupName,
-		Clusters:    param.Clusters,
-	}
-
-	sc.subCallback.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
-	svc, err := sc.GetService(serviceParam)
-	if err != nil {
-		return err
-	}
-	if !sc.hostReactor.serviceProxy.clientConfig.NotLoadCacheAtStart {
-		sc.subCallback.ServiceChanged(&svc)
-	}
+	clusters := strings.Join(param.Clusters, ",")
+	sc.serviceInfoHolder.RegisterCallback(util.GetGroupName(param.ServiceName, param.GroupName), clusters, &param.SubscribeCallback)
+	sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
 	return nil
 }
 
 //取消服务监听
 func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
-	sc.subCallback.RemoveCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	clusters := strings.Join(param.Clusters, ",")
+	serviceFullName := util.GetGroupName(param.ServiceName, param.GroupName)
+	sc.serviceInfoHolder.DeregisterCallback(serviceFullName, clusters, &param.SubscribeCallback)
+	if sc.serviceInfoHolder.IsSubscribed(serviceFullName, clusters) {
+		sc.serviceProxy.Unsubscribe(param.ServiceName, param.GroupName, clusters)
+	}
+
 	return nil
 }

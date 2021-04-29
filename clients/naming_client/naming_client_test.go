@@ -355,11 +355,9 @@ var serviceJsonTest = `{
 		}`
 
 var serviceTest = model.Service(model.Service{Name: "DEFAULT_GROUP@@DEMO",
-	CacheMillis: 1000, UseSpecifiedURL: false,
+	CacheMillis: 1000,
 	Hosts: []model.Instance{
 		{
-			Valid:       true,
-			Marked:      false,
 			InstanceId:  "10.10.10.10-8888-a-DEMO",
 			Port:        0x22b8,
 			Ip:          "10.10.10.10",
@@ -370,8 +368,6 @@ var serviceTest = model.Service(model.Service{Name: "DEFAULT_GROUP@@DEMO",
 			Enable:      true,
 		},
 		{
-			Valid:       true,
-			Marked:      false,
 			InstanceId:  "10.10.10.11-8888-a-DEMO",
 			Port:        0x22b8,
 			Ip:          "10.10.10.11",
@@ -383,8 +379,7 @@ var serviceTest = model.Service(model.Service{Name: "DEFAULT_GROUP@@DEMO",
 		},
 	},
 	Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-	LastRefTime: 1528787794594, Env: "", Clusters: "a",
-	Metadata: map[string]string(nil)})
+	LastRefTime: 1528787794594, Clusters: "a"})
 
 //func TestNamingProxy_GetService_WithoutGroupName(t *testing.T) {
 //	ctrl := gomock.NewController(t)
@@ -444,13 +439,10 @@ var serviceTest = model.Service(model.Service{Name: "DEFAULT_GROUP@@DEMO",
 
 func TestNamingClient_SelectOneHealthyInstance_SameWeight(t *testing.T) {
 	services := model.Service(model.Service{
-		Name:            "DEFAULT_GROUP@@DEMO",
-		CacheMillis:     1000,
-		UseSpecifiedURL: false,
+		Name:        "DEFAULT_GROUP@@DEMO",
+		CacheMillis: 1000,
 		Hosts: []model.Instance{
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.10-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.10",
@@ -462,8 +454,6 @@ func TestNamingClient_SelectOneHealthyInstance_SameWeight(t *testing.T) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.11-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.11",
@@ -475,8 +465,6 @@ func TestNamingClient_SelectOneHealthyInstance_SameWeight(t *testing.T) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.12-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.12",
@@ -488,8 +476,6 @@ func TestNamingClient_SelectOneHealthyInstance_SameWeight(t *testing.T) {
 				Healthy:     false,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.13-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.13",
@@ -501,8 +487,6 @@ func TestNamingClient_SelectOneHealthyInstance_SameWeight(t *testing.T) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.14-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.14",
@@ -515,8 +499,7 @@ func TestNamingClient_SelectOneHealthyInstance_SameWeight(t *testing.T) {
 			},
 		},
 		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime: 1528787794594, Env: "", Clusters: "a",
-		Metadata: map[string]string(nil)})
+		LastRefTime: 1528787794594, Clusters: "a"})
 	ctrl := gomock.NewController(t)
 	defer func() {
 		ctrl.Finish()
@@ -541,13 +524,11 @@ func TestNamingClient_SelectOneHealthyInstance_SameWeight(t *testing.T) {
 
 func TestNamingClient_SelectOneHealthyInstance_Empty(t *testing.T) {
 	services := model.Service(model.Service{
-		Name:            "DEFAULT_GROUP@@DEMO",
-		CacheMillis:     1000,
-		UseSpecifiedURL: false,
-		Hosts:           []model.Instance{},
-		Checksum:        "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime:     1528787794594, Env: "", Clusters: "a",
-		Metadata: map[string]string(nil)})
+		Name:        "DEFAULT_GROUP@@DEMO",
+		CacheMillis: 1000,
+		Hosts:       []model.Instance{},
+		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
+		LastRefTime: 1528787794594, Clusters: "a"})
 	ctrl := gomock.NewController(t)
 	defer func() {
 		ctrl.Finish()
@@ -567,13 +548,10 @@ func TestNamingClient_SelectOneHealthyInstance_Empty(t *testing.T) {
 
 func TestNamingClient_SelectInstances_Healthy(t *testing.T) {
 	services := model.Service(model.Service{
-		Name:            "DEFAULT_GROUP@@DEMO",
-		CacheMillis:     1000,
-		UseSpecifiedURL: false,
+		Name:        "DEFAULT_GROUP@@DEMO",
+		CacheMillis: 1000,
 		Hosts: []model.Instance{
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.10-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.10",
@@ -585,8 +563,6 @@ func TestNamingClient_SelectInstances_Healthy(t *testing.T) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.11-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.11",
@@ -598,8 +574,6 @@ func TestNamingClient_SelectInstances_Healthy(t *testing.T) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.12-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.12",
@@ -611,8 +585,6 @@ func TestNamingClient_SelectInstances_Healthy(t *testing.T) {
 				Healthy:     false,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.13-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.13",
@@ -624,8 +596,6 @@ func TestNamingClient_SelectInstances_Healthy(t *testing.T) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.14-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.14",
@@ -638,8 +608,7 @@ func TestNamingClient_SelectInstances_Healthy(t *testing.T) {
 			},
 		},
 		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime: 1528787794594, Env: "", Clusters: "a",
-		Metadata: map[string]string(nil)})
+		LastRefTime: 1528787794594, Clusters: "a"})
 	ctrl := gomock.NewController(t)
 	defer func() {
 		ctrl.Finish()
@@ -659,13 +628,10 @@ func TestNamingClient_SelectInstances_Healthy(t *testing.T) {
 
 func TestNamingClient_SelectInstances_Unhealthy(t *testing.T) {
 	services := model.Service(model.Service{
-		Name:            "DEFAULT_GROUP@@DEMO",
-		CacheMillis:     1000,
-		UseSpecifiedURL: false,
+		Name:        "DEFAULT_GROUP@@DEMO",
+		CacheMillis: 1000,
 		Hosts: []model.Instance{
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.10-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.10",
@@ -677,8 +643,6 @@ func TestNamingClient_SelectInstances_Unhealthy(t *testing.T) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.11-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.11",
@@ -690,8 +654,6 @@ func TestNamingClient_SelectInstances_Unhealthy(t *testing.T) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.12-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.12",
@@ -703,8 +665,6 @@ func TestNamingClient_SelectInstances_Unhealthy(t *testing.T) {
 				Healthy:     false,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.13-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.13",
@@ -716,8 +676,6 @@ func TestNamingClient_SelectInstances_Unhealthy(t *testing.T) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.14-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.14",
@@ -730,8 +688,7 @@ func TestNamingClient_SelectInstances_Unhealthy(t *testing.T) {
 			},
 		},
 		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime: 1528787794594, Env: "", Clusters: "a",
-		Metadata: map[string]string(nil)})
+		LastRefTime: 1528787794594, Clusters: "a"})
 	ctrl := gomock.NewController(t)
 	defer func() {
 		ctrl.Finish()
@@ -751,13 +708,11 @@ func TestNamingClient_SelectInstances_Unhealthy(t *testing.T) {
 
 func TestNamingClient_SelectInstances_Empty(t *testing.T) {
 	services := model.Service(model.Service{
-		Name:            "DEFAULT_GROUP@@DEMO",
-		CacheMillis:     1000,
-		UseSpecifiedURL: false,
-		Hosts:           []model.Instance{},
-		Checksum:        "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime:     1528787794594, Env: "", Clusters: "a",
-		Metadata: map[string]string(nil)})
+		Name:        "DEFAULT_GROUP@@DEMO",
+		CacheMillis: 1000,
+		Hosts:       []model.Instance{},
+		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
+		LastRefTime: 1528787794594, Clusters: "a"})
 	ctrl := gomock.NewController(t)
 	defer func() {
 		ctrl.Finish()
@@ -820,13 +775,10 @@ func TestNamingClient_selectOneHealthyInstanceResult(t *testing.T) {
 
 func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
 	services := model.Service(model.Service{
-		Name:            "DEFAULT_GROUP@@DEMO",
-		CacheMillis:     1000,
-		UseSpecifiedURL: false,
+		Name:        "DEFAULT_GROUP@@DEMO",
+		CacheMillis: 1000,
 		Hosts: []model.Instance{
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.10-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.10",
@@ -838,8 +790,6 @@ func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.11-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.11",
@@ -851,8 +801,6 @@ func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.12-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.12",
@@ -864,8 +812,6 @@ func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
 				Healthy:     false,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.13-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.13",
@@ -877,8 +823,6 @@ func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.14-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.14",
@@ -891,8 +835,7 @@ func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
 			},
 		},
 		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime: 1528787794594, Env: "", Clusters: "a",
-		Metadata: map[string]string(nil)})
+		LastRefTime: 1528787794594, Clusters: "a"})
 	nc := nacos_client.NacosClient{}
 	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
 	nc.SetClientConfig(clientConfigTest)
@@ -904,96 +847,12 @@ func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
 
 }
 
-func BenchmarkNamingClient_Random(b *testing.B) {
-	services := model.Service(model.Service{
-		Name:            "DEFAULT_GROUP@@DEMO",
-		CacheMillis:     1000,
-		UseSpecifiedURL: false,
-		Hosts: []model.Instance{
-			{
-				Valid:       true,
-				Marked:      false,
-				InstanceId:  "10.10.10.10-80-a-DEMO",
-				Port:        80,
-				Ip:          "10.10.10.10",
-				Weight:      10,
-				Metadata:    map[string]string{},
-				ClusterName: "a",
-				ServiceName: "DEMO1",
-				Enable:      true,
-				Healthy:     true,
-			},
-			{
-				Valid:       true,
-				Marked:      false,
-				InstanceId:  "10.10.10.11-80-a-DEMO",
-				Port:        80,
-				Ip:          "10.10.10.11",
-				Weight:      9,
-				Metadata:    map[string]string{},
-				ClusterName: "a",
-				ServiceName: "DEMO",
-				Enable:      true,
-				Healthy:     true,
-			},
-			{
-				Valid:       true,
-				Marked:      false,
-				InstanceId:  "10.10.10.12-80-a-DEMO",
-				Port:        80,
-				Ip:          "10.10.10.12",
-				Weight:      8,
-				Metadata:    map[string]string{},
-				ClusterName: "a",
-				ServiceName: "DEMO",
-				Enable:      true,
-				Healthy:     false,
-			},
-			{
-				Valid:       true,
-				Marked:      false,
-				InstanceId:  "10.10.10.13-80-a-DEMO",
-				Port:        80,
-				Ip:          "10.10.10.13",
-				Weight:      8,
-				Metadata:    map[string]string{},
-				ClusterName: "a",
-				ServiceName: "DEMO",
-				Enable:      false,
-				Healthy:     true,
-			},
-			{
-				Valid:       true,
-				Marked:      false,
-				InstanceId:  "10.10.10.14-80-a-DEMO",
-				Port:        80,
-				Ip:          "10.10.10.14",
-				Weight:      7,
-				Metadata:    map[string]string{},
-				ClusterName: "a",
-				ServiceName: "DEMO",
-				Enable:      true,
-				Healthy:     true,
-			},
-		},
-		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime: 1528787794594, Env: "", Clusters: "a",
-		Metadata: map[string]string(nil)})
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		random(services.Hosts, 10)
-	}
-}
-
 func BenchmarkNamingClient_ChooserPick(b *testing.B) {
 	services := model.Service(model.Service{
-		Name:            "DEFAULT_GROUP@@DEMO",
-		CacheMillis:     1000,
-		UseSpecifiedURL: false,
+		Name:        "DEFAULT_GROUP@@DEMO",
+		CacheMillis: 1000,
 		Hosts: []model.Instance{
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.10-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.10",
@@ -1005,8 +864,6 @@ func BenchmarkNamingClient_ChooserPick(b *testing.B) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.11-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.11",
@@ -1018,8 +875,6 @@ func BenchmarkNamingClient_ChooserPick(b *testing.B) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.12-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.12",
@@ -1031,8 +886,6 @@ func BenchmarkNamingClient_ChooserPick(b *testing.B) {
 				Healthy:     false,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.13-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.13",
@@ -1044,8 +897,6 @@ func BenchmarkNamingClient_ChooserPick(b *testing.B) {
 				Healthy:     true,
 			},
 			{
-				Valid:       true,
-				Marked:      false,
 				InstanceId:  "10.10.10.14-80-a-DEMO",
 				Port:        80,
 				Ip:          "10.10.10.14",
@@ -1058,8 +909,7 @@ func BenchmarkNamingClient_ChooserPick(b *testing.B) {
 			},
 		},
 		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime: 1528787794594, Env: "", Clusters: "a",
-		Metadata: map[string]string(nil)})
+		LastRefTime: 1528787794594, Clusters: "a"})
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		chooser := newChooser(services.Hosts)
