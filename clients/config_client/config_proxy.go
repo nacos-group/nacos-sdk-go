@@ -64,7 +64,7 @@ func (cp *ConfigProxy) GetConfigProxy(param vo.ConfigParam, tenant, accessKey, s
 	return result, err
 }
 
-func (cp *ConfigProxy) SearchConfigProxy(param vo.SearchConfigParm, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
+func (cp *ConfigProxy) SearchConfigProxy(param vo.SearchConfigParam, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
 	params := util.TransformObject2Param(param)
 	if len(tenant) > 0 {
 		params["tenant"] = tenant

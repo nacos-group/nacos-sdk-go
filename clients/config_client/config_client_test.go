@@ -171,7 +171,7 @@ func Test_SearchConfig(t *testing.T) {
 		DataId:  dataIdKey,
 		Group:   "groDEFAULT_GROUPup",
 		Content: "hello world!222222"})
-	configPage, err := client.SearchConfig(vo.SearchConfigParm{
+	configPage, err := client.SearchConfig(vo.SearchConfigParam{
 		Search:   "accurate",
 		DataId:   dataIdKey,
 		Group:    "groDEFAULT_GROUPup",
