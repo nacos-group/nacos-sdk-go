@@ -34,7 +34,6 @@ import (
 type NamingClient struct {
 	nacos_client.INacosClient
 	serviceProxy      naming_proxy.INamingProxy
-	NamespaceId       string
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
@@ -58,10 +57,10 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 	if initLogger(clientConfig) != nil {
 		return naming, err
 	}
-
-	naming.NamespaceId = clientConfig.NamespaceId
-
-	naming.serviceInfoHolder = naming_cache.NewServiceInfoHolder(naming.NamespaceId, clientConfig.CacheDir,
+	if clientConfig.NamespaceId == "" {
+		clientConfig.NamespaceId = constant.DEFAULT_NAMESPACE_ID
+	}
+	naming.serviceInfoHolder = naming_cache.NewServiceInfoHolder(clientConfig.NamespaceId, clientConfig.CacheDir,
 		clientConfig.UpdateCacheWhenEmpty, clientConfig.NotLoadCacheAtStart)
 
 	naming.serviceProxy, err = naming_proxy.NewNamingProxyDelegate(clientConfig, serverConfig, httpAgent, naming.serviceInfoHolder)
@@ -141,11 +140,12 @@ func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (mod
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
+	clientConfig, _ := sc.GetClientConfig()
 	if len(param.NameSpace) == 0 {
-		if len(sc.NamespaceId) == 0 {
+		if len(clientConfig.NamespaceId) == 0 {
 			param.NameSpace = constant.DEFAULT_NAMESPACE_ID
 		} else {
-			param.NameSpace = sc.NamespaceId
+			param.NameSpace = clientConfig.NamespaceId
 		}
 	}
 	services, err := sc.serviceProxy.GetServiceList(param.PageNo, param.PageSize, param.GroupName, &model.ExpressionSelector{})

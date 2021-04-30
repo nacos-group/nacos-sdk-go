@@ -77,7 +77,7 @@ type ServerInfo struct {
 }
 
 type RpcClient struct {
-	name                        string
+	Name                        string
 	labels                      map[string]string
 	currentConnection           IConnection
 	rpcClientStatus             RpcClientStatus
@@ -88,7 +88,6 @@ type RpcClient struct {
 	executeClient               IRpcClient
 	nacosServer                 *nacos_server.NacosServer
 	serverRequestHandlerMapping map[string]ServerRequestHandlerMapping
-	clientResponseMapping       map[string]func() rpc_response.IResponse
 	mux                         *sync.Mutex
 	clientAbilities             rpc_request.ClientAbilities
 	Tenant                      string
@@ -153,7 +152,6 @@ func (r *RpcClient) Start() {
 		return
 	}
 	r.registerServerRequestHandlers()
-	r.registerClientResponses()
 	go func() {
 		for {
 			event := <-r.eventChan
@@ -175,7 +173,7 @@ func (r *RpcClient) Start() {
 						}
 					}
 					if !serverExist {
-						logger.Infof("%s Recommend server is not in server list ,ignore recommend server %+v", r.name, rc.serverInfo)
+						logger.Infof("%s Recommend server is not in server list ,ignore recommend server %+v", r.Name, rc.serverInfo)
 						rc.serverInfo = ServerInfo{}
 					}
 				}
@@ -192,17 +190,17 @@ func (r *RpcClient) Start() {
 		startUpRetryTimes--
 		serverInfo := r.nextRpcServer()
 
-		logger.Infof("[RpcClient.Start] %+v Try to connect to server on start up, server: %+v", r.name, serverInfo)
+		logger.Infof("[RpcClient.Start] %+v Try to connect to server on start up, server: %+v", r.Name, serverInfo)
 
 		if connection, err := r.executeClient.connectToServer(serverInfo); err != nil {
 			logger.Warnf("[RpcClient.Start] %+v Fail to connect to server on start up, error message=%+v, "+
-				"start up retry times left=%+v", r.name, err.Error(), startUpRetryTimes)
+				"start up retry times left=%+v", r.Name, err.Error(), startUpRetryTimes)
 		} else {
 			currentConnection = connection
 		}
 	}
 	if currentConnection != nil {
-		logger.Infof("%s Success to connect to server %+v on start up,connectionId=%v", r.name,
+		logger.Infof("%s Success to connect to server %+v on start up,connectionId=%v", r.Name,
 			currentConnection.getServerInfo(), currentConnection.getConnectionId())
 		r.currentConnection = currentConnection
 		atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
@@ -224,44 +222,6 @@ func (r *RpcClient) registerServerRequestHandlers() {
 	r.RegisterServerRequestHandler(func() rpc_request.IRequest {
 		return &rpc_request.ClientDetectionRequest{InternalRequest: rpc_request.NewInternalRequest()}
 	}, &ClientDetectionRequestHandler{})
-}
-
-func (r *RpcClient) registerClientResponses() {
-	// register InstanceResponse.
-	r.RegisterClientResponse(func() rpc_response.IResponse {
-		return &rpc_response.InstanceResponse{Response: &rpc_response.Response{}}
-	})
-
-	// register QueryServiceResponse.
-	r.RegisterClientResponse(func() rpc_response.IResponse {
-		return &rpc_response.QueryServiceResponse{Response: &rpc_response.Response{}}
-	})
-
-	// register SubscribeServiceResponse.
-	r.RegisterClientResponse(func() rpc_response.IResponse {
-		return &rpc_response.SubscribeServiceResponse{Response: &rpc_response.Response{}}
-	})
-
-	// register ServiceListResponse.
-	r.RegisterClientResponse(func() rpc_response.IResponse {
-		return &rpc_response.ServiceListResponse{Response: &rpc_response.Response{}}
-	})
-
-	// register NotifySubscriberResponse.
-	r.RegisterClientResponse(func() rpc_response.IResponse {
-		return &rpc_response.NotifySubscriberResponse{Response: &rpc_response.Response{}}
-	})
-
-	// register HealthCheckResponse.
-	r.RegisterClientResponse(func() rpc_response.IResponse {
-		return &rpc_response.HealthCheckResponse{Response: &rpc_response.Response{}}
-	})
-
-	// register ErrorResponse.
-	r.RegisterClientResponse(func() rpc_response.IResponse {
-		return &rpc_response.ErrorResponse{Response: &rpc_response.Response{}}
-	})
-
 }
 
 func (r *RpcClient) signalNotify() {
@@ -290,24 +250,15 @@ func (r *RpcClient) RegisterServerRequestHandler(request func() rpc_request.IReq
 			"missing required parameters,request:%+v handler:%+v", request, handler)
 		return
 	}
-	logger.Infof("%s Register server push request:%s handler:%+v", r.name, requestType, handler)
+	logger.Infof("%s Register server push request:%s handler:%+v", r.Name, requestType, handler)
 	r.serverRequestHandlerMapping[requestType] = ServerRequestHandlerMapping{
 		serverRequest: request,
 		handler:       handler,
 	}
 }
 
-func (r *RpcClient) RegisterClientResponse(response func() rpc_response.IResponse) {
-	responseType := response().GetResponseType()
-	if responseType == "" {
-		logger.Errorf("%s Register client response error: responseType is nil", r.name)
-		return
-	}
-	r.clientResponseMapping[responseType] = response
-}
-
 func (r *RpcClient) RegisterConnectionListener(listener IConnectionEventListener) {
-	logger.Infof("%s Register connection listener [%+v] to current client", r.name, listener)
+	logger.Infof("%s Register connection listener [%+v] to current client", r.Name, listener)
 	r.connectionEventListeners = append(r.connectionEventListeners, listener)
 }
 
@@ -317,14 +268,14 @@ func (r *RpcClient) switchServerAsync(recommendServerInfo ServerInfo, onRequestF
 
 func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 	if onRequestFail && r.sendHealthCheck() {
-		logger.Infof("%s Server check success,currentServer is %+v", r.name, r.currentConnection.getServerInfo())
+		logger.Infof("%s Server check success,currentServer is %+v", r.Name, r.currentConnection.getServerInfo())
 		atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
 		return
 	}
 	serverInfoFlag := false
 	if (serverInfo == ServerInfo{}) {
 		serverInfoFlag = true
-		logger.Infof("%s try to re connect to a new server ,server is  not appointed,will choose a random server.", r.name)
+		logger.Infof("%s try to re connect to a new server ,server is  not appointed,will choose a random server.", r.Name)
 	}
 	switchSuccess := false
 	var reConnectTimes, retryTurns int
@@ -334,11 +285,11 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 		}
 		connectionNew, err := r.executeClient.connectToServer(serverInfo)
 		if connectionNew != nil && err == nil {
-			logger.Infof("%s success to connect a server %+v,connectionId=%s", r.name, serverInfo,
+			logger.Infof("%s success to connect a server %+v,connectionId=%s", r.Name, serverInfo,
 				connectionNew.getConnectionId())
 
 			if r.currentConnection != nil {
-				logger.Infof("%s Abandon prev connection ,server is %+v, connectionId is %s", r.name, serverInfo,
+				logger.Infof("%s Abandon prev connection ,server is %+v, connectionId is %s", r.Name, serverInfo,
 					r.currentConnection.getConnectionId())
 				r.currentConnection.setAbandon(true)
 				r.closeConnection()
@@ -353,7 +304,7 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 			r.closeConnection()
 		}
 		if reConnectTimes > 0 && reConnectTimes%len(r.nacosServer.GetServerList()) == 0 {
-			logger.Infof("%s fail to connect server,after trying %v times, last try server is %+v,error=%+v", r.name,
+			logger.Infof("%s fail to connect server,after trying %v times, last try server is %+v,error=%+v", r.Name,
 				reConnectTimes, serverInfo, err)
 			if retryTurns < 50 {
 				retryTurns++
@@ -365,7 +316,7 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 		}
 	}
 	if r.isShutdown() {
-		logger.Infof("%s Client is shutdown ,stop reconnect to server", r.name)
+		logger.Infof("%s Client is shutdown ,stop reconnect to server", r.Name)
 	}
 }
 
@@ -381,7 +332,7 @@ func (r *RpcClient) notifyConnectionEvent(event ConnectionEvent) {
 	if len(r.connectionEventListeners) == 0 {
 		return
 	}
-	logger.Infof("%s Notify %s event to listeners.", r.name, event.toString())
+	logger.Infof("%s Notify %s event to listeners.", r.Name, event.toString())
 	for _, v := range r.connectionEventListeners {
 		if event.isConnected() {
 			v.OnConnected()
@@ -405,7 +356,7 @@ func (r *RpcClient) healthCheck(timer *time.Timer) {
 		if r.currentConnection == nil {
 			return
 		}
-		logger.Infof("%s Server healthy check fail,currentConnection=%s", r.name, r.currentConnection.getConnectionId())
+		logger.Infof("%s Server healthy check fail,currentConnection=%s", r.Name, r.currentConnection.getConnectionId())
 		atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(UNHEALTHY))
 		reconnectContext = ReconnectContext{onRequestFail: false}
 	}
@@ -451,6 +402,10 @@ func (r *RpcClient) isShutdown() bool {
 //check is this client is running.
 func (r *RpcClient) IsRunning() bool {
 	return atomic.LoadInt32((*int32)(&r.rpcClientStatus)) == (int32)(RUNNING)
+}
+
+func (r *RpcClient) IsInitialized() bool {
+	return atomic.LoadInt32((*int32)(&r.rpcClientStatus)) == (int32)(INITIALIZED)
 }
 
 func (c *ConnectionEvent) toString() string {
@@ -506,7 +461,7 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 
 func waitReconnect(timeoutMills int64, retryTimes *int, request rpc_request.IRequest, err error) error {
 	logger.Errorf("Send request fail, request=%+v, retryTimes=%v,error=%+v", request, retryTimes, err)
-	time.Sleep(time.Duration(math.Min(100, float64(timeoutMills/3))))
+	time.Sleep(time.Duration(math.Min(100, float64(timeoutMills/3))) * time.Millisecond)
 	*retryTimes++
 	return err
 }

@@ -21,8 +21,12 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 
+	"github.com/nacos-group/nacos-sdk-go/common/remote/rpc"
+	"github.com/nacos-group/nacos-sdk-go/common/remote/rpc/rpc_request"
+	"github.com/nacos-group/nacos-sdk-go/common/remote/rpc/rpc_response"
+
+	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
@@ -37,31 +41,32 @@ type ConfigProxy struct {
 	clientConfig constant.ClientConfig
 }
 
-func NewConfigProxy(serverConfig []constant.ServerConfig, clientConfig constant.ClientConfig, httpAgent http_agent.IHttpAgent) (ConfigProxy, error) {
+func NewConfigProxy(serverConfig []constant.ServerConfig, clientConfig constant.ClientConfig, httpAgent http_agent.IHttpAgent) (*ConfigProxy, error) {
 	proxy := ConfigProxy{}
 	var err error
 	proxy.nacosServer, err = nacos_server.NewNacosServer(serverConfig, clientConfig, httpAgent, clientConfig.TimeoutMs, clientConfig.Endpoint)
 	proxy.clientConfig = clientConfig
-	return proxy, err
+	return &proxy, err
 
 }
 
-func (cp *ConfigProxy) GetServerList() []constant.ServerConfig {
-	return cp.nacosServer.GetServerList()
+func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_request.IRequest, timeoutMills uint64) (rpc_response.IResponse, error) {
+	cp.nacosServer.InjectSecurityInfo(request.GetHeaders())
+	cp.injectCommHeader(request.GetHeaders())
+	signHeaders := nacos_server.GetSignHeaders(request.GetHeaders(), cp.clientConfig.SecretKey)
+	request.PutAllHeaders(signHeaders)
+	//todo Spas-SecurityToken/Spas-AccessKey.
+	//todo Config Limiter
+	return rpcClient.Request(request, int64(timeoutMills))
 }
 
-func (cp *ConfigProxy) GetConfigProxy(param vo.ConfigParam, tenant, accessKey, secretKey string) (string, error) {
-	params := util.TransformObject2Param(param)
-	if len(tenant) > 0 {
-		params["tenant"] = tenant
-	}
-
-	var headers = map[string]string{}
-	headers["accessKey"] = accessKey
-	headers["secretKey"] = secretKey
-
-	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_PATH, params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
-	return result, err
+func (cp *ConfigProxy) injectCommHeader(param map[string]string) {
+	now := string(util.CurrentMillis())
+	param[constant.CLIENT_APPNAME_HEADER] = cp.clientConfig.AppName
+	param[constant.CLIENT_REQUEST_TS_HEADER] = now
+	param[constant.CLIENT_REQUEST_TOKEN_HEADER] = util.Md5(now + cp.clientConfig.AppKey)
+	param[constant.EX_CONFIG_INFO] = "true"
+	param[constant.CHARSET_KEY] = "utf-8"
 }
 
 func (cp *ConfigProxy) SearchConfigProxy(param vo.SearchConfigParm, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
@@ -89,98 +94,97 @@ func (cp *ConfigProxy) SearchConfigProxy(param vo.SearchConfigParm, tenant, acce
 	}
 	return &configPage, nil
 }
-func (cp *ConfigProxy) PublishConfigProxy(param vo.ConfigParam, tenant, accessKey, secretKey string) (bool, error) {
-	params := util.TransformObject2Param(param)
-	if len(tenant) > 0 {
-		params["tenant"] = tenant
+
+func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64, notify bool, client *ConfigClient) (*rpc_response.ConfigQueryResponse, error) {
+	if group == "" {
+		group = constant.DEFAULT_GROUP
+	}
+	configQueryRequest := rpc_request.NewConfigQueryRequest(group, dataId, tenant)
+	configQueryRequest.Headers["notify"] = strconv.FormatBool(notify)
+	iResponse, err := cp.requestProxy(cp.getRpcClient(client), configQueryRequest, timeout)
+	if err != nil {
+		return nil, err
+	}
+	response, ok := iResponse.(*rpc_response.ConfigQueryResponse)
+	if !ok {
+		return nil, errors.New("ConfigQueryRequest returns type error")
+	}
+	if response.IsSuccess() {
+		//todo LocalConfigInfoProcessor.saveSnapshot
+		cacheKey := util.GetConfigCacheKey(dataId, group, tenant)
+		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, response.Content)
+		//todo LocalConfigInfoProcessor.saveEncryptDataKeySnapshot
+		if response.ContentType == "" {
+			response.ContentType = "text"
+		}
+		return response, nil
 	}
 
-	var headers = map[string]string{}
-	headers["accessKey"] = accessKey
-	headers["secretKey"] = secretKey
-	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_PATH, params, headers, http.MethodPost, cp.clientConfig.TimeoutMs)
-	if err != nil {
-		return false, errors.New("[client.PublishConfig] publish config failed:" + err.Error())
+	if response.GetErrorCode() == 300 {
+		//todo LocalConfigInfoProcessor.saveSnapshot
+		//todo LocalConfigInfoProcessor.saveEncryptDataKeySnapshot
+		return response, nil
 	}
-	if strings.ToLower(strings.Trim(result, " ")) == "true" {
-		return true, nil
-	} else {
-		return false, errors.New("[client.PublishConfig] publish config failed:" + result)
+
+	if response.GetErrorCode() == 400 {
+		logger.Errorf(
+			"[config_rpc_client] [sub-server-error] get server config being modified concurrently, dataId=%s, group=%s, "+
+				"tenant=%s", dataId, group, tenant)
+		return nil, errors.New("data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant)
 	}
+
+	if response.GetErrorCode() > 0 {
+		logger.Errorf("[config_rpc_client] [sub-server-error]  dataId=%s, group=%s, tenant=%s, code=%v", dataId, group,
+			tenant, response)
+	}
+	return response, nil
 }
 
-func (cp *ConfigProxy) PublishAggProxy(param vo.ConfigParam, tenant, accessKey, secretKey string) (bool, error) {
-	params := util.TransformObject2Param(param)
-	if len(tenant) > 0 {
-		params["tenant"] = tenant
+func (cp *ConfigProxy) createRpcClient(taskId string, client *ConfigClient) *rpc.RpcClient {
+	labels := map[string]string{
+		constant.LABEL_SOURCE: constant.LABEL_SOURCE_SDK,
+		constant.LABEL_MODULE: constant.LABEL_MODULE_CONFIG,
+		"taskId":              taskId,
 	}
-	params["method"] = "addDatum"
-	var headers = map[string]string{}
-	headers["accessKey"] = accessKey
-	headers["secretKey"] = secretKey
-	_, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_AGG_PATH, params, headers, http.MethodPost, cp.clientConfig.TimeoutMs)
-	if err != nil {
-		return false, errors.New("[client.PublishAggProxy] publish agg failed:" + err.Error())
+
+	iRpcClient, _ := rpc.CreateClient("config-"+taskId+"-"+client.uid, rpc.GRPC, labels, cp.nacosServer)
+	rpcClient := iRpcClient.GetRpcClient()
+	if rpcClient.IsInitialized() {
+		rpcClient.RegisterServerRequestHandler(func() rpc_request.IRequest {
+			return &rpc_request.ConfigChangeNotifyRequest{ConfigRequest: rpc_request.NewConfigRequest()}
+		}, &ConfigChangeNotifyRequestHandler{client: client})
+		rpcClient.Tenant = cp.clientConfig.NamespaceId
+		rpcClient.Start()
 	}
-	return true, nil
+	return rpcClient
 }
 
-func (cp *ConfigProxy) DeleteAggProxy(param vo.ConfigParam, tenant, accessKey, secretKey string) (bool, error) {
-	params := util.TransformObject2Param(param)
-	if len(tenant) > 0 {
-		params["tenant"] = tenant
-	}
-	params["method"] = "deleteDatum"
-	var headers = map[string]string{}
-	headers["accessKey"] = accessKey
-	headers["secretKey"] = secretKey
-	_, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_AGG_PATH, params, headers, http.MethodPost, cp.clientConfig.TimeoutMs)
-	if err != nil {
-		return false, errors.New("[client.DeleteAggProxy] delete agg failed:" + err.Error())
-	}
-	return true, nil
+func (cp *ConfigProxy) getRpcClient(client *ConfigClient) *rpc.RpcClient {
+	return cp.createRpcClient("0", client)
 }
 
-func (cp *ConfigProxy) DeleteConfigProxy(param vo.ConfigParam, tenant, accessKey, secretKey string) (bool, error) {
-	params := util.TransformObject2Param(param)
-	if len(tenant) > 0 {
-		params["tenant"] = tenant
-	}
-	var headers = map[string]string{}
-	headers["accessKey"] = accessKey
-	headers["secretKey"] = secretKey
-	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_PATH, params, headers, http.MethodDelete, cp.clientConfig.TimeoutMs)
-	if err != nil {
-		return false, errors.New("[client.DeleteConfig] deleted config failed:" + err.Error())
-	}
-	if strings.ToLower(strings.Trim(result, " ")) == "true" {
-		return true, nil
-	} else {
-		return false, errors.New("[client.DeleteConfig] deleted config failed: " + string(result))
-	}
+type ConfigChangeNotifyRequestHandler struct {
+	client *ConfigClient
 }
 
-func (cp *ConfigProxy) ListenConfig(params map[string]string, isInitializing bool, tenant, accessKey, secretKey string) (string, error) {
-	//fixed at 30000ms，avoid frequent request on the server
-	var listenInterval uint64 = 30000
-	headers := map[string]string{
-		"Content-Type":         "application/x-www-form-urlencoded;charset=utf-8",
-		"Long-Pulling-Timeout": strconv.FormatUint(listenInterval, 10),
-	}
-	if isInitializing {
-		headers["Long-Pulling-Timeout-No-Hangup"] = "true"
-	}
+func (c *ConfigChangeNotifyRequestHandler) RequestReply(request rpc_request.IRequest, rpcClient *rpc.RpcClient) rpc_response.IResponse {
+	configChangeNotifyRequest, ok := request.(*rpc_request.ConfigChangeNotifyRequest)
+	if ok {
+		logger.Infof("%s [server-push] config changed. dataId=%s, group=%s,tenant=%s", rpcClient.Name,
+			configChangeNotifyRequest.DataId, configChangeNotifyRequest.Group, configChangeNotifyRequest.Tenant)
 
-	headers["accessKey"] = accessKey
-	headers["secretKey"] = secretKey
-
-	if len(tenant) > 0 {
-		params["tenant"] = tenant
+		cacheKey := util.GetConfigCacheKey(configChangeNotifyRequest.DataId, configChangeNotifyRequest.Group,
+			configChangeNotifyRequest.Tenant)
+		cache, ok := c.client.cacheMap.Get(cacheKey)
+		if !ok {
+			return nil
+		}
+		cacheData := cache.(*cacheData)
+		cacheData.isSyncWithServer = false
+		c.client.notifyListenConfig()
+		return &rpc_response.NotifySubscriberResponse{
+			Response: &rpc_response.Response{ResultCode: constant.RESPONSE_CODE_SUCCESS},
+		}
 	}
-	logger.Infof("[client.ListenConfig] request params:%+v header:%+v \n", params, headers)
-	// In order to prevent the server from handling the delay of the client's long task,
-	// increase the client's read timeout to avoid this problem.
-	timeout := listenInterval + listenInterval/10
-	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_LISTEN_PATH, params, headers, http.MethodPost, timeout)
-	return result, err
+	return nil
 }

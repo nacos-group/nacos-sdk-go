@@ -17,9 +17,16 @@
 package rpc_response
 
 import (
-	"github.com/nacos-group/nacos-sdk-go/model"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/util"
 )
+
+var ClientResponseMapping map[string]func() IResponse
+
+func init() {
+	ClientResponseMapping = make(map[string]func() IResponse)
+	registerClientResponses()
+}
 
 type IResponse interface {
 	GetResponseType() string
@@ -63,87 +70,68 @@ func (r *Response) GetMessage() string {
 	return r.Message
 }
 
-type ConnectResetResponse struct {
-	*Response
+func registerClientResponse(response func() IResponse) {
+	responseType := response().GetResponseType()
+	if responseType == "" {
+		logger.Errorf("Register client response error: responseType is nil")
+		return
+	}
+	ClientResponseMapping[responseType] = response
 }
 
-func (c *ConnectResetResponse) GetResponseType() string {
-	return "ConnectResetResponse"
-}
+func registerClientResponses() {
+	// register InstanceResponse.
+	registerClientResponse(func() IResponse {
+		return &InstanceResponse{Response: &Response{}}
+	})
 
-type ClientDetectionResponse struct {
-	*Response
-}
+	// register QueryServiceResponse.
+	registerClientResponse(func() IResponse {
+		return &QueryServiceResponse{Response: &Response{}}
+	})
 
-func (c *ClientDetectionResponse) GetResponseType() string {
-	return "ClientDetectionResponse"
-}
+	// register SubscribeServiceResponse.
+	registerClientResponse(func() IResponse {
+		return &SubscribeServiceResponse{Response: &Response{}}
+	})
 
-type ServerCheckResponse struct {
-	*Response
-	ConnectionId string `json:"connectionId"`
-}
+	// register ServiceListResponse.
+	registerClientResponse(func() IResponse {
+		return &ServiceListResponse{Response: &Response{}}
+	})
 
-func (c *ServerCheckResponse) GetResponseType() string {
-	return "ServerCheckResponse"
-}
+	// register NotifySubscriberResponse.
+	registerClientResponse(func() IResponse {
+		return &NotifySubscriberResponse{Response: &Response{}}
+	})
 
-type InstanceResponse struct {
-	*Response
-}
+	// register HealthCheckResponse.
+	registerClientResponse(func() IResponse {
+		return &HealthCheckResponse{Response: &Response{}}
+	})
 
-func (c *InstanceResponse) GetResponseType() string {
-	return "InstanceResponse"
-}
+	// register ErrorResponse.
+	registerClientResponse(func() IResponse {
+		return &ErrorResponse{Response: &Response{}}
+	})
 
-type QueryServiceResponse struct {
-	*Response
-	ServiceInfo model.Service `json:"serviceInfo"`
-}
+	//register ConfigChangeBatchListenResponse
+	registerClientResponse(func() IResponse {
+		return &ConfigChangeBatchListenResponse{Response: &Response{}}
+	})
 
-func (c *QueryServiceResponse) GetResponseType() string {
-	return "QueryServiceResponse"
-}
+	//register ConfigQueryResponse
+	registerClientResponse(func() IResponse {
+		return &ConfigQueryResponse{Response: &Response{}}
+	})
 
-type SubscribeServiceResponse struct {
-	*Response
-	ServiceInfo model.Service `json:"serviceInfo"`
-}
+	//register ConfigPublishResponse
+	registerClientResponse(func() IResponse {
+		return &ConfigPublishResponse{Response: &Response{}}
+	})
 
-func (c *SubscribeServiceResponse) GetResponseType() string {
-	return "SubscribeServiceResponse"
-}
-
-type ServiceListResponse struct {
-	*Response
-	Count        int      `json:"count"`
-	ServiceNames []string `json:"serviceNames"`
-}
-
-func (c *ServiceListResponse) GetResponseType() string {
-	return "ServiceListResponse"
-}
-
-type NotifySubscriberResponse struct {
-	*Response
-}
-
-func (c *NotifySubscriberResponse) GetResponseType() string {
-	return "NotifySubscriberResponse"
-}
-
-type HealthCheckResponse struct {
-	*Response
-}
-
-func (c *HealthCheckResponse) GetResponseType() string {
-	return "HealthCheckResponse"
-}
-
-type ErrorResponse struct {
-	*Response
-}
-
-func (c *ErrorResponse) GetResponseType() string {
-	return "ErrorResponse"
+	//register ConfigRemoveResponse
+	registerClientResponse(func() IResponse {
+		return &ConfigRemoveResponse{Response: &Response{}}
+	})
 }

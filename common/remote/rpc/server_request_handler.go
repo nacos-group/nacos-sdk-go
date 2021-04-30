@@ -33,13 +33,13 @@ import (
 type IServerRequestHandler interface {
 
 	//Handle request from server.
-	requestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse
+	RequestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse
 }
 
 type ConnectResetRequestHandler struct {
 }
 
-func (c *ConnectResetRequestHandler) requestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse {
+func (c *ConnectResetRequestHandler) RequestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse {
 	defer rpcClient.mux.Unlock()
 	connectResetRequest, ok := request.(*rpc_request.ConnectResetRequest)
 	if ok {
@@ -64,7 +64,7 @@ func (c *ConnectResetRequestHandler) requestReply(request rpc_request.IRequest, 
 type ClientDetectionRequestHandler struct {
 }
 
-func (c *ClientDetectionRequestHandler) requestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse {
+func (c *ClientDetectionRequestHandler) RequestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse {
 	_, ok := request.(*rpc_request.ClientDetectionRequest)
 	if ok {
 		return &rpc_response.ClientDetectionResponse{
@@ -78,7 +78,7 @@ type NamingPushRequestHandler struct {
 	ServiceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
-func (c *NamingPushRequestHandler) requestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse {
+func (c *NamingPushRequestHandler) RequestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse {
 	notifySubscriberRequest, ok := request.(*rpc_request.NotifySubscriberRequest)
 	if ok {
 		c.ServiceInfoHolder.ProcessService(&notifySubscriberRequest.ServiceInfo)
