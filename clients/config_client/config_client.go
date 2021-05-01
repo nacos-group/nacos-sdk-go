@@ -476,7 +476,7 @@ func (client *ConfigClient) buildBasePath(serverConfig constant.ServerConfig) (b
 	return
 }
 
-func (client *ConfigClient) SearchConfig(param vo.SearchConfigParm) (*model.ConfigPage, error) {
+func (client *ConfigClient) SearchConfig(param vo.SearchConfigParam) (*model.ConfigPage, error) {
 	return client.searchConfigInner(param)
 }
 
@@ -516,7 +516,7 @@ func (client *ConfigClient) RemoveAggr(param vo.ConfigParam) (published bool,
 	return client.configProxy.DeleteAggProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
 }
 
-func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParm) (*model.ConfigPage, error) {
+func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParam) (*model.ConfigPage, error) {
 	if param.Search != "accurate" && param.Search != "blur" {
 		return nil, errors.New("[client.searchConfigInner] param.search must be accurate or blur")
 	}
