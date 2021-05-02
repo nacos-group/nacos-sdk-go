@@ -103,6 +103,28 @@ func (us *PushReceiver) startServer() {
 }
 
 func (us *PushReceiver) handleClient(conn *net.UDPConn) {
+
+	if conn == nil {
+		time.Sleep(time.Second * 5)
+		for i := 0; i < 3; i++ {
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			port := r.Intn(1000) + 54951
+			us.port = port
+			conn1, ok := us.tryListen()
+
+			if ok {
+				conn = conn1
+				logger.Infof("udp server start, port: " + strconv.Itoa(port))
+				break
+			}
+
+			if !ok && i == 2 {
+				logger.Errorf("failed to start udp server")
+				return
+			}
+		}
+	}
+
 	data := make([]byte, 4024)
 	n, remoteAddr, err := conn.ReadFromUDP(data)
 	if err != nil {
