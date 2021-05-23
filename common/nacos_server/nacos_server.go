@@ -88,7 +88,7 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 		contextPath = constant.WEB_CONTEXT
 	}
 
-	signHeaders := getSignHeaders(params, newHeaders)
+	signHeaders := GetSignHeaders(params, newHeaders["secretKey"])
 
 	url := curServer + contextPath + api
 
@@ -322,7 +322,7 @@ func getAddress(cfg constant.ServerConfig) string {
 	return cfg.Scheme + "://" + cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
 }
 
-func getSignHeaders(params map[string]string, newHeaders map[string]string) map[string]string {
+func GetSignHeaders(params map[string]string, secretKey string) map[string]string {
 	resource := ""
 
 	if len(params["tenant"]) != 0 {
@@ -339,9 +339,9 @@ func getSignHeaders(params map[string]string, newHeaders map[string]string) map[
 	signature := ""
 
 	if resource == "" {
-		signature = signWithhmacSHA1Encrypt(timeStamp, newHeaders["secretKey"])
+		signature = signWithhmacSHA1Encrypt(timeStamp, secretKey)
 	} else {
-		signature = signWithhmacSHA1Encrypt(resource+"+"+timeStamp, newHeaders["secretKey"])
+		signature = signWithhmacSHA1Encrypt(resource+"+"+timeStamp, secretKey)
 	}
 
 	headers["Spas-Signature"] = signature

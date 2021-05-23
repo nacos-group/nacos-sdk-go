@@ -63,7 +63,7 @@ func (g *GrpcConnection) request(request rpc_request.IRequest, timeoutMills int6
 		return nil, err
 	}
 
-	responseFunc, ok := client.clientResponseMapping[responsePayload.Metadata.GetType()]
+	responseFunc, ok := rpc_response.ClientResponseMapping[responsePayload.Metadata.GetType()]
 
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("request:%s,unsupported response type:%s", request.GetRequestType(),

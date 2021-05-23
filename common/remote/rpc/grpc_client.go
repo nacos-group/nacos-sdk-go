@@ -44,7 +44,7 @@ type GrpcClient struct {
 func NewGrpcClient(clientName string, nacosServer *nacos_server.NacosServer) *GrpcClient {
 	rpcClient := &GrpcClient{
 		&RpcClient{
-			name:                        clientName,
+			Name:                        clientName,
 			labels:                      make(map[string]string, 8),
 			rpcClientStatus:             INITIALIZED,
 			eventChan:                   make(chan ConnectionEvent),
@@ -52,7 +52,6 @@ func NewGrpcClient(clientName string, nacosServer *nacos_server.NacosServer) *Gr
 			lastActiveTimeStamp:         time.Now(),
 			nacosServer:                 nacosServer,
 			serverRequestHandlerMapping: make(map[string]ServerRequestHandlerMapping, 8),
-			clientResponseMapping:       make(map[string]func() rpc_response.IResponse, 8),
 			mux:                         new(sync.Mutex),
 		},
 	}
@@ -132,6 +131,7 @@ func (c *GrpcClient) sendConnectionSetupRequest(grpcConn *GrpcConnection) error 
 	if err != nil {
 		logger.Warnf("Send ConnectionSetupRequest error:%+v", err)
 	}
+	time.Sleep(100 * time.Millisecond)
 	return err
 }
 
@@ -209,7 +209,7 @@ func (c *GrpcClient) handleServerRequest(p *nacos_grpc_service.Payload, grpcConn
 
 	serverRequest.PutAllHeaders(p.GetMetadata().Headers)
 
-	response := mapping.handler.requestReply(serverRequest, client)
+	response := mapping.handler.RequestReply(serverRequest, client)
 	if response == nil {
 		logger.Warnf("%s Fail to process server request, ackId->%s", grpcConn.getConnectionId(),
 			serverRequest.GetRequestId())
