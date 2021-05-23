@@ -51,6 +51,7 @@ type Chooser struct {
 }
 
 func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
+	rand.Seed(time.Now().UnixNano())
 	naming := NamingClient{}
 	clientConfig, err := nc.GetClientConfig()
 	if err != nil {
@@ -282,7 +283,6 @@ func newChooser(instances []model.Instance) Chooser {
 }
 
 func (chs Chooser) pick() model.Instance {
-	rand.Seed(time.Now().Unix())
 	r := rand.Intn(chs.max) + 1
 	i := sort.SearchInts(chs.totals, r)
 	return chs.data[i]
