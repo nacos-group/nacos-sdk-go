@@ -48,7 +48,7 @@ func NewConfigClient(param vo.NacosClientParam) (iClient config_client.IConfigCl
 	if err != nil {
 		return
 	}
-	iClient = &config
+	iClient = config
 	return
 }
 
