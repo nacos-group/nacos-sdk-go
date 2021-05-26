@@ -104,3 +104,11 @@ type ErrorResponse struct {
 func (c *ErrorResponse) GetResponseType() string {
 	return "ErrorResponse"
 }
+
+type MockResponse struct {
+	*Response
+}
+
+func (c *MockResponse) GetResponseType() string {
+	return "MockResponse"
+}

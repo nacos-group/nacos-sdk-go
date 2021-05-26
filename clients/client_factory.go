@@ -62,7 +62,7 @@ func NewNamingClient(param vo.NacosClientParam) (iClient naming_client.INamingCl
 	if err != nil {
 		return
 	}
-	iClient = &naming
+	iClient = naming
 	return
 }
 

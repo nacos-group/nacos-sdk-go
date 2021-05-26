@@ -17,17 +17,13 @@
 package naming_client
 
 import (
-	"fmt"
-	"net/http"
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/mock"
 	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
 )
@@ -38,7 +34,7 @@ var clientConfigTest = *constant.NewClientConfig(
 	constant.WithNotLoadCacheAtStart(true),
 )
 
-var serverConfigTest = *constant.NewServerConfig("console.nacos.io", 80, constant.WithContextPath("/nacos"))
+var serverConfigTest = *constant.NewServerConfig("127.0.0.1", 80, constant.WithContextPath("/nacos"))
 
 var headers = map[string][]string{
 	"Client-Version":  {constant.CLIENT_VERSION},
@@ -49,37 +45,46 @@ var headers = map[string][]string{
 	"Content-Type":    {"application/x-www-form-urlencoded"},
 }
 
-func Test_RegisterServiceInstance_withoutGroupName(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer func() {
-		ctrl.Finish()
-	}()
-	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-	mockIHttpAgent.EXPECT().Request(gomock.Eq("POST"),
-		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
-		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(10*1000)),
-		gomock.Eq(map[string]string{
-			"namespaceId": "",
-			"serviceName": "DEFAULT_GROUP@@DEMO",
-			"groupName":   "DEFAULT_GROUP",
-			"app":         "",
-			"clusterName": "",
-			"ip":          "10.0.0.10",
-			"port":        "80",
-			"weight":      "0",
-			"enable":      "false",
-			"healthy":     "false",
-			"metadata":    "{}",
-			"ephemeral":   "false",
-		})).Times(1).
-		Return(http_agent.FakeHttpResponse(200, `ok`), nil)
+type MockNamingProxy struct {
+}
+
+func (m *MockNamingProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
+	return true, nil
+}
+
+func (m *MockNamingProxy) DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
+	return true, nil
+}
+
+func (m *MockNamingProxy) GetServiceList(pageNo uint32, pageSize uint32, groupName string, selector *model.ExpressionSelector) (model.ServiceList, error) {
+	return model.ServiceList{Doms: []string{""}}, nil
+}
+
+func (m *MockNamingProxy) ServerHealthy() bool {
+	return true
+}
+
+func (m *MockNamingProxy) QueryInstancesOfService(serviceName, groupName, clusters string, udpPort int, healthyOnly bool) (*model.Service, error) {
+	return &model.Service{}, nil
+}
+
+func (m *MockNamingProxy) Subscribe(serviceName, groupName, clusters string) (model.Service, error) {
+	return model.Service{}, nil
+}
+
+func (m *MockNamingProxy) Unsubscribe(serviceName, groupName, clusters string) {}
+
+func NewTestNamingClient() *NamingClient {
 	nc := nacos_client.NacosClient{}
 	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
 	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(mockIHttpAgent)
+	nc.SetHttpAgent(&http_agent.HttpAgent{})
 	client, _ := NewNamingClient(&nc)
-	success, err := client.RegisterInstance(vo.RegisterInstanceParam{
+	client.serviceProxy = &MockNamingProxy{}
+	return client
+}
+func Test_RegisterServiceInstance_withoutGroupName(t *testing.T) {
+	success, err := NewTestNamingClient().RegisterInstance(vo.RegisterInstanceParam{
 		ServiceName: "DEMO",
 		Ip:          "10.0.0.10",
 		Port:        80,
@@ -90,39 +95,8 @@ func Test_RegisterServiceInstance_withoutGroupName(t *testing.T) {
 }
 
 func Test_RegisterServiceInstance_withGroupName(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer func() {
-		ctrl.Finish()
-	}()
-	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-
-	mockIHttpAgent.EXPECT().Request(gomock.Eq("POST"),
-		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
-		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(10*1000)),
-		gomock.Eq(map[string]string{
-			"namespaceId": "",
-			"serviceName": "test_group@@DEMO2",
-			"groupName":   "test_group",
-			"app":         "",
-			"clusterName": "",
-			"ip":          "10.0.0.10",
-			"port":        "80",
-			"weight":      "0",
-			"enable":      "false",
-			"healthy":     "false",
-			"metadata":    "{}",
-			"ephemeral":   "false",
-		})).Times(1).
-		Return(http_agent.FakeHttpResponse(200, `ok`), nil)
-
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(mockIHttpAgent)
-	client, _ := NewNamingClient(&nc)
-	success, err := client.RegisterInstance(vo.RegisterInstanceParam{
-		ServiceName: "DEMO2",
+	success, err := NewTestNamingClient().RegisterInstance(vo.RegisterInstanceParam{
+		ServiceName: "DEMO",
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
@@ -133,39 +107,8 @@ func Test_RegisterServiceInstance_withGroupName(t *testing.T) {
 }
 
 func Test_RegisterServiceInstance_withCluster(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer func() {
-		ctrl.Finish()
-	}()
-	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-
-	mockIHttpAgent.EXPECT().Request(gomock.Eq("POST"),
-		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
-		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(10*1000)),
-		gomock.Eq(map[string]string{
-			"namespaceId": "",
-			"serviceName": "test_group@@DEMO3",
-			"groupName":   "test_group",
-			"app":         "",
-			"clusterName": "test",
-			"ip":          "10.0.0.10",
-			"port":        "80",
-			"weight":      "0",
-			"enable":      "false",
-			"healthy":     "false",
-			"metadata":    "{}",
-			"ephemeral":   "false",
-		})).Times(1).
-		Return(http_agent.FakeHttpResponse(200, `ok`), nil)
-
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(mockIHttpAgent)
-	client, _ := NewNamingClient(&nc)
-	success, err := client.RegisterInstance(vo.RegisterInstanceParam{
-		ServiceName: "DEMO3",
+	success, err := NewTestNamingClient().RegisterInstance(vo.RegisterInstanceParam{
+		ServiceName: "DEMO",
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
@@ -175,149 +118,27 @@ func Test_RegisterServiceInstance_withCluster(t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, true, success)
 }
-
-func Test_RegisterServiceInstance_401(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer func() {
-		ctrl.Finish()
-	}()
-	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-
-	mockIHttpAgent.EXPECT().Request(gomock.Eq("POST"),
-		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
-		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(10*1000)),
-		gomock.Eq(map[string]string{
-			"namespaceId": "",
-			"serviceName": "test_group@@DEMO4",
-			"groupName":   "test_group",
-			"app":         "",
-			"clusterName": "",
-			"ip":          "10.0.0.10",
-			"port":        "80",
-			"weight":      "0",
-			"enable":      "false",
-			"healthy":     "false",
-			"metadata":    "{}",
-			"ephemeral":   "false",
-		})).Times(3).
-		Return(http_agent.FakeHttpResponse(401, `no security`), nil)
-
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(mockIHttpAgent)
-	client, _ := NewNamingClient(&nc)
-	result, err := client.RegisterInstance(vo.RegisterInstanceParam{
-		ServiceName: "DEMO4",
-		Ip:          "10.0.0.10",
-		Port:        80,
-		GroupName:   "test_group",
-		Ephemeral:   false,
-	})
-	assert.Equal(t, false, result)
-	assert.NotNil(t, err)
-}
-
 func TestNamingProxy_DeregisterService_WithoutGroupName(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer func() {
-		ctrl.Finish()
-	}()
-	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-
-	mockIHttpAgent.EXPECT().Request(gomock.Eq("DELETE"),
-		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
-		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(10*1000)),
-		gomock.Eq(map[string]string{
-			"namespaceId": "",
-			"serviceName": "DEFAULT_GROUP@@DEMO5",
-			"clusterName": "",
-			"ip":          "10.0.0.10",
-			"port":        "80",
-			"ephemeral":   "true",
-		})).Times(1).
-		Return(http_agent.FakeHttpResponse(200, `ok`), nil)
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(mockIHttpAgent)
-	client, _ := NewNamingClient(&nc)
-	client.DeregisterInstance(vo.DeregisterInstanceParam{
+	success, err := NewTestNamingClient().DeregisterInstance(vo.DeregisterInstanceParam{
 		ServiceName: "DEMO5",
 		Ip:          "10.0.0.10",
 		Port:        80,
 		Ephemeral:   true,
 	})
+	assert.Equal(t, nil, err)
+	assert.Equal(t, true, success)
 }
 
 func TestNamingProxy_DeregisterService_WithGroupName(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer func() {
-		ctrl.Finish()
-	}()
-	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-
-	mockIHttpAgent.EXPECT().Request(gomock.Eq("DELETE"),
-		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
-		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(10*1000)),
-		gomock.Eq(map[string]string{
-			"namespaceId": "",
-			"serviceName": "test_group@@DEMO6",
-			"clusterName": "",
-			"ip":          "10.0.0.10",
-			"port":        "80",
-			"ephemeral":   "true",
-		})).Times(1).
-		Return(http_agent.FakeHttpResponse(200, `ok`), nil)
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(mockIHttpAgent)
-	client, _ := NewNamingClient(&nc)
-	client.DeregisterInstance(vo.DeregisterInstanceParam{
+	success, err := NewTestNamingClient().DeregisterInstance(vo.DeregisterInstanceParam{
 		ServiceName: "DEMO6",
 		Ip:          "10.0.0.10",
 		Port:        80,
 		GroupName:   "test_group",
 		Ephemeral:   true,
 	})
-}
-
-func TestNamingProxy_DeregisterService_401(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer func() {
-		ctrl.Finish()
-	}()
-	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-
-	mockIHttpAgent.EXPECT().Request(gomock.Eq("DELETE"),
-		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
-		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(10*1000)),
-		gomock.Eq(map[string]string{
-			"namespaceId": "",
-			"serviceName": "test_group@@DEMO7",
-			"clusterName": "",
-			"ip":          "10.0.0.10",
-			"port":        "80",
-			"ephemeral":   "true",
-		})).Times(3).
-		Return(http_agent.FakeHttpResponse(401, `no security`), nil)
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(mockIHttpAgent)
-	client, _ := NewNamingClient(&nc)
-	client.DeregisterInstance(vo.DeregisterInstanceParam{
-		ServiceName: "DEMO7",
-		Ip:          "10.0.0.10",
-		Port:        80,
-		GroupName:   "test_group",
-		Ephemeral:   true,
-	})
+	assert.Equal(t, nil, err)
+	assert.Equal(t, true, success)
 }
 
 var serviceJsonTest = `{
@@ -381,64 +202,8 @@ var serviceTest = model.Service(model.Service{Name: "DEFAULT_GROUP@@DEMO",
 	Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
 	LastRefTime: 1528787794594, Clusters: "a"})
 
-//func TestNamingProxy_GetService_WithoutGroupName(t *testing.T) {
-//	ctrl := gomock.NewController(t)
-//	defer func() {
-//		ctrl.Finish()
-//	}()
-//	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-//
-//	mockIHttpAgent.EXPECT().Request(gomock.Eq("GET"),
-//		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance/list"),
-//		gomock.AssignableToTypeOf(http.Header{}),
-//		gomock.Eq(uint64(10*1000)),
-//		gomock.Any()).Times(2).
-//		Return(http_agent.FakeHttpResponse(200, serviceJsonTest), nil)
-//
-//	nc := nacos_client.NacosClient{}
-//	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-//	nc.SetClientConfig(clientConfigTest)
-//	nc.SetHttpAgent(mockIHttpAgent)
-//	client, _ := NewNamingClient(&nc)
-//	result, err := client.GetService(vo.GetServiceParam{
-//		ServiceName: "DEMO",
-//		Clusters:    []string{"a"},
-//	})
-//	assert.Nil(t, err)
-//	assert.Equal(t, serviceTest, result)
-//
-//}
-
-//func TestNamingClient_SelectAllInstancs(t *testing.T) {
-//	ctrl := gomock.NewController(t)
-//	defer func() {
-//		ctrl.Finish()
-//	}()
-//	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-//
-//	mockIHttpAgent.EXPECT().Request(gomock.Eq("GET"),
-//		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance/list"),
-//		gomock.AssignableToTypeOf(http.Header{}),
-//		gomock.Eq(uint64(10*1000)),
-//		gomock.Any()).Times(2).
-//		Return(http_agent.FakeHttpResponse(200, serviceJsonTest), nil)
-//
-//	nc := nacos_client.NacosClient{}
-//	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-//	nc.SetClientConfig(clientConfigTest)
-//	nc.SetHttpAgent(mockIHttpAgent)
-//	client, _ := NewNamingClient(&nc)
-//	instances, err := client.SelectAllInstances(vo.SelectAllInstancesParam{
-//		ServiceName: "DEMO",
-//		Clusters:    []string{"a"},
-//	})
-//	fmt.Println(utils.ToJsonString(instances))
-//	assert.Nil(t, err)
-//	assert.Equal(t, 2, len(instances))
-//}
-
 func TestNamingClient_SelectOneHealthyInstance_SameWeight(t *testing.T) {
-	services := model.Service(model.Service{
+	services := model.Service{
 		Name:        "DEFAULT_GROUP@@DEMO",
 		CacheMillis: 1000,
 		Hosts: []model.Instance{
@@ -499,55 +264,29 @@ func TestNamingClient_SelectOneHealthyInstance_SameWeight(t *testing.T) {
 			},
 		},
 		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime: 1528787794594, Clusters: "a"})
-	ctrl := gomock.NewController(t)
-	defer func() {
-		ctrl.Finish()
-	}()
-	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(mockIHttpAgent)
-	client, _ := NewNamingClient(&nc)
-	instance1, err := client.selectOneHealthyInstances(services)
-	fmt.Println(util.ToJsonString(instance1))
+		LastRefTime: 1528787794594, Clusters: "a"}
+	instance1, err := NewTestNamingClient().selectOneHealthyInstances(services)
 	assert.Nil(t, err)
 	assert.NotNil(t, instance1)
-	instance2, err := client.selectOneHealthyInstances(services)
-	fmt.Println(util.ToJsonString(instance2))
+	instance2, err := NewTestNamingClient().selectOneHealthyInstances(services)
 	assert.Nil(t, err)
 	assert.NotNil(t, instance2)
-	//assert.NotEqual(t, instance1, instance2)
 }
 
 func TestNamingClient_SelectOneHealthyInstance_Empty(t *testing.T) {
-	services := model.Service(model.Service{
+	services := model.Service{
 		Name:        "DEFAULT_GROUP@@DEMO",
 		CacheMillis: 1000,
 		Hosts:       []model.Instance{},
 		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime: 1528787794594, Clusters: "a"})
-	ctrl := gomock.NewController(t)
-	defer func() {
-		ctrl.Finish()
-	}()
-	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(mockIHttpAgent)
-	client, _ := NewNamingClient(&nc)
-	instance, err := client.selectOneHealthyInstances(services)
-	fmt.Println(util.ToJsonString(instance))
+		LastRefTime: 1528787794594, Clusters: "a"}
+	instance, err := NewTestNamingClient().selectOneHealthyInstances(services)
 	assert.NotNil(t, err)
 	assert.Nil(t, instance)
 }
 
 func TestNamingClient_SelectInstances_Healthy(t *testing.T) {
-	services := model.Service(model.Service{
+	services := model.Service{
 		Name:        "DEFAULT_GROUP@@DEMO",
 		CacheMillis: 1000,
 		Hosts: []model.Instance{
@@ -608,26 +347,14 @@ func TestNamingClient_SelectInstances_Healthy(t *testing.T) {
 			},
 		},
 		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime: 1528787794594, Clusters: "a"})
-	ctrl := gomock.NewController(t)
-	defer func() {
-		ctrl.Finish()
-	}()
-	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(mockIHttpAgent)
-	client, _ := NewNamingClient(&nc)
-	instances, err := client.selectInstances(services, true)
-	fmt.Println(util.ToJsonString(instances))
+		LastRefTime: 1528787794594, Clusters: "a"}
+	instances, err := NewTestNamingClient().selectInstances(services, true)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(instances))
 }
 
 func TestNamingClient_SelectInstances_Unhealthy(t *testing.T) {
-	services := model.Service(model.Service{
+	services := model.Service{
 		Name:        "DEFAULT_GROUP@@DEMO",
 		CacheMillis: 1000,
 		Hosts: []model.Instance{
@@ -688,93 +415,37 @@ func TestNamingClient_SelectInstances_Unhealthy(t *testing.T) {
 			},
 		},
 		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime: 1528787794594, Clusters: "a"})
-	ctrl := gomock.NewController(t)
-	defer func() {
-		ctrl.Finish()
-	}()
-	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(mockIHttpAgent)
-	client, _ := NewNamingClient(&nc)
-	instances, err := client.selectInstances(services, false)
-	fmt.Println(util.ToJsonString(instances))
+		LastRefTime: 1528787794594, Clusters: "a"}
+	instances, err := NewTestNamingClient().selectInstances(services, false)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(instances))
 }
 
 func TestNamingClient_SelectInstances_Empty(t *testing.T) {
-	services := model.Service(model.Service{
+	services := model.Service{
 		Name:        "DEFAULT_GROUP@@DEMO",
 		CacheMillis: 1000,
 		Hosts:       []model.Instance{},
 		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime: 1528787794594, Clusters: "a"})
-	ctrl := gomock.NewController(t)
-	defer func() {
-		ctrl.Finish()
-	}()
-	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
-
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(mockIHttpAgent)
-	client, _ := NewNamingClient(&nc)
-	instances, err := client.selectInstances(services, false)
-	fmt.Println(util.ToJsonString(instances))
+		LastRefTime: 1528787794594, Clusters: "a"}
+	instances, err := NewTestNamingClient().selectInstances(services, false)
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, len(instances))
 }
 
 func TestNamingClient_GetAllServicesInfo(t *testing.T) {
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(&http_agent.HttpAgent{})
-	client, _ := NewNamingClient(&nc)
-	reslut, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
+	result, err := NewTestNamingClient().GetAllServicesInfo(vo.GetAllServiceInfoParam{
 		GroupName: "DEFAULT_GROUP",
 		PageNo:    1,
 		PageSize:  20,
 	})
 
-	assert.NotNil(t, reslut.Doms)
+	assert.NotNil(t, result.Doms)
 	assert.Nil(t, err)
 }
 
-func TestNamingClient_selectOneHealthyInstanceResult(t *testing.T) {
-	services := model.Service(model.Service{
-		Name: "DEFAULT_GROUP@@DEMO",
-		Hosts: []model.Instance{
-			{
-				Ip:      "127.0.0.1",
-				Weight:  1,
-				Enable:  true,
-				Healthy: true,
-			},
-			{
-				Ip:      "127.0.0.2",
-				Weight:  9,
-				Enable:  true,
-				Healthy: true,
-			},
-		}})
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	client, _ := NewNamingClient(&nc)
-	for i := 0; i < 10; i++ {
-		i, _ := client.selectOneHealthyInstances(services)
-		fmt.Println(i.Ip)
-	}
-}
-
 func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
-	services := model.Service(model.Service{
+	services := model.Service{
 		Name:        "DEFAULT_GROUP@@DEMO",
 		CacheMillis: 1000,
 		Hosts: []model.Instance{
@@ -835,84 +506,11 @@ func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
 			},
 		},
 		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime: 1528787794594, Clusters: "a"})
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	client, _ := NewNamingClient(&nc)
+		LastRefTime: 1528787794594, Clusters: "a"}
+	client := NewTestNamingClient()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		client.selectOneHealthyInstances(services)
 	}
 
-}
-
-func BenchmarkNamingClient_ChooserPick(b *testing.B) {
-	services := model.Service(model.Service{
-		Name:        "DEFAULT_GROUP@@DEMO",
-		CacheMillis: 1000,
-		Hosts: []model.Instance{
-			{
-				InstanceId:  "10.10.10.10-80-a-DEMO",
-				Port:        80,
-				Ip:          "10.10.10.10",
-				Weight:      10,
-				Metadata:    map[string]string{},
-				ClusterName: "a",
-				ServiceName: "DEMO1",
-				Enable:      true,
-				Healthy:     true,
-			},
-			{
-				InstanceId:  "10.10.10.11-80-a-DEMO",
-				Port:        80,
-				Ip:          "10.10.10.11",
-				Weight:      9,
-				Metadata:    map[string]string{},
-				ClusterName: "a",
-				ServiceName: "DEMO",
-				Enable:      true,
-				Healthy:     true,
-			},
-			{
-				InstanceId:  "10.10.10.12-80-a-DEMO",
-				Port:        80,
-				Ip:          "10.10.10.12",
-				Weight:      8,
-				Metadata:    map[string]string{},
-				ClusterName: "a",
-				ServiceName: "DEMO",
-				Enable:      true,
-				Healthy:     false,
-			},
-			{
-				InstanceId:  "10.10.10.13-80-a-DEMO",
-				Port:        80,
-				Ip:          "10.10.10.13",
-				Weight:      7,
-				Metadata:    map[string]string{},
-				ClusterName: "a",
-				ServiceName: "DEMO",
-				Enable:      false,
-				Healthy:     true,
-			},
-			{
-				InstanceId:  "10.10.10.14-80-a-DEMO",
-				Port:        80,
-				Ip:          "10.10.10.14",
-				Weight:      6,
-				Metadata:    map[string]string{},
-				ClusterName: "a",
-				ServiceName: "DEMO",
-				Enable:      true,
-				Healthy:     true,
-			},
-		},
-		Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-		LastRefTime: 1528787794594, Clusters: "a"})
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		chooser := newChooser(services.Hosts)
-		chooser.pick()
-	}
 }
