@@ -110,7 +110,7 @@ var serverConfigsTest = []constant.ServerConfig{serverConfigTest}
 
 var httpAgentTest = mock.MockIHttpAgent{}
 
-func createConfigClientTest() ConfigClient {
+func createConfigClientTest() *ConfigClient {
 	nc := nacos_client.NacosClient{}
 	nc.SetServerConfig([]constant.ServerConfig{*serverConfigWithOptions})
 	nc.SetClientConfig(*clientConfigWithOptions)
@@ -119,16 +119,7 @@ func createConfigClientTest() ConfigClient {
 	return client
 }
 
-func createConfigClientTestWithTenant() ConfigClient {
-	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTestWithTenant)
-	nc.SetHttpAgent(&http_agent.HttpAgent{})
-	client, _ := NewConfigClient(&nc)
-	return client
-}
-
-func createConfigClientHttpTest(mockHttpAgent http_agent.IHttpAgent) ConfigClient {
+func createConfigClientHttpTest(mockHttpAgent http_agent.IHttpAgent) *ConfigClient {
 	nc := nacos_client.NacosClient{}
 	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
 	nc.SetClientConfig(clientConfigTest)
@@ -137,7 +128,7 @@ func createConfigClientHttpTest(mockHttpAgent http_agent.IHttpAgent) ConfigClien
 	return client
 }
 
-func createConfigClientHttpTestWithTenant(mockHttpAgent http_agent.IHttpAgent) ConfigClient {
+func createConfigClientHttpTestWithTenant(mockHttpAgent http_agent.IHttpAgent) *ConfigClient {
 	nc := nacos_client.NacosClient{}
 	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
 	nc.SetClientConfig(clientConfigTestWithTenant)
