@@ -48,7 +48,7 @@ type ConfigClient struct {
 	kmsClient       *kms.Client
 	localConfigs    []vo.ConfigParam
 	mutex           sync.Mutex
-	configProxy     *ConfigProxy
+	configProxy     IConfigProxy
 	configCacheDir  string
 	lastAllSyncTime time.Time
 	cacheMap        cache.ConcurrentMap
@@ -328,7 +328,7 @@ func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParm) (*model
 		param.PageSize = 10
 	}
 	clientConfig, _ := client.GetClientConfig()
-	configItems, err := client.configProxy.SearchConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
+	configItems, err := client.configProxy.searchConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
 	if err != nil {
 		logger.Errorf("search config from server error:%+v ", err)
 		if _, ok := err.(*nacos_error.NacosError); ok {

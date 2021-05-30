@@ -37,8 +37,8 @@ type NamingClient struct {
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
-func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
-	naming := NamingClient{}
+func NewNamingClient(nc nacos_client.INacosClient) (*NamingClient, error) {
+	naming := &NamingClient{INacosClient: nc}
 	clientConfig, err := nc.GetClientConfig()
 	if err != nil {
 		return naming, err

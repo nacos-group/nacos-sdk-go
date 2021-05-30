@@ -41,7 +41,7 @@ type ConfigProxy struct {
 	clientConfig constant.ClientConfig
 }
 
-func NewConfigProxy(serverConfig []constant.ServerConfig, clientConfig constant.ClientConfig, httpAgent http_agent.IHttpAgent) (*ConfigProxy, error) {
+func NewConfigProxy(serverConfig []constant.ServerConfig, clientConfig constant.ClientConfig, httpAgent http_agent.IHttpAgent) (IConfigProxy, error) {
 	proxy := ConfigProxy{}
 	var err error
 	proxy.nacosServer, err = nacos_server.NewNacosServer(serverConfig, clientConfig, httpAgent, clientConfig.TimeoutMs, clientConfig.Endpoint)
@@ -69,7 +69,7 @@ func (cp *ConfigProxy) injectCommHeader(param map[string]string) {
 	param[constant.CHARSET_KEY] = "utf-8"
 }
 
-func (cp *ConfigProxy) SearchConfigProxy(param vo.SearchConfigParm, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
+func (cp *ConfigProxy) searchConfigProxy(param vo.SearchConfigParm, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
 	params := util.TransformObject2Param(param)
 	if len(tenant) > 0 {
 		params["tenant"] = tenant
