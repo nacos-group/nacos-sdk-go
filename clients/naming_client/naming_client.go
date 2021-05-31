@@ -18,7 +18,9 @@ package naming_client
 
 import (
 	"math"
+	"math/rand"
 	"strings"
+	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client/naming_cache"
@@ -38,6 +40,7 @@ type NamingClient struct {
 }
 
 func NewNamingClient(nc nacos_client.INacosClient) (*NamingClient, error) {
+	rand.Seed(time.Now().UnixNano())
 	naming := &NamingClient{INacosClient: nc}
 	clientConfig, err := nc.GetClientConfig()
 	if err != nil {
