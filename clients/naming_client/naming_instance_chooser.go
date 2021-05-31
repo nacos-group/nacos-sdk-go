@@ -19,7 +19,6 @@ package naming_client
 import (
 	"math/rand"
 	"sort"
-	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/model"
 )
@@ -57,7 +56,6 @@ func newChooser(instances []model.Instance) Chooser {
 }
 
 func (chs Chooser) pick() model.Instance {
-	rand.Seed(time.Now().Unix())
 	r := rand.Intn(chs.max) + 1
 	i := sort.SearchInts(chs.totals, r)
 	return chs.data[i]
