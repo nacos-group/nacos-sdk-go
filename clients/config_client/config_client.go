@@ -172,8 +172,12 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 		return "", err
 	}
 	clientConfig, _ := client.GetClientConfig()
-	cacheKey := util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
-	content, err = client.configProxy.GetConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
+	tenant := clientConfig.NamespaceId
+	if param.Namespace != "" {
+		tenant = param.Namespace
+	}
+	cacheKey := util.GetConfigCacheKey(param.DataId, param.Group, tenant)
+	content, err = client.configProxy.GetConfigProxy(param, tenant, clientConfig.AccessKey, clientConfig.SecretKey)
 
 	if err != nil {
 		logger.Infof("get config from server error:%+v ", err)
@@ -211,7 +215,11 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 		err = errors.New("[client.PublishConfig] param.content can not be empty")
 	}
 	clientConfig, _ := client.GetClientConfig()
-	return client.configProxy.PublishConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
+	tenant := clientConfig.NamespaceId
+	if param.Namespace != "" {
+		tenant = param.Namespace
+	}
+	return client.configProxy.PublishConfigProxy(param, tenant, clientConfig.AccessKey, clientConfig.SecretKey)
 }
 
 func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, err error) {
@@ -223,7 +231,11 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, er
 	}
 
 	clientConfig, _ := client.GetClientConfig()
-	return client.configProxy.DeleteConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
+	tenant := clientConfig.NamespaceId
+	if param.Namespace != "" {
+		tenant = param.Namespace
+	}
+	return client.configProxy.DeleteConfigProxy(param, tenant, clientConfig.AccessKey, clientConfig.SecretKey)
 }
 
 //Cancel Listen Config
@@ -233,7 +245,11 @@ func (client *ConfigClient) CancelListenConfig(param vo.ConfigParam) (err error)
 		logger.Errorf("[checkConfigInfo.GetClientConfig] failed,err:%+v", err)
 		return
 	}
-	cacheMap.Remove(util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId))
+	tenant := clientConfig.NamespaceId
+	if param.Namespace != "" {
+		tenant = param.Namespace
+	}
+	cacheMap.Remove(util.GetConfigCacheKey(param.DataId, param.Group, tenant))
 	logger.Infof("Cancel listen config DataId:%s Group:%s", param.DataId, param.Group)
 	remakeId := int(math.Ceil(float64(len(cacheMap.Keys())) / float64(perTaskConfigSize)))
 	if remakeId < currentTaskCount {
@@ -274,8 +290,11 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 		err = errors.New("[checkConfigInfo.GetClientConfig] failed")
 		return err
 	}
-
-	key := util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
+	tenant := clientConfig.NamespaceId
+	if param.Namespace != "" {
+		tenant = param.Namespace
+	}
+	key := util.GetConfigCacheKey(param.DataId, param.Group, tenant)
 	var cData cacheData
 	if v, ok := cacheMap.Get(key); ok {
 		cData = v.(cacheData)
@@ -462,7 +481,11 @@ func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParm) (*model
 		param.PageSize = 10
 	}
 	clientConfig, _ := client.GetClientConfig()
-	configItems, err := client.configProxy.SearchConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
+	tenant := clientConfig.NamespaceId
+	if param.Namespace != "" {
+		tenant = param.Namespace
+	}
+	configItems, err := client.configProxy.SearchConfigProxy(param, tenant, clientConfig.AccessKey, clientConfig.SecretKey)
 	if err != nil {
 		logger.Errorf("search config from server error:%+v ", err)
 		if _, ok := err.(*nacos_error.NacosError); ok {
@@ -477,4 +500,66 @@ func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParm) (*model
 		return nil, err
 	}
 	return configItems, nil
+}
+
+func (client *ConfigClient) SearchConfigHistory(param vo.SearchConfigParm) (*model.ConfigPage, error) {
+	return client.searchConfigHistoryInner(param)
+}
+
+func (client *ConfigClient) searchConfigHistoryInner(param vo.SearchConfigParm) (*model.ConfigPage, error) {
+	if param.Search != "accurate" && param.Search != "blur" {
+		return nil, errors.New("[client.searchConfigHistoryInner] param.search must be accurate or blur")
+	}
+	if param.PageNo <= 0 {
+		param.PageNo = 1
+	}
+	if param.PageSize <= 0 {
+		param.PageSize = 10
+	}
+
+	clientConfig, _ := client.GetClientConfig()
+	tenant := clientConfig.NamespaceId
+
+	if param.Namespace != "" {
+		tenant = param.Namespace
+	}
+	configItems, err := client.configProxy.SearchConfigHistoryProxy(param, tenant, clientConfig.AccessKey, clientConfig.SecretKey)
+	if err != nil {
+		logger.Errorf("search config from server error:%+v ", err)
+		if _, ok := err.(*nacos_error.NacosError); ok {
+			nacosErr := err.(*nacos_error.NacosError)
+			if nacosErr.ErrorCode() == "404" {
+				return nil, errors.New("config not found")
+			}
+			if nacosErr.ErrorCode() == "403" {
+				return nil, errors.New("get config forbidden")
+			}
+		}
+		return nil, err
+	}
+	return configItems, nil
+}
+
+func (client *ConfigClient) GetConfigHistoryPre(id string) (content string, err error) {
+	if len(id) <= 0 {
+		err = errors.New("[client.GetConfigHistoryPre] param.dataId can not be empty")
+		return "", err
+	}
+	clientConfig, _ := client.GetClientConfig()
+	content, err = client.configProxy.GetConfigHistoryPre(id, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
+
+	if err != nil {
+		logger.Infof("get config from server error:%+v ", err)
+		if _, ok := err.(*nacos_error.NacosError); ok {
+			nacosErr := err.(*nacos_error.NacosError)
+			if nacosErr.ErrorCode() == "404" {
+				return "", errors.New("config not found")
+			}
+			if nacosErr.ErrorCode() == "403" {
+				return "", errors.New("get config forbidden")
+			}
+		}
+	}
+
+	return
 }

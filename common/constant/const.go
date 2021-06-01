@@ -45,6 +45,8 @@ const (
 	CONFIG_BASE_PATH            = "/v1/cs"
 	CONFIG_PATH                 = CONFIG_BASE_PATH + "/configs"
 	CONFIG_LISTEN_PATH          = CONFIG_BASE_PATH + "/configs/listener"
+	CONFIGHISTORYPATH           = CONFIG_BASE_PATH + "/history"
+	CONFIGHISTORYPREPATH        = CONFIGHISTORYPATH + "/previous"
 	SERVICE_BASE_PATH           = "/v1/ns"
 	SERVICE_PATH                = SERVICE_BASE_PATH + "/instance"
 	SERVICE_INFO_PATH           = SERVICE_BASE_PATH + "/service"

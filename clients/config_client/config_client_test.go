@@ -45,13 +45,13 @@ var clientConfigTestWithTenant = constant.ClientConfig{
 	TimeoutMs:      10000,
 	ListenInterval: 20000,
 	BeatInterval:   10000,
-	NamespaceId:    "tenant",
+	NamespaceId:    "33c1e53a-095c-4428-a608-a679bf647ba5",
 }
 
 var serverConfigTest = constant.ServerConfig{
 	ContextPath: "/nacos",
-	Port:        80,
-	IpAddr:      "console.nacos.io",
+	Port:        30010,
+	IpAddr:      "172.20.200.43",
 }
 
 var configParamMapTest = map[string]string{
@@ -134,7 +134,7 @@ func Test_GetConfig(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.True(t, success)
-
+	time.Sleep(time.Second * 1)
 	content, err := client.GetConfig(vo.ConfigParam{
 		DataId: "dataId",
 		Group:  "group"})
@@ -146,15 +146,31 @@ func Test_GetConfig(t *testing.T) {
 func Test_SearchConfig(t *testing.T) {
 	client := cretateConfigClientTest()
 	configPage, err := client.SearchConfig(vo.SearchConfigParm{
-		Search:   "accurate",
-		DataId:   "",
-		Group:    "DEFAULT_GROUP",
-		PageNo:   1,
-		PageSize: 10,
+		Namespace: "aad6b059-2344-4f5e-b2b2-6a7326124d8f",
+		Search:    "accurate",
+		DataId:    "test-data-2",
+		Group:     "test-group",
+		PageNo:    1,
+		PageSize:  10,
 	})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, configPage)
 	assert.NotEmpty(t, configPage.PageItems)
+	c, err := client.SearchConfigHistory(vo.SearchConfigParm{
+		Namespace: "aad6b059-2344-4f5e-b2b2-6a7326124d8f",
+		Search:    "accurate",
+		DataId:    "aaaaaaaaaaa",
+		Group:     "DEFAULT_GROUP",
+		PageNo:    1,
+		PageSize:  10,
+	})
+	assert.Nil(t, err)
+	assert.NotEmpty(t, c)
+	assert.NotEmpty(t, c.PageItems)
+
+	content, err := client.GetConfigHistoryPre("3")
+	assert.Nil(t, err)
+	t.Log(content)
 }
 
 func Test_GetConfigWithErrorResponse_401(t *testing.T) {

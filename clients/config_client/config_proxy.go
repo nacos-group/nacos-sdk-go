@@ -89,6 +89,47 @@ func (cp *ConfigProxy) SearchConfigProxy(param vo.SearchConfigParm, tenant, acce
 	}
 	return &configPage, nil
 }
+
+func (cp *ConfigProxy) GetConfigHistoryPre(id, tenant, accessKey, secretKey string) (string, error) {
+	params := map[string]string{}
+	if len(tenant) > 0 {
+		params["tenant"] = tenant
+	}
+	params["id"] = id
+	var headers = map[string]string{}
+	headers["accessKey"] = accessKey
+	headers["secretKey"] = secretKey
+
+	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIGHISTORYPREPATH, params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
+	return result, err
+}
+
+func (cp *ConfigProxy) SearchConfigHistoryProxy(param vo.SearchConfigParm, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
+	params := util.TransformObject2Param(param)
+	if len(tenant) > 0 {
+		params["tenant"] = tenant
+	}
+	if _, ok := params["group"]; !ok {
+		params["group"] = ""
+	}
+	if _, ok := params["dataId"]; !ok {
+		params["dataId"] = ""
+	}
+	var headers = map[string]string{}
+	headers["accessKey"] = accessKey
+	headers["secretKey"] = secretKey
+	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIGHISTORYPATH, params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
+	if err != nil {
+		return nil, err
+	}
+	var configPage model.ConfigPage
+	err = json.Unmarshal([]byte(result), &configPage)
+	if err != nil {
+		return nil, err
+	}
+	return &configPage, nil
+}
+
 func (cp *ConfigProxy) PublishConfigProxy(param vo.ConfigParam, tenant, accessKey, secretKey string) (bool, error) {
 	params := util.TransformObject2Param(param)
 	if len(tenant) > 0 {
