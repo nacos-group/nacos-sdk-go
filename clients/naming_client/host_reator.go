@@ -171,3 +171,56 @@ func (hr *HostReactor) asyncUpdateService() {
 		time.Sleep(1 * time.Second)
 	}
 }
+
+func (hr *HostReactor) GetAllNamespaceInfo() model.NamespaceList {
+	data := model.NamespaceList{}
+	result, err := hr.serviceProxy.GetAllNamespaceList()
+	if err != nil {
+		logger.Errorf("GetAllNamespaceInfo return error! err:%+v", err)
+		return data
+	}
+	if result == "" {
+		logger.Error("GetAllNamespaceInfo return result is empty!")
+
+		return data
+	}
+
+	err = json.Unmarshal([]byte(result), &data)
+	if err != nil {
+		logger.Errorf("GetAllServiceInfoList result json.Unmarshal error!err:%+v", err)
+		return data
+	}
+	return data
+}
+
+func (hr *HostReactor) CreateNamespace(data model.NamespaceReq) error {
+	result, err := hr.serviceProxy.CreateNamespace(data)
+	if err != nil {
+		logger.Errorf("GetAllNamespaceInfo return error! err:%+v", err)
+		return err
+	}
+	logger.Info("CreateNamespace result=", result)
+	return nil
+}
+
+func (hr *HostReactor) UpdateNamespace(data model.NamespaceReq) error {
+	result, err := hr.serviceProxy.UpdateNamespace(data)
+	if err != nil {
+		logger.Errorf("GetAllNamespaceInfo return error! err:%+v", err)
+		return err
+	}
+	logger.Info("UpdateNamespace result=", result)
+
+	return nil
+}
+
+func (hr *HostReactor) DeleteNamespace(id string) error {
+	result, err := hr.serviceProxy.DeleteNamespace(id)
+	if err != nil {
+		logger.Errorf("GetAllNamespaceInfo return error! err:%+v", err)
+		return err
+	}
+	logger.Info("DeleteNamespace result=", result)
+
+	return nil
+}

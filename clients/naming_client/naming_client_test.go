@@ -17,9 +17,11 @@
 package naming_client
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
@@ -40,8 +42,8 @@ var clientConfigTest = constant.ClientConfig{
 }
 
 var serverConfigTest = constant.ServerConfig{
-	IpAddr:      "console.nacos.io",
-	Port:        80,
+	IpAddr:      "172.20.200.43",
+	Port:        30010,
 	ContextPath: "/nacos",
 }
 
@@ -319,6 +321,39 @@ func TestNamingProxy_DeristerService_401(t *testing.T) {
 		GroupName:   "test_group",
 		Ephemeral:   true,
 	})
+}
+func TestNamingClient_GetAllNamespacesInfo(t *testing.T) {
+	nc := &nacos_client.NacosClient{}
+	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+	nc.SetClientConfig(clientConfigTest)
+	client, err := NewNamingClient(nc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := client.GetAllNamespacesInfo()
+	if err != nil {
+		t.Fatal(err)
+	}
+	byte, _ := json.Marshal(data)
+	t.Log(string(byte))
+	//id, _ := uuid.NewV1()
+	//err = client.CreateNamespace(model.NamespaceReq{
+	//	//CustomNamespaceId: id.String(),
+	//	CustomNamespaceId: "319fcfa9-c2a5-11eb-83ab-08002788ce48",
+	//	NamespaceName:     "daolin11",
+	//	NamespaceDesc:     "test11",
+	//})
+	err = client.UpdateNamespace(model.NamespaceReq{
+		//CustomNamespaceId: id.String(),
+		CustomNamespaceId: "319fcfa9-c2a5-11eb-83ab-08002788ce48",
+		NamespaceName:     "daolin",
+		NamespaceDesc:     "test",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(time.Second * 5)
+	client.DeleteNamespace("319fcfa9-c2a5-11eb-83ab-08002788ce48")
 }
 
 var serviceJsonTest = `{

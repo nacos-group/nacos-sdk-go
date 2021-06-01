@@ -187,3 +187,34 @@ func (proxy *NamingProxy) GetAllServiceInfoList(namespace, groupName string, pag
 	api := constant.SERVICE_INFO_PATH + "/list"
 	return proxy.nacosServer.ReqApi(api, param, http.MethodGet)
 }
+
+func (proxy *NamingProxy) GetAllNamespaceList() (string, error) {
+	param := make(map[string]string)
+	api := constant.NAMESPACE_PATH
+	return proxy.nacosServer.ReqApi(api, param, http.MethodGet)
+}
+
+func (proxy *NamingProxy) CreateNamespace(namespace model.NamespaceReq) (string, error) {
+	api := constant.NAMESPACE_PATH
+	params := map[string]string{}
+	params["customNamespaceId"] = namespace.CustomNamespaceId
+	params["namespaceName"] = namespace.NamespaceName
+	params["namespaceDesc"] = namespace.NamespaceDesc
+	return proxy.nacosServer.ReqApi(api, params, http.MethodPost)
+}
+
+func (proxy *NamingProxy) UpdateNamespace(namespace model.NamespaceReq) (string, error) {
+	api := constant.NAMESPACE_PATH
+	params := map[string]string{}
+	params["namespace"] = namespace.CustomNamespaceId
+	params["namespaceShowName"] = namespace.NamespaceName
+	params["namespaceDesc"] = namespace.NamespaceDesc
+	return proxy.nacosServer.ReqApi(api, params, http.MethodPut)
+}
+
+func (proxy *NamingProxy) DeleteNamespace(id string) (string, error) {
+	api := constant.NAMESPACE_PATH
+	params := map[string]string{}
+	params["namespaceId"] = id
+	return proxy.nacosServer.ReqApi(api, params, http.MethodDelete)
+}

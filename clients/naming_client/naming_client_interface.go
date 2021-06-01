@@ -90,4 +90,16 @@ type INamingClient interface {
 
 	//GetAllServicesInfo use to get all service info by page
 	GetAllServicesInfo(param vo.GetAllServiceInfoParam) (model.ServiceList, error)
+
+	//GetAllNamespacesInfo use to get all namespace info by page
+	GetAllNamespacesInfo() (model.NamespaceList, error)
+
+	//create namespace
+	CreateNamespace(data model.NamespaceReq) error
+
+	//update namespace
+	UpdateNamespace(data model.NamespaceReq) error
+
+	//delete namespace
+	DeleteNamespace(id string) error
 }

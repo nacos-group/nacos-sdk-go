@@ -24,14 +24,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-	"github.com/pkg/errors"
 )
 
 type NamingClient struct {
@@ -61,10 +63,16 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 	if err != nil {
 		return naming, err
 	}
+
+	if _, _err := nc.GetHttpAgent(); _err != nil {
+		_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
+	}
+
 	httpAgent, err := nc.GetHttpAgent()
 	if err != nil {
 		return naming, err
 	}
+
 	err = logger.InitLogger(logger.Config{
 		Level:        clientConfig.LogLevel,
 		OutputPath:   clientConfig.LogDir,
@@ -307,4 +315,23 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
 	sc.subCallback.RemoveCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 	return nil
+}
+
+//get namespaces
+func (sc *NamingClient) GetAllNamespacesInfo() (model.NamespaceList, error) {
+	services := sc.hostReactor.GetAllNamespaceInfo()
+	return services, nil
+}
+
+func (sc *NamingClient) CreateNamespace(data model.NamespaceReq) error {
+	return sc.hostReactor.CreateNamespace(data)
+}
+
+func (sc *NamingClient) UpdateNamespace(data model.NamespaceReq) error {
+	return sc.hostReactor.UpdateNamespace(data)
+
+}
+
+func (sc *NamingClient) DeleteNamespace(id string) error {
+	return sc.hostReactor.DeleteNamespace(id)
 }
