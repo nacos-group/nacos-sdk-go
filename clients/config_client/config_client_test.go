@@ -186,8 +186,9 @@ func Test_GetConfigWithErrorResponse_401(t *testing.T) {
 		gomock.Eq(configParamMapTest),
 	).Times(3).Return(http_agent.FakeHttpResponse(401, "no security"), nil)
 	result, err := client.GetConfig(configParamTest)
-	assert.Nil(t, err)
-	fmt.Printf("result:%s \n", result)
+	assert.NotNil(t, err)
+	assert.Equal(t, "", result)
+	fmt.Println(err.Error())
 }
 
 func Test_GetConfigWithErrorResponse_404(t *testing.T) {
@@ -201,9 +202,9 @@ func Test_GetConfigWithErrorResponse_404(t *testing.T) {
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(configParamMapTest),
 	).Times(3).Return(http_agent.FakeHttpResponse(404, ""), nil)
-	reslut, err := client.GetConfig(configParamTest)
+	result, err := client.GetConfig(configParamTest)
 	assert.Nil(t, err)
-	assert.Equal(t, "", reslut)
+	assert.Equal(t, "", result)
 }
 
 func Test_GetConfigWithErrorResponse_403(t *testing.T) {
@@ -217,9 +218,9 @@ func Test_GetConfigWithErrorResponse_403(t *testing.T) {
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(configParamMapTest),
 	).Times(3).Return(http_agent.FakeHttpResponse(403, ""), nil)
-	reslut, err := client.GetConfig(configParamTest)
+	result, err := client.GetConfig(configParamTest)
 	assert.NotNil(t, err)
-	assert.Equal(t, "", reslut)
+	assert.Equal(t, "", result)
 	fmt.Println(err.Error())
 }
 
