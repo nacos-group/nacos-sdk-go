@@ -25,6 +25,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/file"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 )
 
 type NacosClient struct {
@@ -69,7 +70,7 @@ func (client *NacosClient) SetClientConfig(config constant.ClientConfig) (err er
 		config.LogDir = file.GetCurrentPath() + string(os.PathSeparator) + "log"
 	}
 
-	log.Printf("[INFO] logDir:<%s>   cacheDir:<%s>", config.LogDir, config.CacheDir)
+	logger.Infof("[INFO] logDir:<%s>   cacheDir:<%s>", config.LogDir, config.CacheDir)
 	client.clientConfig = config
 	client.clientConfigValid = true
 
