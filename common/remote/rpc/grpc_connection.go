@@ -23,13 +23,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/common/remote/rpc/rpc_request"
-	"github.com/nacos-group/nacos-sdk-go/common/remote/rpc/rpc_response"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
 
-	"github.com/nacos-group/nacos-sdk-go/util"
+	"github.com/nacos-group/nacos-sdk-go/v2/util"
 
 	"github.com/golang/protobuf/ptypes/any"
-	nacos_grpc_service "github.com/nacos-group/nacos-sdk-go/api/grpc"
+	nacos_grpc_service "github.com/nacos-group/nacos-sdk-go/v2/api/grpc"
 	"google.golang.org/grpc"
 )
 

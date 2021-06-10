@@ -17,14 +17,14 @@
 package naming_proxy
 
 import (
-	"github.com/nacos-group/nacos-sdk-go/clients/naming_client/naming_cache"
-	"github.com/nacos-group/nacos-sdk-go/clients/naming_client/naming_grpc"
-	"github.com/nacos-group/nacos-sdk-go/clients/naming_client/naming_http"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/util"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_grpc"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
+	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
 
 type NamingProxyDelegate struct {

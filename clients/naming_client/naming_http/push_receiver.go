@@ -26,9 +26,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/clients/naming_client/naming_cache"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/util"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
 
 type PushReceiver struct {

@@ -32,13 +32,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/common/nacos_error"
-	"github.com/nacos-group/nacos-sdk-go/common/security"
-	"github.com/nacos-group/nacos-sdk-go/inner/uuid"
-	"github.com/nacos-group/nacos-sdk-go/util"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_error"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
+	"github.com/nacos-group/nacos-sdk-go/v2/inner/uuid"
+	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
 
 type NacosServer struct {
