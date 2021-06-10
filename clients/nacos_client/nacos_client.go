@@ -18,7 +18,6 @@ package nacos_client
 
 import (
 	"errors"
-	"log"
 	"os"
 	"strconv"
 
