@@ -20,11 +20,11 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 
 	"github.com/go-errors/errors"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/util"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
 
 type HttpAgent struct {

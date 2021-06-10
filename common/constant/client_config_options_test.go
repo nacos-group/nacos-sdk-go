@@ -20,7 +20,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nacos-group/nacos-sdk-go/common/file"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/file"
 
 	"github.com/stretchr/testify/assert"
 )
