@@ -23,6 +23,8 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net"
+	"os"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -70,22 +72,112 @@ func (us *PushReceiver) tryListen() (*net.UDPConn, bool) {
 	return conn, true
 }
 
+const (
+	PushReceiverListenPortEnvKey     = "PUSH_RECEIVER_LISTEN_PORT"
+	PushReceiverListenRetryTimes     = "PUSH_RECEIVER_RETRY_TIMES"
+	PushReceiverExitCodeAfterRetried = "PUSH_RECEIVER_EXIT_CODE_AFTER_RETRIED"
+
+	defaultRetryTimes = 3
+)
+
+var (
+	portPattern      = regexp.MustCompile(`^(?P<port>\d{1,5})$`)
+	portRangePattern = regexp.MustCompile(`^(?P<begin>\d{1,5})[-~](?P<end>\d{1,5})$`)
+
+	portIndex  = 1
+	beginIndex = 1
+	endIndex   = 2
+)
+
+func validPort(port int) bool {
+	return port > 1024 && port < 65535
+}
+
+func getListenPort() int {
+	raw := os.Getenv(PushReceiverListenPortEnvKey)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	if matches := portPattern.FindStringSubmatch(raw); matches != nil {
+		if port, err := strconv.Atoi(matches[portIndex]); err != nil {
+			logger.Warnf("parse push receiver listening port failed, env: %s, err: %s", raw, err)
+		} else if !validPort(port) {
+			logger.Warnf("specified push receiver listening port invalid, 1024 ~ 65535, env: %s", raw)
+		} else {
+			logger.Infof("use specified port for push receiver listening, port: %d", port)
+			return port
+		}
+	} else if matches = portRangePattern.FindStringSubmatch(raw); matches != nil {
+		begin, err := strconv.Atoi(matches[beginIndex])
+		if err != nil {
+			logger.Warnf("parse push receiver listening port range begin failed, env: %s, err: %s", raw, err)
+		}
+		end, err := strconv.Atoi(matches[endIndex])
+		if err != nil {
+			logger.Warnf("parse push receiver listening port range end failed, env: %s, err: %s", raw, err)
+		}
+		if validPort(begin) && validPort(end) {
+			if begin > end {
+				t := end
+				end = begin
+				begin = t
+			}
+			port := r.Intn(end-begin) + begin
+			logger.Infof("use random port from specified range for push receiver listening, port: %d", port)
+			return port
+		}
+		logger.Warnf("specified push receiver listening port range invalid, 1024 ~ 65535, env: %s", raw)
+	}
+	port := r.Intn(1000) + 54951
+	logger.Infof("use random port for push receiver listening, port: %d", port)
+	return port
+}
+
+func getRetryTimes() int {
+	raw := os.Getenv(PushReceiverListenRetryTimes)
+	if raw == "" {
+		logger.Infof("use default retry times for push receiver listening, times: %d", defaultRetryTimes)
+		return defaultRetryTimes
+	}
+	times, err := strconv.Atoi(raw)
+	if err != nil {
+		logger.Warnf("parse retry times for push receiver listening failed, use default, env: %s", raw)
+		return defaultRetryTimes
+	}
+	logger.Infof("use specified retry times for push receiver listening, times: %d", times)
+	return times
+}
+
+func shouldExit() (bool, int) {
+	raw := os.Getenv(PushReceiverExitCodeAfterRetried)
+	if raw == "" {
+		return false, 0
+	}
+	code, err := strconv.Atoi(raw)
+	if err != nil {
+		logger.Warnf("parse exit code of push receiver listen after retried failed, not to exit, env: %s, err: %s", raw, err)
+		return false, 0
+	}
+	logger.Infof("use specified exit code if push receiver listen failed after retried, code: %d", code)
+	return true, code
+}
+
 func (us *PushReceiver) getConn() *net.UDPConn {
 	var conn *net.UDPConn
-	for i := 0; i < 3; i++ {
-		r := rand.New(rand.NewSource(time.Now().UnixNano()))
-		port := r.Intn(1000) + 54951
-		us.port = port
+	retryTimes := getRetryTimes()
+	for i := 0; i < retryTimes; i++ {
+		us.port = getListenPort()
 		conn1, ok := us.tryListen()
 
 		if ok {
 			conn = conn1
-			logger.Infof("udp server start, port: " + strconv.Itoa(port))
+			logger.Infof("udp server start, port: %d", us.port)
 			return conn
 		}
 
-		if !ok && i == 2 {
+		if !ok && i == retryTimes-1 {
 			logger.Errorf("failed to start udp server after trying 3 times.")
+			if should, code := shouldExit(); should {
+				os.Exit(code)
+			}
 		}
 	}
 	return nil
