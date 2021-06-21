@@ -276,9 +276,9 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	}
 
 	key := util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
-	var cData cacheData
+	var cData *cacheData
 	if v, ok := client.cacheMap.Get(key); ok {
-		cData = v.(cacheData)
+		cData = v.(*cacheData)
 		cData.isInitializing = true
 	} else {
 		var (
@@ -297,7 +297,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 			lastMd5:  md5Str,
 		}
 
-		cData = cacheData{
+		cData = &cacheData{
 			isInitializing:    true,
 			dataId:            param.DataId,
 			group:             param.Group,
@@ -309,7 +309,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 			configClient:      client,
 		}
 	}
-	client.cacheMap.Set(key, &cData)
+	client.cacheMap.Set(key, cData)
 	return
 }
 
