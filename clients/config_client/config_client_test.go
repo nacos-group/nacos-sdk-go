@@ -67,6 +67,7 @@ var clientConfigWithOptions = constant.NewClientConfig(
 
 var (
 	dataIdKey                         = goVersion + "dataId"
+	groupKey                          = goVersion + "group:env"
 	configNoChangeKey                 = goVersion + "ConfigNoChange"
 	multipleClientsKey                = goVersion + "MultipleClients"
 	multipleClientsMultipleConfigsKey = goVersion + "MultipleClientsMultipleConfig"
@@ -78,23 +79,23 @@ var (
 
 var configParamMapTest = map[string]string{
 	"dataId": dataIdKey,
-	"group":  "group",
+	"group":  groupKey,
 }
 
 var configParamTest = vo.ConfigParam{
 	DataId: dataIdKey,
-	Group:  "group",
+	Group:  groupKey,
 }
 
 var localConfigTest = vo.ConfigParam{
 	DataId:  dataIdKey,
-	Group:   "group",
+	Group:   groupKey,
 	Content: "content",
 }
 
 var localConfigMapTest = map[string]string{
 	"dataId":  dataIdKey,
-	"group":   "group",
+	"group":   groupKey,
 	"content": "content",
 }
 
@@ -185,8 +186,9 @@ func Test_GetConfigWithErrorResponse_401(t *testing.T) {
 		gomock.Eq(configParamMapTest),
 	).Times(3).Return(http_agent.FakeHttpResponse(401, "no security"), nil)
 	result, err := client.GetConfig(configParamTest)
-	assert.Nil(t, err)
-	fmt.Printf("result:%s \n", result)
+	assert.NotNil(t, err)
+	assert.Equal(t, "", result)
+	fmt.Println(err.Error())
 }
 
 func Test_GetConfigWithErrorResponse_404(t *testing.T) {
@@ -200,9 +202,9 @@ func Test_GetConfigWithErrorResponse_404(t *testing.T) {
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(configParamMapTest),
 	).Times(3).Return(http_agent.FakeHttpResponse(404, ""), nil)
-	reslut, err := client.GetConfig(configParamTest)
+	result, err := client.GetConfig(configParamTest)
 	assert.Nil(t, err)
-	assert.Equal(t, "", reslut)
+	assert.Equal(t, "", result)
 }
 
 func Test_GetConfigWithErrorResponse_403(t *testing.T) {
@@ -216,9 +218,9 @@ func Test_GetConfigWithErrorResponse_403(t *testing.T) {
 		gomock.Eq(clientConfigTest.TimeoutMs),
 		gomock.Eq(configParamMapTest),
 	).Times(3).Return(http_agent.FakeHttpResponse(403, ""), nil)
-	reslut, err := client.GetConfig(configParamTest)
+	result, err := client.GetConfig(configParamTest)
 	assert.NotNil(t, err)
-	assert.Equal(t, "", reslut)
+	assert.Equal(t, "", result)
 	fmt.Println(err.Error())
 }
 
