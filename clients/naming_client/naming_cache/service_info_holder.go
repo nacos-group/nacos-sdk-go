@@ -45,7 +45,7 @@ func NewServiceInfoHolder(namespace, cacheDir string, updateCacheWhenEmpty, notL
 		UpdateTimeMap:        cache.NewConcurrentMap(),
 		ServiceInfoMap:       cache.NewConcurrentMap(),
 	}
-	
+
 	if !notLoadCacheAtStart {
 		serviceInfoHolder.loadCacheFromDisk()
 	}
