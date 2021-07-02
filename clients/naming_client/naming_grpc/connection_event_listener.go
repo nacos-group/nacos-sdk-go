@@ -69,8 +69,8 @@ func (c *ConnectionEventListener) redoSubscribe() {
 func (c *ConnectionEventListener) redoRegisterEachService() {
 	for k, v := range c.registeredInstanceCached.Items() {
 		info := strings.Split(k, constant.SERVICE_INFO_SPLITER)
-		serviceName := info[0]
-		groupName := info[1]
+		serviceName := info[1]
+		groupName := info[0]
 		instances, ok := v.([]model.Instance)
 		if !ok {
 			logger.Warnf("redo register service:%s faild,instances type not is []model.instance", info[0])
