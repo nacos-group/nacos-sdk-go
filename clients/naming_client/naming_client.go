@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -31,7 +33,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-	"github.com/pkg/errors"
 )
 
 type NamingClient struct {
@@ -138,6 +139,36 @@ func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bo
 	sc.beatReactor.RemoveBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port)
 
 	_, err := sc.serviceProxy.DeregisterInstance(util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port, param.Cluster, param.Ephemeral)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// UpdateInstance 修改服务实例
+func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, error) {
+	if len(param.GroupName) == 0 {
+		param.GroupName = constant.DEFAULT_GROUP
+	}
+
+	// 先更新心跳信息，防止断链后信息被刷回初始信息
+	sc.beatReactor.RemoveBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port)
+	beatInfo := model.BeatInfo{
+		Ip:          param.Ip,
+		Port:        param.Port,
+		Metadata:    param.Metadata,
+		ServiceName: util.GetGroupName(param.ServiceName, param.GroupName),
+		Cluster:     param.ClusterName,
+		Weight:      param.Weight,
+		Period:      util.GetDurationWithDefault(param.Metadata, constant.HEART_BEAT_INTERVAL, time.Second*5),
+		State:       model.StateRunning,
+	}
+	sc.beatReactor.AddBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), beatInfo)
+
+	// 更新实例信息
+	_, err := sc.serviceProxy.UpdateInstance(
+		util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port, param.ClusterName, param.Ephemeral,
+		param.Weight, param.Enable, param.Metadata)
 	if err != nil {
 		return false, err
 	}

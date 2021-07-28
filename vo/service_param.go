@@ -40,6 +40,18 @@ type DeregisterInstanceParam struct {
 	Ephemeral   bool   `param:"ephemeral"`   //optional
 }
 
+type UpdateInstanceParam struct {
+	Ip          string            `param:"ip"`          // required
+	Port        uint64            `param:"port"`        // required
+	ClusterName string            `param:"cluster"`     // optional,default:DEFAULT
+	ServiceName string            `param:"serviceName"` // required
+	GroupName   string            `param:"groupName"`   // optional,default:DEFAULT_GROUP
+	Ephemeral   bool              `param:"ephemeral"`   // optional
+	Weight      float64           `param:"weight"`      // required,it must be lager than 0
+	Enable      bool              `param:"enabled"`     // required,the instance can be access or not
+	Metadata    map[string]string `param:"metadata"`    // optional
+}
+
 type GetServiceParam struct {
 	Clusters    []string `param:"clusters"`    //optional,default:DEFAULT
 	ServiceName string   `param:"serviceName"` //required
