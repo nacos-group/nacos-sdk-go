@@ -294,16 +294,6 @@ func Test_UpdateServiceInstance_withoutGroupName(t *testing.T) {
 	}()
 	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
 	mockIHttpAgent.EXPECT().Request(gomock.Eq("PUT"),
-		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance/beat"),
-		gomock.AssignableToTypeOf(http.Header{}),
-		gomock.Eq(uint64(10*1000)),
-		gomock.Eq(map[string]string{
-			"namespaceId": "",
-			"serviceName": "DEFAULT_GROUP@@DEMO",
-			"beat":        "{\"ip\":\"10.0.0.10\",\"port\":80,\"weight\":0,\"serviceName\":\"DEFAULT_GROUP@@DEMO\",\"cluster\":\"\",\"metadata\":{},\"scheduled\":false}",
-		})).Times(1).
-		Return(http_agent.FakeHttpResponse(200, `ok`), nil)
-	mockIHttpAgent.EXPECT().Request(gomock.Eq("PUT"),
 		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
 		gomock.AssignableToTypeOf(http.Header{}),
 		gomock.Eq(uint64(10*1000)),

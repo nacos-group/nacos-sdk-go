@@ -151,25 +151,28 @@ func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, erro
 		param.GroupName = constant.DEFAULT_GROUP
 	}
 
-	// Update the heartbeat information first to prevent the information
-	// from being flushed back to the original information after reconnecting
-	sc.beatReactor.RemoveBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port)
-	beatInfo := model.BeatInfo{
-		Ip:          param.Ip,
-		Port:        param.Port,
-		Metadata:    param.Metadata,
-		ServiceName: util.GetGroupName(param.ServiceName, param.GroupName),
-		Cluster:     param.ClusterName,
-		Weight:      param.Weight,
-		Period:      util.GetDurationWithDefault(param.Metadata, constant.HEART_BEAT_INTERVAL, time.Second*5),
-		State:       model.StateRunning,
+	if param.Ephemeral {
+		// Update the heartbeat information first to prevent the information
+		// from being flushed back to the original information after reconnecting
+		sc.beatReactor.RemoveBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port)
+		beatInfo := model.BeatInfo{
+			Ip:          param.Ip,
+			Port:        param.Port,
+			Metadata:    param.Metadata,
+			ServiceName: util.GetGroupName(param.ServiceName, param.GroupName),
+			Cluster:     param.ClusterName,
+			Weight:      param.Weight,
+			Period:      util.GetDurationWithDefault(param.Metadata, constant.HEART_BEAT_INTERVAL, time.Second*5),
+			State:       model.StateRunning,
+		}
+		sc.beatReactor.AddBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), beatInfo)
 	}
-	sc.beatReactor.AddBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), beatInfo)
 
 	// Do update instance
 	_, err := sc.serviceProxy.UpdateInstance(
 		util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port, param.ClusterName, param.Ephemeral,
 		param.Weight, param.Enable, param.Metadata)
+
 	if err != nil {
 		return false, err
 	}
@@ -276,7 +279,7 @@ func random(instances []model.Instance, mw int) []model.Instance {
 	if len(instances) <= 1 || mw <= 1 {
 		return instances
 	}
-	//实例交叉插入列表，避免列表中是连续的实例
+	// 实例交叉插入列表，避免列表中是连续的实例
 	var result = make([]model.Instance, 0)
 	for i := 1; i <= mw; i++ {
 		for _, host := range instances {
@@ -342,7 +345,7 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	return nil
 }
 
-//取消服务监听
+// 取消服务监听
 func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
 	sc.subCallback.RemoveCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 	return nil
