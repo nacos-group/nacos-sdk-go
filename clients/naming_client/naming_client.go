@@ -145,13 +145,14 @@ func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bo
 	return true, nil
 }
 
-// UpdateInstance 修改服务实例
+// UpdateInstance Update information for exist instance.
 func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
 
-	// 先更新心跳信息，防止断链后信息被刷回初始信息
+	// Update the heartbeat information first to prevent the information
+	// from being flushed back to the original information after reconnecting
 	sc.beatReactor.RemoveBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port)
 	beatInfo := model.BeatInfo{
 		Ip:          param.Ip,
@@ -165,7 +166,7 @@ func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, erro
 	}
 	sc.beatReactor.AddBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), beatInfo)
 
-	// 更新实例信息
+	// Do update instance
 	_, err := sc.serviceProxy.UpdateInstance(
 		util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port, param.ClusterName, param.Ephemeral,
 		param.Weight, param.Enable, param.Metadata)
