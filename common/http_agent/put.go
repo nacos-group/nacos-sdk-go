@@ -22,8 +22,7 @@ import (
 	"time"
 )
 
-func put(path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
-	client := http.Client{}
+func put(client *http.Client, path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
 	client.Timeout = time.Millisecond * time.Duration(timeoutMs)
 	var body string
 	for key, value := range params {

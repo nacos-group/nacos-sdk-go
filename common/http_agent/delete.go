@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-func delete(path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
+func delete(client *http.Client, path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
 	if !strings.HasSuffix(path, "?") {
 		path = path + "?"
 	}
@@ -32,7 +32,6 @@ func delete(path string, header http.Header, timeoutMs uint64, params map[string
 	if strings.HasSuffix(path, "&") {
 		path = path[:len(path)-1]
 	}
-	client := http.Client{}
 	client.Timeout = time.Millisecond * time.Duration(timeoutMs)
 	request, errNew := http.NewRequest(http.MethodDelete, path, nil)
 	if errNew != nil {
