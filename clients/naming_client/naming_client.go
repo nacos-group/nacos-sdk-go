@@ -52,7 +52,7 @@ type Chooser struct {
 
 func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 	rand.Seed(time.Now().UnixNano())
-	naming := NamingClient{}
+	naming := NamingClient{INacosClient: nc}
 	clientConfig, err := nc.GetClientConfig()
 	if err != nil {
 		return naming, err
