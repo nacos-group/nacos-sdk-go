@@ -16,13 +16,26 @@
 
 package vo
 
+type ConfigType string
+
+const (
+	Properties ConfigType = "properties"
+	XML        ConfigType = "xml"
+	JSON       ConfigType = "json"
+	Text       ConfigType = "text"
+	HTML       ConfigType = "html"
+	YAML       ConfigType = "yaml"
+)
+
 type Listener func(namespace, group, dataId, data string)
 
 type ConfigParam struct {
-	DataId   string `param:"dataId"`  //required
-	Group    string `param:"group"`   //required
-	Content  string `param:"content"` //required
-	DatumId  string `param:"datumId"`
+	DataId  string     `param:"dataId"`  //required
+	Group   string     `param:"group"`   //required
+	Content string     `param:"content"` //required
+	DatumId string     `param:"datumId"`
+	Type    ConfigType `param:"type"`
+
 	OnChange func(namespace, group, dataId, data string)
 }
 
