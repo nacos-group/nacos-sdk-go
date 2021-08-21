@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	"github.com/buger/jsonparser"
+
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
@@ -79,6 +80,22 @@ func (proxy *NamingProxy) DeregisterInstance(serviceName string, ip string, port
 	params["port"] = strconv.Itoa(int(port))
 	params["ephemeral"] = strconv.FormatBool(ephemeral)
 	return proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodDelete)
+}
+
+func (proxy *NamingProxy) UpdateInstance(serviceName string, ip string, port uint64, clusterName string, ephemeral bool, weight float64, enable bool, metadata map[string]string) (string, error) {
+	logger.Infof("modify instance namespaceId:<%s>,serviceName:<%s> with instance:<%s:%d@%s>",
+		proxy.clientConfig.NamespaceId, serviceName, ip, port, clusterName)
+	params := map[string]string{}
+	params["namespaceId"] = proxy.clientConfig.NamespaceId
+	params["serviceName"] = serviceName
+	params["clusterName"] = clusterName
+	params["ip"] = ip
+	params["port"] = strconv.Itoa(int(port))
+	params["ephemeral"] = strconv.FormatBool(ephemeral)
+	params["weight"] = strconv.FormatFloat(weight, 'f', -1, 64)
+	params["enable"] = strconv.FormatBool(enable)
+	params["metadata"] = util.ToJsonString(metadata)
+	return proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodPut)
 }
 
 func (proxy *NamingProxy) SendBeat(info model.BeatInfo) (int64, error) {

@@ -22,6 +22,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
@@ -29,7 +31,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-	"github.com/stretchr/testify/assert"
 )
 
 var clientConfigTest = *constant.NewClientConfig(
@@ -284,6 +285,44 @@ func TestNamingProxy_DeregisterService_WithGroupName(t *testing.T) {
 		GroupName:   "test_group",
 		Ephemeral:   true,
 	})
+}
+
+func Test_UpdateServiceInstance_withoutGroupName(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer func() {
+		ctrl.Finish()
+	}()
+	mockIHttpAgent := mock.NewMockIHttpAgent(ctrl)
+	mockIHttpAgent.EXPECT().Request(gomock.Eq("PUT"),
+		gomock.Eq("http://console.nacos.io:80/nacos/v1/ns/instance"),
+		gomock.AssignableToTypeOf(http.Header{}),
+		gomock.Eq(uint64(10*1000)),
+		gomock.Eq(map[string]string{
+			"namespaceId": "",
+			"serviceName": "DEFAULT_GROUP@@DEMO",
+			"clusterName": "",
+			"ip":          "10.0.0.10",
+			"port":        "80",
+			"weight":      "0",
+			"enable":      "false",
+			"metadata":    "{}",
+			"ephemeral":   "false",
+		})).Times(1).
+		Return(http_agent.FakeHttpResponse(200, `ok`), nil)
+	nc := nacos_client.NacosClient{}
+	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+	nc.SetClientConfig(clientConfigTest)
+	nc.SetHttpAgent(mockIHttpAgent)
+	client, _ := NewNamingClient(&nc)
+	success, err := client.UpdateInstance(vo.UpdateInstanceParam{
+		ServiceName: "DEMO",
+		Ip:          "10.0.0.10",
+		Port:        80,
+		Ephemeral:   false,
+		Metadata:    map[string]string{},
+	})
+	assert.Equal(t, nil, err)
+	assert.Equal(t, true, success)
 }
 
 func TestNamingProxy_DeregisterService_401(t *testing.T) {

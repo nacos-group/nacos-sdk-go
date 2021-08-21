@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -31,7 +33,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-	"github.com/pkg/errors"
 )
 
 type NamingClient struct {
@@ -152,6 +153,40 @@ func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bo
 	return true, nil
 }
 
+// UpdateInstance Update information for exist instance.
+func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, error) {
+	if len(param.GroupName) == 0 {
+		param.GroupName = constant.DEFAULT_GROUP
+	}
+
+	if param.Ephemeral {
+		// Update the heartbeat information first to prevent the information
+		// from being flushed back to the original information after reconnecting
+		sc.beatReactor.RemoveBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port)
+		beatInfo := model.BeatInfo{
+			Ip:          param.Ip,
+			Port:        param.Port,
+			Metadata:    param.Metadata,
+			ServiceName: util.GetGroupName(param.ServiceName, param.GroupName),
+			Cluster:     param.ClusterName,
+			Weight:      param.Weight,
+			Period:      util.GetDurationWithDefault(param.Metadata, constant.HEART_BEAT_INTERVAL, time.Second*5),
+			State:       model.StateRunning,
+		}
+		sc.beatReactor.AddBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), beatInfo)
+	}
+
+	// Do update instance
+	_, err := sc.serviceProxy.UpdateInstance(
+		util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port, param.ClusterName, param.Ephemeral,
+		param.Weight, param.Enable, param.Metadata)
+
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // 获取服务列表
 func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, error) {
 	if len(param.GroupName) == 0 {
@@ -252,7 +287,7 @@ func random(instances []model.Instance, mw int) []model.Instance {
 	if len(instances) <= 1 || mw <= 1 {
 		return instances
 	}
-	//实例交叉插入列表，避免列表中是连续的实例
+	// 实例交叉插入列表，避免列表中是连续的实例
 	var result = make([]model.Instance, 0)
 	for i := 1; i <= mw; i++ {
 		for _, host := range instances {
@@ -318,7 +353,7 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	return nil
 }
 
-//取消服务监听
+// 取消服务监听
 func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
 	sc.subCallback.RemoveCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 	return nil
