@@ -19,10 +19,10 @@ package vo
 type ConfigType string
 
 const (
-	Properties ConfigType = "properties"
+	PROPERTIES ConfigType = "properties"
 	XML        ConfigType = "xml"
 	JSON       ConfigType = "json"
-	Text       ConfigType = "text"
+	TEXT       ConfigType = "text"
 	HTML       ConfigType = "html"
 	YAML       ConfigType = "yaml"
 )
