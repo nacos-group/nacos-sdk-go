@@ -297,6 +297,21 @@ func Test_PublishConfig(t *testing.T) {
 	assert.True(t, success)
 }
 
+func Test_PublishConfigWithType(t *testing.T) {
+
+	client := createConfigClientTest()
+
+	success, err := client.PublishConfig(vo.ConfigParam{
+		DataId:  dataIdKey,
+		Group:   "group",
+		Content: "foo",
+		Type:    vo.YAML,
+	})
+
+	assert.Nil(t, err)
+	assert.True(t, success)
+}
+
 func Test_PublishConfigWithErrorResponse(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
