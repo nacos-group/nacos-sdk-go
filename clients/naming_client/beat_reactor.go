@@ -18,6 +18,7 @@ package naming_client
 
 import (
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -36,6 +37,7 @@ type BeatReactor struct {
 	beatThreadCount     int
 	beatThreadSemaphore *nsema.Semaphore
 	beatRecordMap       cache.ConcurrentMap
+	mux                 *sync.Mutex
 }
 
 const Default_Beat_Thread_Num = 20
@@ -51,6 +53,7 @@ func NewBeatReactor(serviceProxy NamingProxy, clientBeatInterval int64) BeatReac
 	br.beatThreadCount = Default_Beat_Thread_Num
 	br.beatRecordMap = cache.NewConcurrentMap()
 	br.beatThreadSemaphore = nsema.NewSemaphore(br.beatThreadCount)
+	br.mux = new(sync.Mutex)
 	return br
 }
 
@@ -61,6 +64,13 @@ func buildKey(serviceName string, ip string, port uint64) string {
 func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo model.BeatInfo) {
 	logger.Infof("adding beat: <%s> to beat map", util.ToJsonString(beatInfo))
 	k := buildKey(serviceName, beatInfo.Ip, beatInfo.Port)
+	defer br.mux.Unlock()
+	br.mux.Lock()
+	if data, ok := br.beatMap.Get(k); ok {
+		beatInfo := data.(*model.BeatInfo)
+		atomic.StoreInt32(&beatInfo.State, int32(model.StateShutdown))
+		br.beatMap.Remove(k)
+	}
 	br.beatMap.Set(k, &beatInfo)
 	go br.sendInstanceBeat(k, &beatInfo)
 }
@@ -68,6 +78,8 @@ func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo model.BeatInfo) 
 func (br *BeatReactor) RemoveBeatInfo(serviceName string, ip string, port uint64) {
 	logger.Infof("remove beat: %s@%s:%d from beat map", serviceName, ip, port)
 	k := buildKey(serviceName, ip, port)
+	defer br.mux.Unlock()
+	br.mux.Lock()
 	data, exist := br.beatMap.Get(k)
 	if exist {
 		beatInfo := data.(*model.BeatInfo)
