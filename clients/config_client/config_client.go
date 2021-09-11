@@ -202,20 +202,18 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool, err error) {
 	if len(param.DataId) <= 0 {
 		err = errors.New("[client.PublishConfig] param.dataId can not be empty")
+		return
 	}
 	if len(param.Content) <= 0 {
 		err = errors.New("[client.PublishConfig] param.content can not be empty")
+		return
 	}
 
 	if len(param.Group) <= 0 {
 		param.Group = constant.DEFAULT_GROUP
 	}
-	if err != nil {
-		return false, err
-	}
-	param.Content, err = client.encrypt(param.DataId, param.Content)
-	if err != nil {
-		return false, err
+	if param.Content, err = client.encrypt(param.DataId, param.Content); err != nil {
+		return
 	}
 
 	clientConfig, _ := client.GetClientConfig()
