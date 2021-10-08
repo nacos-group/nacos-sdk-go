@@ -9,9 +9,9 @@
 Nacos-sdk-go for Go client allows you to access Nacos service,it supports service discovery and dynamic configuration.
 
 ## Requirements
-Supported Go version over 1.12
+Supported Go version over 1.14
 
-Supported Nacos version over 1.x
+Supported Nacos version over 2.x
 
 ## Installation
 Use `go get` to install SDK：

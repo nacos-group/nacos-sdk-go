@@ -9,9 +9,9 @@
 Nacos-sdk-go是Nacos的Go语言客户端，它实现了服务发现和动态配置的功能
 
 ## 使用限制
-支持Go>v1.12版本
+支持Go>v1.14版本
 
-支持Nacos>1.x版本
+支持Nacos>2.x版本
 
 ## 安装
 使用`go get`安装SDK：
