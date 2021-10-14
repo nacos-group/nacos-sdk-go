@@ -79,7 +79,7 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 		schedulerMap: cache.NewConcurrentMap(),
 	}
 	config.schedulerMap.Set("root", true)
-	go config.delayScheduler(time.NewTimer(1*time.Millisecond), 10*time.Millisecond, "root", config.listenConfigExecutor())
+	go config.delayScheduler(time.NewTimer(1*time.Millisecond), 500*time.Millisecond, "root", config.listenConfigExecutor())
 
 	config.INacosClient = nc
 	clientConfig, err := nc.GetClientConfig()
