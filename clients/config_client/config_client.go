@@ -200,7 +200,7 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 	content, err = client.configProxy.GetConfigProxy(param, clientConfig.NamespaceId, clientConfig.AccessKey, clientConfig.SecretKey)
 
 	if err != nil {
-		logger.Infof("get config from server error:%+v ", err)
+		logger.Errorf("get config from server error:%+v ", err)
 		if _, ok := err.(*nacos_error.NacosError); ok {
 			nacosErr := err.(*nacos_error.NacosError)
 			if nacosErr.ErrorCode() == "404" {
