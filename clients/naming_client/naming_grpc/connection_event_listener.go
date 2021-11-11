@@ -29,14 +29,14 @@ import (
 
 type ConnectionEventListener struct {
 	clientProxy              *NamingGrpcProxy
-	registeredInstanceCached cache.ConcurrentMap
+	registeredInstanceCached map[string]model.Instance
 	subscribes               cache.ConcurrentMap
 }
 
 func NewConnectionEventListener(clientProxy *NamingGrpcProxy) *ConnectionEventListener {
 	return &ConnectionEventListener{
 		clientProxy:              clientProxy,
-		registeredInstanceCached: cache.NewConcurrentMap(),
+		registeredInstanceCached: make(map[string]model.Instance),
 		subscribes:               cache.NewConcurrentMap(),
 	}
 }
@@ -67,63 +67,36 @@ func (c *ConnectionEventListener) redoSubscribe() {
 }
 
 func (c *ConnectionEventListener) redoRegisterEachService() {
-	for k, v := range c.registeredInstanceCached.Items() {
+	for k, v := range c.registeredInstanceCached {
 		info := strings.Split(k, constant.SERVICE_INFO_SPLITER)
 		serviceName := info[1]
 		groupName := info[0]
-		instances, ok := v.([]model.Instance)
-		if !ok {
-			logger.Warnf("redo register service:%s faild,instances type not is []model.instance", info[0])
-		}
-		for _, instance := range instances {
-			_, err := c.clientProxy.RegisterInstance(serviceName, groupName, instance)
-			if err != nil {
-				logger.Warnf("redo register service:%s groupName:%s faild:%s", info[0], info[1], err.Error())
-			}
+		_, err := c.clientProxy.RegisterInstance(serviceName, groupName, v)
+		if err != nil {
+			logger.Warnf("redo register service:%s groupName:%s faild:%s", info[0], info[1], err.Error())
 		}
 	}
 }
 
 func (c *ConnectionEventListener) CacheInstanceForRedo(serviceName, groupName string, instance model.Instance) {
-	var flag bool
 	key := util.GetGroupName(serviceName, groupName)
-	instances, ok := c.registeredInstanceCached.Get(key)
-	if !ok {
-		instances = []model.Instance{instance}
-		c.registeredInstanceCached.Set(key, instances)
-	} else {
-		instances, ok := instances.([]model.Instance)
-		if !ok {
-			c.registeredInstanceCached.Remove(key)
-			logger.Warn("cacheInstanceForRedo faild,instances type not is []model.instance")
-			return
-		}
-		for _, v := range instances {
-			if reflect.DeepEqual(v, instance) {
-				flag = false
-			}
-		}
-		if flag {
-			instances = append(instances, instance)
-			c.registeredInstanceCached.Set(key, instances)
-		}
+	getInstance := c.registeredInstanceCached[key]
+	if IsEmpty(getInstance) {
+		return
 	}
+	if reflect.DeepEqual(getInstance, instance) {
+		return
+	}
+	c.registeredInstanceCached[key] = instance
 }
 
 func (c *ConnectionEventListener) RemoveInstanceForRedo(serviceName, groupName string, instance model.Instance) {
 	key := util.GetGroupName(serviceName, groupName)
-	instances, ok := c.registeredInstanceCached.Get(key)
-	if !ok {
+	getInstance := c.registeredInstanceCached[key]
+	if IsEmpty(getInstance) {
 		return
 	}
-	instanceSlice := instances.([]model.Instance)
-	instancesNew := make([]model.Instance, 0, len(instanceSlice))
-	for _, v := range instanceSlice {
-		if !reflect.DeepEqual(v, instance) {
-			instancesNew = append(instancesNew, v)
-		}
-	}
-	c.registeredInstanceCached.Set(key, instancesNew)
+	delete(c.registeredInstanceCached, key)
 }
 
 func (c *ConnectionEventListener) CacheSubscriberForRedo(fullServiceName, clusters string) {
@@ -136,4 +109,8 @@ func (c *ConnectionEventListener) CacheSubscriberForRedo(fullServiceName, cluste
 
 func (c *ConnectionEventListener) RemoveSubscriberForRedo(fullServiceName, clusters string) {
 	c.subscribes.Remove(util.GetServiceCacheKey(fullServiceName, clusters))
+}
+
+func IsEmpty(instance model.Instance) bool {
+	return reflect.DeepEqual(instance, model.Instance{})
 }
