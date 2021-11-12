@@ -214,32 +214,34 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 	if srvs == nil || len(srvs) == 0 {
 		return "", errors.New("server list is empty")
 	}
-
+	var (
+		result string
+		err    error
+	)
 	injectSecurityInfo(server, params)
 
 	//only one server,retry request when error
 	if len(srvs) == 1 {
 		for i := 0; i < constant.REQUEST_DOMAIN_RETRY_TIME; i++ {
-			result, err := server.callServer(api, params, method, getAddress(srvs[0]), srvs[0].ContextPath)
+			result, err = server.callServer(api, params, method, getAddress(srvs[0]), srvs[0].ContextPath)
 			if err == nil {
 				return result, nil
 			}
 			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), err, result)
 		}
-		return "", errors.New("retry " + strconv.Itoa(constant.REQUEST_DOMAIN_RETRY_TIME) + " times request failed!")
 	} else {
 		index := rand.Intn(len(srvs))
 		for i := 1; i <= len(srvs); i++ {
 			curServer := srvs[index]
-			result, err := server.callServer(api, params, method, getAddress(curServer), curServer.ContextPath)
+			result, err = server.callServer(api, params, method, getAddress(curServer), curServer.ContextPath)
 			if err == nil {
 				return result, nil
 			}
 			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), err, result)
 			index = (index + i) % len(srvs)
 		}
-		return "", errors.New("retry " + strconv.Itoa(constant.REQUEST_DOMAIN_RETRY_TIME) + " times request failed!")
 	}
+	return "", fmt.Errorf("retry%stimes request failed,err=%v", strconv.Itoa(constant.REQUEST_DOMAIN_RETRY_TIME), err)
 }
 
 func (server *NacosServer) initRefreshSrvIfNeed() {
