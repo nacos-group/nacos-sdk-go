@@ -19,6 +19,7 @@ package rpc
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"strconv"
@@ -177,14 +178,26 @@ func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiReque
 }
 
 func serverCheck(client nacos_grpc_service.RequestClient) (rpc_response.IResponse, error) {
-	payload, err := client.Request(context.Background(), convertRequest(rpc_request.NewServerCheckRequest()))
-	if err != nil {
-		return nil, err
-	}
 	var response rpc_response.ServerCheckResponse
-	err = json.Unmarshal(payload.GetBody().Value, &response)
-	if err != nil {
-		return nil, err
+	for i := 0; i <= 30; i++ {
+		payload, err := client.Request(context.Background(), convertRequest(rpc_request.NewServerCheckRequest()))
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(payload.GetBody().Value, &response)
+		if err != nil {
+			return nil, err
+		}
+		// check if the server is ready, if not, wait 1 second and try again
+		if response.GetErrorCode() >= 300 && response.GetErrorCode() < 400 {
+			// if we wait 30 second, but the server is not ready,then throw this error
+			if i == 30 {
+				return nil, errors.New("the nacos server is not ready to work in 30 seconds, connect to server failed")
+			}
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		break
 	}
 	return &response, nil
 }
