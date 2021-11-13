@@ -37,10 +37,10 @@ type ConnectResetRequestHandler struct {
 }
 
 func (c *ConnectResetRequestHandler) RequestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse {
-	defer rpcClient.mux.Unlock()
 	connectResetRequest, ok := request.(*rpc_request.ConnectResetRequest)
 	if ok {
 		rpcClient.mux.Lock()
+		defer rpcClient.mux.Unlock()
 		if rpcClient.IsRunning() {
 			if connectResetRequest.ServerIp != "" {
 				serverPortNum, err := strconv.Atoi(connectResetRequest.ServerPort)
