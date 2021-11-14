@@ -98,7 +98,7 @@ func (c *ConnectionEventListener) CacheInstanceForRedo(serviceName, groupName st
 
 func (c *ConnectionEventListener) RemoveInstanceForRedo(serviceName, groupName string, instance model.Instance) {
 	key := util.GetGroupName(serviceName, groupName)
-	_,ok := c.registeredInstanceCached.Get(key)
+	_, ok := c.registeredInstanceCached.Get(key)
 	if !ok {
 		return
 	}
