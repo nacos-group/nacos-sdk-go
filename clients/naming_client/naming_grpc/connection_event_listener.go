@@ -85,16 +85,15 @@ func (c *ConnectionEventListener) redoRegisterEachService() {
 
 func (c *ConnectionEventListener) CacheInstanceForRedo(serviceName, groupName string, instance model.Instance) {
 	key := util.GetGroupName(serviceName, groupName)
-	currentMap, ok := c.registeredInstanceCached.Get(key)
+	getInstance, ok := c.registeredInstanceCached.Get(key)
 	if !ok {
 		logger.Warnf("CacheInstanceForRedo get cache instance is null,key:%s", key)
 		return
 	}
-	getInstance := currentMap.(model.Instance)
-	if reflect.DeepEqual(getInstance, instance) {
+	if reflect.DeepEqual(getInstance.(model.Instance), instance) {
 		return
 	}
-	c.registeredInstanceCached.Set(key,instance)
+	c.registeredInstanceCached.Set(key, instance)
 }
 
 func (c *ConnectionEventListener) RemoveInstanceForRedo(serviceName, groupName string, instance model.Instance) {
