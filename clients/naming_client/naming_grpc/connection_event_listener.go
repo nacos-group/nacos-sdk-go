@@ -87,13 +87,10 @@ func (c *ConnectionEventListener) CacheInstanceForRedo(serviceName, groupName st
 	key := util.GetGroupName(serviceName, groupName)
 	currentMap, ok := c.registeredInstanceCached.Get(key)
 	if !ok {
-		logger.Warnf("get key: %s is null", key)
+		logger.Warnf("CacheInstanceForRedo get cache instance is null,key:%s", key)
 		return
 	}
 	getInstance := currentMap.(model.Instance)
-	if IsEmpty(getInstance) {
-		return
-	}
 	if reflect.DeepEqual(getInstance, instance) {
 		return
 	}
@@ -102,14 +99,11 @@ func (c *ConnectionEventListener) CacheInstanceForRedo(serviceName, groupName st
 
 func (c *ConnectionEventListener) RemoveInstanceForRedo(serviceName, groupName string, instance model.Instance) {
 	key := util.GetGroupName(serviceName, groupName)
-	currentMap,ok := c.registeredInstanceCached.Get(key)
+	_,ok := c.registeredInstanceCached.Get(key)
 	if !ok {
 		return
 	}
-	if IsEmpty(currentMap.(model.Instance)) {
-		return
-	}
-	delete(c.registeredInstanceCached.Items(), key)
+	c.registeredInstanceCached.Remove(key)
 }
 
 func (c *ConnectionEventListener) CacheSubscriberForRedo(fullServiceName, clusters string) {
@@ -122,8 +116,4 @@ func (c *ConnectionEventListener) CacheSubscriberForRedo(fullServiceName, cluste
 
 func (c *ConnectionEventListener) RemoveSubscriberForRedo(fullServiceName, clusters string) {
 	c.subscribes.Remove(util.GetServiceCacheKey(fullServiceName, clusters))
-}
-
-func IsEmpty(instance model.Instance) bool {
-	return reflect.DeepEqual(instance, model.Instance{})
 }
