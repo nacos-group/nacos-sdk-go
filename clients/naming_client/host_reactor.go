@@ -65,7 +65,7 @@ func NewHostReactor(serviceProxy NamingProxy, cacheDir string, updateThreadNum i
 
 func (hr *HostReactor) loadCacheFromDisk() {
 	serviceMap := cache.ReadServicesFromFile(hr.cacheDir)
-	if serviceMap == nil || len(serviceMap) == 0 {
+	if len(serviceMap) == 0 {
 		return
 	}
 	for k, v := range serviceMap {

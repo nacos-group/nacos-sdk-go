@@ -113,7 +113,7 @@ func (proxy *NamingProxy) SendBeat(info model.BeatInfo) (int64, error) {
 	if result != "" {
 		interVal, err := jsonparser.GetInt([]byte(result), "clientBeatInterval")
 		if err != nil {
-			return 0, errors.New(fmt.Sprintf("namespaceId:<%s> sending beat to server:<%s> get 'clientBeatInterval' from <%s> error:<%+v>", proxy.clientConfig.NamespaceId, util.ToJsonString(info), result, err))
+			return 0, fmt.Errorf("namespaceId:<%s> sending beat to server:<%s> get 'clientBeatInterval' from <%s> error:<%+v>", proxy.clientConfig.NamespaceId, util.ToJsonString(info), result, err)
 		} else {
 			return interVal, nil
 		}
@@ -133,10 +133,6 @@ func (proxy *NamingProxy) GetServiceList(pageNo int, pageSize int, groupName str
 		switch selector.Type {
 		case "label":
 			params["selector"] = util.ToJsonString(selector)
-			break
-		default:
-			break
-
 		}
 	}
 
@@ -152,14 +148,14 @@ func (proxy *NamingProxy) GetServiceList(pageNo int, pageSize int, groupName str
 	serviceList := model.ServiceList{}
 	count, err := jsonparser.GetInt([]byte(result), "count")
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'count' from <%s> error:<%+v>", proxy.clientConfig.NamespaceId, pageNo, pageSize, util.ToJsonString(selector), groupName, result, err))
+		return nil, fmt.Errorf("namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'count' from <%s> error:<%+v>", proxy.clientConfig.NamespaceId, pageNo, pageSize, util.ToJsonString(selector), groupName, result, err)
 	}
 	var doms []string
 	_, err = jsonparser.ArrayEach([]byte(result), func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		doms = append(doms, string(value))
 	}, "doms")
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'doms' from <%s> error:<%+v> ", proxy.clientConfig.NamespaceId, pageNo, pageSize, util.ToJsonString(selector), groupName, result, err))
+		return nil, fmt.Errorf("namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'doms' from <%s> error:<%+v> ", proxy.clientConfig.NamespaceId, pageNo, pageSize, util.ToJsonString(selector), groupName, result, err)
 	}
 	serviceList.Count = count
 	serviceList.Doms = doms
