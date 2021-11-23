@@ -207,6 +207,12 @@ func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (mod
 			param.NameSpace = sc.NamespaceId
 		}
 	}
+	if param.PageNo == 0 {
+		param.PageNo = 1
+	}
+	if param.PageSize == 0 {
+		param.PageSize = 10
+	}
 	services := sc.hostReactor.GetAllServiceInfo(param.NameSpace, param.GroupName, param.PageNo, param.PageSize)
 	return services, nil
 }
