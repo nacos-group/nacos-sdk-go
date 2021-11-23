@@ -259,7 +259,7 @@ func (server *NacosServer) initRefreshSrvIfNeed() {
 }
 
 func (server *NacosServer) refreshServerSrvIfNeed() {
-	if util.CurrentMillis()-server.lastSrvRefTime < server.vipSrvRefInterMills && len(server.serverList) > 0 {
+	if len(server.serverList) > 0 || util.CurrentMillis()-server.lastSrvRefTime < server.vipSrvRefInterMills {
 		return
 	}
 
