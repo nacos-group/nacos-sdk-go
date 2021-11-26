@@ -56,14 +56,13 @@ func (c *ConnectionEventListener) redoSubscribe() {
 		var err error
 		var service model.Service
 		if len(info) > 2 {
-			service, err = c.clientProxy.Subscribe(info[0], info[1], info[2])
+			service, err = c.clientProxy.Subscribe(info[1], info[0], info[2])
 		} else {
-			service, err = c.clientProxy.Subscribe(info[0], info[1], "")
+			service, err = c.clientProxy.Subscribe(info[1], info[0], "")
 		}
 
 		if err != nil {
-			logger.Warnf("redo subscribe service:%s faild:%+v", info[0], err)
-			return
+			logger.Warnf("redo subscribe service:%s faild:%+v", info[1], err)
 		}
 		c.clientProxy.serviceInfoHolder.ProcessService(&service)
 	}
