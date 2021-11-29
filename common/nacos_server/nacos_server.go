@@ -52,6 +52,7 @@ type NacosServer struct {
 	vipSrvRefInterMills int64
 	contextPath         string
 	currentIndex        int32
+	RefreshAdderSignal  chan int
 }
 
 func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
@@ -70,6 +71,7 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 		vipSrvRefInterMills: 10000,
 		contextPath:         clientCfg.ContextPath,
 		currentIndex:        rand.Int31n((int32)(len(serverList))),
+		RefreshAdderSignal:  make(chan int, 1),
 	}
 	ns.initRefreshSrvIfNeed()
 	_, err := securityLogin.Login()
@@ -296,6 +298,7 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 			server.Lock()
 			logger.Infof("server list is updated, old: <%v>,new:<%v>", server.serverList, servers)
 			server.serverList = servers
+			server.RefreshAdderSignal <- 0
 			server.lastSrvRefTime = util.CurrentMillis()
 			server.Unlock()
 		}

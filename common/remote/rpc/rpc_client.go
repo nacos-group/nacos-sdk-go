@@ -180,6 +180,8 @@ func (r *RpcClient) Start() {
 				r.reconnect(rc.serverInfo, rc.onRequestFail)
 			case <-timer.C:
 				r.healthCheck(timer)
+			case <-r.nacosServer.RefreshAdderSignal:
+				r.switchServerAsync(ServerInfo{}, false)
 			}
 		}
 	}()
@@ -282,6 +284,9 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 	for !switchSuccess && !r.isShutdown() {
 		if serverInfoFlag {
 			serverInfo = r.nextRpcServer()
+		}
+		if r.currentConnection != nil && r.currentConnection.getServerInfo() == serverInfo && r.IsRunning() {
+			return
 		}
 		connectionNew, err := r.executeClient.connectToServer(serverInfo)
 		if connectionNew != nil && err == nil {
