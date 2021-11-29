@@ -54,15 +54,18 @@ func (c *ConnectionEventListener) redoSubscribe() {
 	for _, key := range c.subscribes.Keys() {
 		info := strings.Split(key, constant.SERVICE_INFO_SPLITER)
 		var err error
+		var service model.Service
 		if len(info) > 2 {
-			_, err = c.clientProxy.Subscribe(info[0], info[1], info[2])
+			service, err = c.clientProxy.Subscribe(info[0], info[1], info[2])
 		} else {
-			_, err = c.clientProxy.Subscribe(info[0], info[1], "")
+			service, err = c.clientProxy.Subscribe(info[0], info[1], "")
 		}
 
 		if err != nil {
 			logger.Warnf("redo subscribe service:%s faild:%+v", info[0], err)
+			return
 		}
+		c.clientProxy.serviceInfoHolder.ProcessService(&service)
 	}
 }
 
