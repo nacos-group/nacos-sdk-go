@@ -63,6 +63,7 @@ func (c *ConnectionEventListener) redoSubscribe() {
 
 		if err != nil {
 			logger.Warnf("redo subscribe service:%s faild:%+v", info[1], err)
+			return
 		}
 		c.clientProxy.serviceInfoHolder.ProcessService(&service)
 	}
