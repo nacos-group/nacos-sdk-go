@@ -43,16 +43,16 @@ import (
 
 type NacosServer struct {
 	sync.RWMutex
-	securityLogin       security.AuthClient
-	serverList          []constant.ServerConfig
-	httpAgent           http_agent.IHttpAgent
-	timeoutMs           uint64
-	endpoint            string
-	lastSrvRefTime      int64
-	vipSrvRefInterMills int64
-	contextPath         string
-	currentIndex        int32
-	RefreshAdderSignal  chan int
+	securityLogin         security.AuthClient
+	serverList            []constant.ServerConfig
+	httpAgent             http_agent.IHttpAgent
+	timeoutMs             uint64
+	endpoint              string
+	lastSrvRefTime        int64
+	vipSrvRefInterMills   int64
+	contextPath           string
+	currentIndex          int32
+	ServerSrcChangeSignal chan struct{}
 }
 
 func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
@@ -63,15 +63,15 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 	securityLogin := security.NewAuthClient(clientCfg, serverList, httpAgent)
 
 	ns := NacosServer{
-		serverList:          serverList,
-		securityLogin:       securityLogin,
-		httpAgent:           httpAgent,
-		timeoutMs:           timeoutMs,
-		endpoint:            endpoint,
-		vipSrvRefInterMills: 10000,
-		contextPath:         clientCfg.ContextPath,
-		currentIndex:        rand.Int31n((int32)(len(serverList))),
-		RefreshAdderSignal:  make(chan int, 1),
+		serverList:            serverList,
+		securityLogin:         securityLogin,
+		httpAgent:             httpAgent,
+		timeoutMs:             timeoutMs,
+		endpoint:              endpoint,
+		vipSrvRefInterMills:   10000,
+		contextPath:           clientCfg.ContextPath,
+		currentIndex:          rand.Int31n((int32)(len(serverList))),
+		ServerSrcChangeSignal: make(chan struct{}, 1),
 	}
 	ns.initRefreshSrvIfNeed()
 	_, err := securityLogin.Login()
@@ -298,7 +298,7 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 			server.Lock()
 			logger.Infof("server list is updated, old: <%v>,new:<%v>", server.serverList, servers)
 			server.serverList = servers
-			server.RefreshAdderSignal <- 0
+			server.ServerSrcChangeSignal <- struct{}{}
 			server.lastSrvRefTime = util.CurrentMillis()
 			server.Unlock()
 		}

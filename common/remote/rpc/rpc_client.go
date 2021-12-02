@@ -180,8 +180,8 @@ func (r *RpcClient) Start() {
 				r.reconnect(rc.serverInfo, rc.onRequestFail)
 			case <-timer.C:
 				r.healthCheck(timer)
-			case <-r.nacosServer.RefreshAdderSignal:
-				r.switchServerAsync(ServerInfo{}, false)
+			case <-r.nacosServer.ServerSrcChangeSignal:
+				r.notifyServerSrvChange()
 			}
 		}
 	}()
@@ -212,6 +212,24 @@ func (r *RpcClient) Start() {
 	}
 
 	r.signalNotify()
+}
+
+func (r *RpcClient) notifyServerSrvChange() {
+	if r.currentConnection == nil {
+		r.switchServerAsync(ServerInfo{}, false)
+		return
+	}
+	curServerInfo := r.currentConnection.getServerInfo()
+	var found bool
+	for _, ele := range r.nacosServer.GetServerList() {
+		if ele.IpAddr == curServerInfo.serverIp {
+			found = true
+		}
+	}
+	if !found {
+		logger.Infof("Current connected server {}:{} is not in latest server list, switch switchServerAsync", curServerInfo.serverIp, curServerInfo.serverPort)
+		r.switchServerAsync(ServerInfo{}, false)
+	}
 }
 
 func (r *RpcClient) registerServerRequestHandlers() {
