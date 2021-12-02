@@ -303,9 +303,6 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 		if serverInfoFlag {
 			serverInfo = r.nextRpcServer()
 		}
-		if r.currentConnection != nil && r.currentConnection.getServerInfo() == serverInfo && r.IsRunning() {
-			return
-		}
 		connectionNew, err := r.executeClient.connectToServer(serverInfo)
 		if connectionNew != nil && err == nil {
 			logger.Infof("%s success to connect a server %+v,connectionId=%s", r.Name, serverInfo,
