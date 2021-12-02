@@ -30,7 +30,7 @@ func TestBeatReactor_AddBeatInfo(t *testing.T) {
 	br := NewBeatReactor(NamingProxy{nacosServer: &nacos_server.NacosServer{}}, 5000)
 	serviceName := "Test"
 	groupName := "public"
-	beatInfo := model.BeatInfo{
+	beatInfo := &model.BeatInfo{
 		Ip:          "127.0.0.1",
 		Port:        8080,
 		Metadata:    map[string]string{},
@@ -49,7 +49,7 @@ func TestBeatReactor_RemoveBeatInfo(t *testing.T) {
 	br := NewBeatReactor(NamingProxy{nacosServer: &nacos_server.NacosServer{}}, 5000)
 	serviceName := "Test"
 	groupName := "public"
-	beatInfo1 := model.BeatInfo{
+	beatInfo1 := &model.BeatInfo{
 		Ip:          "127.0.0.1",
 		Port:        8080,
 		Metadata:    map[string]string{},
@@ -58,7 +58,7 @@ func TestBeatReactor_RemoveBeatInfo(t *testing.T) {
 		Weight:      1,
 	}
 	br.AddBeatInfo(util.GetGroupName(serviceName, groupName), beatInfo1)
-	beatInfo2 := model.BeatInfo{
+	beatInfo2 := &model.BeatInfo{
 		Ip:          "127.0.0.2",
 		Port:        8080,
 		Metadata:    map[string]string{},

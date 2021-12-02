@@ -18,7 +18,6 @@ package config_client
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"runtime"
 	"strconv"
@@ -188,7 +187,6 @@ func Test_GetConfigWithErrorResponse_401(t *testing.T) {
 	result, err := client.GetConfig(configParamTest)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", result)
-	fmt.Println(err.Error())
 }
 
 func Test_GetConfigWithErrorResponse_404(t *testing.T) {
@@ -221,7 +219,6 @@ func Test_GetConfigWithErrorResponse_403(t *testing.T) {
 	result, err := client.GetConfig(configParamTest)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", result)
-	fmt.Println(err.Error())
 }
 
 func Test_GetConfigWithCache(t *testing.T) {
@@ -439,7 +436,6 @@ func TestListen(t *testing.T) {
 				DataId: localConfigTest.DataId,
 				Group:  localConfigTest.Group,
 				OnChange: func(namespace, group, dataId, data string) {
-					fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
 					ch <- data
 				},
 			})
@@ -459,7 +455,6 @@ func TestListen(t *testing.T) {
 		case c := <-ch:
 			assert.Equal(t, c, localConfigTest.Content)
 		case <-time.After(10 * time.Second):
-			fmt.Println("timeout")
 			assert.Errorf(t, errors.New("timeout"), "timeout")
 		}
 	})
@@ -512,7 +507,6 @@ func TestListen(t *testing.T) {
 			DataId: multipleClientsKey,
 			Group:  localConfigTest.Group,
 			OnChange: func(namespace, group, dataId, data string) {
-				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
 				ch <- data
 			},
 		}
@@ -535,7 +529,6 @@ func TestListen(t *testing.T) {
 		case c := <-ch:
 			assert.Equal(t, localConfigTest.Content, c)
 		case <-time.After(10 * time.Second):
-			fmt.Println("timeout")
 			assert.Errorf(t, errors.New("timeout"), "timeout")
 		}
 
@@ -547,7 +540,6 @@ func TestListen(t *testing.T) {
 			DataId: multipleClientsMultipleConfigsKey,
 			Group:  localConfigTest.Group,
 			OnChange: func(namespace, group, dataId, data string) {
-				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
 				ch <- data
 			},
 		}
@@ -570,7 +562,6 @@ func TestListen(t *testing.T) {
 		case c := <-ch:
 			assert.Equal(t, localConfigTest.Content, c)
 		case <-time.After(10 * time.Second):
-			fmt.Println("timeout")
 			assert.Errorf(t, errors.New("timeout"), "timeout")
 		}
 
@@ -589,7 +580,6 @@ func TestCancelListenConfig(t *testing.T) {
 			DataId: cancelOneKey,
 			Group:  "group",
 			OnChange: func(namespace, group, dataId, data string) {
-				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
 			},
 		}
 
@@ -597,7 +587,6 @@ func TestCancelListenConfig(t *testing.T) {
 			DataId: cancelOne1Key,
 			Group:  "group1",
 			OnChange: func(namespace, group, dataId, data string) {
-				fmt.Println("group1:" + group + ", dataId1:" + dataId + ", data:" + data)
 				context = data
 			},
 		}
@@ -609,7 +598,6 @@ func TestCancelListenConfig(t *testing.T) {
 			client.ListenConfig(listenConfigParam1)
 		}()
 
-		fmt.Println("Start listening")
 		for i := 1; i <= 5; i++ {
 			go func() {
 				success, err = client.PublishConfig(vo.ConfigParam{
@@ -627,7 +615,6 @@ func TestCancelListenConfig(t *testing.T) {
 
 			if i == 3 {
 				client.CancelListenConfig(listenConfigParam)
-				fmt.Println("Cancel listen config")
 			}
 			time.Sleep(2 * time.Second)
 			assert.Nil(t, err)
@@ -647,7 +634,6 @@ func TestCancelListenConfig(t *testing.T) {
 			DataId: cancelListenConfigKey,
 			Group:  localConfigTest.Group,
 			OnChange: func(namespace, group, dataId, data string) {
-				fmt.Println("group:" + group + ", dataId:" + dataId + ", data:" + data)
 				context = data
 				ch <- data
 			},

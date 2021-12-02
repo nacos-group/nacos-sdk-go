@@ -61,18 +61,19 @@ func buildKey(serviceName string, ip string, port uint64) string {
 	return serviceName + constant.NAMING_INSTANCE_ID_SPLITTER + ip + constant.NAMING_INSTANCE_ID_SPLITTER + strconv.Itoa(int(port))
 }
 
-func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo model.BeatInfo) {
+func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo *model.BeatInfo) {
 	logger.Infof("adding beat: <%s> to beat map", util.ToJsonString(beatInfo))
 	k := buildKey(serviceName, beatInfo.Ip, beatInfo.Port)
 	defer br.mux.Unlock()
 	br.mux.Lock()
 	if data, ok := br.beatMap.Get(k); ok {
-		beatInfo := data.(*model.BeatInfo)
+		beatInfo = data.(*model.BeatInfo)
 		atomic.StoreInt32(&beatInfo.State, int32(model.StateShutdown))
 		br.beatMap.Remove(k)
 	}
-	br.beatMap.Set(k, &beatInfo)
-	go br.sendInstanceBeat(k, &beatInfo)
+	br.beatMap.Set(k, beatInfo)
+	beatInfo.Metadata = util.DeepCopyMap(beatInfo.Metadata)
+	go br.sendInstanceBeat(k, beatInfo)
 }
 
 func (br *BeatReactor) RemoveBeatInfo(serviceName string, ip string, port uint64) {
