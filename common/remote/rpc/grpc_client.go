@@ -158,16 +158,15 @@ func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiReque
 						if err == io.EOF {
 							logger.Infof("%s Request stream onCompleted, switch server", grpcConn.getConnectionId())
 						} else {
-							logger.Errorf("%s Request stream error, switch server,error=%+v", grpcConn.getConnectionId(), err)
+							logger.Errorf("%s Request stream error, switch server, error=%+v", grpcConn.getConnectionId(), err)
 						}
 						if atomic.CompareAndSwapInt32((*int32)(&c.rpcClientStatus), int32(RUNNING), int32(UNHEALTHY)) {
 							c.switchServerAsync(ServerInfo{}, false)
 						}
 					} else {
-						logger.Infof("%s Ignore event,isRunning:%v,isAbandon=%v", grpcConn.getConnectionId(), running, abandon)
+						logger.Infof("%s received error event, isRunning:%v, isAbandon=%v, error=%+v", grpcConn.getConnectionId(), running, abandon)
 						time.Sleep(time.Second)
 					}
-
 				} else {
 					c.handleServerRequest(payload, grpcConn)
 				}
