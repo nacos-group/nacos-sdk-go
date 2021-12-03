@@ -75,6 +75,7 @@ func (g *GrpcConnection) request(request rpc_request.IRequest, timeoutMills int6
 }
 
 func (g *GrpcConnection) close() {
+	g.Connection.close()
 	g.streamCloseChan <- struct{}{}
 }
 
