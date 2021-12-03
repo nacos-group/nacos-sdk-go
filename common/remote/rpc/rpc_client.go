@@ -227,7 +227,7 @@ func (r *RpcClient) notifyServerSrvChange() {
 		}
 	}
 	if !found {
-		logger.Infof("Current connected server {}:{} is not in latest server list, switch switchServerAsync", curServerInfo.serverIp, curServerInfo.serverPort)
+		logger.Infof("Current connected server %s:%d is not in latest server list, switch switchServerAsync", curServerInfo.serverIp, curServerInfo.serverPort)
 		r.switchServerAsync(ServerInfo{}, false)
 	}
 }
