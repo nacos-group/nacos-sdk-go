@@ -173,3 +173,11 @@ func GetUrlFormedMap(source map[string]string) (urlEncoded string) {
 	urlEncoded = urlEncoder.Encode()
 	return
 }
+
+func DeepCopyMap(params map[string]string) map[string]string {
+	result := make(map[string]string, len(params))
+	for k, v := range params {
+		result[k] = v
+	}
+	return result
+}

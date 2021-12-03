@@ -118,7 +118,7 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 		Weight:      param.Weight,
 		Ephemeral:   param.Ephemeral,
 	}
-	beatInfo := model.BeatInfo{
+	beatInfo := &model.BeatInfo{
 		Ip:          param.Ip,
 		Port:        param.Port,
 		Metadata:    param.Metadata,
@@ -163,7 +163,7 @@ func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, erro
 		// Update the heartbeat information first to prevent the information
 		// from being flushed back to the original information after reconnecting
 		sc.beatReactor.RemoveBeatInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Ip, param.Port)
-		beatInfo := model.BeatInfo{
+		beatInfo := &model.BeatInfo{
 			Ip:          param.Ip,
 			Port:        param.Port,
 			Metadata:    param.Metadata,
@@ -287,22 +287,6 @@ func (sc *NamingClient) selectOneHealthyInstances(service model.Service) (*model
 	chooser := newChooser(result)
 	instance := chooser.pick()
 	return &instance, nil
-}
-
-func random(instances []model.Instance, mw int) []model.Instance {
-	if len(instances) <= 1 || mw <= 1 {
-		return instances
-	}
-	// 实例交叉插入列表，避免列表中是连续的实例
-	var result = make([]model.Instance, 0)
-	for i := 1; i <= mw; i++ {
-		for _, host := range instances {
-			if int(math.Ceil(host.Weight)) >= i {
-				result = append(result, host)
-			}
-		}
-	}
-	return result
 }
 
 type instance []model.Instance

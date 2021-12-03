@@ -17,7 +17,6 @@
 package naming_client
 
 import (
-	"fmt"
 	"log"
 	"strings"
 	"testing"
@@ -57,7 +56,6 @@ func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
 		Clusters:    []string{"default"},
 		GroupName:   "public",
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			fmt.Println(util.ToJsonString(ed.callbackFuncsMap))
 		},
 	}
 	ed.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
@@ -99,7 +97,6 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 		Clusters:    []string{"default"},
 		GroupName:   "public",
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			fmt.Printf("func1:%s \n", util.ToJsonString(services))
 		},
 	}
 	ed.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
@@ -110,7 +107,6 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 		Clusters:    []string{"default"},
 		GroupName:   "public",
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			fmt.Printf("func2:%s \n", util.ToJsonString(services))
 		},
 	}
 	ed.AddCallbackFuncs(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
