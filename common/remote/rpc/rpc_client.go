@@ -171,6 +171,7 @@ func (r *RpcClient) Start() {
 						if rc.serverInfo.serverIp == v.IpAddr {
 							rc.serverInfo.serverPort = v.Port
 							serverExist = true
+							break
 						}
 					}
 					if !serverExist {
