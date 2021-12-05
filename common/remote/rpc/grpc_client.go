@@ -165,7 +165,8 @@ func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiReque
 						}
 					} else {
 						logger.Infof("%s received error event, isRunning:%v, isAbandon=%v, error=%+v", grpcConn.getConnectionId(), running, abandon, err)
-						time.Sleep(time.Second)
+						after := time.After(time.Second)
+						<-after
 					}
 				} else {
 					c.handleServerRequest(payload, grpcConn)
