@@ -36,15 +36,6 @@ var clientConfigTest = *constant.NewClientConfig(
 
 var serverConfigTest = *constant.NewServerConfig("127.0.0.1", 80, constant.WithContextPath("/nacos"))
 
-var headers = map[string][]string{
-	"Client-Version":  {constant.CLIENT_VERSION},
-	"User-Agent":      {constant.CLIENT_VERSION},
-	"Accept-Encoding": {"gzip,deflate,sdch"},
-	"Connection":      {"Keep-Alive"},
-	"Request-Module":  {"Naming"},
-	"Content-Type":    {"application/x-www-form-urlencoded"},
-}
-
 type MockNamingProxy struct {
 }
 
@@ -76,9 +67,9 @@ func (m *MockNamingProxy) Unsubscribe(serviceName, groupName, clusters string) {
 
 func NewTestNamingClient() *NamingClient {
 	nc := nacos_client.NacosClient{}
-	nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	nc.SetClientConfig(clientConfigTest)
-	nc.SetHttpAgent(&http_agent.HttpAgent{})
+	_ = nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+	_ = nc.SetClientConfig(clientConfigTest)
+	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
 	client, _ := NewNamingClient(&nc)
 	client.serviceProxy = &MockNamingProxy{}
 	return client
@@ -140,67 +131,6 @@ func TestNamingProxy_DeregisterService_WithGroupName(t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, true, success)
 }
-
-var serviceJsonTest = `{
-			"name": "DEFAULT_GROUP@@DEMO",
-			"cacheMillis": 1000,
-			"useSpecifiedURL": false,
-			"hosts": [{
-				"valid": true,
-				"marked": false,
-				"instanceId": "10.10.10.10-8888-a-DEMO",
-				"port": 8888,
-				"ip": "10.10.10.10",
-				"weight": 1.0,
-				"metadata": {},
-				"serviceName":"DEMO",
-				"enabled":true,
-				"clusterName":"a"
-			},{
-				"valid": true,
-				"marked": false,
-				"instanceId": "10.10.10.11-8888-a-DEMO",
-				"port": 8888,
-				"ip": "10.10.10.11",
-				"weight": 1.0,
-				"metadata": {},
-				"serviceName":"DEMO",
-				"enabled":true,
-				"clusterName":"a"
-			}
-			],
-			"checksum": "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-			"lastRefTime": 1528787794594,
-			"env": "",
-			"clusters": "a"
-		}`
-
-var serviceTest = model.Service(model.Service{Name: "DEFAULT_GROUP@@DEMO",
-	CacheMillis: 1000,
-	Hosts: []model.Instance{
-		{
-			InstanceId:  "10.10.10.10-8888-a-DEMO",
-			Port:        0x22b8,
-			Ip:          "10.10.10.10",
-			Weight:      1,
-			Metadata:    map[string]string{},
-			ClusterName: "a",
-			ServiceName: "DEMO",
-			Enable:      true,
-		},
-		{
-			InstanceId:  "10.10.10.11-8888-a-DEMO",
-			Port:        0x22b8,
-			Ip:          "10.10.10.11",
-			Weight:      1,
-			Metadata:    map[string]string{},
-			ClusterName: "a",
-			ServiceName: "DEMO",
-			Enable:      true,
-		},
-	},
-	Checksum:    "3bbcf6dd1175203a8afdade0e77a27cd1528787794594",
-	LastRefTime: 1528787794594, Clusters: "a"})
 
 func TestNamingClient_SelectOneHealthyInstance_SameWeight(t *testing.T) {
 	services := model.Service{
@@ -510,7 +440,7 @@ func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
 	client := NewTestNamingClient()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		client.selectOneHealthyInstances(services)
+		_, _ = client.selectOneHealthyInstances(services)
 	}
 
 }

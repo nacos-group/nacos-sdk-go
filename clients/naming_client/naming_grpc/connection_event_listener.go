@@ -20,6 +20,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
@@ -28,12 +30,12 @@ import (
 )
 
 type ConnectionEventListener struct {
-	clientProxy              *NamingGrpcProxy
+	clientProxy              naming_proxy.INamingProxy
 	registeredInstanceCached cache.ConcurrentMap
 	subscribes               cache.ConcurrentMap
 }
 
-func NewConnectionEventListener(clientProxy *NamingGrpcProxy) *ConnectionEventListener {
+func NewConnectionEventListener(clientProxy naming_proxy.INamingProxy) *ConnectionEventListener {
 	return &ConnectionEventListener{
 		clientProxy:              clientProxy,
 		registeredInstanceCached: cache.NewConcurrentMap(),
@@ -65,7 +67,12 @@ func (c *ConnectionEventListener) redoSubscribe() {
 			logger.Warnf("redo subscribe service:%s faild:%+v", info[0], err)
 			return
 		}
-		c.clientProxy.serviceInfoHolder.ProcessService(&service)
+
+		grpcProxy, ok := c.clientProxy.(*NamingGrpcProxy)
+		if !ok {
+			return
+		}
+		grpcProxy.serviceInfoHolder.ProcessService(&service)
 	}
 }
 
@@ -113,7 +120,6 @@ func (c *ConnectionEventListener) CacheSubscriberForRedo(fullServiceName, cluste
 	if _, ok := c.subscribes.Get(key); !ok {
 		c.subscribes.Set(key, struct{}{})
 	}
-	return
 }
 
 func (c *ConnectionEventListener) RemoveSubscriberForRedo(fullServiceName, clusters string) {

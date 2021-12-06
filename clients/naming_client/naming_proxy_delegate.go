@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package naming_proxy
+package naming_client
 
 import (
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_grpc"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
@@ -34,7 +35,7 @@ type NamingProxyDelegate struct {
 }
 
 func NewNamingProxyDelegate(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig,
-	httpAgent http_agent.IHttpAgent, serviceInfoHolder *naming_cache.ServiceInfoHolder) (INamingProxy, error) {
+	httpAgent http_agent.IHttpAgent, serviceInfoHolder *naming_cache.ServiceInfoHolder) (naming_proxy.INamingProxy, error) {
 
 	nacosServer, err := nacos_server.NewNacosServer(serverCfgs, clientCfg, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint)
 	if err != nil {
@@ -58,7 +59,7 @@ func NewNamingProxyDelegate(clientCfg constant.ClientConfig, serverCfgs []consta
 	}, nil
 }
 
-func (proxy *NamingProxyDelegate) getExecuteClientProxy(instance model.Instance) (namingProxy INamingProxy) {
+func (proxy *NamingProxyDelegate) getExecuteClientProxy(instance model.Instance) (namingProxy naming_proxy.INamingProxy) {
 	if instance.Ephemeral {
 		namingProxy = proxy.grpcClientProxy
 	} else {
