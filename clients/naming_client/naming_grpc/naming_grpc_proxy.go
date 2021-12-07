@@ -111,7 +111,6 @@ func (proxy *NamingGrpcProxy) GetServiceList(pageNo uint32, pageSize uint32, gro
 		switch selector.Type {
 		case "label":
 			selectorStr = util.ToJsonString(selector)
-			break
 		default:
 			break
 		}
@@ -155,6 +154,6 @@ func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters 
 
 func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters string) {
 	proxy.eventListener.RemoveSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
-	proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
+	_, _ = proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
 		clusters, false))
 }
