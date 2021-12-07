@@ -27,17 +27,17 @@ import (
 )
 
 type SubscribeCallback struct {
-	callbackFuncMap cache.ConcurrentMap
+	CallbackFuncMap cache.ConcurrentMap
 	mux             *sync.Mutex
 }
 
 func NewSubscribeCallback() *SubscribeCallback {
-	return &SubscribeCallback{callbackFuncMap: cache.NewConcurrentMap(), mux: new(sync.Mutex)}
+	return &SubscribeCallback{CallbackFuncMap: cache.NewConcurrentMap(), mux: new(sync.Mutex)}
 }
 
 func (ed *SubscribeCallback) IsSubscribed(serviceName, clusters string) bool {
 	key := util.GetServiceCacheKey(serviceName, clusters)
-	_, ok := ed.callbackFuncMap.Get(key)
+	_, ok := ed.CallbackFuncMap.Get(key)
 	return ok
 }
 
@@ -47,18 +47,18 @@ func (ed *SubscribeCallback) AddCallbackFunc(serviceName string, clusters string
 	defer ed.mux.Unlock()
 	ed.mux.Lock()
 	var funcSlice []*func(services []model.Instance, err error)
-	old, ok := ed.callbackFuncMap.Get(key)
+	old, ok := ed.CallbackFuncMap.Get(key)
 	if ok {
 		funcSlice = append(funcSlice, old.([]*func(services []model.Instance, err error))...)
 	}
 	funcSlice = append(funcSlice, callbackFunc)
-	ed.callbackFuncMap.Set(key, funcSlice)
+	ed.CallbackFuncMap.Set(key, funcSlice)
 }
 
 func (ed *SubscribeCallback) RemoveCallbackFunc(serviceName string, clusters string, callbackFunc *func(services []model.Instance, err error)) {
 	logger.Info("removing " + serviceName + " with " + clusters + " to listener map")
 	key := util.GetServiceCacheKey(serviceName, clusters)
-	funcs, ok := ed.callbackFuncMap.Get(key)
+	funcs, ok := ed.CallbackFuncMap.Get(key)
 	if ok && funcs != nil {
 		var newFuncs []*func(services []model.Instance, err error)
 		for _, funcItem := range funcs.([]*func(services []model.Instance, err error)) {
@@ -66,7 +66,7 @@ func (ed *SubscribeCallback) RemoveCallbackFunc(serviceName string, clusters str
 				newFuncs = append(newFuncs, funcItem)
 			}
 		}
-		ed.callbackFuncMap.Set(key, newFuncs)
+		ed.CallbackFuncMap.Set(key, newFuncs)
 	}
 
 }
@@ -76,7 +76,7 @@ func (ed *SubscribeCallback) ServiceChanged(service *model.Service) {
 		return
 	}
 	key := util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName), service.Clusters)
-	funcs, ok := ed.callbackFuncMap.Get(key)
+	funcs, ok := ed.CallbackFuncMap.Get(key)
 	if ok {
 		for _, funcItem := range funcs.([]*func(services []model.Instance, err error)) {
 			if len(service.Hosts) == 0 {

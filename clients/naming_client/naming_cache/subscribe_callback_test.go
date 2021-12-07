@@ -55,12 +55,12 @@ func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
 		Clusters:    []string{"default"},
 		GroupName:   "public",
 		SubscribeCallback: func(services []model.Instance, err error) {
-			fmt.Println(util.ToJsonString(ed.callbackFuncMap))
+			fmt.Println(util.ToJsonString(ed.CallbackFuncMap))
 		},
 	}
 	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 	key := util.GetServiceCacheKey(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
-	for k, v := range ed.callbackFuncMap.Items() {
+	for k, v := range ed.CallbackFuncMap.Items() {
 		assert.Equal(t, key, k, "key should be equal!")
 		funcs := v.([]*func(services []model.Instance, err error))
 		assert.Equal(t, len(funcs), 1)
@@ -99,7 +99,7 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 		},
 	}
 	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
-	assert.Equal(t, len(ed.callbackFuncMap.Items()), 1, "callback funcs map length should be 1")
+	assert.Equal(t, len(ed.CallbackFuncMap.Items()), 1, "callback funcs map length should be 1")
 
 	param2 := vo.SubscribeParam{
 		ServiceName: "Test",
@@ -110,16 +110,16 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 		},
 	}
 	ed.AddCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
-	assert.Equal(t, len(ed.callbackFuncMap.Items()), 1, "callback funcs map length should be 2")
+	assert.Equal(t, len(ed.CallbackFuncMap.Items()), 1, "callback funcs map length should be 2")
 
-	for k, v := range ed.callbackFuncMap.Items() {
+	for k, v := range ed.CallbackFuncMap.Items() {
 		log.Printf("key:%s,%d", k, len(v.([]*func(services []model.Instance, err error))))
 	}
 
 	ed.RemoveCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
 
 	key := util.GetServiceCacheKey(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
-	for k, v := range ed.callbackFuncMap.Items() {
+	for k, v := range ed.CallbackFuncMap.Items() {
 		assert.Equal(t, key, k, "key should be equal!")
 		funcs := v.([]*func(services []model.Instance, err error))
 		assert.Equal(t, len(funcs), 1)

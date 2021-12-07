@@ -23,9 +23,12 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
+	"strings"
+	"time"
 )
 
 type NamingProxyDelegate struct {
@@ -52,11 +55,13 @@ func NewNamingProxyDelegate(clientCfg constant.ClientConfig, serverCfgs []consta
 		return nil, err
 	}
 
-	return &NamingProxyDelegate{
+	delegate := &NamingProxyDelegate{
 		httpClientProxy:   httpClientProxy,
 		grpcClientProxy:   grpcClientProxy,
 		serviceInfoHolder: serviceInfoHolder,
-	}, nil
+	}
+	go delegate.failBackSubscribe()
+	return delegate, nil
 }
 
 func (proxy *NamingProxyDelegate) getExecuteClientProxy(instance model.Instance) (namingProxy naming_proxy.INamingProxy) {
@@ -106,4 +111,34 @@ func (proxy *NamingProxyDelegate) Subscribe(serviceName, groupName string, clust
 func (proxy *NamingProxyDelegate) Unsubscribe(serviceName, groupName, clusters string) {
 	proxy.serviceInfoHolder.StopUpdateIfContain(util.GetGroupName(serviceName, groupName), clusters)
 	proxy.grpcClientProxy.Unsubscribe(serviceName, groupName, clusters)
+}
+
+func (proxy *NamingProxyDelegate) failBackSubscribe() {
+	sema := util.NewSemaphore(4)
+	for {
+		delay := time.Second * 30
+		for subService := range proxy.serviceInfoHolder.SubCallback.CallbackFuncMap.Items() {
+			if _, ok := proxy.serviceInfoHolder.ServiceInfoMap.Get(subService); !ok {
+				delay = time.Second
+				go func() {
+					sema.Acquire()
+					info := strings.Split(subService, constant.SERVICE_INFO_SPLITER)
+					var err error
+					var cluster string
+					if len(info) > 2 {
+						_, err = proxy.Subscribe(info[0], info[1], info[2])
+						cluster = info[2]
+					} else {
+						_, err = proxy.Subscribe(info[0], info[1], "")
+						cluster = ""
+					}
+					if err != nil {
+						logger.Errorf("Redo subscribe return error! service:%s group:%s cluster:%s :%+v", info[0], info[1], cluster, err)
+					}
+					sema.Release()
+				}()
+			}
+		}
+		<-time.After(delay)
+	}
 }
