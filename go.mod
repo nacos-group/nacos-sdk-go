@@ -3,7 +3,6 @@ module github.com/nacos-group/nacos-sdk-go/v2
 go 1.14
 
 require (
-	bou.ke/monkey v1.0.2 // indirect
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.18
 	github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
