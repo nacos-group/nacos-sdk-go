@@ -22,9 +22,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
@@ -66,7 +67,7 @@ func NewNamingClient(nc nacos_client.INacosClient) (*NamingClient, error) {
 	naming.serviceInfoHolder = naming_cache.NewServiceInfoHolder(clientConfig.NamespaceId, clientConfig.CacheDir,
 		clientConfig.UpdateCacheWhenEmpty, clientConfig.NotLoadCacheAtStart)
 
-	naming.serviceProxy, err = naming_proxy.NewNamingProxyDelegate(clientConfig, serverConfig, httpAgent, naming.serviceInfoHolder)
+	naming.serviceProxy, err = NewNamingProxyDelegate(clientConfig, serverConfig, httpAgent, naming.serviceInfoHolder)
 
 	go NewServiceInfoUpdater(naming.serviceInfoHolder, clientConfig.UpdateThreadNum, naming.serviceProxy).asyncUpdateService()
 	if err != nil {
@@ -85,7 +86,7 @@ func initLogger(clientConfig constant.ClientConfig) error {
 	})
 }
 
-// 注册服务实例
+// RegisterInstance 注册服务实例
 func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, error) {
 	if param.ServiceName == "" {
 		return false, errors.New("serviceName cannot be empty!")
@@ -111,7 +112,7 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 
 }
 
-// 注销服务实例
+// DeregisterInstance 注销服务实例
 func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -125,7 +126,7 @@ func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bo
 	return sc.serviceProxy.DeregisterInstance(param.ServiceName, param.GroupName, instance)
 }
 
-// 获取服务列表
+// GetService 获取服务列表
 func (sc *NamingClient) GetService(param vo.GetServiceParam) (service model.Service, err error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -255,18 +256,18 @@ func (sc *NamingClient) selectOneHealthyInstances(service model.Service) (*model
 	return &instance, nil
 }
 
-// 服务监听
+// Subscribe 服务监听
 func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
 	clusters := strings.Join(param.Clusters, ",")
 	sc.serviceInfoHolder.RegisterCallback(util.GetGroupName(param.ServiceName, param.GroupName), clusters, &param.SubscribeCallback)
-	sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
+	_, _ = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
 	return nil
 }
 
-//取消服务监听
+// Unsubscribe 取消服务监听
 func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
 	clusters := strings.Join(param.Clusters, ",")
 	serviceFullName := util.GetGroupName(param.ServiceName, param.GroupName)
