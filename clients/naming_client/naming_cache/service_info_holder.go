@@ -80,7 +80,7 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 			return
 		}
 	}
-	if ok && oldDomain.(model.Service).LastRefTime > service.LastRefTime {
+	if ok && oldDomain.(model.Service).LastRefTime >= service.LastRefTime {
 		logger.Warnf("out of date data received, old-t: %d, new-t: %d", oldDomain.(model.Service).LastRefTime, service.LastRefTime)
 		return
 	}
