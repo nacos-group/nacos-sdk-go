@@ -35,9 +35,8 @@ import (
 
 type GrpcConnection struct {
 	*Connection
-	client          nacos_grpc_service.RequestClient
-	biStreamClient  nacos_grpc_service.BiRequestStream_RequestBiStreamClient
-	streamCloseChan chan struct{}
+	client         nacos_grpc_service.RequestClient
+	biStreamClient nacos_grpc_service.BiRequestStream_RequestBiStreamClient
 }
 
 func NewGrpcConnection(serverInfo ServerInfo, connectionId string, conn *grpc.ClientConn,
@@ -49,9 +48,8 @@ func NewGrpcConnection(serverInfo ServerInfo, connectionId string, conn *grpc.Cl
 			abandon:      false,
 			conn:         conn,
 		},
-		client:          client,
-		biStreamClient:  biStreamClient,
-		streamCloseChan: make(chan struct{}),
+		client:         client,
+		biStreamClient: biStreamClient,
 	}
 }
 func (g *GrpcConnection) request(request rpc_request.IRequest, timeoutMills int64, client *RpcClient) (rpc_response.IResponse, error) {
@@ -75,7 +73,7 @@ func (g *GrpcConnection) request(request rpc_request.IRequest, timeoutMills int6
 }
 
 func (g *GrpcConnection) close() {
-	g.streamCloseChan <- struct{}{}
+	g.Connection.close()
 }
 
 func (g *GrpcConnection) biStreamSend(payload *nacos_grpc_service.Payload) error {
