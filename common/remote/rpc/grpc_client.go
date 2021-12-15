@@ -71,14 +71,14 @@ func getKeepAliveTimeMillis() keepalive.ClientParameters {
 	keepAliveTimeMillisInt, err := strconv.Atoi(os.Getenv("nacos.remote.grpc.keep.alive.millis"))
 	var keepAliveTime time.Duration
 	if err != nil {
-		keepAliveTime = 6 * 60 * 1000 * time.Millisecond
+		keepAliveTime = 60 * 1000 * time.Millisecond
 	} else {
 		keepAliveTime = time.Duration(keepAliveTimeMillisInt) * time.Millisecond
 	}
 	return keepalive.ClientParameters{
-		Time:                keepAliveTime,   // send pings every 10 seconds if there is no activity
-		Timeout:             3 * time.Second, // wait 1 second for ping ack before considering the connection dead
-		PermitWithoutStream: true,            // send pings even without active streams
+		Time:                keepAliveTime,    // send pings every 60 seconds if there is no activity
+		Timeout:             20 * time.Second, // wait 20 second for ping ack before considering the connection dead
+		PermitWithoutStream: true,             // send pings even without active streams
 	}
 }
 
