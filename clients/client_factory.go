@@ -29,13 +29,13 @@ import (
 
 // CreateConfigClient use to create config client
 func CreateConfigClient(properties map[string]interface{}) (iClient config_client.IConfigClient, err error) {
-	param := getConfigParam(properties)
+	param, err := getConfigParam(properties)
 	return NewConfigClient(param)
 }
 
 //CreateNamingClient use to create a nacos naming client
 func CreateNamingClient(properties map[string]interface{}) (iClient naming_client.INamingClient, err error) {
-	param := getConfigParam(properties)
+	param, err := getConfigParam(properties)
 	return NewNamingClient(param)
 }
 
@@ -65,16 +65,20 @@ func NewNamingClient(param vo.NacosClientParam) (iClient naming_client.INamingCl
 	return
 }
 
-func getConfigParam(properties map[string]interface{}) (param vo.NacosClientParam) {
+func getConfigParam(properties map[string]interface{}) (param vo.NacosClientParam, err error) {
 
 	if clientConfigTmp, exist := properties[constant.KEY_CLIENT_CONFIG]; exist {
 		if clientConfig, ok := clientConfigTmp.(constant.ClientConfig); ok {
 			param.ClientConfig = &clientConfig
+		} else {
+			err = errors.New("clientConfigTmp type assertion failed")
 		}
 	}
 	if serverConfigTmp, exist := properties[constant.KEY_SERVER_CONFIGS]; exist {
 		if serverConfigs, ok := serverConfigTmp.([]constant.ServerConfig); ok {
 			param.ServerConfigs = serverConfigs
+		} else {
+			err = errors.New("serverConfigTmp type assertion failed")
 		}
 	}
 	return

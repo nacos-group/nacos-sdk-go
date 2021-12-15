@@ -38,7 +38,7 @@ func TestSetConfigClient(t *testing.T) {
 
 	t.Run("setConfig_normal", func(t *testing.T) {
 		// use map params setConfig
-		param := getConfigParam(map[string]interface{}{
+		param, err := getConfigParam(map[string]interface{}{
 			"serverConfigs": sc,
 			"clientConfig":  cc,
 		})
