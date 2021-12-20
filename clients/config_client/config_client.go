@@ -97,7 +97,10 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	}
 	config.configCacheDir = clientConfig.CacheDir + string(os.PathSeparator) + "config"
 
-	config.configProxy, err = NewConfigProxy(serverConfig, clientConfig, httpAgent)
+	if config.configProxy, err = NewConfigProxy(serverConfig, clientConfig, httpAgent); err != nil {
+		return nil, err
+	}
+
 	if clientConfig.OpenKMS {
 		kmsClient, err := kms.NewClientWithAccessKey(clientConfig.RegionId, clientConfig.AccessKey, clientConfig.SecretKey)
 		if err != nil {
