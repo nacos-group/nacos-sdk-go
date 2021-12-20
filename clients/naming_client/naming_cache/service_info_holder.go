@@ -80,6 +80,11 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 			return
 		}
 	}
+	if ok && oldDomain.(model.Service).LastRefTime >= service.LastRefTime {
+		logger.Warnf("out of date data received, old-t: %d, new-t: %d", oldDomain.(model.Service).LastRefTime, service.LastRefTime)
+		return
+	}
+
 	s.UpdateTimeMap.Set(cacheKey, uint64(util.CurrentMillis()))
 	s.ServiceInfoMap.Set(cacheKey, *service)
 	if !ok || ok && !reflect.DeepEqual(service.Hosts, oldDomain.(model.Service).Hosts) {
