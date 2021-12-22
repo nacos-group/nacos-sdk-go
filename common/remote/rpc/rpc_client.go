@@ -499,7 +499,7 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 }
 
 func waitReconnect(timeoutMills int64, retryTimes *int, request rpc_request.IRequest, err error) error {
-	logger.Errorf("Send request fail, request=%+v, retryTimes=%v,error=%+v", request, *retryTimes, err)
+	logger.Errorf("Send request fail, request=%s, body=%s, retryTimes=%v, error=%+v", request.GetRequestType(), request.GetBody(request), *retryTimes, err)
 	time.Sleep(time.Duration(math.Min(100, float64(timeoutMills/3))) * time.Millisecond)
 	*retryTimes++
 	return err
