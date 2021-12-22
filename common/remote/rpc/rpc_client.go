@@ -52,6 +52,23 @@ const (
 	SHUTDOWN
 )
 
+func (status RpcClientStatus) getDesc() string {
+	switch status {
+	case INITIALIZED:
+		return "INITIALIZED"
+	case STARTING:
+		return "STARTING"
+	case UNHEALTHY:
+		return "UNHEALTHY"
+	case RUNNING:
+		return "RUNNING"
+	case SHUTDOWN:
+		return "SHUTDOWN"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 type ConnectionStatus uint32
 
 const (
@@ -269,10 +286,10 @@ func (r *RpcClient) RegisterServerRequestHandler(request func() rpc_request.IReq
 	requestType := request().GetRequestType()
 	if handler == nil || requestType == "" {
 		logger.Errorf("%s register server push request handler "+
-			"missing required parameters,request:%+v handler:%+v", request, handler)
+			"missing required parameters,request:%+v handler", r.Name, requestType, handler)
 		return
 	}
-	logger.Infof("%s register server push request:%s handler:%+v", r.Name, requestType, handler)
+	logger.Infof("%s register server push request:%s handler", r.Name, requestType, handler)
 	r.serverRequestHandlerMapping[requestType] = ServerRequestHandlerMapping{
 		serverRequest: request,
 		handler:       handler,
@@ -447,7 +464,7 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 	for retryTimes < constant.REQUEST_DOMAIN_RETRY_TIME && util.CurrentMillis() < start+timeoutMills {
 		if r.currentConnection == nil || !r.IsRunning() {
 			currentErr = waitReconnect(timeoutMills, &retryTimes, request, errors.New(fmt.Sprintf(
-				"Client not connected, current status:%v", atomic.LoadInt32((*int32)(&r.rpcClientStatus)))))
+				"Client not connected, current status:%s", r.rpcClientStatus.getDesc())))
 			continue
 		}
 		response, err := r.currentConnection.request(request, timeoutMills, r)
