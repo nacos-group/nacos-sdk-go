@@ -64,4 +64,7 @@ type IConfigClient interface {
 	// pageNo  option,default is 1
 	// pageSize option,default is 10
 	SearchConfig(param vo.SearchConfigParm) (*model.ConfigPage, error)
+
+	// CloseClient Close the GRPC client
+	CloseClient()
 }

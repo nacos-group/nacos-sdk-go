@@ -278,3 +278,7 @@ func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
 
 	return nil
 }
+
+func (sc *NamingClient) CloseClient() {
+	sc.serviceProxy.CloseClient()
+}

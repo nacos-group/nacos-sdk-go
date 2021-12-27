@@ -20,12 +20,9 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"os"
-	"os/signal"
 	"reflect"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
@@ -212,8 +209,6 @@ func (r *RpcClient) Start() {
 	} else {
 		r.switchServerAsync(ServerInfo{}, false)
 	}
-
-	r.signalNotify()
 }
 
 func (r *RpcClient) notifyServerSrvChange() {
@@ -246,21 +241,7 @@ func (r *RpcClient) registerServerRequestHandlers() {
 	}, &ClientDetectionRequestHandler{})
 }
 
-func (r *RpcClient) signalNotify() {
-	c := make(chan os.Signal)
-	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	go func() {
-		for {
-			s := <-c
-			switch s {
-			case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
-				r.shutdown()
-			}
-		}
-	}()
-}
-
-func (r *RpcClient) shutdown() {
+func (r *RpcClient) Shutdown() {
 	atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(SHUTDOWN))
 	r.closeConnection()
 }

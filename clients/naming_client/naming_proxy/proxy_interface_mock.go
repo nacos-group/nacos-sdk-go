@@ -134,3 +134,9 @@ func (mr *MockINamingProxyMockRecorder) Unsubscribe(serviceName, groupName, clus
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockINamingProxy)(nil).Unsubscribe), serviceName, groupName, clusters)
 }
+
+// CloseClient mocks base method.
+func (m *MockINamingProxy) CloseClient() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CloseClient")
+}

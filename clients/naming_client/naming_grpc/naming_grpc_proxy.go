@@ -157,3 +157,7 @@ func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters strin
 	_, _ = proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
 		clusters, false))
 }
+
+func (proxy *NamingGrpcProxy) CloseClient() {
+	proxy.rpcClient.GetRpcClient().Shutdown()
+}

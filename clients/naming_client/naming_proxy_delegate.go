@@ -107,3 +107,7 @@ func (proxy *NamingProxyDelegate) Unsubscribe(serviceName, groupName, clusters s
 	proxy.serviceInfoHolder.StopUpdateIfContain(util.GetGroupName(serviceName, groupName), clusters)
 	proxy.grpcClientProxy.Unsubscribe(serviceName, groupName, clusters)
 }
+
+func (proxy *NamingProxyDelegate) CloseClient() {
+	proxy.grpcClientProxy.CloseClient()
+}

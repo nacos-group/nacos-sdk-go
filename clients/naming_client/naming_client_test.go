@@ -65,6 +65,8 @@ func (m *MockNamingProxy) Subscribe(serviceName, groupName, clusters string) (mo
 
 func (m *MockNamingProxy) Unsubscribe(serviceName, groupName, clusters string) {}
 
+func (m *MockNamingProxy) CloseClient() {}
+
 func NewTestNamingClient() *NamingClient {
 	nc := nacos_client.NacosClient{}
 	_ = nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
