@@ -61,7 +61,7 @@ func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_reques
 }
 
 func (cp *ConfigProxy) injectCommHeader(param map[string]string) {
-	now := string(util.CurrentMillis())
+	now := strconv.FormatInt(util.CurrentMillis(), 10)
 	param[constant.CLIENT_APPNAME_HEADER] = cp.clientConfig.AppName
 	param[constant.CLIENT_REQUEST_TS_HEADER] = now
 	param[constant.CLIENT_REQUEST_TOKEN_HEADER] = util.Md5(now + cp.clientConfig.AppKey)

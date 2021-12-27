@@ -197,3 +197,7 @@ func (proxy *NamingHttpProxy) Subscribe(serviceName, groupName, clusters string)
 func (proxy *NamingHttpProxy) Unsubscribe(serviceName, groupName, clusters string) {
 
 }
+
+func (proxy *NamingHttpProxy) CloseClient() {
+
+}

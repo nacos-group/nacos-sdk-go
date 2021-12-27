@@ -318,6 +318,10 @@ func (client *ConfigClient) SearchConfig(param vo.SearchConfigParm) (*model.Conf
 	return client.searchConfigInner(param)
 }
 
+func (client *ConfigClient) CloseClient() {
+	client.configProxy.getRpcClient(client).Shutdown()
+}
+
 func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParm) (*model.ConfigPage, error) {
 	if param.Search != "accurate" && param.Search != "blur" {
 		return nil, errors.New("[client.searchConfigInner] param.search must be accurate or blur")
@@ -363,7 +367,7 @@ func (client *ConfigClient) startInternal() {
 
 func (client *ConfigClient) executeConfigListen() {
 	listenCachesMap := make(map[int][]*cacheData, 16)
-	needAllSync := time.Now().Sub(client.lastAllSyncTime) >= constant.ALL_SYNC_INTERNAL
+	needAllSync := time.Since(client.lastAllSyncTime) >= constant.ALL_SYNC_INTERNAL
 	for _, v := range client.cacheMap.Items() {
 		cache, ok := v.(*cacheData)
 		if !ok {
@@ -391,7 +395,7 @@ func (client *ConfigClient) executeConfigListen() {
 	if len(listenCachesMap) > 0 {
 		for taskId, listenCaches := range listenCachesMap {
 			request := buildConfigBatchListenRequest(listenCaches)
-			rpcClient := client.configProxy.createRpcClient(string(taskId), client)
+			rpcClient := client.configProxy.createRpcClient(fmt.Sprintf("%d", taskId), client)
 			iResponse, err := client.configProxy.requestProxy(rpcClient, request, 3000)
 			if err != nil {
 				logger.Warnf("ConfigBatchListenRequest failure,err:%+v", err)
