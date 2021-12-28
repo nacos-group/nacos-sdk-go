@@ -139,7 +139,6 @@ func main() {
 	param := &vo.SubscribeParam{
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		Clusters:    []string{"cluster-a"},
 		SubscribeCallback: func(services []model.Instance, err error) {
 			fmt.Printf("callback111 return services:%s \n\n", util.ToJsonString(services))
 		},
