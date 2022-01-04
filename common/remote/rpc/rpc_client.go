@@ -254,6 +254,7 @@ func (r *RpcClient) signalNotify() {
 			s := <-c
 			switch s {
 			case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
+				logger.Infof("%s received system signal: %s, shutdown client", r.Name, s)
 				r.shutdown()
 			}
 		}
