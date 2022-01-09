@@ -20,6 +20,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 )
 
+// INamingProxy ...
 type INamingProxy interface {
 	RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error)
 

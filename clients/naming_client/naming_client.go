@@ -22,24 +22,26 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
+	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
-	"github.com/pkg/errors"
 )
 
+// NamingClient ...
 type NamingClient struct {
 	nacos_client.INacosClient
 	serviceProxy      naming_proxy.INamingProxy
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
+// NewNamingClient ...
 func NewNamingClient(nc nacos_client.INacosClient) (*NamingClient, error) {
 	rand.Seed(time.Now().UnixNano())
 	naming := &NamingClient{INacosClient: nc}
@@ -140,6 +142,7 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (service model.Serv
 	return service, err
 }
 
+// GetAllServicesInfo 分页获取 Namespace 下某个 Group 所有服务信息
 func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (model.ServiceList, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -156,6 +159,7 @@ func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (mod
 	return services, err
 }
 
+// SelectAllInstances 根据 DataId 和 Group 获取所有实例信息
 func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -177,6 +181,7 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 	return service.Hosts, err
 }
 
+// SelectInstances 根据 DataId、Group、Health 获取所有实例信息
 func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -211,6 +216,7 @@ func (sc *NamingClient) selectInstances(service model.Service, healthy bool) ([]
 	return result, nil
 }
 
+// SelectOneHealthyInstance 根据 DataId、Group 选择一个健康实例
 func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanceParam) (*model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP

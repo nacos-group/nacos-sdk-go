@@ -28,6 +28,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
 
+// NamingProxyDelegate ...
 type NamingProxyDelegate struct {
 	httpClientProxy   *naming_http.NamingHttpProxy
 	grpcClientProxy   *naming_grpc.NamingGrpcProxy
