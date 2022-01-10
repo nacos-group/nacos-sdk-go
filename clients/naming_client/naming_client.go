@@ -88,7 +88,7 @@ func initLogger(clientConfig constant.ClientConfig) error {
 	})
 }
 
-// RegisterInstance 注册服务实例
+// RegisterInstance ...
 func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, error) {
 	if param.ServiceName == "" {
 		return false, errors.New("serviceName cannot be empty!")
@@ -114,7 +114,7 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 
 }
 
-// DeregisterInstance 注销服务实例
+// DeregisterInstance ...
 func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -128,7 +128,7 @@ func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bo
 	return sc.serviceProxy.DeregisterInstance(param.ServiceName, param.GroupName, instance)
 }
 
-// GetService 获取服务列表
+// GetService Get service info by Group and DataId, clusters was optional
 func (sc *NamingClient) GetService(param vo.GetServiceParam) (service model.Service, err error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -142,7 +142,7 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (service model.Serv
 	return service, err
 }
 
-// GetAllServicesInfo 分页获取 Namespace 下某个 Group 所有服务信息
+// GetAllServicesInfo Get all instance by Namespace and Group with page
 func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (model.ServiceList, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -159,7 +159,7 @@ func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (mod
 	return services, err
 }
 
-// SelectAllInstances 根据 DataId 和 Group 获取所有实例信息
+// SelectAllInstances Get all instance by DataId 和 Group
 func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -181,7 +181,7 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 	return service.Hosts, err
 }
 
-// SelectInstances 根据 DataId、Group、Health 获取所有实例信息
+// SelectInstances Get all instance by DataId, Group and Health
 func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -216,7 +216,7 @@ func (sc *NamingClient) selectInstances(service model.Service, healthy bool) ([]
 	return result, nil
 }
 
-// SelectOneHealthyInstance 根据 DataId、Group 选择一个健康实例
+// SelectOneHealthyInstance Get one healthy instance by DataId and Group
 func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanceParam) (*model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -262,7 +262,7 @@ func (sc *NamingClient) selectOneHealthyInstances(service model.Service) (*model
 	return &instance, nil
 }
 
-// Subscribe 服务监听
+// Subscribe ...
 func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -273,7 +273,7 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	return nil
 }
 
-// Unsubscribe 取消服务监听
+// Unsubscribe ...
 func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
 	clusters := strings.Join(param.Clusters, ",")
 	serviceFullName := util.GetGroupName(param.ServiceName, param.GroupName)
@@ -285,6 +285,7 @@ func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
 	return nil
 }
 
+// CloseClient ...
 func (sc *NamingClient) CloseClient() {
 	sc.serviceProxy.CloseClient()
 }
