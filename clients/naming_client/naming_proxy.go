@@ -98,7 +98,8 @@ func (proxy *NamingProxy) UpdateInstance(serviceName string, ip string, port uin
 	return proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodPut)
 }
 
-func (proxy *NamingProxy) SendBeat(info model.BeatInfo) (int64, error) {
+func (proxy *NamingProxy) SendBeat(info *model.BeatInfo) (int64, error) {
+
 	logger.Infof("namespaceId:<%s> sending beat to server:<%s>",
 		proxy.clientConfig.NamespaceId, util.ToJsonString(info))
 	params := map[string]string{}
