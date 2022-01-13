@@ -29,6 +29,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
 
+// NamingGrpcProxy ...
 type NamingGrpcProxy struct {
 	clientConfig      constant.ClientConfig
 	nacosServer       *nacos_server.NacosServer
@@ -37,6 +38,7 @@ type NamingGrpcProxy struct {
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
+// NewNamingGrpcProxy create naming grpc proxy
 func NewNamingGrpcProxy(clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer,
 	serviceInfoHolder *naming_cache.ServiceInfoHolder) (*NamingGrpcProxy, error) {
 	srvProxy := NamingGrpcProxy{
@@ -77,10 +79,11 @@ func NewNamingGrpcProxy(clientCfg constant.ClientConfig, nacosServer *nacos_serv
 
 func (proxy *NamingGrpcProxy) requestToServer(request rpc_request.IRequest) (rpc_response.IResponse, error) {
 	proxy.nacosServer.InjectSecurityInfo(request.GetHeaders())
-	//todo ak/sk
+	// todo ak/sk
 	return proxy.rpcClient.GetRpcClient().Request(request, int64(proxy.clientConfig.TimeoutMs))
 }
 
+// RegisterInstance ...
 func (proxy *NamingGrpcProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
 	logger.Infof("register instance namespaceId:<%s>,serviceName:<%s> with instance:<%s>",
 		proxy.clientConfig.NamespaceId, serviceName, util.ToJsonString(instance))
@@ -93,6 +96,7 @@ func (proxy *NamingGrpcProxy) RegisterInstance(serviceName string, groupName str
 	return response.IsSuccess(), err
 }
 
+// DeregisterInstance ...
 func (proxy *NamingGrpcProxy) DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
 	logger.Infof("deregister instance namespaceId:<%s>,serviceName:<%s> with instance:<%s:%d@%s>",
 		proxy.clientConfig.NamespaceId, serviceName, instance.Ip, instance.Port, instance.ClusterName)
@@ -105,6 +109,7 @@ func (proxy *NamingGrpcProxy) DeregisterInstance(serviceName string, groupName s
 	return response.IsSuccess(), err
 }
 
+// GetServiceList ...
 func (proxy *NamingGrpcProxy) GetServiceList(pageNo uint32, pageSize uint32, groupName string, selector *model.ExpressionSelector) (model.ServiceList, error) {
 	var selectorStr string
 	if selector != nil {
@@ -127,10 +132,12 @@ func (proxy *NamingGrpcProxy) GetServiceList(pageNo uint32, pageSize uint32, gro
 	}, nil
 }
 
+// ServerHealthy ...
 func (proxy *NamingGrpcProxy) ServerHealthy() bool {
 	return proxy.rpcClient.GetRpcClient().IsRunning()
 }
 
+// QueryInstancesOfService ...
 func (proxy *NamingGrpcProxy) QueryInstancesOfService(serviceName, groupName, clusters string, udpPort int, healthyOnly bool) (*model.Service, error) {
 	response, err := proxy.requestToServer(rpc_request.NewServiceQueryRequest(proxy.clientConfig.NamespaceId, serviceName, groupName, clusters,
 		healthyOnly, udpPort))
@@ -141,6 +148,7 @@ func (proxy *NamingGrpcProxy) QueryInstancesOfService(serviceName, groupName, cl
 	return &queryServiceResponse.ServiceInfo, nil
 }
 
+// Subscribe ...
 func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters string) (model.Service, error) {
 	proxy.eventListener.CacheSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
 	response, err := proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName,
@@ -152,6 +160,7 @@ func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters 
 	return subscribeServiceResponse.ServiceInfo, nil
 }
 
+// Unsubscribe ...
 func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters string) {
 	proxy.eventListener.RemoveSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
 	_, _ = proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,

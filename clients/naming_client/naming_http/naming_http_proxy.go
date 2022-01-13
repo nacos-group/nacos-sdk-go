@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
@@ -32,6 +33,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
 
+// NamingHttpProxy ...
 type NamingHttpProxy struct {
 	clientConfig      constant.ClientConfig
 	nacosServer       *nacos_server.NacosServer
@@ -39,6 +41,7 @@ type NamingHttpProxy struct {
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
+// NewNamingHttpProxy  create naming http proxy
 func NewNamingHttpProxy(clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer,
 	serviceInfoHolder *naming_cache.ServiceInfoHolder) (*NamingHttpProxy, error) {
 	srvProxy := NamingHttpProxy{
@@ -54,6 +57,7 @@ func NewNamingHttpProxy(clientCfg constant.ClientConfig, nacosServer *nacos_serv
 	return &srvProxy, nil
 }
 
+// RegisterInstance ...
 func (proxy *NamingHttpProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
 	logger.Infof("register instance namespaceId:<%s>,serviceName:<%s> with instance:<%s>",
 		proxy.clientConfig.NamespaceId, serviceName, util.ToJsonString(instance))
@@ -91,6 +95,7 @@ func (proxy *NamingHttpProxy) RegisterInstance(serviceName string, groupName str
 	return true, nil
 }
 
+// DeregisterInstance ...
 func (proxy *NamingHttpProxy) DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
 	serviceName = util.GetGroupName(serviceName, groupName)
 	logger.Infof("deregister instance namespaceId:<%s>,serviceName:<%s> with instance:<%s:%d@%s>",
@@ -110,6 +115,7 @@ func (proxy *NamingHttpProxy) DeregisterInstance(serviceName string, groupName s
 	return true, nil
 }
 
+// GetServiceList ...
 func (proxy *NamingHttpProxy) GetServiceList(pageNo uint32, pageSize uint32, groupName string, selector *model.ExpressionSelector) (model.ServiceList, error) {
 	params := map[string]string{}
 	params["namespaceId"] = proxy.clientConfig.NamespaceId
@@ -154,6 +160,7 @@ func (proxy *NamingHttpProxy) GetServiceList(pageNo uint32, pageSize uint32, gro
 	return serviceList, nil
 }
 
+// ServerHealthy ...
 func (proxy *NamingHttpProxy) ServerHealthy() bool {
 	api := constant.SERVICE_BASE_PATH + "/operator/metrics"
 	result, err := proxy.nacosServer.ReqApi(api, map[string]string{}, http.MethodGet)
@@ -172,6 +179,7 @@ func (proxy *NamingHttpProxy) ServerHealthy() bool {
 	return false
 }
 
+// QueryInstancesOfService ...
 func (proxy *NamingHttpProxy) QueryInstancesOfService(serviceName, groupName, clusters string, udpPort int, healthyOnly bool) (*model.Service, error) {
 	param := make(map[string]string)
 	param["namespaceId"] = proxy.clientConfig.NamespaceId
@@ -190,10 +198,12 @@ func (proxy *NamingHttpProxy) QueryInstancesOfService(serviceName, groupName, cl
 
 }
 
+// Subscribe ...
 func (proxy *NamingHttpProxy) Subscribe(serviceName, groupName, clusters string) (model.Service, error) {
 	return model.Service{}, nil
 }
 
+// Unsubscribe ...
 func (proxy *NamingHttpProxy) Unsubscribe(serviceName, groupName, clusters string) {
 
 }
