@@ -57,8 +57,7 @@ func main() {
 		panic(err)
 	}
 
-	//Register with default cluster and group
-	//ClusterName=DEFAULT,GroupName=DEFAULT_GROUP
+	//Register
 	ExampleServiceClient_RegisterServiceInstance(client, vo.RegisterInstanceParam{
 		Ip:          "10.0.0.10",
 		Port:        8848,
@@ -72,9 +71,7 @@ func main() {
 		Metadata:    map[string]string{"idc": "shanghai"},
 	})
 
-	//DeRegister with ip,port,serviceName
-	//ClusterName=DEFAULT, GroupName=DEFAULT_GROUP
-	//Note:ip=10.0.0.10,port=8848 should belong to the cluster of DEFAULT and the group of DEFAULT_GROUP.
+	//DeRegister
 	ExampleServiceClient_DeRegisterServiceInstance(client, vo.DeregisterInstanceParam{
 		Ip:          "10.0.0.10",
 		Port:        8848,
@@ -84,8 +81,7 @@ func main() {
 		Ephemeral:   true, //it must be true
 	})
 
-	//Register with default cluster and group
-	//ClusterName=DEFAULT,GroupName=DEFAULT_GROUP
+	//Register
 	ExampleServiceClient_RegisterServiceInstance(client, vo.RegisterInstanceParam{
 		Ip:          "10.0.0.10",
 		Port:        8848,
@@ -101,8 +97,7 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	//Get service with serviceName
-	//ClusterName=DEFAULT, GroupName=DEFAULT_GROUP
+	//Get service with serviceName, groupName , clusters
 	ExampleServiceClient_GetService(client, vo.GetServiceParam{
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
@@ -140,7 +135,7 @@ func main() {
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
 		SubscribeCallback: func(services []model.Instance, err error) {
-			fmt.Printf("callback111 return services:%s \n\n", util.ToJsonString(services))
+			fmt.Printf("callback return services:%s \n\n", util.ToJsonString(services))
 		},
 	}
 	ExampleServiceClient_Subscribe(client, param)
@@ -157,6 +152,22 @@ func main() {
 		Ephemeral:   true,
 		Metadata:    map[string]string{"idc": "beijing"},
 	})
+	//wait for client pull change from server
+	time.Sleep(3 * time.Second)
+
+	ExampleServiceClient_UpdateServiceInstance(client, vo.UpdateInstanceParam{
+		Ip:          "10.0.0.11", //update ip
+		Port:        8848,
+		ServiceName: "demo.go",
+		GroupName:   "group-a",
+		ClusterName: "cluster-a",
+		Weight:      10,
+		Enable:      true,
+		Healthy:     true,
+		Ephemeral:   true,
+		Metadata:    map[string]string{"idc": "beijing1"}, //update metadata
+	})
+
 	//wait for client pull change from server
 	time.Sleep(3 * time.Second)
 

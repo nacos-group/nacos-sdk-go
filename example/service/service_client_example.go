@@ -34,6 +34,11 @@ func ExampleServiceClient_DeRegisterServiceInstance(client naming_client.INaming
 	fmt.Printf("DeRegisterServiceInstance,param:%+v,result:%+v \n\n", param, success)
 }
 
+func ExampleServiceClient_UpdateServiceInstance(client naming_client.INamingClient, param vo.UpdateInstanceParam) {
+	success, _ := client.UpdateInstance(param)
+	fmt.Printf("UpdateServiceInstance,param:%+v,result:%+v \n\n", param, success)
+}
+
 func ExampleServiceClient_GetService(client naming_client.INamingClient, param vo.GetServiceParam) {
 	service, _ := client.GetService(param)
 	fmt.Printf("GetService,param:%+v, result:%+v \n\n", param, service)

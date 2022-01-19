@@ -29,7 +29,6 @@ type INamingClient interface {
 	// RegisterInstance use to register instance
 	// Ip  require
 	// Port  require
-	// Tenant optional
 	// Weight  require,it must be lager than 0
 	// Enable  require,the instance can be access or not
 	// Healthy  require,the instance is health or not
@@ -49,6 +48,19 @@ type INamingClient interface {
 	// GroupName  optional,default:DEFAULT_GROUP
 	// Ephemeral optional
 	DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error)
+
+	// UpdateInstance use to update instance
+	// Ip  require
+	// Port  require
+	// Weight  require,it must be lager than 0
+	// Enable  require,the instance can be access or not
+	// Healthy  require,the instance is health or not
+	// Metadata  optional
+	// ClusterName  optional,default:DEFAULT
+	// ServiceName require
+	// GroupName optional,default:DEFAULT_GROUP
+	// Ephemeral optional
+	UpdateInstance(param vo.UpdateInstanceParam) (bool, error)
 
 	// GetService use to get service
 	// ServiceName require
