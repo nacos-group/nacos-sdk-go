@@ -228,7 +228,10 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	request.AdditionMap["encryptedDataKey"] = param.EncryptedDataKey
 	rpcClient := client.configProxy.getRpcClient(client)
 	response, err := client.configProxy.requestProxy(rpcClient, request, constant.DEFAULT_TIMEOUT_MILLS)
-	return response.IsSuccess(), err
+	if response != nil {
+		return response.IsSuccess(), err
+	}
+	return false, err
 }
 
 func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, err error) {
@@ -245,8 +248,10 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, er
 	request := rpc_request.NewConfigRemoveRequest(param.Group, param.DataId, clientConfig.NamespaceId)
 	rpcClient := client.configProxy.getRpcClient(client)
 	response, err := client.configProxy.requestProxy(rpcClient, request, constant.DEFAULT_TIMEOUT_MILLS)
-	return response.IsSuccess(), err
-
+	if response != nil {
+		return response.IsSuccess(), err
+	}
+	return false, err
 }
 
 //Cancel Listen Config
