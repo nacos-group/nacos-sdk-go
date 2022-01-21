@@ -128,6 +128,32 @@ func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bo
 	return sc.serviceProxy.DeregisterInstance(param.ServiceName, param.GroupName, instance)
 }
 
+// UpdateInstance ...
+func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, error) {
+	if param.ServiceName == "" {
+		return false, errors.New("serviceName cannot be empty!")
+	}
+	if len(param.GroupName) == 0 {
+		param.GroupName = constant.DEFAULT_GROUP
+	}
+	if param.Metadata == nil {
+		param.Metadata = make(map[string]string)
+	}
+	instance := model.Instance{
+		Ip:          param.Ip,
+		Port:        param.Port,
+		Metadata:    param.Metadata,
+		ClusterName: param.ClusterName,
+		Healthy:     param.Healthy,
+		Enable:      param.Enable,
+		Weight:      param.Weight,
+		Ephemeral:   param.Ephemeral,
+	}
+
+	return sc.serviceProxy.RegisterInstance(param.ServiceName, param.GroupName, instance)
+
+}
+
 // GetService Get service info by Group and DataId, clusters was optional
 func (sc *NamingClient) GetService(param vo.GetServiceParam) (service model.Service, err error) {
 	if len(param.GroupName) == 0 {

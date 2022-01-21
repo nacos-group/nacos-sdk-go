@@ -85,7 +85,7 @@ func (proxy *NamingGrpcProxy) requestToServer(request rpc_request.IRequest) (rpc
 
 // RegisterInstance ...
 func (proxy *NamingGrpcProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
-	logger.Infof("register instance namespaceId:<%s>,serviceName:<%s> with instance:<%s>",
+	logger.Infof("instance namespaceId:<%s>,serviceName:<%s> with instance:<%s>",
 		proxy.clientConfig.NamespaceId, serviceName, util.ToJsonString(instance))
 	instanceRequest := rpc_request.NewInstanceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName, "registerInstance", instance)
 	response, err := proxy.requestToServer(instanceRequest)
