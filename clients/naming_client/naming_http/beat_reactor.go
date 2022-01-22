@@ -76,6 +76,7 @@ func (br *BeatReactor) RemoveBeatInfo(serviceName string, ip string, port uint64
 		atomic.StoreInt32(&beatInfo.State, int32(model.StateShutdown))
 	}
 	br.beatMap.Remove(k)
+	monitor.GetDom2BeatSizeMonitor().Set(float64(len(br.beatMap)))
 }
 
 func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {

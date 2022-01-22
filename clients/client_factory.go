@@ -18,6 +18,7 @@ package clients
 
 import (
 	"errors"
+	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
 
@@ -111,7 +112,8 @@ func setConfig(param vo.NacosClientParam) (iClient nacos_client.INacosClient, er
 	}
 
 	if _, _err := client.GetHttpAgent(); _err != nil {
-		_ = client.SetHttpAgent(&http_agent.HttpAgent{})
+		//_ = client.SetHttpAgent(&http_agent.HttpAgent{})
+		_ = client.SetHttpAgent(http_agent.NewMetricHttpAgent(&http_agent.HttpAgent{}))
 	}
 	iClient = client
 	return

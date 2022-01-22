@@ -26,36 +26,40 @@ var (
     histogramMonitorVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
         Name: "nacos_client_request",
         Help: "nacos_client_request",
-    },[]string{"module", "method", "url", "code"})
+    }, []string{"module", "method", "url", "code"})
 )
+
 // register collectors vec
-func init()  {
-    prometheus.MustRegister(gaugeMonitorVec,histogramMonitorVec)
+func init() {
+    prometheus.MustRegister(gaugeMonitorVec, histogramMonitorVec)
 }
 
 // get gauge with labels and use gaugeMonitorVec
-func GetGaugeWithLabels(labels ...string) prometheus.Gauge{
+func GetGaugeWithLabels(labels ...string) prometheus.Gauge {
     return gaugeMonitorVec.WithLabelValues(labels...)
 }
 
-func GetServiceInfoMapSizeMonitor() prometheus.Gauge{
-    return GetGaugeWithLabels("naming","serviceInfoMapSize")
+func GetServiceInfoMapSizeMonitor() prometheus.Gauge {
+    return GetGaugeWithLabels("naming", "serviceInfoMapSize")
 }
 
-func GetDom2BeatSizeMonitor() prometheus.Gauge{
+func GetDom2BeatSizeMonitor() prometheus.Gauge {
     return GetGaugeWithLabels("naming", "dom2BeatSize")
 }
 
+func GetListenConfigCountMonitor() prometheus.Gauge {
+    return GetGaugeWithLabels("naming", "listenConfigCount")
+}
+
 // get histogram with labels and use histogramMonitorVec
-func GetHistogramWithLabels(labels ...string) prometheus.Observer{
+func GetHistogramWithLabels(labels ...string) prometheus.Observer {
     return histogramMonitorVec.WithLabelValues(labels...)
 }
 
-func GetConfigRequestMonitor(labels ...string) prometheus.Observer{
-    return GetHistogramWithLabels(labels...)
+func GetConfigRequestMonitor(method, url, code string) prometheus.Observer {
+    return GetHistogramWithLabels("config", method, url, code)
 }
 
-func GetNamingRequestMonitor(labels ...string) prometheus.Observer{
-    return GetHistogramWithLabels(labels...)
+func GetNamingRequestMonitor(method, url, code string) prometheus.Observer {
+    return GetHistogramWithLabels("naming", method, url, code)
 }
-

@@ -19,6 +19,9 @@ package config_client
 import (
 	"errors"
 	"fmt"
+	"github.com/nacos-group/nacos-sdk-go/common/monitor"
+	"math"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -311,6 +314,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 		}
 	}
 	client.cacheMap.Set(key, cData)
+	monitor.GetListenConfigCountMonitor().Set(float64(len(client.cacheMap)))
 	return
 }
 
@@ -470,7 +474,7 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData *cacheData, notify 
 		cacheData.cacheDataListener.lastMd5 = cacheData.md5
 		client.cacheMap.Set(util.GetConfigCacheKey(cacheData.dataId, cacheData.group, cacheData.tenant), cacheData)
 	}
-
+	monitor.GetListenConfigCountMonitor().Set(float64(len(client.cacheMap)))
 }
 
 func (client *ConfigClient) notifyListenConfig() {
