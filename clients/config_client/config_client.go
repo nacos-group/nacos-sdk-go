@@ -19,9 +19,7 @@ package config_client
 import (
 	"errors"
 	"fmt"
-	"github.com/nacos-group/nacos-sdk-go/common/monitor"
-	"math"
-	"net/url"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 	"os"
 	"strings"
 	"sync"

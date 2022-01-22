@@ -19,6 +19,7 @@ package naming_http
 import (
 	"errors"
 	"fmt"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 	"net/http"
 	"strconv"
 	"sync/atomic"
@@ -64,6 +65,7 @@ func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo model.BeatInfo) 
 	logger.Infof("adding beat: <%s> to beat map", util.ToJsonString(beatInfo))
 	k := buildKey(serviceName, beatInfo.Ip, beatInfo.Port)
 	br.beatMap.Set(k, &beatInfo)
+	monitor.GetDom2BeatSizeMonitor().Set(float64(len(br.beatMap)))
 	go br.sendInstanceBeat(k, &beatInfo)
 }
 

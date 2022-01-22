@@ -18,7 +18,6 @@ package clients
 
 import (
 	"errors"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
 

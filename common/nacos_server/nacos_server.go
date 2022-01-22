@@ -22,7 +22,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/nacos-group/nacos-sdk-go/common/monitor"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -173,7 +173,7 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 		return
 	}
 	result = string(bytes)
-	monitor.GetNamingRequestMonitor(method,api,util.GetStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
+	monitor.GetNamingRequestMonitor(method, api, util.GetStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
 	if response.StatusCode == constant.RESPONSE_CODE_SUCCESS {
 		return
 	} else {
