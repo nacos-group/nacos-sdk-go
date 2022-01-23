@@ -77,16 +77,18 @@ func (ed *SubscribeCallback) ServiceChanged(service *model.Service) {
 				return
 			}
 			for _, host := range service.Hosts {
-				var subscribeService model.SubscribeService
-				subscribeService.Valid = host.Valid
-				subscribeService.Port = host.Port
-				subscribeService.Ip = host.Ip
-				subscribeService.Metadata = host.Metadata
-				subscribeService.ServiceName = host.ServiceName
-				subscribeService.ClusterName = host.ClusterName
-				subscribeService.Weight = host.Weight
-				subscribeService.InstanceId = host.InstanceId
-				subscribeService.Enable = host.Enable
+				subscribeService := model.SubscribeService{
+					Valid:       host.Valid,
+					Port:        host.Port,
+					Ip:          host.Ip,
+					Metadata:    host.Metadata,
+					ServiceName: host.ServiceName,
+					ClusterName: host.ClusterName,
+					Weight:      host.Weight,
+					InstanceId:  host.InstanceId,
+					Enable:      host.Enable,
+					Healthy:     host.Healthy,
+				}
 				subscribeServices = append(subscribeServices, subscribeService)
 			}
 			(*funcItem)(subscribeServices, nil)
