@@ -94,6 +94,7 @@ type SubscribeService struct {
 	ServiceName string            `json:"serviceName"`
 	Valid       bool              `json:"valid"`
 	Weight      float64           `json:"weight"`
+	Healthy     bool              `json:"healthy"`
 }
 
 type BeatInfo struct {
