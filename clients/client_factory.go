@@ -84,9 +84,9 @@ func setConfig(param vo.NacosClientParam) (iClient nacos_client.INacosClient, er
 	client := &nacos_client.NacosClient{}
 	if param.ClientConfig == nil {
 		// default clientConfig
-		client.SetClientConfig(constant.ClientConfig{})
+		_ = client.SetClientConfig(constant.ClientConfig{})
 	} else {
-		client.SetClientConfig(*param.ClientConfig)
+		_ = client.SetClientConfig(*param.ClientConfig)
 	}
 
 	if len(param.ServerConfigs) == 0 {

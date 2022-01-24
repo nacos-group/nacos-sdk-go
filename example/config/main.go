@@ -47,8 +47,6 @@ func main() {
 		NotLoadCacheAtStart: true,
 		LogDir:              "/tmp/nacos/log",
 		CacheDir:            "/tmp/nacos/cache",
-		RotateTime:          "1h",
-		MaxAge:              3,
 		LogLevel:            "debug",
 	}
 	//or a more graceful way to create ClientConfig
@@ -58,8 +56,6 @@ func main() {
 		constant.WithNotLoadCacheAtStart(true),
 		constant.WithLogDir("/tmp/nacos/log"),
 		constant.WithCacheDir("/tmp/nacos/cache"),
-		constant.WithRotateTime("1h"),
-		constant.WithMaxAge(3),
 		constant.WithLogLevel("debug"),
 	)
 
