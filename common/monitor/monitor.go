@@ -19,47 +19,47 @@ package monitor
 import "github.com/prometheus/client_golang/prometheus"
 
 var (
-    gaugeMonitorVec = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-        Name: "nacos_monitor",
-        Help: "nacos_monitor",
-    }, []string{"module", "name"})
-    histogramMonitorVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-        Name: "nacos_client_request",
-        Help: "nacos_client_request",
-    }, []string{"module", "method", "url", "code"})
+	gaugeMonitorVec = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "nacos_monitor",
+		Help: "nacos_monitor",
+	}, []string{"module", "name"})
+	histogramMonitorVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "nacos_client_request",
+		Help: "nacos_client_request",
+	}, []string{"module", "method", "url", "code"})
 )
 
 // register collectors vec
 func init() {
-    prometheus.MustRegister(gaugeMonitorVec, histogramMonitorVec)
+	prometheus.MustRegister(gaugeMonitorVec, histogramMonitorVec)
 }
 
 // get gauge with labels and use gaugeMonitorVec
 func GetGaugeWithLabels(labels ...string) prometheus.Gauge {
-    return gaugeMonitorVec.WithLabelValues(labels...)
+	return gaugeMonitorVec.WithLabelValues(labels...)
 }
 
 func GetServiceInfoMapSizeMonitor() prometheus.Gauge {
-    return GetGaugeWithLabels("naming", "serviceInfoMapSize")
+	return GetGaugeWithLabels("naming", "serviceInfoMapSize")
 }
 
 func GetDom2BeatSizeMonitor() prometheus.Gauge {
-    return GetGaugeWithLabels("naming", "dom2BeatSize")
+	return GetGaugeWithLabels("naming", "dom2BeatSize")
 }
 
 func GetListenConfigCountMonitor() prometheus.Gauge {
-    return GetGaugeWithLabels("naming", "listenConfigCount")
+	return GetGaugeWithLabels("naming", "listenConfigCount")
 }
 
 // get histogram with labels and use histogramMonitorVec
 func GetHistogramWithLabels(labels ...string) prometheus.Observer {
-    return histogramMonitorVec.WithLabelValues(labels...)
+	return histogramMonitorVec.WithLabelValues(labels...)
 }
 
 func GetConfigRequestMonitor(method, url, code string) prometheus.Observer {
-    return GetHistogramWithLabels("config", method, url, code)
+	return GetHistogramWithLabels("config", method, url, code)
 }
 
 func GetNamingRequestMonitor(method, url, code string) prometheus.Observer {
-    return GetHistogramWithLabels("naming", method, url, code)
+	return GetHistogramWithLabels("naming", method, url, code)
 }
