@@ -49,6 +49,7 @@ type ClientConfig struct {
 	LogSampling          *ClientLogSamplingConfig // the sampling config of log
 	ContextPath          string                   // the nacos server contextpath
 	LogRollingConfig     *ClientLogRollingConfig  // the log rolling config
+	LogStdout            bool                     // whether output log to stdout. If it is true, LogDir and LogRollingConfig are ignored
 }
 
 type ClientLogSamplingConfig struct {

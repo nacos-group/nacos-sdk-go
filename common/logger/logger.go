@@ -45,6 +45,7 @@ type Config struct {
 	Level            string
 	Sampling         *SamplingConfig
 	LogRollingConfig *lumberjack.Logger
+	LogStdout        bool // whether to output log to stdout. If it is true, LogRollingConfig is ignored
 }
 
 type SamplingConfig struct {
@@ -111,6 +112,7 @@ func BuildLoggerConfig(clientConfig constant.ClientConfig) Config {
 		loggerConfig.LogRollingConfig.LocalTime = logRollingConfig.LocalTime
 		loggerConfig.LogRollingConfig.Compress = logRollingConfig.Compress
 	}
+	loggerConfig.LogStdout = clientConfig.LogStdout
 	return loggerConfig
 }
 
@@ -174,5 +176,9 @@ func GetLogger() Logger {
 
 // getLogWriter get Lumberjack writer by LumberjackConfig
 func (c *Config) getLogWriter() zapcore.WriteSyncer {
-	return zapcore.AddSync(c.LogRollingConfig)
+	if !c.LogStdout {
+		return zapcore.AddSync(c.LogRollingConfig)
+	} else {
+		return zapcore.AddSync(os.Stdout)
+	}
 }
