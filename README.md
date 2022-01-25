@@ -23,24 +23,25 @@ $ go get -u github.com/nacos-group/nacos-sdk-go
 
 ```go
 constant.ClientConfig{
-	TimeoutMs            uint64 // timeout for requesting Nacos server, default value is 10000ms
-	NamespaceId          string // the namespaceId of Nacos
-	Endpoint             string // the endpoint for ACM. https://help.aliyun.com/document_detail/130146.html
-	RegionId             string // the regionId for ACM & KMS
-	AccessKey            string // the AccessKey for ACM & KMS
-	SecretKey            string // the SecretKey for ACM & KMS
-	OpenKMS              bool   // it's to open KMS, default is false. https://help.aliyun.com/product/28933.html
-	                            // , to enable encrypt/decrypt, DataId should be start with "cipher-"
-	CacheDir             string // the directory for persist nacos service info,default value is current path
-	UpdateThreadNum      int    // the number of goroutine for update nacos service info,default value is 20
-	NotLoadCacheAtStart  bool   // not to load persistent nacos service info in CacheDir at start time
-	UpdateCacheWhenEmpty bool   // update cache when get empty service instance from server
-	Username             string // the username for nacos auth
-	Password             string // the password for nacos auth
-	LogDir               string // the directory for log, default is current path
-	RotateTime           string // the rotate time for log, eg: 30m, 1h, 24h, default is 24h
-	MaxAge               int64  // the max age of a log file, default value is 3
-	LogLevel             string // the level of log, it's must be debug,info,warn,error, default value is info
+	TimeoutMs            uint64                   // timeout for requesting Nacos server, default value is 10000ms
+    NamespaceId          string                   // the namespaceId of Nacos.When namespace is public, fill in the blank string here.
+    AppName              string                   // the appName
+    Endpoint             string                   // the endpoint for get Nacos server addresses
+    RegionId             string                   // the regionId for kms
+    AccessKey            string                   // the AccessKey for kms
+    SecretKey            string                   // the SecretKey for kms
+    OpenKMS              bool                     // it's to open kms,default is false. https://help.aliyun.com/product/28933.html
+    CacheDir             string                   // the directory for persist nacos service info,default value is current path
+    UpdateThreadNum      int                      // the number of gorutine for update nacos service info,default value is 20
+    NotLoadCacheAtStart  bool                     // not to load persistent nacos service info in CacheDir at start time
+    UpdateCacheWhenEmpty bool                     // update cache when get empty service instance from server
+    Username             string                   // the username for nacos auth
+    Password             string                   // the password for nacos auth
+    LogDir               string                   // the directory for log, default is current path
+    LogLevel             string                   // the level of log, it's must be debug,info,warn,error, default value is info
+    LogSampling          *ClientLogSamplingConfig // the sampling config of log
+    ContextPath          string                   // the nacos server contextpath
+    LogRollingConfig     *ClientLogRollingConfig  // the log rolling config
 }
 ```
 
@@ -68,8 +69,6 @@ clientConfig := constant.ClientConfig{
 	NotLoadCacheAtStart: true,
 	LogDir:              "/tmp/nacos/log",
 	CacheDir:            "/tmp/nacos/cache",
-	RotateTime:          "1h",
-	MaxAge:              3,
 	LogLevel:            "debug",
 }
 //Another way of create clientConfig
@@ -79,8 +78,6 @@ clientConfig := *constant.NewClientConfig(
     constant.WithNotLoadCacheAtStart(true),
     constant.WithLogDir("/tmp/nacos/log"),
     constant.WithCacheDir("/tmp/nacos/cache"),
-    constant.WithRotateTime("1h"),
-    constant.WithMaxAge(3),
     constant.WithLogLevel("debug"),
 )
 

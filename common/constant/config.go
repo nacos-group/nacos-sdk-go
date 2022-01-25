@@ -48,7 +48,7 @@ type ClientConfig struct {
 	LogLevel             string                   // the level of log, it's must be debug,info,warn,error, default value is info
 	LogSampling          *ClientLogSamplingConfig // the sampling config of log
 	ContextPath          string                   // the nacos server contextpath
-	LogRollingConfig     *ClientLogRollingConfig  // log rolling config
+	LogRollingConfig     *ClientLogRollingConfig  // the log rolling config
 }
 
 type ClientLogSamplingConfig struct {

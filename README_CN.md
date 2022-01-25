@@ -25,6 +25,7 @@ $ go get -u github.com/nacos-group/nacos-sdk-go
 constant.ClientConfig{
 	TimeoutMs            uint64 // 请求Nacos服务端的超时时间，默认是10000ms
 	NamespaceId          string // ACM的命名空间Id
+    AppName              string // App名称
 	Endpoint             string // 当使用ACM时，需要该配置. https://help.aliyun.com/document_detail/130146.html
 	RegionId             string // ACM&KMS的regionId，用于配置中心的鉴权
 	AccessKey            string // ACM&KMS的AccessKey，用于配置中心的鉴权
@@ -38,9 +39,9 @@ constant.ClientConfig{
 	Username             string // Nacos服务端的API鉴权Username
 	Password             string // Nacos服务端的API鉴权Password
 	LogDir               string // 日志存储路径
-	RotateTime           string // 日志轮转周期，比如：30m, 1h, 24h, 默认是24h
-	MaxAge               int64  // 日志最大文件数，默认3
 	LogLevel             string // 日志默认级别，值必须是：debug,info,warn,error，默认值是info
+    LogSampling          *ClientLogSamplingConfig // 日志采样配置
+    LogRollingConfig     *ClientLogRollingConfig  // 日志归档配置
 }
 ```
 
@@ -67,8 +68,6 @@ clientConfig := constant.ClientConfig{
 	NotLoadCacheAtStart: true,
 	LogDir:              "/tmp/nacos/log",
 	CacheDir:            "/tmp/nacos/cache",
-	RotateTime:          "1h",
-	MaxAge:              3,
 	LogLevel:            "debug",
 }
 
@@ -79,8 +78,6 @@ clientConfig := *constant.NewClientConfig(
     constant.WithNotLoadCacheAtStart(true),
     constant.WithLogDir("/tmp/nacos/log"),
     constant.WithCacheDir("/tmp/nacos/cache"),
-    constant.WithRotateTime("1h"),
-    constant.WithMaxAge(3),
     constant.WithLogLevel("debug"),
 )
 
