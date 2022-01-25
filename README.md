@@ -23,7 +23,7 @@ $ go get -u github.com/nacos-group/nacos-sdk-go
 
 ```go
 constant.ClientConfig{
-	TimeoutMs            uint64                   // timeout for requesting Nacos server, default value is 10000ms
+    TimeoutMs            uint64                   // timeout for requesting Nacos server, default value is 10000ms
     NamespaceId          string                   // the namespaceId of Nacos.When namespace is public, fill in the blank string here.
     AppName              string                   // the appName
     Endpoint             string                   // the endpoint for get Nacos server addresses
