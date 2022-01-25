@@ -34,12 +34,10 @@ func TestNewClientConfig(t *testing.T) {
 	assert.Equal(t, config.LogLevel, "info")
 	assert.Equal(t, config.BeatInterval, int64(5000))
 	assert.Equal(t, config.UpdateThreadNum, 20)
-	assert.Equal(t, config.RotateTime, "24h")
 
 	assert.Equal(t, config.LogDir, file.GetCurrentPath()+string(os.PathSeparator)+"log")
 	assert.Equal(t, config.CacheDir, file.GetCurrentPath()+string(os.PathSeparator)+"cache")
 
-	assert.Equal(t, config.MaxAge, int64(3))
 	assert.Equal(t, config.NotLoadCacheAtStart, false)
 	assert.Equal(t, config.UpdateCacheWhenEmpty, false)
 
@@ -61,12 +59,10 @@ func TestNewClientConfigWithOptions(t *testing.T) {
 		WithLogLevel("error"),
 		WithBeatInterval(int64(2000)),
 		WithUpdateThreadNum(30),
-		WithRotateTime("16h"),
 
 		WithLogDir("/tmp/nacos/log"),
 		WithCacheDir("/tmp/nacos/cache"),
 
-		WithMaxAge(int64(6)),
 		WithNotLoadCacheAtStart(true),
 		WithUpdateCacheWhenEmpty(true),
 
@@ -86,12 +82,10 @@ func TestNewClientConfigWithOptions(t *testing.T) {
 	assert.Equal(t, config.LogLevel, "error")
 	assert.Equal(t, config.BeatInterval, int64(2000))
 	assert.Equal(t, config.UpdateThreadNum, 30)
-	assert.Equal(t, config.RotateTime, "16h")
 
 	assert.Equal(t, config.LogDir, "/tmp/nacos/log")
 	assert.Equal(t, config.CacheDir, "/tmp/nacos/cache")
 
-	assert.Equal(t, config.MaxAge, int64(6))
 	assert.Equal(t, config.NotLoadCacheAtStart, true)
 	assert.Equal(t, config.UpdateCacheWhenEmpty, true)
 

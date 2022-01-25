@@ -29,10 +29,7 @@ func reset() {
 
 func TestInitLogger(t *testing.T) {
 	config := Config{
-		Level:        "degug",
-		OutputPath:   "/tmp/nacos",
-		RotationTime: "1h",
-		MaxAge:       2,
+		Level: "debug",
 	}
 	err := InitLogger(config)
 	assert.NoError(t, err)
@@ -43,10 +40,7 @@ func TestGetLogger(t *testing.T) {
 	// not yet init get default log
 	log := GetLogger()
 	config := Config{
-		Level:        "degug",
-		OutputPath:   "/tmp/nacos",
-		RotationTime: "1h",
-		MaxAge:       2,
+		Level: "debug",
 	}
 	_ = InitLogger(config)
 	// after init logger
@@ -73,10 +67,7 @@ func TestSetLogger(t *testing.T) {
 	assert.Equal(t, log1, log2)
 
 	config := Config{
-		Level:        "degug",
-		OutputPath:   "/tmp/nacos",
-		RotationTime: "1h",
-		MaxAge:       2,
+		Level: "degug",
 	}
 	_ = InitLogger(config)
 	// after init logger
@@ -100,10 +91,7 @@ func TestRaceLogger(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			config := Config{
-				Level:        "degug",
-				OutputPath:   "/tmp/nacos",
-				RotationTime: "1h",
-				MaxAge:       2,
+				Level: "debug",
 			}
 			_ = InitLogger(config)
 		}()

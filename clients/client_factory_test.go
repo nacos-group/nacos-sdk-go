@@ -25,8 +25,6 @@ func TestSetConfigClient(t *testing.T) {
 		constant.WithNotLoadCacheAtStart(true),
 		constant.WithLogDir("/tmp/nacos/log"),
 		constant.WithCacheDir("/tmp/nacos/cache"),
-		constant.WithRotateTime("1h"),
-		constant.WithMaxAge(3),
 		constant.WithLogLevel("debug"),
 	)
 

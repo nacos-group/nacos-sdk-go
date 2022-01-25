@@ -77,4 +77,5 @@ const (
 	DEFAULT_SERVER_SCHEME       = "http"
 	WINDOWS_LEGAL_NAME_SPLITER  = "&&"
 	OS_WINDOWS                  = "windows"
+	LOG_FILE_NAME               = "nacos-sdk.log"
 )

@@ -33,8 +33,6 @@ func NewClientConfig(opts ...ClientOption) *ClientConfig {
 		NotLoadCacheAtStart:  false,
 		UpdateCacheWhenEmpty: false,
 		LogDir:               file.GetCurrentPath() + string(os.PathSeparator) + "log",
-		RotateTime:           "24h",
-		MaxAge:               3,
 		LogLevel:             "info",
 	}
 
@@ -153,20 +151,6 @@ func WithLogDir(logDir string) ClientOption {
 	}
 }
 
-// WithRotateTime ...
-func WithRotateTime(rotateTime string) ClientOption {
-	return func(config *ClientConfig) {
-		config.RotateTime = rotateTime
-	}
-}
-
-// WithMaxAge ...
-func WithMaxAge(maxAge int64) ClientOption {
-	return func(config *ClientConfig) {
-		config.MaxAge = maxAge
-	}
-}
-
 // WithLogLevel ...
 func WithLogLevel(logLevel string) ClientOption {
 	return func(config *ClientConfig) {
@@ -178,5 +162,12 @@ func WithLogLevel(logLevel string) ClientOption {
 func WithLogSampling(tick time.Duration, initial int, thereafter int) ClientOption {
 	return func(config *ClientConfig) {
 		config.LogSampling = &ClientLogSamplingConfig{initial, thereafter, tick}
+	}
+}
+
+// WithLogRollingConfig ...
+func WithLogRollingConfig(rollingConfig *ClientLogRollingConfig) ClientOption {
+	return func(config *ClientConfig) {
+		config.LogRollingConfig = rollingConfig
 	}
 }

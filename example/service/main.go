@@ -45,9 +45,10 @@ func main() {
 		NotLoadCacheAtStart: true,
 		LogDir:              "/tmp/nacos/log",
 		CacheDir:            "/tmp/nacos/cache",
-		RotateTime:          "1h",
-		MaxAge:              3,
-		LogLevel:            "debug",
+		LogRollingConfig: &constant.ClientLogRollingConfig{
+			MaxSize: 1,
+		},
+		LogLevel: "debug",
 	}
 	//or a more graceful way to create ClientConfig
 	_ = *constant.NewClientConfig(
@@ -56,9 +57,8 @@ func main() {
 		constant.WithNotLoadCacheAtStart(true),
 		constant.WithLogDir("/tmp/nacos/log"),
 		constant.WithCacheDir("/tmp/nacos/cache"),
-		constant.WithRotateTime("1h"),
-		constant.WithMaxAge(3),
 		constant.WithLogLevel("debug"),
+		constant.WithLogRollingConfig(&constant.ClientLogRollingConfig{MaxSize: 1}),
 	)
 
 	// a more graceful way to create naming client
