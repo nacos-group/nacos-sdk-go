@@ -24,8 +24,8 @@ $ go get -u github.com/nacos-group/nacos-sdk-go
 ```go
 constant.ClientConfig{
 	TimeoutMs            uint64 // 请求Nacos服务端的超时时间，默认是10000ms
-	NamespaceId          string // ACM的命名空间Id
-    AppName              string // App名称
+	NamespaceId          string // ACM的命名空间Id 
+	AppName              string // App名称
 	Endpoint             string // 当使用ACM时，需要该配置. https://help.aliyun.com/document_detail/130146.html
 	RegionId             string // ACM&KMS的regionId，用于配置中心的鉴权
 	AccessKey            string // ACM&KMS的AccessKey，用于配置中心的鉴权
@@ -39,9 +39,9 @@ constant.ClientConfig{
 	Username             string // Nacos服务端的API鉴权Username
 	Password             string // Nacos服务端的API鉴权Password
 	LogDir               string // 日志存储路径
-	LogLevel             string // 日志默认级别，值必须是：debug,info,warn,error，默认值是info
-    LogSampling          *ClientLogSamplingConfig // 日志采样配置
-    LogRollingConfig     *ClientLogRollingConfig  // 日志归档配置
+	LogLevel             string // 日志默认级别，值必须是：debug,info,warn,error，默认值是info 
+	LogSampling          *ClientLogSamplingConfig // 日志采样配置 
+	LogRollingConfig     *ClientLogRollingConfig  // 日志归档配置
 }
 ```
 
