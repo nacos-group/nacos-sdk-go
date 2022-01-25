@@ -17,6 +17,7 @@
 package naming_cache
 
 import (
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 	"os"
 	"reflect"
 
@@ -96,6 +97,7 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 		cache.WriteServicesToFile(*service, s.cacheDir)
 		s.subCallback.ServiceChanged(service)
 	}
+	monitor.GetServiceInfoMapSizeMonitor().Set(float64(len(s.ServiceInfoMap)))
 }
 
 func (s *ServiceInfoHolder) GetServiceInfo(serviceName, groupName, clusters string) (model.Service, bool) {

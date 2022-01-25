@@ -24,6 +24,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
+
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
@@ -316,6 +318,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 		}
 	}
 	client.cacheMap.Set(key, cData)
+	monitor.GetListenConfigCountMonitor().Set(float64(len(client.cacheMap)))
 	return
 }
 
@@ -475,7 +478,7 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData *cacheData, notify 
 		cacheData.cacheDataListener.lastMd5 = cacheData.md5
 		client.cacheMap.Set(util.GetConfigCacheKey(cacheData.dataId, cacheData.group, cacheData.tenant), cacheData)
 	}
-
+	monitor.GetListenConfigCountMonitor().Set(float64(len(client.cacheMap)))
 }
 
 func (client *ConfigClient) notifyListenConfig() {
