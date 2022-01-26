@@ -67,6 +67,22 @@ func getMaxCallRecvMsgSize() int {
 	return maxCallRecvMsgSizeInt
 }
 
+func getInitialWindowSize() int32 {
+	initialWindowSize, err := strconv.Atoi(os.Getenv("nacos.remote.client.grpc.initial.window.size"))
+	if err != nil {
+		return 10 * 1024 * 1024
+	}
+	return int32(initialWindowSize)
+}
+
+func getInitialConnWindowSize() int32 {
+	initialConnWindowSize, err := strconv.Atoi(os.Getenv("nacos.remote.client.grpc.initial.conn.window.size"))
+	if err != nil {
+		return 10 * 1024 * 1024
+	}
+	return int32(initialConnWindowSize)
+}
+
 func getKeepAliveTimeMillis() keepalive.ClientParameters {
 	keepAliveTimeMillisInt, err := strconv.Atoi(os.Getenv("nacos.remote.grpc.keep.alive.millis"))
 	var keepAliveTime time.Duration
@@ -87,6 +103,8 @@ func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientCon
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(getMaxCallRecvMsgSize())))
 	opts = append(opts, grpc.WithKeepaliveParams(getKeepAliveTimeMillis()))
 	opts = append(opts, grpc.WithInsecure())
+	opts = append(opts, grpc.WithInitialWindowSize(getInitialWindowSize()))
+	opts = append(opts, grpc.WithInitialConnWindowSize(getInitialConnWindowSize()))
 	rpcPort := serverInfo.serverPort + c.rpcPortOffset()
 	return grpc.Dial(serverInfo.serverIp+":"+strconv.FormatUint(rpcPort, 10), opts...)
 
