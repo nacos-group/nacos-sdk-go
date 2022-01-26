@@ -53,6 +53,13 @@ func WithTimeoutMs(timeoutMs uint64) ClientOption {
 	}
 }
 
+// WithAppName ...
+func WithAppName(appName string) ClientOption {
+	return func(config *ClientConfig) {
+		config.AppName = appName
+	}
+}
+
 // WithBeatInterval ...
 func WithBeatInterval(beatInterval int64) ClientOption {
 	return func(config *ClientConfig) {
