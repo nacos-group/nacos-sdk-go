@@ -104,9 +104,9 @@ func (proxy *NamingProxyDelegate) Subscribe(serviceName, groupName string, clust
 	return service, nil
 }
 
-func (proxy *NamingProxyDelegate) Unsubscribe(serviceName, groupName, clusters string) {
+func (proxy *NamingProxyDelegate) Unsubscribe(serviceName, groupName, clusters string) error {
 	proxy.serviceInfoHolder.StopUpdateIfContain(util.GetGroupName(serviceName, groupName), clusters)
-	proxy.grpcClientProxy.Unsubscribe(serviceName, groupName, clusters)
+	return proxy.grpcClientProxy.Unsubscribe(serviceName, groupName, clusters)
 }
 
 func (proxy *NamingProxyDelegate) CloseClient() {
