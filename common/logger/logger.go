@@ -17,16 +17,14 @@
 package logger
 
 import (
-	"io"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
-	rotatelogs "github.com/lestrrat/go-file-rotatelogs"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/file"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (
@@ -42,10 +40,15 @@ var levelMap = map[string]zapcore.Level{
 }
 
 type Config struct {
-	Level        string
-	OutputPath   string
-	RotationTime string
-	MaxAge       int64
+	Level            string
+	Sampling         *SamplingConfig
+	LogRollingConfig *lumberjack.Logger
+}
+
+type SamplingConfig struct {
+	Initial    int
+	Thereafter int
+	Tick       time.Duration
 }
 
 type NacosLogger struct {
@@ -84,6 +87,31 @@ func init() {
 	SetLogger(&NacosLogger{zapLogger.Sugar()})
 }
 
+func BuildLoggerConfig(clientConfig constant.ClientConfig) Config {
+	loggerConfig := Config{
+		Level: clientConfig.LogLevel,
+	}
+	if clientConfig.LogSampling != nil {
+		loggerConfig.Sampling = &SamplingConfig{
+			Initial:    clientConfig.LogSampling.Initial,
+			Thereafter: clientConfig.LogSampling.Thereafter,
+			Tick:       clientConfig.LogSampling.Tick,
+		}
+	}
+	loggerConfig.LogRollingConfig = &lumberjack.Logger{
+		Filename: clientConfig.LogDir + string(os.PathSeparator) + constant.LOG_FILE_NAME,
+	}
+	logRollingConfig := clientConfig.LogRollingConfig
+	if logRollingConfig != nil {
+		loggerConfig.LogRollingConfig.MaxSize = logRollingConfig.MaxSize
+		loggerConfig.LogRollingConfig.MaxAge = logRollingConfig.MaxAge
+		loggerConfig.LogRollingConfig.MaxBackups = logRollingConfig.MaxBackups
+		loggerConfig.LogRollingConfig.LocalTime = logRollingConfig.LocalTime
+		loggerConfig.LogRollingConfig.Compress = logRollingConfig.Compress
+	}
+	return loggerConfig
+}
+
 // InitLogger is init global logger for nacos
 func InitLogger(config Config) (err error) {
 	logLock.Lock()
@@ -96,11 +124,9 @@ func InitLogger(config Config) (err error) {
 func InitNacosLogger(config Config) (Logger, error) {
 	logLevel := getLogLevel(config.Level)
 	encoder := getEncoder()
-	writer, err := getWriter(config.OutputPath, config.RotationTime, config.MaxAge)
-	if err != nil {
-		return nil, err
-	}
-	core := zapcore.NewCore(zapcore.NewConsoleEncoder(encoder), zapcore.AddSync(writer), logLevel)
+	writer := config.getLogWriter()
+	core := zapcore.NewCore(zapcore.NewConsoleEncoder(encoder),
+		zapcore.NewMultiWriteSyncer(writer, zapcore.AddSync(os.Stdout)), logLevel)
 	zaplogger := zap.New(core, zap.AddCallerSkip(1))
 	return &NacosLogger{zaplogger.Sugar()}, nil
 }
@@ -127,19 +153,6 @@ func getEncoder() zapcore.EncoderConfig {
 	}
 }
 
-func getWriter(outputPath string, rotateTime string, maxAge int64) (writer io.Writer, err error) {
-	err = file.MkdirIfNecessary(outputPath)
-	if err != nil {
-		return
-	}
-	outputPath = outputPath + string(os.PathSeparator)
-	rotateDuration, err := time.ParseDuration(rotateTime)
-	writer, err = rotatelogs.New(filepath.Join(outputPath, "nacos-sdk.log-%Y%m%d%H%M"),
-		rotatelogs.WithRotationTime(rotateDuration), rotatelogs.WithMaxAge(time.Duration(maxAge)*rotateDuration),
-		rotatelogs.WithLinkName(filepath.Join(outputPath, "nacos-sdk.log")))
-	return
-}
-
 //SetLogger sets logger for sdk
 func SetLogger(log Logger) {
 	logLock.Lock()
@@ -151,4 +164,9 @@ func GetLogger() Logger {
 	logLock.RLock()
 	defer logLock.RUnlock()
 	return logger
+}
+
+// getLogWriter get Lumberjack writer by LumberjackConfig
+func (c *Config) getLogWriter() zapcore.WriteSyncer {
+	return zapcore.AddSync(c.LogRollingConfig)
 }

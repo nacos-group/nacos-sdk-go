@@ -28,6 +28,7 @@ type IConnection interface {
 	getConnectionId() string
 	getServerInfo() ServerInfo
 	setAbandon(flag bool)
+	getAbandon() bool
 }
 
 type Connection struct {
@@ -47,6 +48,10 @@ func (c *Connection) getServerInfo() ServerInfo {
 
 func (c *Connection) setAbandon(flag bool) {
 	c.abandon = flag
+}
+
+func (c *Connection) getAbandon() bool {
+	return c.abandon
 }
 
 func (c *Connection) close() {

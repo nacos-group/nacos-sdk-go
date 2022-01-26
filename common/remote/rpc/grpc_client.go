@@ -19,6 +19,7 @@ package rpc
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"strconv"
@@ -67,6 +68,22 @@ func getMaxCallRecvMsgSize() int {
 	return maxCallRecvMsgSizeInt
 }
 
+func getInitialWindowSize() int32 {
+	initialWindowSize, err := strconv.Atoi(os.Getenv("nacos.remote.client.grpc.initial.window.size"))
+	if err != nil {
+		return 10 * 1024 * 1024
+	}
+	return int32(initialWindowSize)
+}
+
+func getInitialConnWindowSize() int32 {
+	initialConnWindowSize, err := strconv.Atoi(os.Getenv("nacos.remote.client.grpc.initial.conn.window.size"))
+	if err != nil {
+		return 10 * 1024 * 1024
+	}
+	return int32(initialConnWindowSize)
+}
+
 func getKeepAliveTimeMillis() keepalive.ClientParameters {
 	keepAliveTimeMillisInt, err := strconv.Atoi(os.Getenv("nacos.remote.grpc.keep.alive.millis"))
 	var keepAliveTime time.Duration
@@ -87,6 +104,8 @@ func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientCon
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(getMaxCallRecvMsgSize())))
 	opts = append(opts, grpc.WithKeepaliveParams(getKeepAliveTimeMillis()))
 	opts = append(opts, grpc.WithInsecure())
+	opts = append(opts, grpc.WithInitialWindowSize(getInitialWindowSize()))
+	opts = append(opts, grpc.WithInitialConnWindowSize(getInitialConnWindowSize()))
 	rpcPort := serverInfo.serverPort + c.rpcPortOffset()
 	return grpc.Dial(serverInfo.serverIp+":"+strconv.FormatUint(rpcPort, 10), opts...)
 
@@ -147,14 +166,14 @@ func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiReque
 	go func() {
 		for {
 			select {
-			case <-grpcConn.streamCloseChan:
+			case <-streamClient.Context().Done():
 				return
 			default:
 				payload, err := streamClient.Recv()
 				if err != nil {
 					running := c.IsRunning()
-					abandon := grpcConn.abandon
-					if c.IsRunning() && !grpcConn.abandon {
+					abandon := grpcConn.getAbandon()
+					if c.IsRunning() && !abandon {
 						if err == io.EOF {
 							logger.Infof("%s Request stream onCompleted, switch server", grpcConn.getConnectionId())
 						} else {
@@ -162,10 +181,11 @@ func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiReque
 						}
 						if atomic.CompareAndSwapInt32((*int32)(&c.rpcClientStatus), int32(RUNNING), int32(UNHEALTHY)) {
 							c.switchServerAsync(ServerInfo{}, false)
+							return
 						}
 					} else {
 						logger.Infof("%s received error event, isRunning:%v, isAbandon=%v, error=%+v", grpcConn.getConnectionId(), running, abandon, err)
-						<-time.After(time.Second)
+						return
 					}
 				} else {
 					c.handleServerRequest(payload, grpcConn)
@@ -177,14 +197,26 @@ func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiReque
 }
 
 func serverCheck(client nacos_grpc_service.RequestClient) (rpc_response.IResponse, error) {
-	payload, err := client.Request(context.Background(), convertRequest(rpc_request.NewServerCheckRequest()))
-	if err != nil {
-		return nil, err
-	}
 	var response rpc_response.ServerCheckResponse
-	err = json.Unmarshal(payload.GetBody().Value, &response)
-	if err != nil {
-		return nil, err
+	for i := 0; i <= 30; i++ {
+		payload, err := client.Request(context.Background(), convertRequest(rpc_request.NewServerCheckRequest()))
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(payload.GetBody().Value, &response)
+		if err != nil {
+			return nil, err
+		}
+		// check if the server is ready, if not, wait 1 second and try again
+		if response.GetErrorCode() >= 300 && response.GetErrorCode() < 400 {
+			// if we wait 30 second, but the server is not ready,then throw this error
+			if i == 30 {
+				return nil, errors.New("the nacos server is not ready to work in 30 seconds, connect to server failed")
+			}
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		break
 	}
 	return &response, nil
 }
