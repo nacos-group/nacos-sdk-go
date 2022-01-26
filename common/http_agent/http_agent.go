@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/tls"
 
 	"github.com/go-errors/errors"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
@@ -28,11 +29,16 @@ import (
 )
 
 type HttpAgent struct {
+	TlsConfig constant.TLSConfig
 }
 
 func (agent *HttpAgent) Get(path string, header http.Header, timeoutMs uint64,
 	params map[string]string) (response *http.Response, err error) {
-	return get(path, header, timeoutMs, params)
+	client, err := agent.createClient()
+	if err != nil {
+		return nil, err
+	}
+	return get(client, path, header, timeoutMs, params)
 }
 
 func (agent *HttpAgent) RequestOnlyResult(method string, path string, header http.Header, timeoutMs uint64, params map[string]string) string {
@@ -94,13 +100,37 @@ func (agent *HttpAgent) Request(method string, path string, header http.Header, 
 }
 func (agent *HttpAgent) Post(path string, header http.Header, timeoutMs uint64,
 	params map[string]string) (response *http.Response, err error) {
-	return post(path, header, timeoutMs, params)
+	client, err := agent.createClient()
+	if err != nil {
+		return nil, err
+	}
+	return post(client, path, header, timeoutMs, params)
 }
 func (agent *HttpAgent) Delete(path string, header http.Header, timeoutMs uint64,
 	params map[string]string) (response *http.Response, err error) {
-	return delete(path, header, timeoutMs, params)
+	client, err := agent.createClient()
+	if err != nil {
+		return nil, err
+	}
+	return delete(client, path, header, timeoutMs, params)
 }
 func (agent *HttpAgent) Put(path string, header http.Header, timeoutMs uint64,
 	params map[string]string) (response *http.Response, err error) {
-	return put(path, header, timeoutMs, params)
+	client, err := agent.createClient()
+	if err != nil {
+		return nil, err
+	}
+	return put(client, path, header, timeoutMs, params)
+}
+
+func (agent *HttpAgent) createClient() (*http.Client, error) {
+	if !agent.TlsConfig.Enable {
+		return &http.Client{}, nil
+	}
+	cfg, err := tls.NewTLS(agent.TlsConfig)
+	if err != nil {
+		return nil, err
+	}
+	return &http.Client{Transport: &http.Transport{TLSClientConfig: cfg}}, nil
+
 }

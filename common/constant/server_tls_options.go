@@ -13,31 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package http_agent
 
-import (
-	"net/http"
-	"strings"
-	"time"
+package constant
 
-	"github.com/nacos-group/nacos-sdk-go/v2/util"
-)
+var SkipVerifyConfig = TLSConfig{Enable: true}
 
-func post(client *http.Client, path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
-	client.Timeout = time.Millisecond * time.Duration(timeoutMs)
-
-	body := util.GetUrlFormedMap(params)
-	request, errNew := http.NewRequest(http.MethodPost, path, strings.NewReader(body))
-	if errNew != nil {
-		err = errNew
-		return
+func NewTLSConfig(opts ...TLSOption) *TLSConfig {
+	tlsConfig := TLSConfig{Enable: true}
+	for _, opt := range opts {
+		opt(&tlsConfig)
 	}
-	request.Header = header
-	resp, errDo := client.Do(request)
-	if errDo != nil {
-		err = errDo
-	} else {
-		response = resp
+	return &tlsConfig
+}
+
+type TLSOption func(*TLSConfig)
+
+func WithCA(caFile, serverNameOverride string) TLSOption {
+	return func(tc *TLSConfig) {
+		tc.CaFile = caFile
+		tc.ServerNameOverride = serverNameOverride
 	}
-	return
+}
+
+func WithCertificate(certFile, keyFile string) TLSOption {
+	return func(tc *TLSConfig) {
+		tc.CertFile = certFile
+		tc.KeyFile = keyFile
+	}
 }
