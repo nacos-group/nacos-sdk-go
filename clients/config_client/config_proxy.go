@@ -47,7 +47,6 @@ func NewConfigProxy(serverConfig []constant.ServerConfig, clientConfig constant.
 	proxy.nacosServer, err = nacos_server.NewNacosServer(serverConfig, clientConfig, httpAgent, clientConfig.TimeoutMs, clientConfig.Endpoint)
 	proxy.clientConfig = clientConfig
 	return &proxy, err
-
 }
 
 func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_request.IRequest, timeoutMills uint64) (rpc_response.IResponse, error) {

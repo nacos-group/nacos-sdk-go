@@ -161,10 +161,11 @@ func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters 
 }
 
 // Unsubscribe ...
-func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters string) {
+func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters string) error {
 	proxy.eventListener.RemoveSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
-	_, _ = proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
+	_, err := proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
 		clusters, false))
+	return err
 }
 
 func (proxy *NamingGrpcProxy) CloseClient() {

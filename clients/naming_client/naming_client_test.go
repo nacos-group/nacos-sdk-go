@@ -63,7 +63,9 @@ func (m *MockNamingProxy) Subscribe(serviceName, groupName, clusters string) (mo
 	return model.Service{}, nil
 }
 
-func (m *MockNamingProxy) Unsubscribe(serviceName, groupName, clusters string) {}
+func (m *MockNamingProxy) Unsubscribe(serviceName, groupName, clusters string) error {
+	return nil
+}
 
 func (m *MockNamingProxy) CloseClient() {}
 
