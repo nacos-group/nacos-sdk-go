@@ -92,4 +92,5 @@ const (
 	CLIENT_REQUEST_TOKEN_HEADER = "Client-RequestToken"
 	EX_CONFIG_INFO              = "exConfigInfo"
 	CHARSET_KEY                 = "charset"
+	LOG_FILE_NAME               = "nacos-sdk.log"
 )

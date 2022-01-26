@@ -49,16 +49,8 @@ func (client *NacosClient) SetClientConfig(config constant.ClientConfig) (err er
 		config.UpdateThreadNum = 20
 	}
 
-	if len(config.RotateTime) == 0 {
-		config.RotateTime = "24h"
-	}
-
 	if len(config.LogLevel) == 0 {
 		config.LogLevel = "info"
-	}
-
-	if config.MaxAge <= 0 {
-		config.MaxAge = 3
 	}
 
 	if config.CacheDir == "" {
