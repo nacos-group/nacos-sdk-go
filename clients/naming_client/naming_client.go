@@ -290,20 +290,20 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	}
 	clusters := strings.Join(param.Clusters, ",")
 	sc.serviceInfoHolder.RegisterCallback(util.GetGroupName(param.ServiceName, param.GroupName), clusters, &param.SubscribeCallback)
-	_, _ = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
-	return nil
+	_, err := sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
+	return err
 }
 
 // Unsubscribe ...
-func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
+func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) (err error) {
 	clusters := strings.Join(param.Clusters, ",")
 	serviceFullName := util.GetGroupName(param.ServiceName, param.GroupName)
 	sc.serviceInfoHolder.DeregisterCallback(serviceFullName, clusters, &param.SubscribeCallback)
 	if sc.serviceInfoHolder.IsSubscribed(serviceFullName, clusters) {
-		sc.serviceProxy.Unsubscribe(param.ServiceName, param.GroupName, clusters)
+		err = sc.serviceProxy.Unsubscribe(param.ServiceName, param.GroupName, clusters)
 	}
 
-	return nil
+	return err
 }
 
 // CloseClient ...
