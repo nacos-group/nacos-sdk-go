@@ -56,7 +56,8 @@ type NacosServer struct {
 }
 
 func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
-	if len(serverList) == 0 && endpoint == "" {
+	severLen := len(serverList)
+	if severLen == 0 && endpoint == "" {
 		return &NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
 	}
 
@@ -70,9 +71,12 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 		endpoint:              endpoint,
 		vipSrvRefInterMills:   10000,
 		contextPath:           clientCfg.ContextPath,
-		currentIndex:          rand.Int31n((int32)(len(serverList))),
 		ServerSrcChangeSignal: make(chan struct{}, 1),
 	}
+	if severLen > 0 {
+		ns.currentIndex = rand.Int31n(int32(severLen))
+	}
+
 	ns.initRefreshSrvIfNeed()
 	_, err := securityLogin.Login()
 
@@ -361,7 +365,11 @@ func signWithhmacSHA1Encrypt(encryptText, encryptKey string) string {
 	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
 }
 
-func (server *NacosServer) GetNextServer() constant.ServerConfig {
-	index := atomic.AddInt32(&server.currentIndex, 1) % (int32)(len(server.GetServerList()))
-	return server.GetServerList()[index]
+func (server *NacosServer) GetNextServer() (constant.ServerConfig, error) {
+	serverLen := len(server.GetServerList())
+	if serverLen == 0 {
+		return constant.ServerConfig{}, errors.New("server is empty")
+	}
+	index := atomic.AddInt32(&server.currentIndex, 1) % int32(serverLen)
+	return server.GetServerList()[index], nil
 }

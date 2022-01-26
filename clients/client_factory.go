@@ -102,7 +102,7 @@ func setConfig(param vo.NacosClientParam) (iClient nacos_client.INacosClient, er
 			err = errors.New("server configs not found in properties")
 			return nil, err
 		}
-		_ = client.SetServerConfig([]constant.ServerConfig{})
+		_ = client.SetServerConfig(nil)
 	} else {
 		err = client.SetServerConfig(param.ServerConfigs)
 		if err != nil {

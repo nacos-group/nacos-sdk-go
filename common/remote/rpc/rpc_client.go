@@ -206,15 +206,18 @@ func (r *RpcClient) Start() {
 	startUpRetryTimes := constant.REQUEST_DOMAIN_RETRY_TIME
 	for startUpRetryTimes > 0 && currentConnection == nil {
 		startUpRetryTimes--
-		serverInfo := r.nextRpcServer()
-
+		serverInfo, err := r.nextRpcServer()
+		if err != nil {
+			logger.Errorf("[RpcClient.nextRpcServer],err:%+v", err)
+			break
+		}
 		logger.Infof("[RpcClient.Start] %+v try to connect to server on start up, server: %+v", r.Name, serverInfo)
-
 		if connection, err := r.executeClient.connectToServer(serverInfo); err != nil {
 			logger.Warnf("[RpcClient.Start] %+v fail to connect to server on start up, error message=%+v, "+
 				"start up retry times left=%+v", r.Name, err.Error(), startUpRetryTimes)
 		} else {
 			currentConnection = connection
+			break
 		}
 	}
 	if currentConnection != nil {
@@ -292,16 +295,23 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 		atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
 		return
 	}
-	serverInfoFlag := false
+	var (
+		serverInfoFlag             bool
+		reConnectTimes, retryTurns int
+		err                        error
+	)
 	if (serverInfo == ServerInfo{}) {
 		serverInfoFlag = true
 		logger.Infof("%s try to re connect to a new server, server is not appointed, will choose a random server.", r.Name)
 	}
-	switchSuccess := false
-	var reConnectTimes, retryTurns int
-	for !switchSuccess && !r.isShutdown() {
+
+	for !r.isShutdown() {
 		if serverInfoFlag {
-			serverInfo = r.nextRpcServer()
+			serverInfo, err = r.nextRpcServer()
+			if err != nil {
+				logger.Errorf("[RpcClient.nextRpcServer],err:%+v", err)
+				break
+			}
 		}
 		connectionNew, err := r.executeClient.connectToServer(serverInfo)
 		if connectionNew != nil && err == nil {
@@ -316,7 +326,6 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 			}
 			r.currentConnection = connectionNew
 			atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
-			switchSuccess = true
 			r.eventChan <- ConnectionEvent{eventType: CONNECTED}
 			return
 		}
@@ -404,12 +413,15 @@ func (r *RpcClient) sendHealthCheck() bool {
 	return true
 }
 
-func (r *RpcClient) nextRpcServer() ServerInfo {
-	serverConfig := r.nacosServer.GetNextServer()
+func (r *RpcClient) nextRpcServer() (ServerInfo, error) {
+	serverConfig, err := r.nacosServer.GetNextServer()
+	if err != nil {
+		return ServerInfo{}, err
+	}
 	return ServerInfo{
 		serverIp:   serverConfig.IpAddr,
 		serverPort: serverConfig.Port,
-	}
+	}, nil
 }
 
 func (c *ConnectionEvent) isConnected() bool {
