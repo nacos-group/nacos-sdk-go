@@ -80,12 +80,7 @@ func NewNamingClient(nc nacos_client.INacosClient) (*NamingClient, error) {
 }
 
 func initLogger(clientConfig constant.ClientConfig) error {
-	return logger.InitLogger(logger.Config{
-		Level:        clientConfig.LogLevel,
-		OutputPath:   clientConfig.LogDir,
-		RotationTime: clientConfig.RotateTime,
-		MaxAge:       clientConfig.MaxAge,
-	})
+	return logger.InitLogger(logger.BuildLoggerConfig(clientConfig))
 }
 
 // RegisterInstance ...

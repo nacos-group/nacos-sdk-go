@@ -125,12 +125,7 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 }
 
 func initLogger(clientConfig constant.ClientConfig) error {
-	return logger.InitLogger(logger.Config{
-		Level:        clientConfig.LogLevel,
-		OutputPath:   clientConfig.LogDir,
-		RotationTime: clientConfig.RotateTime,
-		MaxAge:       clientConfig.MaxAge,
-	})
+	return logger.InitLogger(logger.BuildLoggerConfig(clientConfig))
 }
 
 func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err error) {
