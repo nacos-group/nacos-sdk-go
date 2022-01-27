@@ -16,7 +16,7 @@ Nacos-sdk-go是Nacos的Go语言客户端，它实现了服务发现和动态配�
 ## 安装
 使用`go get`安装SDK：
 ```sh
-$ go get -u github.com/nacos-group/nacos-sdk-go
+$ go get -u github.com/nacos-group/nacos-sdk-go/v2
 ```
 ## 快速使用
 * ClientConfig
@@ -48,10 +48,10 @@ constant.ClientConfig{
 
 ```go
 constant.ServerConfig{
-	ContextPath string // Nacos的ContextPath
+	ContextPath string // Nacos的ContextPath，默认/nacos，在2.0中不需要设置
 	IpAddr      string // Nacos的服务地址
 	Port        uint64 // Nacos的服务端口
-	Scheme      string // Nacos的服务地址前缀
+	Scheme      string // Nacos的服务地址前缀，默认http，在2.0中不需要设置
 }
 ```
 
@@ -67,8 +67,6 @@ clientConfig := constant.ClientConfig{
 	NotLoadCacheAtStart: true,
 	LogDir:              "/tmp/nacos/log",
 	CacheDir:            "/tmp/nacos/cache",
-	RotateTime:          "1h",
-	MaxAge:              3,
 	LogLevel:            "debug",
 }
 
@@ -79,8 +77,6 @@ clientConfig := *constant.NewClientConfig(
     constant.WithNotLoadCacheAtStart(true),
     constant.WithLogDir("/tmp/nacos/log"),
     constant.WithCacheDir("/tmp/nacos/cache"),
-    constant.WithRotateTime("1h"),
-    constant.WithMaxAge(3),
     constant.WithLogLevel("debug"),
 )
 

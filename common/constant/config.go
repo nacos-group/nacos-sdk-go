@@ -19,10 +19,10 @@ package constant
 import "time"
 
 type ServerConfig struct {
-	Scheme      string //the nacos server scheme
-	ContextPath string //the nacos server contextpath
-	IpAddr      string //the nacos server address
-	Port        uint64 //the nacos server port
+	Scheme      string // the nacos server scheme,defaut=http,this is not required in 2.0
+	ContextPath string // the nacos server contextpath,defaut=/nacos,this is not required in 2.0
+	IpAddr      string // the nacos server address
+	Port        uint64 // nacos server port
 }
 
 type ClientConfig struct {
