@@ -53,6 +53,13 @@ func WithTimeoutMs(timeoutMs uint64) ClientOption {
 	}
 }
 
+// WithAppName ...
+func WithAppName(appName string) ClientOption {
+	return func(config *ClientConfig) {
+		config.AppName = appName
+	}
+}
+
 // WithBeatInterval ...
 func WithBeatInterval(beatInterval int64) ClientOption {
 	return func(config *ClientConfig) {
@@ -169,5 +176,11 @@ func WithLogSampling(tick time.Duration, initial int, thereafter int) ClientOpti
 func WithLogRollingConfig(rollingConfig *ClientLogRollingConfig) ClientOption {
 	return func(config *ClientConfig) {
 		config.LogRollingConfig = rollingConfig
+	}
+}
+
+func WithTLS(tlsCfg TLSConfig) ClientOption {
+	return func(config *ClientConfig) {
+		config.TLSCfg = tlsCfg
 	}
 }

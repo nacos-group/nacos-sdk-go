@@ -151,8 +151,10 @@ func (proxy *NamingGrpcProxy) QueryInstancesOfService(serviceName, groupName, cl
 // Subscribe ...
 func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters string) (model.Service, error) {
 	proxy.eventListener.CacheSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
-	response, err := proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName,
-		groupName, clusters, true))
+	request := rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName,
+		groupName, clusters, true)
+	request.Headers["app"] = proxy.clientConfig.AppName
+	response, err := proxy.requestToServer(request)
 	if err != nil {
 		return model.Service{}, err
 	}
@@ -161,10 +163,11 @@ func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters 
 }
 
 // Unsubscribe ...
-func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters string) {
+func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters string) error {
 	proxy.eventListener.RemoveSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
-	_, _ = proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
+	_, err := proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
 		clusters, false))
+	return err
 }
 
 func (proxy *NamingGrpcProxy) CloseClient() {

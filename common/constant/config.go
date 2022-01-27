@@ -48,6 +48,7 @@ type ClientConfig struct {
 	ContextPath          string                   // the nacos server contextpath
 	LogSampling          *ClientLogSamplingConfig // the sampling config of log
 	LogRollingConfig     *ClientLogRollingConfig  // log rolling config
+	TLSCfg               TLSConfig                // tls Config
 }
 
 type ClientLogSamplingConfig struct {
@@ -81,4 +82,12 @@ type ClientLogRollingConfig struct {
 	// Compress determines if the rotated log files should be compressed
 	// using gzip. The default is not to perform compression.
 	Compress bool
+}
+
+type TLSConfig struct {
+	Enable             bool   // enable tls
+	CaFile             string // clients use when verifying server certificates
+	CertFile           string // server use when verifying client certificates
+	KeyFile            string // server use when verifying client certificates
+	ServerNameOverride string // serverNameOverride is for testing only
 }

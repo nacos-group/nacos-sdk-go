@@ -77,6 +77,7 @@ const (
 	NAMING_INSTANCE_ID_SPLITTER = "#"
 	DefaultClientErrorCode      = "SDK.NacosError"
 	DEFAULT_SERVER_SCHEME       = "http"
+	HTTPS_SERVER_SCHEME         = "https"
 	LABEL_SOURCE                = "source"
 	LABEL_SOURCE_SDK            = "sdk"
 	LABEL_MODULE                = "module"
@@ -93,4 +94,5 @@ const (
 	EX_CONFIG_INFO              = "exConfigInfo"
 	CHARSET_KEY                 = "charset"
 	LOG_FILE_NAME               = "nacos-sdk.log"
+	HTTPS_SERVER_PORT           = 443
 )

@@ -127,7 +127,7 @@ func InitNacosLogger(config Config) (Logger, error) {
 	writer := config.getLogWriter()
 	core := zapcore.NewCore(zapcore.NewConsoleEncoder(encoder),
 		zapcore.NewMultiWriteSyncer(writer, zapcore.AddSync(os.Stdout)), logLevel)
-	zaplogger := zap.New(core, zap.AddCallerSkip(1))
+	zaplogger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 	return &NacosLogger{zaplogger.Sugar()}, nil
 }
 
