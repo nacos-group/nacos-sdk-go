@@ -89,9 +89,9 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 	s.ServiceInfoMap.Set(cacheKey, *service)
 	if !ok || ok && !reflect.DeepEqual(service.Hosts, oldDomain.(model.Service).Hosts) {
 		if !ok {
-			logger.Info("service not found in cache " + cacheKey)
+			logger.Infof("service not found in cache,cachekey:%s", cacheKey)
 		} else {
-			logger.Info("service key:%s was updated to:%s", cacheKey, util.ToJsonString(service))
+			logger.Infof("service key:%s was updated to:%s", cacheKey, util.ToJsonString(service))
 		}
 		cache.WriteServicesToFile(*service, s.cacheDir)
 		s.subCallback.ServiceChanged(service)

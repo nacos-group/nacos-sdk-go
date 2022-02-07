@@ -211,17 +211,17 @@ func (r *RpcClient) Start() {
 			logger.Errorf("[RpcClient.nextRpcServer],err:%+v", err)
 			break
 		}
-		logger.Infof("[RpcClient.Start] %+v try to connect to server on start up, server: %+v", r.Name, serverInfo)
+		logger.Infof("[RpcClient.Start] %s try to connect to server on start up, server: %+v", r.Name, serverInfo)
 		if connection, err := r.executeClient.connectToServer(serverInfo); err != nil {
-			logger.Warnf("[RpcClient.Start] %+v fail to connect to server on start up, error message=%+v, "+
-				"start up retry times left=%+v", r.Name, err.Error(), startUpRetryTimes)
+			logger.Warnf("[RpcClient.Start] %s fail to connect to server on start up, error message=%v, "+
+				"start up retry times left=%d", r.Name, err.Error(), startUpRetryTimes)
 		} else {
 			currentConnection = connection
 			break
 		}
 	}
 	if currentConnection != nil {
-		logger.Infof("%s success to connect to server %+v on start up, connectionId=%v", r.Name,
+		logger.Infof("%s success to connect to server %+v on start up, connectionId=%s", r.Name,
 			currentConnection.getServerInfo(), currentConnection.getConnectionId())
 		r.currentConnection = currentConnection
 		atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
@@ -309,7 +309,7 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 		if serverInfoFlag {
 			serverInfo, err = r.nextRpcServer()
 			if err != nil {
-				logger.Errorf("[RpcClient.nextRpcServer],err:%+v", err)
+				logger.Errorf("[RpcClient.nextRpcServer],err:%v", err)
 				break
 			}
 		}
@@ -333,7 +333,7 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 			r.closeConnection()
 		}
 		if reConnectTimes > 0 && reConnectTimes%len(r.nacosServer.GetServerList()) == 0 {
-			logger.Infof("%s fail to connect server, after trying %v times, last try server is %+v, error=%+v", r.Name,
+			logger.Infof("%s fail to connect server, after trying %d times, last try server is %+v, error=%v", r.Name,
 				reConnectTimes, serverInfo, err)
 			if retryTurns < 50 {
 				retryTurns++
@@ -437,7 +437,7 @@ func (r *RpcClient) isShutdown() bool {
 	return atomic.LoadInt32((*int32)(&r.rpcClientStatus)) == (int32)(SHUTDOWN)
 }
 
-//check is this client is running.
+//IsRunning check is this client is running.
 func (r *RpcClient) IsRunning() bool {
 	return atomic.LoadInt32((*int32)(&r.rpcClientStatus)) == (int32)(RUNNING)
 }
