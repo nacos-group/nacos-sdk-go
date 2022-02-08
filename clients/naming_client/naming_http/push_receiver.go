@@ -51,7 +51,6 @@ func NewPushReceiver(serviceInfoHolder *naming_cache.ServiceInfoHolder) *PushRec
 	pr := PushReceiver{
 		serviceInfoHolder: serviceInfoHolder,
 	}
-	pr.startServer()
 	return &pr
 }
 
