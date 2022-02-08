@@ -281,6 +281,8 @@ func (r *RpcClient) RegisterServerRequestHandler(request func() rpc_request.IReq
 }
 
 func (r *RpcClient) RegisterConnectionListener(listener IConnectionEventListener) {
+	r.mux.Lock()
+	defer r.mux.Unlock()
 	logger.Infof("%s register connection listener [%+v] to current client", r.Name, reflect.TypeOf(listener))
 	r.connectionEventListeners = append(r.connectionEventListeners, listener)
 }
@@ -358,6 +360,8 @@ func (r *RpcClient) closeConnection() {
 
 // Notify when client new connected.
 func (r *RpcClient) notifyConnectionEvent(event ConnectionEvent) {
+	r.mux.Lock()
+	defer r.mux.Unlock()
 	if len(r.connectionEventListeners) == 0 {
 		return
 	}
@@ -373,6 +377,8 @@ func (r *RpcClient) notifyConnectionEvent(event ConnectionEvent) {
 }
 
 func (r *RpcClient) healthCheck(timer *time.Timer) {
+	r.mux.Lock()
+	defer r.mux.Unlock()
 	defer timer.Reset(constant.KEEP_ALIVE_TIME * time.Second)
 	var reconnectContext ReconnectContext
 	if time.Now().Sub(r.lastActiveTimeStamp) < constant.KEEP_ALIVE_TIME*time.Second {
@@ -481,7 +487,9 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 				currentErr = waitReconnect(timeoutMills, &retryTimes, request, errors.New(response.GetMessage()))
 				continue
 			}
+			r.mux.Lock()
 			r.lastActiveTimeStamp = time.Now()
+			r.mux.Unlock()
 			return response, nil
 		} else {
 			currentErr = waitReconnect(timeoutMills, &retryTimes, request, err)
