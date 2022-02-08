@@ -2,13 +2,9 @@ name: CI
 
 on:
   push:
-    branches:
-      - master
-      - 2.0.0
+    branches: "master"
   pull_request:
-    branches:
-      - master
-      - 2.0.0
+    branches: "*"
 jobs:
   build:
     name: ubuntu-latest ${{ matrix.config.go_version }}

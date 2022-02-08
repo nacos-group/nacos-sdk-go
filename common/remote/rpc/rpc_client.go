@@ -463,6 +463,8 @@ func (c *ConnectionEvent) toString() string {
 }
 
 func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (rpc_response.IResponse, error) {
+	r.mux.Lock()
+	defer r.mux.Unlock()
 	retryTimes := 0
 	start := util.CurrentMillis()
 	var currentErr error
@@ -476,20 +478,16 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 		if err == nil {
 			if response, ok := response.(*rpc_response.ErrorResponse); ok {
 				if response.GetErrorCode() == constant.UN_REGISTER {
-					r.mux.Lock()
 					if atomic.CompareAndSwapInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING), (int32)(UNHEALTHY)) {
 						logger.Infof("Connection is unregistered, switch server, connectionId=%s, request=%s",
 							r.currentConnection.getConnectionId(), request.GetRequestType())
 						r.switchServerAsync(ServerInfo{}, false)
 					}
-					r.mux.Unlock()
 				}
 				currentErr = waitReconnect(timeoutMills, &retryTimes, request, errors.New(response.GetMessage()))
 				continue
 			}
-			r.mux.Lock()
 			r.lastActiveTimeStamp = time.Now()
-			r.mux.Unlock()
 			return response, nil
 		} else {
 			currentErr = waitReconnect(timeoutMills, &retryTimes, request, err)
