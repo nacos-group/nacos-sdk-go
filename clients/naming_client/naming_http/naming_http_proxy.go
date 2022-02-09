@@ -80,7 +80,7 @@ func (proxy *NamingHttpProxy) RegisterInstance(serviceName string, groupName str
 		return false, err
 	}
 	if instance.Ephemeral {
-		beatInfo := model.BeatInfo{
+		beatInfo := &model.BeatInfo{
 			Ip:          instance.Ip,
 			Port:        instance.Port,
 			Metadata:    instance.Metadata,
