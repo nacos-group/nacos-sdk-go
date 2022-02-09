@@ -281,8 +281,6 @@ func (r *RpcClient) RegisterServerRequestHandler(request func() rpc_request.IReq
 }
 
 func (r *RpcClient) RegisterConnectionListener(listener IConnectionEventListener) {
-	r.mux.Lock()
-	defer r.mux.Unlock()
 	logger.Infof("%s register connection listener [%+v] to current client", r.Name, reflect.TypeOf(listener))
 	r.connectionEventListeners = append(r.connectionEventListeners, listener)
 }
@@ -360,8 +358,6 @@ func (r *RpcClient) closeConnection() {
 
 // Notify when client new connected.
 func (r *RpcClient) notifyConnectionEvent(event ConnectionEvent) {
-	r.mux.Lock()
-	defer r.mux.Unlock()
 	if len(r.connectionEventListeners) == 0 {
 		return
 	}
@@ -377,8 +373,6 @@ func (r *RpcClient) notifyConnectionEvent(event ConnectionEvent) {
 }
 
 func (r *RpcClient) healthCheck(timer *time.Timer) {
-	r.mux.Lock()
-	defer r.mux.Unlock()
 	defer timer.Reset(constant.KEEP_ALIVE_TIME * time.Second)
 	var reconnectContext ReconnectContext
 	if time.Now().Sub(r.lastActiveTimeStamp) < constant.KEEP_ALIVE_TIME*time.Second {
@@ -463,8 +457,6 @@ func (c *ConnectionEvent) toString() string {
 }
 
 func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (rpc_response.IResponse, error) {
-	r.mux.Lock()
-	defer r.mux.Unlock()
 	retryTimes := 0
 	start := util.CurrentMillis()
 	var currentErr error
@@ -478,11 +470,13 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 		if err == nil {
 			if response, ok := response.(*rpc_response.ErrorResponse); ok {
 				if response.GetErrorCode() == constant.UN_REGISTER {
+					r.mux.Lock()
 					if atomic.CompareAndSwapInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING), (int32)(UNHEALTHY)) {
 						logger.Infof("Connection is unregistered, switch server, connectionId=%s, request=%s",
 							r.currentConnection.getConnectionId(), request.GetRequestType())
 						r.switchServerAsync(ServerInfo{}, false)
 					}
+					r.mux.Unlock()
 				}
 				currentErr = waitReconnect(timeoutMills, &retryTimes, request, errors.New(response.GetMessage()))
 				continue
