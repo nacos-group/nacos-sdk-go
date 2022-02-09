@@ -5,9 +5,7 @@ on:
     branches: "master"
   pull_request:
     branches: "*"
-
 jobs:
-
   build:
     name: ubuntu-latest ${{ matrix.config.go_version }}
     runs-on: ubuntu-latest
@@ -16,6 +14,14 @@ jobs:
         config:
           - go_version: 1.13
           - go_version: 1.14
+    services:
+      nacos:
+        image: nacos/nacos-server:latest
+        env:
+          MODE: standalone
+        ports:
+          - "8848:8848"
+          - "9848:9848"
     steps:
 
     - name: Set up Go 1.x
@@ -34,7 +40,8 @@ jobs:
       run: |
         diff -u <(echo -n) <(gofmt -d -s .)
         diff -u <(echo -n) <(goimports -d .)
-        go test -v ./... -coverprofile=coverage.txt -covermode=atomic
+        go test -race ./... -coverprofile=coverage.txt -covermode=atomic
+        
 
     - name: Coverage
       run: bash <(curl -s https://codecov.io/bash)
