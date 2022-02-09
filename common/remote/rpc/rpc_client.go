@@ -98,7 +98,7 @@ type RpcClient struct {
 	rpcClientStatus             RpcClientStatus
 	eventChan                   chan ConnectionEvent
 	reconnectionChan            chan ReconnectContext
-	connectionEventListeners    []IConnectionEventListener
+	connectionEventListeners    atomic.Value
 	lastActiveTimeStamp         time.Time
 	executeClient               IRpcClient
 	nacosServer                 *nacos_server.NacosServer
@@ -282,7 +282,10 @@ func (r *RpcClient) RegisterServerRequestHandler(request func() rpc_request.IReq
 
 func (r *RpcClient) RegisterConnectionListener(listener IConnectionEventListener) {
 	logger.Infof("%s register connection listener [%+v] to current client", r.Name, reflect.TypeOf(listener))
-	r.connectionEventListeners = append(r.connectionEventListeners, listener)
+	listeners := r.connectionEventListeners.Load()
+	connectionEventListeners := listeners.([]IConnectionEventListener)
+	connectionEventListeners = append(connectionEventListeners, listener)
+	r.connectionEventListeners.Store(connectionEventListeners)
 }
 
 func (r *RpcClient) switchServerAsync(recommendServerInfo ServerInfo, onRequestFail bool) {
@@ -358,11 +361,12 @@ func (r *RpcClient) closeConnection() {
 
 // Notify when client new connected.
 func (r *RpcClient) notifyConnectionEvent(event ConnectionEvent) {
-	if len(r.connectionEventListeners) == 0 {
+	listeners := r.connectionEventListeners.Load().([]IConnectionEventListener)
+	if len(listeners) == 0 {
 		return
 	}
 	logger.Infof("%s notify %s event to listeners.", r.Name, event.toString())
-	for _, v := range r.connectionEventListeners {
+	for _, v := range listeners {
 		if event.isConnected() {
 			v.OnConnected()
 		}
@@ -462,8 +466,8 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 	var currentErr error
 	for retryTimes < constant.REQUEST_DOMAIN_RETRY_TIME && util.CurrentMillis() < start+timeoutMills {
 		if r.currentConnection == nil || !r.IsRunning() {
-			currentErr = waitReconnect(timeoutMills, &retryTimes, request, errors.New(fmt.Sprintf(
-				"Client not connected, current status:%s", r.rpcClientStatus.getDesc())))
+			currentErr = waitReconnect(timeoutMills, &retryTimes, request,
+				fmt.Errorf("client not connected, current status:%s", r.rpcClientStatus.getDesc()))
 			continue
 		}
 		response, err := r.currentConnection.request(request, timeoutMills, r)

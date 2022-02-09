@@ -32,8 +32,6 @@ func TestSetConfigClient(t *testing.T) {
 		*constant.NewServerConfig(
 			ip,
 			8848,
-			//constant.WithScheme("http"),
-			//constant.WithContextPath("/nacos"),
 		),
 	}
 
@@ -67,40 +65,4 @@ func TestSetConfigClient(t *testing.T) {
 		assert.Nil(t, err)
 		assert.True(t, reflect.DeepEqual(nacosClientFromMap, nacosClientFromStruct))
 	})
-
-	t.Run("registry", func(t *testing.T) {
-		client, err := NewNamingClient(
-			vo.NacosClientParam{
-				ClientConfig:  &cc,
-				ServerConfigs: sc,
-			},
-		)
-		if err != nil {
-			t.Fatal(err)
-			return
-		}
-		serviceName := "golang-sms@grpc"
-		_, err = client.RegisterInstance(vo.RegisterInstanceParam{
-			Ip:          "f",
-			Port:        8840,
-			ServiceName: serviceName,
-			Weight:      10,
-			Enable:      true,
-			Healthy:     true,
-			Ephemeral:   true,
-			Metadata:    map[string]string{"idc": "shanghai-xs"},
-		})
-		if err != nil {
-			t.Fatal(err)
-			return
-		}
-		is, err := client.GetService(vo.GetServiceParam{
-			ServiceName: serviceName,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Logf("is %#v", is)
-	})
-
 }
