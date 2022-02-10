@@ -78,9 +78,17 @@ func ReadServicesFromFile(cacheDir string) map[string]model.Service {
 func WriteConfigToFile(cacheKey string, cacheDir string, content string) {
 	file.MkdirIfNecessary(cacheDir)
 	fileName := GetFileName(cacheKey, cacheDir)
-	err := ioutil.WriteFile(fileName, []byte(content), 0666)
-	if err != nil {
-		logger.Errorf("failed to write config  cache:%s ,value:%s ,err:%+v", fileName, content, err)
+	if len(content) == 0 {
+		// delete config snapshot
+		removeErr := os.Remove(fileName)
+		if removeErr != nil {
+			logger.Errorf("failed to delete config file,cache:%s ,value:%s ,err:%+v", fileName, content, removeErr)
+		}
+	} else {
+		err := ioutil.WriteFile(fileName, []byte(content), 0666)
+		if err != nil {
+			logger.Errorf("failed to write config  cache:%s ,value:%s ,err:%+v", fileName, content, err)
+		}
 	}
 }
 
