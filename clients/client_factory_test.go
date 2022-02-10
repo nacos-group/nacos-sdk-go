@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"net"
 	"reflect"
 	"testing"
 
@@ -9,18 +10,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSetConfigClient(t *testing.T) {
+func getIntranetIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "127.0.0.1"
+	}
 
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return "127.0.0.1"
+}
+
+func TestSetConfigClient(t *testing.T) {
+	ip := getIntranetIP()
 	sc := []constant.ServerConfig{
 		*constant.NewServerConfig(
-			"console.nacos.io",
-			80,
-			constant.WithScheme("http"),
-			constant.WithContextPath("/nacos")),
+			ip,
+			8848,
+		),
 	}
 
 	cc := *constant.NewClientConfig(
-		constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"),
+		constant.WithNamespaceId("public"),
 		constant.WithTimeoutMs(5000),
 		constant.WithNotLoadCacheAtStart(true),
 		constant.WithLogDir("/tmp/nacos/log"),
@@ -49,5 +65,4 @@ func TestSetConfigClient(t *testing.T) {
 		assert.Nil(t, err)
 		assert.True(t, reflect.DeepEqual(nacosClientFromMap, nacosClientFromStruct))
 	})
-
 }

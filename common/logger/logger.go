@@ -83,7 +83,7 @@ func init() {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 	zapLoggerConfig.EncoderConfig = zapLoggerEncoderConfig
-	zapLogger, _ := zapLoggerConfig.Build(zap.AddCallerSkip(1))
+	zapLogger, _ := zapLoggerConfig.Build(zap.AddCaller(), zap.AddCallerSkip(1))
 	SetLogger(&NacosLogger{zapLogger.Sugar()})
 }
 

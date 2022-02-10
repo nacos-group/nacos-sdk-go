@@ -71,7 +71,7 @@ func ReadServicesFromFile(cacheDir string) map[string]model.Service {
 		serviceMap[f.Name()] = *service
 	}
 
-	logger.Info("finish loading name cache, total: " + strconv.Itoa(len(files)))
+	logger.Infof("finish loading name cache, total: %s", strconv.Itoa(len(files)))
 	return serviceMap
 }
 

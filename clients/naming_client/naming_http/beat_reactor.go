@@ -17,10 +17,12 @@
 package naming_http
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -33,28 +35,32 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
-	nsema "github.com/toolkits/concurrent/semaphore"
+	"golang.org/x/sync/semaphore"
 )
 
 type BeatReactor struct {
 	beatMap             cache.ConcurrentMap
 	nacosServer         *nacos_server.NacosServer
 	beatThreadCount     int
-	beatThreadSemaphore *nsema.Semaphore
+	beatThreadSemaphore *semaphore.Weighted
 	beatRecordMap       cache.ConcurrentMap
 	clientCfg           constant.ClientConfig
+	mux                 *sync.Mutex
 }
 
-const Default_Beat_Thread_Num = 20
+const DefaultBeatThreadNum = 20
+
+var ctx = context.Background()
 
 func NewBeatReactor(clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer) BeatReactor {
 	br := BeatReactor{}
 	br.beatMap = cache.NewConcurrentMap()
 	br.nacosServer = nacosServer
 	br.clientCfg = clientCfg
-	br.beatThreadCount = Default_Beat_Thread_Num
+	br.beatThreadCount = DefaultBeatThreadNum
 	br.beatRecordMap = cache.NewConcurrentMap()
-	br.beatThreadSemaphore = nsema.NewSemaphore(br.beatThreadCount)
+	br.beatThreadSemaphore = semaphore.NewWeighted(int64(br.beatThreadCount))
+	br.mux = new(sync.Mutex)
 	return br
 }
 
@@ -62,41 +68,52 @@ func buildKey(serviceName string, ip string, port uint64) string {
 	return serviceName + constant.NAMING_INSTANCE_ID_SPLITTER + ip + constant.NAMING_INSTANCE_ID_SPLITTER + strconv.Itoa(int(port))
 }
 
-func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo model.BeatInfo) {
+func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo *model.BeatInfo) {
 	logger.Infof("adding beat: <%s> to beat map", util.ToJsonString(beatInfo))
 	k := buildKey(serviceName, beatInfo.Ip, beatInfo.Port)
-	br.beatMap.Set(k, &beatInfo)
+	defer br.mux.Unlock()
+	br.mux.Lock()
+	if data, ok := br.beatMap.Get(k); ok {
+		beatInfo = data.(*model.BeatInfo)
+		atomic.StoreInt32(&beatInfo.State, int32(model.StateShutdown))
+		br.beatMap.Remove(k)
+	}
+	br.beatMap.Set(k, beatInfo)
+	beatInfo.Metadata = util.DeepCopyMap(beatInfo.Metadata)
 	monitor.GetDom2BeatSizeMonitor().Set(float64(len(br.beatMap)))
-	go br.sendInstanceBeat(k, &beatInfo)
+	go br.sendInstanceBeat(k, beatInfo)
 }
 
 func (br *BeatReactor) RemoveBeatInfo(serviceName string, ip string, port uint64) {
 	logger.Infof("remove beat: %s@%s:%d from beat map", serviceName, ip, port)
 	k := buildKey(serviceName, ip, port)
+	defer br.mux.Unlock()
+	br.mux.Lock()
 	data, exist := br.beatMap.Get(k)
 	if exist {
 		beatInfo := data.(*model.BeatInfo)
 		atomic.StoreInt32(&beatInfo.State, int32(model.StateShutdown))
 	}
-	br.beatMap.Remove(k)
 	monitor.GetDom2BeatSizeMonitor().Set(float64(len(br.beatMap)))
+	br.beatMap.Remove(k)
+
 }
 
 func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 	for {
-		br.beatThreadSemaphore.Acquire()
+		br.beatThreadSemaphore.Acquire(ctx, 1)
 		//如果当前实例注销，则进行停止心跳
 		if atomic.LoadInt32(&beatInfo.State) == int32(model.StateShutdown) {
 			logger.Infof("instance[%s] stop heartBeating", k)
-			br.beatThreadSemaphore.Release()
+			br.beatThreadSemaphore.Release(1)
 			return
 		}
 
 		//进行心跳通信
-		beatInterval, err := br.SendBeat(*beatInfo)
+		beatInterval, err := br.SendBeat(beatInfo)
 		if err != nil {
 			logger.Errorf("beat to server return error:%+v", err)
-			br.beatThreadSemaphore.Release()
+			br.beatThreadSemaphore.Release(1)
 			t := time.NewTimer(beatInfo.Period)
 			<-t.C
 			continue
@@ -106,14 +123,14 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 		}
 
 		br.beatRecordMap.Set(k, util.CurrentMillis())
-		br.beatThreadSemaphore.Release()
+		br.beatThreadSemaphore.Release(1)
 
 		t := time.NewTimer(beatInfo.Period)
 		<-t.C
 	}
 }
 
-func (br *BeatReactor) SendBeat(info model.BeatInfo) (int64, error) {
+func (br *BeatReactor) SendBeat(info *model.BeatInfo) (int64, error) {
 	logger.Infof("namespaceId:<%s> sending beat to server:<%s>",
 		br.clientCfg.NamespaceId, util.ToJsonString(info))
 	params := map[string]string{}

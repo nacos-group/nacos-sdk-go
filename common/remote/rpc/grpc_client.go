@@ -57,6 +57,8 @@ func NewGrpcClient(clientName string, nacosServer *nacos_server.NacosServer) *Gr
 		},
 	}
 	rpcClient.executeClient = rpcClient
+	listeners := make([]IConnectionEventListener, 0, 8)
+	rpcClient.connectionEventListeners.Store(listeners)
 	return rpcClient
 }
 

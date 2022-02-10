@@ -131,3 +131,11 @@ func GetStatusCode(response *http.Response) string {
 	}
 	return statusCode
 }
+
+func DeepCopyMap(params map[string]string) map[string]string {
+	result := make(map[string]string, len(params))
+	for k, v := range params {
+		result[k] = v
+	}
+	return result
+}

@@ -288,10 +288,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 			content string
 			md5Str  string
 		)
-		content, fileErr := cache.ReadConfigFromFile(key, client.configCacheDir)
-		if fileErr != nil {
-			logger.Errorf("[cache.ReadConfigFromFile] error: %+v", fileErr)
-		}
+		content, _ = cache.ReadConfigFromFile(key, client.configCacheDir)
 		if len(content) > 0 {
 			md5Str = util.Md5(content)
 		}
