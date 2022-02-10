@@ -22,6 +22,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
@@ -56,7 +58,13 @@ func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_reques
 	request.PutAllHeaders(signHeaders)
 	//todo Spas-SecurityToken/Spas-AccessKey.
 	//todo Config Limiter
-	return rpcClient.Request(request, int64(timeoutMills))
+	response, err := rpcClient.Request(request, int64(timeoutMills))
+	if response != nil {
+		monitor.GetConfigRequestMonitor(monitor.GRPC, request.GetRequestType(), strconv.Itoa(response.GetResultCode()))
+	} else {
+		monitor.GetConfigRequestMonitor(monitor.GRPC, request.GetRequestType(), "NA")
+	}
+	return response, err
 }
 
 func (cp *ConfigProxy) injectCommHeader(param map[string]string) {

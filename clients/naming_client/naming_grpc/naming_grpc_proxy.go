@@ -17,9 +17,12 @@
 package naming_grpc
 
 import (
+	"strconv"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
@@ -80,7 +83,13 @@ func NewNamingGrpcProxy(clientCfg constant.ClientConfig, nacosServer *nacos_serv
 func (proxy *NamingGrpcProxy) requestToServer(request rpc_request.IRequest) (rpc_response.IResponse, error) {
 	proxy.nacosServer.InjectSecurityInfo(request.GetHeaders())
 	// todo ak/sk
-	return proxy.rpcClient.GetRpcClient().Request(request, int64(proxy.clientConfig.TimeoutMs))
+	response, err := proxy.rpcClient.GetRpcClient().Request(request, int64(proxy.clientConfig.TimeoutMs))
+	if response != nil {
+		monitor.GetConfigRequestMonitor(monitor.GRPC, request.GetRequestType(), strconv.Itoa(response.GetResultCode()))
+	} else {
+		monitor.GetConfigRequestMonitor(monitor.GRPC, request.GetRequestType(), "NA")
+	}
+	return response, err
 }
 
 // RegisterInstance ...

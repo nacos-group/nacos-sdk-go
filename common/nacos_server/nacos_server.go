@@ -125,6 +125,7 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 
 	var response *http.Response
 	response, err = server.httpAgent.Request(method, url, headers, timeoutMS, params)
+	monitor.GetConfigRequestMonitor(method, url, util.GetStatusCode(response))
 	if err != nil {
 		return
 	}

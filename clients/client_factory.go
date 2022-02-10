@@ -112,8 +112,7 @@ func setConfig(param vo.NacosClientParam) (iClient nacos_client.INacosClient, er
 
 	if _, _err := client.GetHttpAgent(); _err != nil {
 		if clientCfg, err := client.GetClientConfig(); err == nil {
-			//_ = client.SetHttpAgent(&http_agent.HttpAgent{TlsConfig: clientCfg.TLSCfg})
-			_ = client.SetHttpAgent(http_agent.NewMetricHttpAgent(&http_agent.HttpAgent{TlsConfig: clientCfg.TLSCfg}))
+			_ = client.SetHttpAgent(&http_agent.HttpAgent{TlsConfig: clientCfg.TLSCfg})
 		}
 	}
 	iClient = client

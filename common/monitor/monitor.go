@@ -29,6 +29,10 @@ var (
 	}, []string{"module", "method", "url", "code"})
 )
 
+const (
+	GRPC = "grpc"
+)
+
 // register collectors vec
 func init() {
 	prometheus.MustRegister(gaugeMonitorVec, histogramMonitorVec)
