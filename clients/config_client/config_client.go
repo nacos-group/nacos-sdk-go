@@ -19,6 +19,7 @@ package config_client
 import (
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 	"sync"
@@ -116,8 +117,8 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	config.uid = uid.String()
 
 	config.cacheMap = cache.NewConcurrentMap()
-
-	config.listenExecute = make(chan struct{}, 1)
+	// maximum buffered queue to prevent chan deadlocks during frequent configuration file updates
+	config.listenExecute = make(chan struct{}, math.MaxInt64)
 
 	config.startInternal()
 
