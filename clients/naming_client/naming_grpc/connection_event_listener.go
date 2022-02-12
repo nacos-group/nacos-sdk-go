@@ -98,9 +98,8 @@ func (c *ConnectionEventListener) CacheInstanceForRedo(serviceName, groupName st
 	getInstance, ok := c.registeredInstanceCached.Get(key)
 	if !ok {
 		logger.Warnf("CacheInstanceForRedo get cache instance is null,key:%s", key)
-		return
 	}
-	if reflect.DeepEqual(getInstance.(model.Instance), instance) {
+	if getInstance != nil && reflect.DeepEqual(getInstance.(model.Instance), instance) {
 		return
 	}
 	c.registeredInstanceCached.Set(key, instance)
