@@ -46,6 +46,13 @@ func NewClientConfig(opts ...ClientOption) *ClientConfig {
 // ClientOption ...
 type ClientOption func(*ClientConfig)
 
+// WithLogEntity ...
+func WithLogEntity(logger Logger) ClientOption {
+	return func(config *ClientConfig) {
+		config.LogEntity = logger
+	}
+}
+
 // WithTimeoutMs ...
 func WithTimeoutMs(timeoutMs uint64) ClientOption {
 	return func(config *ClientConfig) {

@@ -49,6 +49,7 @@ type ClientConfig struct {
 	LogSampling          *ClientLogSamplingConfig // the sampling config of log
 	ContextPath          string                   // the nacos server contextpath
 	LogRollingConfig     *ClientLogRollingConfig  // the log rolling config
+	LogEntity            Logger                   // a log interface implementation
 }
 
 type ClientLogSamplingConfig struct {
@@ -57,6 +58,18 @@ type ClientLogSamplingConfig struct {
 	Tick       time.Duration //the sampling tick of log
 }
 
+// Logger is the interface for Logger types
+type Logger interface {
+	Info(args ...interface{})
+	Warn(args ...interface{})
+	Error(args ...interface{})
+	Debug(args ...interface{})
+
+	Infof(fmt string, args ...interface{})
+	Warnf(fmt string, args ...interface{})
+	Errorf(fmt string, args ...interface{})
+	Debugf(fmt string, args ...interface{})
+}
 type ClientLogRollingConfig struct {
 	// MaxSize is the maximum size in megabytes of the log file before it gets
 	// rotated. It defaults to 100 megabytes.

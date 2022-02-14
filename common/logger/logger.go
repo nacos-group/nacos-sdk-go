@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	logger  Logger
+	logger  constant.Logger
 	logLock sync.RWMutex
 )
 
@@ -54,20 +54,7 @@ type SamplingConfig struct {
 }
 
 type NacosLogger struct {
-	Logger
-}
-
-// Logger is the interface for Logger types
-type Logger interface {
-	Info(args ...interface{})
-	Warn(args ...interface{})
-	Error(args ...interface{})
-	Debug(args ...interface{})
-
-	Infof(fmt string, args ...interface{})
-	Warnf(fmt string, args ...interface{})
-	Errorf(fmt string, args ...interface{})
-	Debugf(fmt string, args ...interface{})
+	constant.Logger
 }
 
 func init() {
@@ -123,7 +110,7 @@ func InitLogger(config Config) (err error) {
 }
 
 // InitNacosLogger is init nacos default logger
-func InitNacosLogger(config Config) (Logger, error) {
+func InitNacosLogger(config Config) (constant.Logger, error) {
 	logLevel := getLogLevel(config.Level)
 	encoder := getEncoder()
 	writer := config.getLogWriter()
@@ -160,13 +147,13 @@ func getEncoder() zapcore.EncoderConfig {
 }
 
 //SetLogger sets logger for sdk
-func SetLogger(log Logger) {
+func SetLogger(log constant.Logger) {
 	logLock.Lock()
 	defer logLock.Unlock()
 	logger = log
 }
 
-func GetLogger() Logger {
+func GetLogger() constant.Logger {
 	logLock.RLock()
 	defer logLock.RUnlock()
 	return logger
