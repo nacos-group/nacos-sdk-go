@@ -94,11 +94,15 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	if err != nil {
 		return config, err
 	}
-
-	err = logger.InitLogger(logger.BuildLoggerConfig(clientConfig))
-	if err != nil {
-		return config, err
+	if clientConfig.LogEntity == nil {
+		err = logger.InitLogger(logger.BuildLoggerConfig(clientConfig))
+		if err != nil {
+			return config, err
+		}
+	} else {
+		logger.SetLogger(clientConfig.LogEntity)
 	}
+
 	config.configCacheDir = clientConfig.CacheDir + string(os.PathSeparator) + "config"
 	config.configProxy, err = NewConfigProxy(serverConfig, clientConfig, httpAgent)
 	if clientConfig.OpenKMS {

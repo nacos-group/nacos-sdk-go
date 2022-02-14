@@ -18,12 +18,7 @@ package config_client
 
 import (
 	"errors"
-	"net/http"
-	"runtime"
-	"strconv"
-	"testing"
-	"time"
-
+	fmt2 "fmt"
 	"github.com/golang/mock/gomock"
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
@@ -33,6 +28,11 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/stretchr/testify/assert"
+	"net/http"
+	"runtime"
+	"strconv"
+	"testing"
+	"time"
 )
 
 var goVersion = runtime.Version()
@@ -692,33 +692,33 @@ type mockLogger struct {
 }
 
 func (m mockLogger) Info(args ...interface{}) {
-	panic("implement me")
+	fmt2.Print("implement me")
 }
 
 func (m mockLogger) Warn(args ...interface{}) {
-	panic("implement me")
+	fmt2.Print("implement me")
 }
 
 func (m mockLogger) Error(args ...interface{}) {
-	panic("implement me")
+	fmt2.Print("implement me")
 }
 
 func (m mockLogger) Debug(args ...interface{}) {
-	panic("implement me")
+	fmt2.Print("implement me")
 }
 
 func (m mockLogger) Infof(fmt string, args ...interface{}) {
-	panic("implement me")
+	fmt2.Print("implement me")
 }
 
 func (m mockLogger) Warnf(fmt string, args ...interface{}) {
-	panic("implement me")
+	fmt2.Print("implement me")
 }
 
 func (m mockLogger) Errorf(fmt string, args ...interface{}) {
-	panic("implement me")
+	fmt2.Print("implement me")
 }
 
 func (m mockLogger) Debugf(fmt string, args ...interface{}) {
-	panic("implement me")
+	fmt2.Print("implement me")
 }
