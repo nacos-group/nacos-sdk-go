@@ -17,7 +17,7 @@
 package naming_grpc
 
 import (
-	"strconv"
+	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
@@ -81,14 +81,11 @@ func NewNamingGrpcProxy(clientCfg constant.ClientConfig, nacosServer *nacos_serv
 }
 
 func (proxy *NamingGrpcProxy) requestToServer(request rpc_request.IRequest) (rpc_response.IResponse, error) {
+	start := time.Now()
 	proxy.nacosServer.InjectSecurityInfo(request.GetHeaders())
 	// todo ak/sk
 	response, err := proxy.rpcClient.GetRpcClient().Request(request, int64(proxy.clientConfig.TimeoutMs))
-	if response != nil {
-		monitor.GetConfigRequestMonitor(monitor.GRPC, request.GetRequestType(), strconv.Itoa(response.GetResultCode()))
-	} else {
-		monitor.GetConfigRequestMonitor(monitor.GRPC, request.GetRequestType(), "NA")
-	}
+	monitor.GetConfigRequestMonitor(monitor.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
 	return response, err
 }
 

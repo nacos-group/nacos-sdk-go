@@ -21,6 +21,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 
@@ -52,6 +53,7 @@ func NewConfigProxy(serverConfig []constant.ServerConfig, clientConfig constant.
 }
 
 func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_request.IRequest, timeoutMills uint64) (rpc_response.IResponse, error) {
+	start := time.Now()
 	cp.nacosServer.InjectSecurityInfo(request.GetHeaders())
 	cp.injectCommHeader(request.GetHeaders())
 	signHeaders := nacos_server.GetSignHeaders(request.GetHeaders(), cp.clientConfig.SecretKey)
@@ -59,11 +61,7 @@ func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_reques
 	//todo Spas-SecurityToken/Spas-AccessKey.
 	//todo Config Limiter
 	response, err := rpcClient.Request(request, int64(timeoutMills))
-	if response != nil {
-		monitor.GetConfigRequestMonitor(monitor.GRPC, request.GetRequestType(), strconv.Itoa(response.GetResultCode()))
-	} else {
-		monitor.GetConfigRequestMonitor(monitor.GRPC, request.GetRequestType(), "NA")
-	}
+	monitor.GetConfigRequestMonitor(monitor.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
 	return response, err
 }
 

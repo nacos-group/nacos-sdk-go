@@ -92,6 +92,7 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 
 func (server *NacosServer) callConfigServer(api string, params map[string]string, newHeaders map[string]string,
 	method string, curServer string, contextPath string, timeoutMS uint64) (result string, err error) {
+	start := time.Now()
 	if contextPath == "" {
 		contextPath = constant.WEB_CONTEXT
 	}
@@ -125,7 +126,7 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 
 	var response *http.Response
 	response, err = server.httpAgent.Request(method, url, headers, timeoutMS, params)
-	monitor.GetConfigRequestMonitor(method, url, util.GetStatusCode(response))
+	monitor.GetConfigRequestMonitor(method, url, util.GetStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
 	if err != nil {
 		return
 	}
