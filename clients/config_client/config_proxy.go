@@ -61,7 +61,7 @@ func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_reques
 	//todo Spas-SecurityToken/Spas-AccessKey.
 	//todo Config Limiter
 	response, err := rpcClient.Request(request, int64(timeoutMills))
-	monitor.GetConfigRequestMonitor(monitor.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
+	monitor.GetConfigRequestMonitor(constant.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
 	return response, err
 }
 

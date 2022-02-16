@@ -80,7 +80,7 @@ func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo *model.BeatInfo)
 	}
 	br.beatMap.Set(k, beatInfo)
 	beatInfo.Metadata = util.DeepCopyMap(beatInfo.Metadata)
-	monitor.GetDom2BeatSizeMonitor().Set(float64(len(br.beatMap)))
+	monitor.GetDom2BeatSizeMonitor().Set(float64(br.beatMap.Count()))
 	go br.sendInstanceBeat(k, beatInfo)
 }
 
@@ -94,7 +94,7 @@ func (br *BeatReactor) RemoveBeatInfo(serviceName string, ip string, port uint64
 		beatInfo := data.(*model.BeatInfo)
 		atomic.StoreInt32(&beatInfo.State, int32(model.StateShutdown))
 	}
-	monitor.GetDom2BeatSizeMonitor().Set(float64(len(br.beatMap)))
+	monitor.GetDom2BeatSizeMonitor().Set(float64(br.beatMap.Count()))
 	br.beatMap.Remove(k)
 
 }

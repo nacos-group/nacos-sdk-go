@@ -97,7 +97,7 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 		cache.WriteServicesToFile(*service, s.cacheDir)
 		s.subCallback.ServiceChanged(service)
 	}
-	monitor.GetServiceInfoMapSizeMonitor().Set(float64(len(s.ServiceInfoMap)))
+	monitor.GetServiceInfoMapSizeMonitor().Set(float64(s.ServiceInfoMap.Count()))
 }
 
 func (s *ServiceInfoHolder) GetServiceInfo(serviceName, groupName, clusters string) (model.Service, bool) {
