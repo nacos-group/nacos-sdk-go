@@ -39,9 +39,15 @@ var levelMap = map[string]zapcore.Level{
 	"error": zapcore.ErrorLevel,
 }
 
+var encodingMap = map[string]int{
+	"json":    1,
+	"console": 1,
+}
+
 type Config struct {
 	Level            string
 	Sampling         *SamplingConfig
+	Encoding         string //console or json
 	LogRollingConfig *lumberjack.Logger
 }
 
@@ -109,6 +115,10 @@ func BuildLoggerConfig(clientConfig constant.ClientConfig) Config {
 		loggerConfig.LogRollingConfig.LocalTime = logRollingConfig.LocalTime
 		loggerConfig.LogRollingConfig.Compress = logRollingConfig.Compress
 	}
+
+	if _, ok := encodingMap[loggerConfig.Encoding]; !ok {
+		loggerConfig.Encoding = "console"
+	}
 	return loggerConfig
 }
 
@@ -123,9 +133,17 @@ func InitLogger(config Config) (err error) {
 // InitNacosLogger is init nacos default logger
 func InitNacosLogger(config Config) (Logger, error) {
 	logLevel := getLogLevel(config.Level)
-	encoder := getEncoder()
+	encoderConfig := getEncoder()
 	writer := config.getLogWriter()
-	core := zapcore.NewCore(zapcore.NewConsoleEncoder(encoder),
+
+	var encoder zapcore.Encoder
+	if config.Encoding == "console" {
+		encoder = zapcore.NewConsoleEncoder(encoderConfig)
+	} else {
+		encoder = zapcore.NewJSONEncoder(encoderConfig)
+	}
+
+	core := zapcore.NewCore(encoder,
 		zapcore.NewMultiWriteSyncer(writer, zapcore.AddSync(os.Stdout)), logLevel)
 	zaplogger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 	return &NacosLogger{zaplogger.Sugar()}, nil
