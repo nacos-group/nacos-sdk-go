@@ -17,6 +17,7 @@
 package constant
 
 import (
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"os"
 	"time"
 
@@ -46,10 +47,10 @@ func NewClientConfig(opts ...ClientOption) *ClientConfig {
 // ClientOption ...
 type ClientOption func(*ClientConfig)
 
-// WithLogEntity ...
-func WithLogEntity(logger Logger) ClientOption {
+// WithCustomLogger ...
+func WithCustomLogger(logger logger.Logger) ClientOption {
 	return func(config *ClientConfig) {
-		config.LogEntity = logger
+		config.CustomLogger = logger
 	}
 }
 
@@ -168,12 +169,12 @@ func WithLogLevel(logLevel string) ClientOption {
 // WithLogSampling ...
 func WithLogSampling(tick time.Duration, initial int, thereafter int) ClientOption {
 	return func(config *ClientConfig) {
-		config.LogSampling = &ClientLogSamplingConfig{initial, thereafter, tick}
+		config.LogSampling = &logger.SamplingConfig{Initial: initial, Thereafter: thereafter, Tick: tick}
 	}
 }
 
 // WithLogRollingConfig ...
-func WithLogRollingConfig(rollingConfig *ClientLogRollingConfig) ClientOption {
+func WithLogRollingConfig(rollingConfig *logger.ClientLogRollingConfig) ClientOption {
 	return func(config *ClientConfig) {
 		config.LogRollingConfig = rollingConfig
 	}

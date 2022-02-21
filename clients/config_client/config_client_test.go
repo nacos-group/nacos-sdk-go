@@ -18,7 +18,7 @@ package config_client
 
 import (
 	"errors"
-	fmt2 "fmt"
+	"fmt"
 	"github.com/golang/mock/gomock"
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
@@ -59,7 +59,7 @@ var serverConfigTest = constant.ServerConfig{
 var serverConfigWithOptions = constant.NewServerConfig("console.nacos.io", 80, constant.WithContextPath("/nacos"))
 
 var clientConfigWithOptions = constant.NewClientConfig(
-	constant.WithLogEntity(mockLogger{}),
+	constant.WithCustomLogger(mockLogger{}),
 	constant.WithTimeoutMs(10*1000),
 	constant.WithBeatInterval(2*1000),
 	constant.WithNotLoadCacheAtStart(true),
@@ -692,33 +692,33 @@ type mockLogger struct {
 }
 
 func (m mockLogger) Info(args ...interface{}) {
-	fmt2.Print("implement me")
+	fmt.Print("implement me")
 }
 
 func (m mockLogger) Warn(args ...interface{}) {
-	fmt2.Print("implement me")
+	fmt.Print("implement me")
 }
 
 func (m mockLogger) Error(args ...interface{}) {
-	fmt2.Print("implement me")
+	fmt.Print("implement me")
 }
 
 func (m mockLogger) Debug(args ...interface{}) {
-	fmt2.Print("implement me")
+	fmt.Print("implement me")
 }
 
-func (m mockLogger) Infof(fmt string, args ...interface{}) {
-	fmt2.Print("implement me")
+func (m mockLogger) Infof(format string, args ...interface{}) {
+	fmt.Print("implement me")
 }
 
-func (m mockLogger) Warnf(fmt string, args ...interface{}) {
-	fmt2.Print("implement me")
+func (m mockLogger) Warnf(format string, args ...interface{}) {
+	fmt.Print("implement me")
 }
 
-func (m mockLogger) Errorf(fmt string, args ...interface{}) {
-	fmt2.Print("implement me")
+func (m mockLogger) Errorf(format string, args ...interface{}) {
+	fmt.Print("implement me")
 }
 
-func (m mockLogger) Debugf(fmt string, args ...interface{}) {
-	fmt2.Print("implement me")
+func (m mockLogger) Debugf(format string, args ...interface{}) {
+	fmt.Print("implement me")
 }

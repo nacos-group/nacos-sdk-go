@@ -1,0 +1,218 @@
+2022-02-14T10:32:57.623+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[401] no security> , result:<no security>
+2022-02-14T10:32:57.623+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[401] no security> , result:<no security>
+2022-02-14T10:32:57.623+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[401] no security> , result:<no security>
+2022-02-14T10:32:57.623+0800	[31mERROR[0m	config_client/config_client.go:191	get config from server error:[401] no security 
+2022-02-14T10:32:57.624+0800	[31mERROR[0m	config_client/config_client.go:205	get config from cache  error:failed to read config cache file:/Volumes/code/go/src/github.com/habby-c/nacos-sdk-go/cache/config/go1.17.5dataId@@go1.17.5group:env@@,err:open /Volumes/code/go/src/github.com/habby-c/nacos-sdk-go/cache/config/go1.17.5dataId@@go1.17.5group:env@@: no such file or directory  
+2022-02-14T10:32:57.624+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[404] > , result:<>
+2022-02-14T10:32:57.624+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[404] > , result:<>
+2022-02-14T10:32:57.624+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[404] > , result:<>
+2022-02-14T10:32:57.624+0800	[31mERROR[0m	config_client/config_client.go:191	get config from server error:[404]  
+2022-02-14T10:32:57.624+0800	[33mWARN[0m	config_client/config_client.go:196	[client.GetConfig] config not found, dataId: go1.17.5dataId, group: go1.17.5group:env, namespaceId: .
+2022-02-14T10:32:57.624+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[403] > , result:<>
+2022-02-14T10:32:57.624+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[403] > , result:<>
+2022-02-14T10:32:57.625+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[403] > , result:<>
+2022-02-14T10:32:57.625+0800	[31mERROR[0m	config_client/config_client.go:191	get config from server error:[403]  
+2022-02-14T10:32:57.625+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[401] no security> , result:<no security>
+2022-02-14T10:32:57.625+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[401] no security> , result:<no security>
+2022-02-14T10:32:57.625+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[401] no security> , result:<no security>
+2022-02-14T10:32:57.625+0800	[31mERROR[0m	config_client/config_client.go:191	get config from server error:[401] no security 
+2022-02-14T10:32:57.704+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<POST>, params:<{"content":"content","group":"group"}>, call domain error:<[500] caused: Required String parameter 'dataId' is not present;> , result:<caused: Required String parameter 'dataId' is not present;>
+2022-02-14T10:32:57.869+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<POST>, params:<{"content":"content","group":"group"}>, call domain error:<[500] caused: Required String parameter 'dataId' is not present;> , result:<caused: Required String parameter 'dataId' is not present;>
+2022-02-14T10:32:58.028+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<POST>, params:<{"content":"content","group":"group"}>, call domain error:<[500] caused: Required String parameter 'dataId' is not present;> , result:<caused: Required String parameter 'dataId' is not present;>
+2022-02-14T10:32:58.194+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<POST>, params:<{"content":"content","dataId":"go1.17.5dataId"}>, call domain error:<[500] caused: Required String parameter 'group' is not present;> , result:<caused: Required String parameter 'group' is not present;>
+2022-02-14T10:32:58.364+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<POST>, params:<{"content":"content","dataId":"go1.17.5dataId"}>, call domain error:<[500] caused: Required String parameter 'group' is not present;> , result:<caused: Required String parameter 'group' is not present;>
+2022-02-14T10:32:58.527+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<POST>, params:<{"content":"content","dataId":"go1.17.5dataId"}>, call domain error:<[500] caused: Required String parameter 'group' is not present;> , result:<caused: Required String parameter 'group' is not present;>
+2022-02-14T10:32:58.691+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<POST>, params:<{"dataId":"go1.17.5dataId","group":"group"}>, call domain error:<[500] caused: Required String parameter 'content' is not present;> , result:<caused: Required String parameter 'content' is not present;>
+2022-02-14T10:32:58.854+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<POST>, params:<{"dataId":"go1.17.5dataId","group":"group"}>, call domain error:<[500] caused: Required String parameter 'content' is not present;> , result:<caused: Required String parameter 'content' is not present;>
+2022-02-14T10:32:59.013+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<POST>, params:<{"dataId":"go1.17.5dataId","group":"group"}>, call domain error:<[500] caused: Required String parameter 'content' is not present;> , result:<caused: Required String parameter 'content' is not present;>
+2022-02-14T10:32:59.288+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<POST>, params:<{"content":"content","dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[401] no security> , result:<no security>
+2022-02-14T10:32:59.288+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<POST>, params:<{"content":"content","dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[401] no security> , result:<no security>
+2022-02-14T10:32:59.288+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<POST>, params:<{"content":"content","dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[401] no security> , result:<no security>
+2022-02-14T10:32:59.470+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<DELETE>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[401] no security> , result:<no security>
+2022-02-14T10:32:59.470+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<DELETE>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[401] no security> , result:<no security>
+2022-02-14T10:32:59.470+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<DELETE>, params:<{"dataId":"go1.17.5dataId","group":"go1.17.5group:env"}>, call domain error:<[401] no security> , result:<no security>
+2022-02-14T10:32:59.553+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<DELETE>, params:<{"group":"group"}>, call domain error:<[500] caused: Required String parameter 'dataId' is not present;> , result:<caused: Required String parameter 'dataId' is not present;>
+2022-02-14T10:32:59.726+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<DELETE>, params:<{"group":"group"}>, call domain error:<[500] caused: Required String parameter 'dataId' is not present;> , result:<caused: Required String parameter 'dataId' is not present;>
+2022-02-14T10:32:59.881+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<DELETE>, params:<{"group":"group"}>, call domain error:<[500] caused: Required String parameter 'dataId' is not present;> , result:<caused: Required String parameter 'dataId' is not present;>
+2022-02-14T10:33:00.050+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<DELETE>, params:<{"dataId":"go1.17.5dataId"}>, call domain error:<[500] caused: Required String parameter 'group' is not present;> , result:<caused: Required String parameter 'group' is not present;>
+2022-02-14T10:33:00.210+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<DELETE>, params:<{"dataId":"go1.17.5dataId"}>, call domain error:<[500] caused: Required String parameter 'group' is not present;> , result:<caused: Required String parameter 'group' is not present;>
+2022-02-14T10:33:00.382+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<DELETE>, params:<{"dataId":"go1.17.5dataId"}>, call domain error:<[500] caused: Required String parameter 'group' is not present;> , result:<caused: Required String parameter 'group' is not present;>
+2022-02-14T10:33:00.384+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5dataIdgo1.17.5group:env] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 Long-Pulling-Timeout-No-Hangup:true accessKey: secretKey:] 
+
+2022-02-14T10:33:01.553+0800	[34mINFO[0m	config_client/config_client.go:421	[client.ListenConfig] no change
+2022-02-14T10:33:01.563+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5dataIdgo1.17.5group:env] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:02.611+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5dataId%02go1.17.5group%3Aenv%01
+
+2022-02-14T10:33:02.699+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5ConfigNoChangego1.17.5group:env9a0364b9e99bb480dd25e1f0284c8555] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 Long-Pulling-Timeout-No-Hangup:true accessKey: secretKey:] 
+
+2022-02-14T10:33:02.708+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5dataIdgo1.17.5group:env9a0364b9e99bb480dd25e1f0284c8555] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:02.780+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5ConfigNoChange%02go1.17.5group%3Aenv%01
+
+2022-02-14T10:33:02.865+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:02.949+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:03.031+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:03.031+0800	[31mERROR[0m	config_client/config_client.go:191	get config from server error:[404] config data not exist
+ 
+2022-02-14T10:33:03.031+0800	[33mWARN[0m	config_client/config_client.go:196	[client.GetConfig] config not found, dataId: go1.17.5ConfigNoChange, group: go1.17.5group:env, namespaceId: .
+2022-02-14T10:33:03.042+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5ConfigNoChangego1.17.5group:envd41d8cd98f00b204e9800998ecf8427e] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:03.127+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5ConfigNoChange%02go1.17.5group%3Aenv%01
+
+2022-02-14T10:33:03.209+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:03.290+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:03.376+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:03.376+0800	[31mERROR[0m	config_client/config_client.go:191	get config from server error:[404] config data not exist
+ 
+2022-02-14T10:33:03.377+0800	[33mWARN[0m	config_client/config_client.go:196	[client.GetConfig] config not found, dataId: go1.17.5ConfigNoChange, group: go1.17.5group:env, namespaceId: .
+2022-02-14T10:33:03.387+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5ConfigNoChangego1.17.5group:envd41d8cd98f00b204e9800998ecf8427e] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:03.467+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5ConfigNoChange%02go1.17.5group%3Aenv%01
+
+2022-02-14T10:33:03.551+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:03.633+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:03.715+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:03.716+0800	[31mERROR[0m	config_client/config_client.go:191	get config from server error:[404] config data not exist
+ 
+2022-02-14T10:33:03.716+0800	[33mWARN[0m	config_client/config_client.go:196	[client.GetConfig] config not found, dataId: go1.17.5ConfigNoChange, group: go1.17.5group:env, namespaceId: .
+2022-02-14T10:33:03.726+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5ConfigNoChangego1.17.5group:envd41d8cd98f00b204e9800998ecf8427e] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:03.817+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5ConfigNoChange%02go1.17.5group%3Aenv%01
+
+2022-02-14T10:33:03.904+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:03.991+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:04.073+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:04.073+0800	[31mERROR[0m	config_client/config_client.go:191	get config from server error:[404] config data not exist
+ 
+2022-02-14T10:33:04.073+0800	[33mWARN[0m	config_client/config_client.go:196	[client.GetConfig] config not found, dataId: go1.17.5ConfigNoChange, group: go1.17.5group:env, namespaceId: .
+2022-02-14T10:33:04.084+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5ConfigNoChangego1.17.5group:envd41d8cd98f00b204e9800998ecf8427e] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:04.167+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5ConfigNoChange%02go1.17.5group%3Aenv%01
+
+2022-02-14T10:33:04.248+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:04.330+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:04.411+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:04.411+0800	[31mERROR[0m	config_client/config_client.go:191	get config from server error:[404] config data not exist
+ 
+2022-02-14T10:33:04.411+0800	[33mWARN[0m	config_client/config_client.go:196	[client.GetConfig] config not found, dataId: go1.17.5ConfigNoChange, group: go1.17.5group:env, namespaceId: .
+2022-02-14T10:33:04.422+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5ConfigNoChangego1.17.5group:envd41d8cd98f00b204e9800998ecf8427e] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:04.502+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5ConfigNoChange%02go1.17.5group%3Aenv%01
+
+2022-02-14T10:33:04.595+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:04.679+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:04.760+0800	[31mERROR[0m	nacos_server/nacos_server.go:194	api</v1/cs/configs>,method:<GET>, params:<{"dataId":"go1.17.5ConfigNoChange","group":"go1.17.5group:env"}>, call domain error:<[404] config data not exist
+> , result:<config data not exist
+>
+2022-02-14T10:33:04.761+0800	[31mERROR[0m	config_client/config_client.go:191	get config from server error:[404] config data not exist
+ 
+2022-02-14T10:33:04.761+0800	[33mWARN[0m	config_client/config_client.go:196	[client.GetConfig] config not found, dataId: go1.17.5ConfigNoChange, group: go1.17.5group:env, namespaceId: .
+2022-02-14T10:33:04.772+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5ConfigNoChangego1.17.5group:envd41d8cd98f00b204e9800998ecf8427e] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:04.849+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5MultipleClientsgo1.17.5group:env] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 Long-Pulling-Timeout-No-Hangup:true accessKey: secretKey:] 
+
+2022-02-14T10:33:04.849+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5MultipleClientsgo1.17.5group:env] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 Long-Pulling-Timeout-No-Hangup:true accessKey: secretKey:] 
+
+2022-02-14T10:33:04.861+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5ConfigNoChange%02go1.17.5group%3Aenv%01
+
+2022-02-14T10:33:04.936+0800	[34mINFO[0m	config_client/config_client.go:421	[client.ListenConfig] no change
+2022-02-14T10:33:04.942+0800	[34mINFO[0m	config_client/config_client.go:421	[client.ListenConfig] no change
+2022-02-14T10:33:04.947+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5MultipleClientsgo1.17.5group:env] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:04.954+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5MultipleClientsgo1.17.5group:env] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:05.020+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5ConfigNoChangego1.17.5group:env9a0364b9e99bb480dd25e1f0284c8555] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:05.029+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5MultipleClients%02go1.17.5group%3Aenv%01
+
+2022-02-14T10:33:05.035+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5MultipleClients%02go1.17.5group%3Aenv%01
+
+2022-02-14T10:33:05.113+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5MultipleClientsMultipleConfiggo1.17.5group:env] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 Long-Pulling-Timeout-No-Hangup:true accessKey: secretKey:] 
+
+2022-02-14T10:33:05.113+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5MultipleClientsMultipleConfiggo1.17.5group:env] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 Long-Pulling-Timeout-No-Hangup:true accessKey: secretKey:] 
+
+2022-02-14T10:33:05.121+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5MultipleClientsgo1.17.5group:env9a0364b9e99bb480dd25e1f0284c8555] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:05.125+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5MultipleClientsgo1.17.5group:env9a0364b9e99bb480dd25e1f0284c8555] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:05.194+0800	[34mINFO[0m	config_client/config_client.go:421	[client.ListenConfig] no change
+2022-02-14T10:33:05.205+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5MultipleClientsMultipleConfiggo1.17.5group:env] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:05.266+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5MultipleClientsMultipleConfig%02go1.17.5group%3Aenv%01
+
+2022-02-14T10:33:05.284+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5MultipleClientsMultipleConfig%02go1.17.5group%3Aenv%01
+
+2022-02-14T10:33:05.354+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5CancelOne1group1go1.17.5CancelOnegroup] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 Long-Pulling-Timeout-No-Hangup:true accessKey: secretKey:] 
+
+2022-02-14T10:33:05.363+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5MultipleClientsMultipleConfiggo1.17.5group:env9a0364b9e99bb480dd25e1f0284c8555] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:05.375+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5MultipleClientsMultipleConfiggo1.17.5group:env9a0364b9e99bb480dd25e1f0284c8555] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:05.445+0800	[34mINFO[0m	config_client/config_client.go:421	[client.ListenConfig] no change
+2022-02-14T10:33:05.456+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5CancelOne1group1go1.17.5CancelOnegroup] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:05.534+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5CancelOne1%02group1%01go1.17.5CancelOne%02group%01
+
+2022-02-14T10:33:05.723+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5CancelOne1group1c7d9eb0d2f54f8c1177976cf2e6ee6d5go1.17.5CancelOnegroupc7d9eb0d2f54f8c1177976cf2e6ee6d5] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:07.522+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5CancelOne1%02group1%01
+
+2022-02-14T10:33:07.618+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5CancelOne1group16e24a85785fd5e2688f1a23aee9d88f3go1.17.5CancelOnegroupc7d9eb0d2f54f8c1177976cf2e6ee6d5] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:07.706+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5CancelOne%02group%01
+
+2022-02-14T10:33:07.802+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5CancelOne1group16e24a85785fd5e2688f1a23aee9d88f3go1.17.5CancelOnegroup6e24a85785fd5e2688f1a23aee9d88f3] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:09.359+0800	[34mINFO[0m	config_client/config_client.go:255	Cancel listen config DataId:go1.17.5CancelOne Group:group
+2022-02-14T10:33:09.625+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5CancelOne1%02group1%01
+
+2022-02-14T10:33:09.722+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5CancelOne1group16ed5493a5f953a3a9bbb55889c57effd] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:11.530+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5CancelOne1%02group1%01
+
+2022-02-14T10:33:11.628+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5CancelOne1group1e8abaeadb99c90710fc2006d4876717a] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:13.531+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5CancelOne1%02group1%01
+
+2022-02-14T10:33:13.624+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5CancelOne1group16327e253ee4afd15df4e3251ce301162] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 accessKey: secretKey:] 
+
+2022-02-14T10:33:15.375+0800	[34mINFO[0m	config_client/config_proxy.go:180	[client.ListenConfig] request params:map[Listening-Configs:go1.17.5cancel_listen_configgo1.17.5group:env] header:map[Content-Type:application/x-www-form-urlencoded;charset=utf-8 Long-Pulling-Timeout:30000 Long-Pulling-Timeout-No-Hangup:true accessKey: secretKey:] 
+
+2022-02-14T10:33:15.548+0800	[34mINFO[0m	config_client/config_client.go:423	[client.ListenConfig] config changed:go1.17.5cancel_listen_config%02go1.17.5group%3Aenv%01
+
+2022-02-14T10:33:15.639+0800	[34mINFO[0m	config_client/config_client.go:255	Cancel listen config DataId:go1.17.5cancel_listen_config Group:go1.17.5group:env

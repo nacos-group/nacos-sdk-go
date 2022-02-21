@@ -94,13 +94,15 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	if err != nil {
 		return config, err
 	}
-	if clientConfig.LogEntity == nil {
-		err = logger.InitLogger(logger.BuildLoggerConfig(clientConfig))
-		if err != nil {
-			return config, err
-		}
-	} else {
-		logger.SetLogger(clientConfig.LogEntity)
+	loggerConfig := logger.Config{
+		Level:                  clientConfig.LogLevel,
+		Sampling:               clientConfig.LogSampling,
+		ClientLogRollingConfig: clientConfig.LogRollingConfig,
+		LogDir:                 "",
+	}
+	err = logger.InitLogger(logger.BuildLoggerConfig(loggerConfig))
+	if err != nil {
+		return config, err
 	}
 
 	config.configCacheDir = clientConfig.CacheDir + string(os.PathSeparator) + "config"
@@ -112,6 +114,7 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 		}
 		config.kmsClient = kmsClient
 	}
+	logger.GetLogger().Infof("logDir:<%s>   cacheDir:<%s>", clientConfig.LogDir, clientConfig.CacheDir)
 	return config, err
 }
 
