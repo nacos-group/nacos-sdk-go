@@ -40,15 +40,15 @@ func GetGaugeWithLabels(labels ...string) prometheus.Gauge {
 }
 
 func GetServiceInfoMapSizeMonitor() prometheus.Gauge {
-	return GetGaugeWithLabels("naming", "serviceInfoMapSize")
+	return GetGaugeWithLabels("serviceInfo", "serviceInfoMapSize")
 }
 
 func GetDom2BeatSizeMonitor() prometheus.Gauge {
-	return GetGaugeWithLabels("naming", "dom2BeatSize")
+	return GetGaugeWithLabels("dom2Beat", "dom2BeatSize")
 }
 
 func GetListenConfigCountMonitor() prometheus.Gauge {
-	return GetGaugeWithLabels("naming", "listenConfigCount")
+	return GetGaugeWithLabels("listenConfig", "listenConfigCount")
 }
 
 // get histogram with labels and use histogramMonitorVec
