@@ -99,6 +99,7 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 		Sampling:               clientConfig.LogSampling,
 		ClientLogRollingConfig: clientConfig.LogRollingConfig,
 		LogDir:                 "",
+		CustomLogger:           clientConfig.CustomLogger,
 	}
 	err = logger.InitLogger(logger.BuildLoggerConfig(loggerConfig))
 	if err != nil {

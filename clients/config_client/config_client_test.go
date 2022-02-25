@@ -692,7 +692,8 @@ type mockLogger struct {
 }
 
 func (m mockLogger) Info(args ...interface{}) {
-	fmt.Print("implement me")
+	fmt.Println("")
+	fmt.Println("implement me")
 }
 
 func (m mockLogger) Warn(args ...interface{}) {
@@ -708,7 +709,8 @@ func (m mockLogger) Debug(args ...interface{}) {
 }
 
 func (m mockLogger) Infof(format string, args ...interface{}) {
-	fmt.Print("implement me")
+	fmt.Print(args...)
+	fmt.Printf(format, args...)
 }
 
 func (m mockLogger) Warnf(format string, args ...interface{}) {

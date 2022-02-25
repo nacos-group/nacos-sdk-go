@@ -47,6 +47,7 @@ type Config struct {
 	LogRollingConfig       *lumberjack.Logger
 	ClientLogRollingConfig *ClientLogRollingConfig
 	LogDir                 string
+	CustomLogger           Logger
 }
 
 type SamplingConfig struct {
@@ -100,17 +101,20 @@ type Logger interface {
 }
 
 func BuildLoggerConfig(clientConfig Config) Config {
-	clientConfig.LogRollingConfig = &lumberjack.Logger{
-		Filename: clientConfig.LogDir + string(os.PathSeparator) + LogFileName,
+	if clientConfig.CustomLogger == nil {
+		clientConfig.LogRollingConfig = &lumberjack.Logger{
+			Filename: clientConfig.LogDir + string(os.PathSeparator) + LogFileName,
+		}
+		logRollingConfig := clientConfig.ClientLogRollingConfig
+		if logRollingConfig != nil {
+			clientConfig.LogRollingConfig.MaxSize = logRollingConfig.MaxSize
+			clientConfig.LogRollingConfig.MaxAge = logRollingConfig.MaxAge
+			clientConfig.LogRollingConfig.MaxBackups = logRollingConfig.MaxBackups
+			clientConfig.LogRollingConfig.LocalTime = logRollingConfig.LocalTime
+			clientConfig.LogRollingConfig.Compress = logRollingConfig.Compress
+		}
 	}
-	logRollingConfig := clientConfig.ClientLogRollingConfig
-	if logRollingConfig != nil {
-		clientConfig.LogRollingConfig.MaxSize = logRollingConfig.MaxSize
-		clientConfig.LogRollingConfig.MaxAge = logRollingConfig.MaxAge
-		clientConfig.LogRollingConfig.MaxBackups = logRollingConfig.MaxBackups
-		clientConfig.LogRollingConfig.LocalTime = logRollingConfig.LocalTime
-		clientConfig.LogRollingConfig.Compress = logRollingConfig.Compress
-	}
+
 	return clientConfig
 }
 
@@ -124,7 +128,9 @@ func InitLogger(config Config) (err error) {
 
 // InitNacosLogger is init nacos default logger
 func InitNacosLogger(config Config) (Logger, error) {
-
+	if config.CustomLogger != nil {
+		return &NacosLogger{config.CustomLogger}, nil
+	}
 	logLevel := getLogLevel(config.Level)
 	encoder := getEncoder()
 	writer := config.getLogWriter()
