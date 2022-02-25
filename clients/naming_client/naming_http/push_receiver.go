@@ -71,16 +71,18 @@ func (us *PushReceiver) tryListen() (*net.UDPConn, bool) {
 }
 
 func (us *PushReceiver) startServer() {
-	var conn *net.UDPConn
+	var (
+		conn *net.UDPConn
+		ok   bool
+	)
 
 	for i := 0; i < 3; i++ {
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 		port := r.Intn(1000) + 54951
 		us.port = port
-		conn1, ok := us.tryListen()
+		conn, ok = us.tryListen()
 
 		if ok {
-			conn = conn1
 			logger.Infof("udp server start, port: " + strconv.Itoa(port))
 			break
 		}
@@ -88,6 +90,10 @@ func (us *PushReceiver) startServer() {
 		if !ok && i == 2 {
 			logger.Errorf("failed to start udp server after trying 3 times.")
 		}
+	}
+
+	if conn == nil {
+		return
 	}
 
 	go func() {
