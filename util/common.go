@@ -19,6 +19,7 @@ package util
 import (
 	"encoding/json"
 	"net"
+	"net/http"
 	"net/url"
 	"strconv"
 	"time"
@@ -118,6 +119,17 @@ func GetUrlFormedMap(source map[string]string) (urlEncoded string) {
 	}
 	urlEncoded = urlEncoder.Encode()
 	return
+}
+
+// get status code by response,default is NA
+func GetStatusCode(response *http.Response) string {
+	var statusCode string
+	if response != nil {
+		statusCode = strconv.Itoa(response.StatusCode)
+	} else {
+		statusCode = "NA"
+	}
+	return statusCode
 }
 
 func DeepCopyMap(params map[string]string) map[string]string {

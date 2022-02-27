@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
+
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
@@ -436,6 +438,7 @@ func (client *ConfigClient) executeConfigListen() {
 	if hasChangedKeys {
 		client.notifyListenConfig()
 	}
+	monitor.GetListenConfigCountMonitor().Set(float64(client.cacheMap.Count()))
 }
 
 func buildConfigBatchListenRequest(caches []*cacheData) *rpc_request.ConfigBatchListenRequest {
@@ -468,7 +471,6 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData *cacheData, notify 
 		cacheData.cacheDataListener.lastMd5 = cacheData.md5
 		client.cacheMap.Set(util.GetConfigCacheKey(cacheData.dataId, cacheData.group, cacheData.tenant), cacheData)
 	}
-
 }
 
 func (client *ConfigClient) notifyListenConfig() {

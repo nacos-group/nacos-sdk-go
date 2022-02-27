@@ -22,6 +22,7 @@ import (
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
@@ -96,6 +97,7 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 		cache.WriteServicesToFile(*service, s.cacheDir)
 		s.subCallback.ServiceChanged(service)
 	}
+	monitor.GetServiceInfoMapSizeMonitor().Set(float64(s.ServiceInfoMap.Count()))
 }
 
 func (s *ServiceInfoHolder) GetServiceInfo(serviceName, groupName, clusters string) (model.Service, bool) {

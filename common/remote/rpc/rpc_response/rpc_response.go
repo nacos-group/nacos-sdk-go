@@ -17,6 +17,8 @@
 package rpc_response
 
 import (
+	"strconv"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
@@ -134,4 +136,13 @@ func registerClientResponses() {
 	registerClientResponse(func() IResponse {
 		return &ConfigRemoveResponse{Response: &Response{}}
 	})
+}
+
+// get grpc response status code with NA default.
+func GetGrpcResponseStatusCode(response IResponse) string {
+	if response != nil {
+		return strconv.Itoa(response.GetResultCode())
+	} else {
+		return "NA"
+	}
 }
