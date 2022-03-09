@@ -91,8 +91,8 @@ func (hr *HostReactor) ProcessServiceJson(result string) {
 	}
 	hr.updateTimeMap.Set(cacheKey, uint64(util.CurrentMillis()))
 	hr.serviceInfoMap.Set(cacheKey, *service)
-	oldService := oldDomain.(model.Service)
-	if !ok || ok && isServiceInstanceChanged(&oldService, service) {
+	oldService, serviceOk := oldDomain.(model.Service)
+	if !ok || ok && serviceOk && isServiceInstanceChanged(&oldService, service) {
 		if !ok {
 			logger.Info("service not found in cache " + cacheKey)
 		} else {
@@ -176,14 +176,6 @@ func (hr *HostReactor) asyncUpdateService() {
 
 // return true when service instance changed ,otherwise return false.
 func isServiceInstanceChanged(oldService, newService *model.Service) bool {
-	if nil == oldService && newService == oldService {
-		// both service is nil
-		return false
-	}
-	if nil == newService || nil == oldService {
-		// one of them is nil
-		return true
-	}
 	oldHostsLen := len(oldService.Hosts)
 	newHostsLen := len(newService.Hosts)
 	if oldHostsLen != newHostsLen {
@@ -194,6 +186,7 @@ func isServiceInstanceChanged(oldService, newService *model.Service) bool {
 	newRefTime := newService.LastRefTime
 	if oldRefTime > newRefTime {
 		logger.Warn(fmt.Sprintf("out of date data received, old-t: %v , new-t:  %v", oldRefTime, newRefTime))
+		return false
 	}
 	// sort instance list
 	oldInstance := oldService.Hosts

@@ -140,7 +140,7 @@ func (s instanceSorter) Less(i, j int) bool {
 	if ipNum1 < ipNum2 {
 		return true
 	}
-	if insI.Port < insI.Port {
+	if insI.Port < insJ.Port {
 		return true
 	}
 	return false
