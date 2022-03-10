@@ -21,6 +21,9 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
@@ -191,7 +194,34 @@ func isServiceInstanceChanged(oldService, newService *model.Service) bool {
 	// sort instance list
 	oldInstance := oldService.Hosts
 	newInstance := newService.Hosts
-	model.SortInstance(oldInstance)
-	model.SortInstance(newInstance)
+	sortInstance(oldInstance)
+	sortInstance(newInstance)
 	return !reflect.DeepEqual(oldInstance, newInstance)
+}
+
+type instanceSorter []model.Instance
+
+func (s instanceSorter) Len() int {
+	return len(s)
+}
+func (s instanceSorter) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s instanceSorter) Less(i, j int) bool {
+	insI, insJ := s[i], s[j]
+	// using ip and port to sort
+	ipNum1, _ := strconv.Atoi(strings.ReplaceAll(insI.Ip, ".", ""))
+	ipNum2, _ := strconv.Atoi(strings.ReplaceAll(insJ.Ip, ".", ""))
+	if ipNum1 < ipNum2 {
+		return true
+	}
+	if insI.Port < insJ.Port {
+		return true
+	}
+	return false
+}
+
+// sort instances
+func sortInstance(instances []model.Instance) {
+	sort.Sort(instanceSorter(instances))
 }

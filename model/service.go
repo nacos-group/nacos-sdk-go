@@ -17,9 +17,6 @@
 package model
 
 import (
-	"sort"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -122,31 +119,4 @@ type ExpressionSelector struct {
 type ServiceList struct {
 	Count int64    `json:"count"`
 	Doms  []string `json:"doms"`
-}
-
-type instanceSorter []Instance
-
-func (s instanceSorter) Len() int {
-	return len(s)
-}
-func (s instanceSorter) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-func (s instanceSorter) Less(i, j int) bool {
-	insI, insJ := s[i], s[j]
-	// using ip and port to sort
-	ipNum1, _ := strconv.Atoi(strings.ReplaceAll(insI.Ip, ".", ""))
-	ipNum2, _ := strconv.Atoi(strings.ReplaceAll(insJ.Ip, ".", ""))
-	if ipNum1 < ipNum2 {
-		return true
-	}
-	if insI.Port < insJ.Port {
-		return true
-	}
-	return false
-}
-
-// sort instances
-func SortInstance(instances []Instance) {
-	sort.Sort(instanceSorter(instances))
 }
