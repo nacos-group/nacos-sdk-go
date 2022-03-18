@@ -193,7 +193,8 @@ func isServiceInstanceChanged(oldService, newService *model.Service) bool {
 	}
 	// sort instance list
 	oldInstance := oldService.Hosts
-	newInstance := newService.Hosts
+	newInstance := make([]model.Instance, len(newService.Hosts))
+	copy(newInstance, newService.Hosts)
 	sortInstance(oldInstance)
 	sortInstance(newInstance)
 	return !reflect.DeepEqual(oldInstance, newInstance)
