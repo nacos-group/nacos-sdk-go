@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
+
 	"github.com/nacos-group/nacos-sdk-go/model"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
@@ -136,6 +138,7 @@ func BenchmarkHostReactor_GetServiceInfoConcurrent(b *testing.B) {
 }
 
 func TestHostReactor_isServiceInstanceChanged(t *testing.T) {
+	rand.Seed(time.Now().Unix())
 	defaultIp := createRandomIp()
 	defaultPort := creatRandomPort()
 	serviceA := &model.Service{
@@ -173,9 +176,6 @@ func TestHostReactor_isServiceInstanceChanged(t *testing.T) {
 		},
 	}
 	ip := createRandomIp()
-	for ip != defaultIp {
-		ip = createRandomIp()
-	}
 	serviceC := &model.Service{
 		LastRefTime: 1001,
 		Hosts: []model.Instance{
@@ -210,14 +210,54 @@ func TestHostReactor_isServiceInstanceChanged(t *testing.T) {
 	})
 }
 
+func TestHostReactor_isServiceInstanceChangedWithUnOrdered(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+	serviceA := &model.Service{
+		LastRefTime: 1001,
+		Hosts: []model.Instance{
+			{
+				Ip:   createRandomIp(),
+				Port: creatRandomPort(),
+			},
+			{
+				Ip:   createRandomIp(),
+				Port: creatRandomPort(),
+			},
+			{
+				Ip:   createRandomIp(),
+				Port: creatRandomPort(),
+			},
+		},
+	}
+
+	serviceB := &model.Service{
+		LastRefTime: 1001,
+		Hosts: []model.Instance{
+			{
+				Ip:   createRandomIp(),
+				Port: creatRandomPort(),
+			},
+			{
+				Ip:   createRandomIp(),
+				Port: creatRandomPort(),
+			},
+			{
+				Ip:   createRandomIp(),
+				Port: creatRandomPort(),
+			},
+		},
+	}
+	logger.Info("serviceA:%s and serviceB:%s are comparing", serviceA.Hosts, serviceB.Hosts)
+	changed := isServiceInstanceChanged(serviceA, serviceB)
+	assert.True(t, changed)
+}
+
 // create random ip addr
 func createRandomIp() string {
-	rand.Seed(time.Now().Unix())
 	ip := fmt.Sprintf("%d.%d.%d.%d", rand.Intn(255), rand.Intn(255), rand.Intn(255), rand.Intn(255))
 	return ip
 }
 
 func creatRandomPort() uint64 {
-	rand.Seed(time.Now().Unix())
 	return rand.Uint64()
 }
