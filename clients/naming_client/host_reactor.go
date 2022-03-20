@@ -19,7 +19,11 @@ package naming_client
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
@@ -90,7 +94,8 @@ func (hr *HostReactor) ProcessServiceJson(result string) {
 	}
 	hr.updateTimeMap.Set(cacheKey, uint64(util.CurrentMillis()))
 	hr.serviceInfoMap.Set(cacheKey, *service)
-	if !ok || ok && !reflect.DeepEqual(service.Hosts, oldDomain.(model.Service).Hosts) {
+	oldService, serviceOk := oldDomain.(model.Service)
+	if !ok || ok && serviceOk && isServiceInstanceChanged(&oldService, service) {
 		if !ok {
 			logger.Info("service not found in cache " + cacheKey)
 		} else {
@@ -170,4 +175,54 @@ func (hr *HostReactor) asyncUpdateService() {
 		}
 		time.Sleep(1 * time.Second)
 	}
+}
+
+// return true when service instance changed ,otherwise return false.
+func isServiceInstanceChanged(oldService, newService *model.Service) bool {
+	oldHostsLen := len(oldService.Hosts)
+	newHostsLen := len(newService.Hosts)
+	if oldHostsLen != newHostsLen {
+		return true
+	}
+	// compare refTime
+	oldRefTime := oldService.LastRefTime
+	newRefTime := newService.LastRefTime
+	if oldRefTime > newRefTime {
+		logger.Warn(fmt.Sprintf("out of date data received, old-t: %v , new-t:  %v", oldRefTime, newRefTime))
+		return false
+	}
+	// sort instance list
+	oldInstance := oldService.Hosts
+	newInstance := make([]model.Instance, len(newService.Hosts))
+	copy(newInstance, newService.Hosts)
+	sortInstance(oldInstance)
+	sortInstance(newInstance)
+	return !reflect.DeepEqual(oldInstance, newInstance)
+}
+
+type instanceSorter []model.Instance
+
+func (s instanceSorter) Len() int {
+	return len(s)
+}
+func (s instanceSorter) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s instanceSorter) Less(i, j int) bool {
+	insI, insJ := s[i], s[j]
+	// using ip and port to sort
+	ipNum1, _ := strconv.Atoi(strings.ReplaceAll(insI.Ip, ".", ""))
+	ipNum2, _ := strconv.Atoi(strings.ReplaceAll(insJ.Ip, ".", ""))
+	if ipNum1 < ipNum2 {
+		return true
+	}
+	if insI.Port < insJ.Port {
+		return true
+	}
+	return false
+}
+
+// sort instances
+func sortInstance(instances []model.Instance) {
+	sort.Sort(instanceSorter(instances))
 }
