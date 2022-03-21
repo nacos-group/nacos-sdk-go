@@ -105,7 +105,10 @@ func InitNacosLogger(config Config) (Logger, error) {
 	logLevel := getLogLevel(config.Level)
 	encoder := getEncoder()
 	writer := config.getLogWriter()
-	core := zapcore.NewCore(zapcore.NewConsoleEncoder(encoder), writer, logLevel)
+ 
+	core := zapcore.NewCore(zapcore.NewConsoleEncoder(encoder), zapcore.NewMultiWriteSyncer(writer, zapcore.AddSync(os.Stdout)), logLevel)
+
+ 
 	if config.Sampling != nil {
 		core = zapcore.NewSamplerWithOptions(core, config.Sampling.Tick, config.Sampling.Initial, config.Sampling.Thereafter)
 	}

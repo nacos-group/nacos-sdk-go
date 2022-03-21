@@ -16,7 +16,9 @@
 
 package model
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	StateRunning = iota

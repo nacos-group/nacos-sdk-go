@@ -17,7 +17,14 @@
 package naming_client
 
 import (
+	"fmt"
+	"math/rand"
 	"testing"
+	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
+
+	"github.com/nacos-group/nacos-sdk-go/model"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -128,4 +135,129 @@ func BenchmarkHostReactor_GetServiceInfoConcurrent(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = client.hostReactor.GetServiceInfo(param.ServiceName, param.ClusterName)
 	}
+}
+
+func TestHostReactor_isServiceInstanceChanged(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+	defaultIp := createRandomIp()
+	defaultPort := creatRandomPort()
+	serviceA := &model.Service{
+		LastRefTime: 1000,
+		Hosts: []model.Instance{
+			{
+				Ip:   defaultIp,
+				Port: defaultPort,
+			},
+			{
+				Ip:   defaultIp,
+				Port: defaultPort + 1,
+			},
+			{
+				Ip:   defaultIp,
+				Port: defaultPort + 2,
+			},
+		},
+	}
+	serviceB := &model.Service{
+		LastRefTime: 1001,
+		Hosts: []model.Instance{
+			{
+				Ip:   defaultIp,
+				Port: defaultPort,
+			},
+			{
+				Ip:   defaultIp,
+				Port: defaultPort + 3,
+			},
+			{
+				Ip:   defaultIp,
+				Port: defaultPort + 4,
+			},
+		},
+	}
+	ip := createRandomIp()
+	serviceC := &model.Service{
+		LastRefTime: 1001,
+		Hosts: []model.Instance{
+			{
+				Ip:   ip,
+				Port: defaultPort,
+			},
+			{
+				Ip:   ip,
+				Port: defaultPort + 3,
+			},
+			{
+				Ip:   ip,
+				Port: defaultPort + 4,
+			},
+		},
+	}
+
+	t.Run("compareWithSelf", func(t *testing.T) {
+		changed := isServiceInstanceChanged(serviceA, serviceA)
+		assert.Equal(t, false, changed)
+	})
+	// compareWithIp
+	t.Run("compareWithIp", func(t *testing.T) {
+		changed := isServiceInstanceChanged(serviceA, serviceC)
+		assert.Equal(t, true, changed)
+	})
+	// compareWithPort
+	t.Run("compareWithPort", func(t *testing.T) {
+		changed := isServiceInstanceChanged(serviceA, serviceB)
+		assert.Equal(t, true, changed)
+	})
+}
+
+func TestHostReactor_isServiceInstanceChangedWithUnOrdered(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+	serviceA := &model.Service{
+		LastRefTime: 1001,
+		Hosts: []model.Instance{
+			{
+				Ip:   createRandomIp(),
+				Port: creatRandomPort(),
+			},
+			{
+				Ip:   createRandomIp(),
+				Port: creatRandomPort(),
+			},
+			{
+				Ip:   createRandomIp(),
+				Port: creatRandomPort(),
+			},
+		},
+	}
+
+	serviceB := &model.Service{
+		LastRefTime: 1001,
+		Hosts: []model.Instance{
+			{
+				Ip:   createRandomIp(),
+				Port: creatRandomPort(),
+			},
+			{
+				Ip:   createRandomIp(),
+				Port: creatRandomPort(),
+			},
+			{
+				Ip:   createRandomIp(),
+				Port: creatRandomPort(),
+			},
+		},
+	}
+	logger.Info("serviceA:%s and serviceB:%s are comparing", serviceA.Hosts, serviceB.Hosts)
+	changed := isServiceInstanceChanged(serviceA, serviceB)
+	assert.True(t, changed)
+}
+
+// create random ip addr
+func createRandomIp() string {
+	ip := fmt.Sprintf("%d.%d.%d.%d", rand.Intn(255), rand.Intn(255), rand.Intn(255), rand.Intn(255))
+	return ip
+}
+
+func creatRandomPort() uint64 {
+	return rand.Uint64()
 }
