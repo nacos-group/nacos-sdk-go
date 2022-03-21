@@ -18,7 +18,6 @@ package config_client
 
 import (
 	"errors"
-	"fmt"
 	"github.com/golang/mock/gomock"
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
@@ -27,6 +26,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/mock"
 	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"runtime"
@@ -692,35 +692,33 @@ type mockLogger struct {
 }
 
 func (m mockLogger) Info(args ...interface{}) {
-	fmt.Println("")
-	fmt.Println("implement me")
+	logrus.Info(args...)
 }
 
 func (m mockLogger) Warn(args ...interface{}) {
-	fmt.Print("implement me")
+	logrus.Info(args...)
 }
 
 func (m mockLogger) Error(args ...interface{}) {
-	fmt.Print("implement me")
+	logrus.Info(args...)
 }
 
 func (m mockLogger) Debug(args ...interface{}) {
-	fmt.Print("implement me")
+	logrus.Info(args...)
 }
 
 func (m mockLogger) Infof(format string, args ...interface{}) {
-	fmt.Print(args...)
-	fmt.Printf(format, args...)
+	logrus.Infof(format, args...)
 }
 
 func (m mockLogger) Warnf(format string, args ...interface{}) {
-	fmt.Print("implement me")
+	logrus.Warnf(format, args...)
 }
 
 func (m mockLogger) Errorf(format string, args ...interface{}) {
-	fmt.Print("implement me")
+	logrus.Errorf(format, args...)
 }
 
 func (m mockLogger) Debugf(format string, args ...interface{}) {
-	fmt.Print("implement me")
+	logrus.Debugf("implement me")
 }
