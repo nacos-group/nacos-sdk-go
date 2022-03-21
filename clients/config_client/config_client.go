@@ -354,7 +354,7 @@ func (client *ConfigClient) listenConfigExecutor() func() error {
 		if taskCount > client.currentTaskCount {
 			for i := client.currentTaskCount; i < taskCount; i++ {
 				client.schedulerMap.Set(strconv.Itoa(i), true)
-				go client.delayScheduler(time.NewTimer(1*time.Millisecond), 10*time.Millisecond, strconv.Itoa(i), client.longPulling(i))
+				go client.delayScheduler(time.NewTimer(1*time.Millisecond), 10*time.Millisecond, strconv.Itoa(i), client.longPolling(i))
 			}
 			client.currentTaskCount = taskCount
 		} else if taskCount < client.currentTaskCount {
@@ -370,7 +370,7 @@ func (client *ConfigClient) listenConfigExecutor() func() error {
 }
 
 //Long polling listening configuration
-func (client *ConfigClient) longPulling(taskId int) func() error {
+func (client *ConfigClient) longPolling(taskId int) func() error {
 	return func() error {
 		var listeningConfigs string
 		initializationList := make([]cacheData, 0)
@@ -417,7 +417,7 @@ func (client *ConfigClient) longPulling(taskId int) func() error {
 				v.isInitializing = false
 				client.cacheMap.Set(util.GetConfigCacheKey(v.dataId, v.group, v.tenant), v)
 			}
-			if len(strings.ToLower(strings.Trim(changed, " "))) == 0 {
+			if len(strings.TrimSpace(changed)) == 0 {
 				logger.Info("[client.ListenConfig] no change")
 			} else {
 				logger.Info("[client.ListenConfig] config changed:" + changed)

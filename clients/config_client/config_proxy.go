@@ -102,7 +102,7 @@ func (cp *ConfigProxy) PublishConfigProxy(param vo.ConfigParam, tenant, accessKe
 	if err != nil {
 		return false, errors.New("[client.PublishConfig] publish config failed:" + err.Error())
 	}
-	if strings.ToLower(strings.Trim(result, " ")) == "true" {
+	if strings.EqualFold("true", strings.TrimSpace(result)) {
 		return true, nil
 	} else {
 		return false, errors.New("[client.PublishConfig] publish config failed:" + result)
