@@ -18,13 +18,13 @@ package main
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
+	"gopkg.in/natefinch/lumberjack.v2"
+	"time"
 )
 
 func main() {
@@ -45,10 +45,8 @@ func main() {
 		NotLoadCacheAtStart: true,
 		LogDir:              "/tmp/nacos/log",
 		CacheDir:            "/tmp/nacos/cache",
-		LogRollingConfig: &constant.ClientLogRollingConfig{
-			MaxSize: 1,
-		},
-		LogLevel: "debug",
+		LogRollingConfig:    &lumberjack.Logger{MaxSize: 10},
+		LogLevel:            "debug",
 	}
 	//or a more graceful way to create ClientConfig
 	_ = *constant.NewClientConfig(
@@ -58,7 +56,7 @@ func main() {
 		constant.WithLogDir("/tmp/nacos/log"),
 		constant.WithCacheDir("/tmp/nacos/cache"),
 		constant.WithLogLevel("debug"),
-		constant.WithLogRollingConfig(&constant.ClientLogRollingConfig{MaxSize: 1}),
+		constant.WithLogRollingConfig(&lumberjack.Logger{MaxSize: 10}),
 	)
 
 	// a more graceful way to create naming client

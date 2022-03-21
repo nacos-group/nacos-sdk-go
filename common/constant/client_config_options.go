@@ -17,11 +17,11 @@
 package constant
 
 import (
+	"github.com/nacos-group/nacos-sdk-go/common/file"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 	"time"
-
-	"github.com/nacos-group/nacos-sdk-go/common/file"
 )
 
 func NewClientConfig(opts ...ClientOption) *ClientConfig {
@@ -174,7 +174,7 @@ func WithLogSampling(tick time.Duration, initial int, thereafter int) ClientOpti
 }
 
 // WithLogRollingConfig ...
-func WithLogRollingConfig(rollingConfig *logger.ClientLogRollingConfig) ClientOption {
+func WithLogRollingConfig(rollingConfig *lumberjack.Logger) ClientOption {
 	return func(config *ClientConfig) {
 		config.LogRollingConfig = rollingConfig
 	}

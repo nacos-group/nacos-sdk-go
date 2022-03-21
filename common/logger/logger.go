@@ -27,8 +27,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const LogFileName = "nacos-sdk.log"
-
 var (
 	logger  Logger
 	logLock sync.RWMutex
@@ -42,45 +40,18 @@ var levelMap = map[string]zapcore.Level{
 }
 
 type Config struct {
-	Level                  string
-	Sampling               *SamplingConfig
-	LogRollingConfig       *lumberjack.Logger
-	ClientLogRollingConfig *ClientLogRollingConfig
-	LogDir                 string
-	CustomLogger           Logger
+	Level            string
+	LogFileName      string
+	Sampling         *SamplingConfig
+	LogRollingConfig *lumberjack.Logger
+	LogDir           string
+	CustomLogger     Logger
 }
 
 type SamplingConfig struct {
 	Initial    int
 	Thereafter int
 	Tick       time.Duration
-}
-
-type ClientLogRollingConfig struct {
-	// MaxSize is the maximum size in megabytes of the log file before it gets
-	// rotated. It defaults to 100 megabytes.
-	MaxSize int
-
-	// MaxAge is the maximum number of days to retain old log files based on the
-	// timestamp encoded in their filename.  Note that a day is defined as 24
-	// hours and may not exactly correspond to calendar days due to daylight
-	// savings, leap seconds, etc. The default is not to remove old log files
-	// based on age.
-	MaxAge int
-
-	// MaxBackups is the maximum number of old log files to retain.  The default
-	// is to retain all old log files (though MaxAge may still cause them to get
-	// deleted.)
-	MaxBackups int
-
-	// LocalTime determines if the time used for formatting the timestamps in
-	// backup files is the computer's local time.  The default is to use UTC
-	// time.
-	LocalTime bool
-
-	// Compress determines if the rotated log files should be compressed
-	// using gzip. The default is not to perform compression.
-	Compress bool
 }
 
 type NacosLogger struct {
@@ -103,9 +74,9 @@ type Logger interface {
 func BuildLoggerConfig(clientConfig Config) Config {
 	if clientConfig.CustomLogger == nil {
 		clientConfig.LogRollingConfig = &lumberjack.Logger{
-			Filename: clientConfig.LogDir + string(os.PathSeparator) + LogFileName,
+			Filename: clientConfig.LogDir + string(os.PathSeparator) + clientConfig.LogFileName,
 		}
-		logRollingConfig := clientConfig.ClientLogRollingConfig
+		logRollingConfig := clientConfig.LogRollingConfig
 		if logRollingConfig != nil {
 			clientConfig.LogRollingConfig.MaxSize = logRollingConfig.MaxSize
 			clientConfig.LogRollingConfig.MaxAge = logRollingConfig.MaxAge
