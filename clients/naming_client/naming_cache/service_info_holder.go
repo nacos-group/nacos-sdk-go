@@ -17,8 +17,12 @@
 package naming_cache
 
 import (
+	"fmt"
 	"os"
 	"reflect"
+	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
@@ -88,7 +92,8 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 
 	s.UpdateTimeMap.Set(cacheKey, uint64(util.CurrentMillis()))
 	s.ServiceInfoMap.Set(cacheKey, *service)
-	if !ok || ok && !reflect.DeepEqual(service.Hosts, oldDomain.(model.Service).Hosts) {
+	oldService := oldDomain.(model.Service)
+	if !ok || ok && isServiceInstanceChanged(&oldService, service) {
 		if !ok {
 			logger.Infof("service not found in cache,cachekey:%s", cacheKey)
 		} else {
@@ -125,4 +130,54 @@ func (s *ServiceInfoHolder) StopUpdateIfContain(serviceName, clusters string) {
 
 func (s *ServiceInfoHolder) IsSubscribed(serviceName, clusters string) bool {
 	return s.subCallback.IsSubscribed(serviceName, clusters)
+}
+
+// return true when service instance changed ,otherwise return false.
+func isServiceInstanceChanged(oldService, newService *model.Service) bool {
+	oldHostsLen := len(oldService.Hosts)
+	newHostsLen := len(newService.Hosts)
+	if oldHostsLen != newHostsLen {
+		return true
+	}
+	// compare refTime
+	oldRefTime := oldService.LastRefTime
+	newRefTime := newService.LastRefTime
+	if oldRefTime > newRefTime {
+		logger.Warn(fmt.Sprintf("out of date data received, old-t: %v , new-t:  %v", oldRefTime, newRefTime))
+		return false
+	}
+	// sort instance list
+	oldInstance := oldService.Hosts
+	newInstance := make([]model.Instance, len(newService.Hosts))
+	copy(newInstance, newService.Hosts)
+	sortInstance(oldInstance)
+	sortInstance(newInstance)
+	return !reflect.DeepEqual(oldInstance, newInstance)
+}
+
+type instanceSorter []model.Instance
+
+func (s instanceSorter) Len() int {
+	return len(s)
+}
+func (s instanceSorter) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s instanceSorter) Less(i, j int) bool {
+	insI, insJ := s[i], s[j]
+	// using ip and port to sort
+	ipNum1, _ := strconv.Atoi(strings.ReplaceAll(insI.Ip, ".", ""))
+	ipNum2, _ := strconv.Atoi(strings.ReplaceAll(insJ.Ip, ".", ""))
+	if ipNum1 < ipNum2 {
+		return true
+	}
+	if insI.Port < insJ.Port {
+		return true
+	}
+	return false
+}
+
+// sort instances
+func sortInstance(instances []model.Instance) {
+	sort.Sort(instanceSorter(instances))
 }
