@@ -205,6 +205,27 @@ func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (mod
 	return services, nil
 }
 
+func (sc *NamingClient) GetCatalogServices(param vo.GetCatalogServicesParam) (model.CatalogServiceList, error) {
+	if len(param.GroupName) == 0 {
+		param.GroupName = constant.DEFAULT_GROUP
+	}
+	if len(param.NameSpace) == 0 {
+		if len(sc.NamespaceId) == 0 {
+			param.NameSpace = constant.DEFAULT_NAMESPACE_ID
+		} else {
+			param.NameSpace = sc.NamespaceId
+		}
+	}
+	if param.PageNo == 0 {
+		param.PageNo = 1
+	}
+	if param.PageSize == 0 {
+		param.PageSize = 10
+	}
+	services := sc.hostReactor.GetCatalogServices(param.NameSpace, param.GroupName, param.PageNo, param.PageSize, param.HasIpCount)
+	return services, nil
+}
+
 func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP

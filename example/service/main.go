@@ -18,13 +18,12 @@ package main
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
+	"time"
 )
 
 func main() {
@@ -274,4 +273,34 @@ func main() {
 		PageNo:    1,
 		PageSize:  10,
 	})
+
+	//GetCatalogService will get the list of service name
+	//NameSpace default value is public.If the client set the namespaceId, NameSpace will use it.
+	//GroupName default value is DEFAULT_GROUP
+	ExampleServiceClient_GetCatalogService(client, vo.GetCatalogServicesParam{
+		PageNo:     1,
+		PageSize:   10,
+		HasIpCount: true,
+	})
+
+	ExampleServiceClient_GetCatalogService(client, vo.GetCatalogServicesParam{
+		PageNo:     1,
+		PageSize:   10,
+		HasIpCount: false,
+	})
+
+	ExampleServiceClient_GetCatalogService(client, vo.GetCatalogServicesParam{
+		NameSpace:  "0e83cc81-9d8c-4bb8-a28a-ff703187543f",
+		PageNo:     1,
+		PageSize:   10,
+		HasIpCount: true,
+	})
+
+	ExampleServiceClient_GetCatalogService(client, vo.GetCatalogServicesParam{
+		NameSpace:  "0e83cc81-9d8c-4bb8-a28a-ff703187543f",
+		PageNo:     1,
+		PageSize:   10,
+		HasIpCount: false,
+	})
+
 }

@@ -120,3 +120,18 @@ type ServiceList struct {
 	Count int64    `json:"count"`
 	Doms  []string `json:"doms"`
 }
+
+type CatalogService struct {
+	Name                 string              `json:"name"`
+	GroupName            string              `json:"groupName"`
+	ClusterCount         uint                `json:"clusterCount"`
+	IpCount              uint                `json:"ipCount"`
+	HealthyInstanceCount uint                `json:"healthyInstanceCount"`
+	TriggerFlag          string              `json:"triggerFlag"`
+	clusterMap           map[string]Instance `json:"clusterMap"`
+}
+
+type CatalogServiceList struct {
+	Count       int64            `json:"count"`
+	ServiceList []CatalogService `json:"serviceList"`
+}

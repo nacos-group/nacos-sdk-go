@@ -65,3 +65,8 @@ func ExampleServiceClient_GetAllService(client naming_client.INamingClient, para
 	service, _ := client.GetAllServicesInfo(param)
 	fmt.Printf("GetAllService,param:%+v, result:%+v \n\n", param, service)
 }
+
+func ExampleServiceClient_GetCatalogService(client naming_client.INamingClient, param vo.GetCatalogServicesParam) {
+	service, _ := client.GetCatalogServices(param)
+	fmt.Printf("GetCatalogService,param:%+v, result:%+v \n\n", param, service)
+}

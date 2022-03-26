@@ -65,6 +65,14 @@ type GetAllServiceInfoParam struct {
 	PageSize  uint32 `param:"pageSize"`  //optional,default:10
 }
 
+type GetCatalogServicesParam struct {
+	NameSpace  string `param:"nameSpace"`  //optional,default:public
+	GroupName  string `param:"groupName"`  //optional,default:DEFAULT_GROUP
+	PageNo     uint32 `param:"pageNo"`     //optional,default:1
+	PageSize   uint32 `param:"pageSize"`   //optional,default:10
+	HasIpCount bool   `param:"hasIpCount"` //required
+}
+
 type SubscribeParam struct {
 	ServiceName       string                                             `param:"serviceName"` //required
 	Clusters          []string                                           `param:"clusters"`    //optional,default:DEFAULT

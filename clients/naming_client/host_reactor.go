@@ -142,6 +142,29 @@ func (hr *HostReactor) GetAllServiceInfo(nameSpace, groupName string, pageNo, pa
 	return data
 }
 
+func (hr *HostReactor) GetCatalogServices(nameSpace, groupName string, pageNo, pageSize uint32, hasIpCount bool) model.CatalogServiceList {
+	data := model.CatalogServiceList{}
+	result, err := hr.serviceProxy.GetCatalogServiceList(nameSpace, groupName, pageNo, pageSize, hasIpCount)
+	if err != nil {
+		logger.Errorf("GetCatalogServices return error!nameSpace:%s groupName:%s pageNo:%d, pageSize:%d err:%+v",
+			nameSpace, groupName, pageNo, pageSize, err)
+		return data
+	}
+	if result == "" {
+		logger.Errorf("GetCatalogServices result is empty!nameSpace:%s  groupName:%s pageNo:%d, pageSize:%d",
+			nameSpace, groupName, pageNo, pageSize)
+		return data
+	}
+
+	err = json.Unmarshal([]byte(result), &data)
+	if err != nil {
+		logger.Errorf("GetCatalogServices result json.Unmarshal error!nameSpace:%s groupName:%s pageNo:%d, pageSize:%d",
+			nameSpace, groupName, pageNo, pageSize)
+		return data
+	}
+	return data
+}
+
 func (hr *HostReactor) updateServiceNow(serviceName, clusters string) {
 	result, err := hr.serviceProxy.QueryList(serviceName, clusters, hr.pushReceiver.port, false)
 
