@@ -18,6 +18,12 @@ package config_client
 
 import (
 	"errors"
+	"net/http"
+	"runtime"
+	"strconv"
+	"testing"
+	"time"
+
 	"github.com/golang/mock/gomock"
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
@@ -28,11 +34,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"runtime"
-	"strconv"
-	"testing"
-	"time"
 )
 
 var goVersion = runtime.Version()
