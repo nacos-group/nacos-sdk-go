@@ -32,6 +32,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/mock"
 	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,6 +60,7 @@ var serverConfigTest = constant.ServerConfig{
 var serverConfigWithOptions = constant.NewServerConfig("console.nacos.io", 80, constant.WithContextPath("/nacos"))
 
 var clientConfigWithOptions = constant.NewClientConfig(
+	constant.WithCustomLogger(mockLogger{}),
 	constant.WithTimeoutMs(10*1000),
 	constant.WithBeatInterval(2*1000),
 	constant.WithNotLoadCacheAtStart(true),
@@ -685,4 +687,39 @@ func TestGetConfigWithSpecialSymbol(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, contentStr, content)
+}
+
+type mockLogger struct {
+}
+
+func (m mockLogger) Info(args ...interface{}) {
+	logrus.Info(args...)
+}
+
+func (m mockLogger) Warn(args ...interface{}) {
+	logrus.Info(args...)
+}
+
+func (m mockLogger) Error(args ...interface{}) {
+	logrus.Info(args...)
+}
+
+func (m mockLogger) Debug(args ...interface{}) {
+	logrus.Info(args...)
+}
+
+func (m mockLogger) Infof(format string, args ...interface{}) {
+	logrus.Infof(format, args...)
+}
+
+func (m mockLogger) Warnf(format string, args ...interface{}) {
+	logrus.Warnf(format, args...)
+}
+
+func (m mockLogger) Errorf(format string, args ...interface{}) {
+	logrus.Errorf(format, args...)
+}
+
+func (m mockLogger) Debugf(format string, args ...interface{}) {
+	logrus.Debugf("implement me")
 }

@@ -9,6 +9,7 @@ require (
 	github.com/golang/mock v1.3.1
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.5.1
 	go.uber.org/zap v1.15.0
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
