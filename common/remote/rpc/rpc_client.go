@@ -336,7 +336,7 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 			r.closeConnection()
 		}
 		if reConnectTimes > 0 && reConnectTimes%len(r.nacosServer.GetServerList()) == 0 {
-			logger.Infof("%s fail to connect server, after trying %d times, last try server is %+v, error=%v", r.Name,
+			logger.Warnf("%s fail to connect server, after trying %d times, last try server is %+v, error=%v", r.Name,
 				reConnectTimes, serverInfo, err)
 			if retryTurns < 50 {
 				retryTurns++
@@ -348,7 +348,7 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 		}
 	}
 	if r.isShutdown() {
-		logger.Infof("%s client is shutdown, stop reconnect to server", r.Name)
+		logger.Warnf("%s client is shutdown, stop reconnect to server", r.Name)
 	}
 }
 
