@@ -21,10 +21,9 @@ import (
 	"sync"
 	"time"
 
-	"gopkg.in/natefinch/lumberjack.v2"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (
@@ -71,44 +70,46 @@ type Logger interface {
 	Debugf(fmt string, args ...interface{})
 }
 
-func BuildLoggerConfig(clientConfig Config) Config {
-	if clientConfig.CustomLogger == nil {
-		clientConfig.LogRollingConfig = &lumberjack.Logger{
-			Filename: clientConfig.LogDir + string(os.PathSeparator) + clientConfig.LogFileName,
-		}
-		logRollingConfig := clientConfig.LogRollingConfig
-		if logRollingConfig != nil {
-			clientConfig.LogRollingConfig.MaxSize = logRollingConfig.MaxSize
-			clientConfig.LogRollingConfig.MaxAge = logRollingConfig.MaxAge
-			clientConfig.LogRollingConfig.MaxBackups = logRollingConfig.MaxBackups
-			clientConfig.LogRollingConfig.LocalTime = logRollingConfig.LocalTime
-			clientConfig.LogRollingConfig.Compress = logRollingConfig.Compress
-		}
+func init() {
+	zapLoggerConfig := zap.NewDevelopmentConfig()
+	zapLoggerEncoderConfig := zapcore.EncoderConfig{
+		TimeKey:        "time",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "message",
+		StacktraceKey:  "stacktrace",
+		EncodeLevel:    zapcore.CapitalColorLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
-
-	return clientConfig
+	zapLoggerConfig.EncoderConfig = zapLoggerEncoderConfig
+	defaultLogger, _ := zapLoggerConfig.Build(zap.AddCaller(), zap.AddCallerSkip(1))
+	setLogger(&NacosLogger{defaultLogger.Sugar()})
 }
 
 // InitLogger is init global logger for nacos
 func InitLogger(config Config) (err error) {
-	logLock.Lock()
-	defer logLock.Unlock()
-	logger, err = InitNacosLogger(config)
+	logger, err = initNacosLogger(config)
+	if err != nil {
+		return err
+	}
+	setLogger(logger)
 	return
 }
 
 // InitNacosLogger is init nacos default logger
-func InitNacosLogger(config Config) (Logger, error) {
+func initNacosLogger(config Config) (Logger, error) {
 	if config.CustomLogger != nil {
 		return &NacosLogger{config.CustomLogger}, nil
 	}
 	logLevel := getLogLevel(config.Level)
 	encoder := getEncoder()
 	writer := config.getLogWriter()
- 
+
 	core := zapcore.NewCore(zapcore.NewConsoleEncoder(encoder), zapcore.NewMultiWriteSyncer(writer, zapcore.AddSync(os.Stdout)), logLevel)
 
- 
 	if config.Sampling != nil {
 		core = zapcore.NewSamplerWithOptions(core, config.Sampling.Tick, config.Sampling.Initial, config.Sampling.Thereafter)
 	}
@@ -140,7 +141,7 @@ func getEncoder() zapcore.EncoderConfig {
 }
 
 //SetLogger sets logger for sdk
-func SetLogger(log Logger) {
+func setLogger(log Logger) {
 	logLock.Lock()
 	defer logLock.Unlock()
 	logger = log
@@ -154,5 +155,9 @@ func GetLogger() Logger {
 
 // getLogWriter get Lumberjack writer by LumberjackConfig
 func (c *Config) getLogWriter() zapcore.WriteSyncer {
+	if c.LogRollingConfig == nil {
+		c.LogRollingConfig = &lumberjack.Logger{}
+	}
+	c.LogRollingConfig.Filename = c.LogDir + string(os.PathSeparator) + c.LogFileName
 	return zapcore.AddSync(c.LogRollingConfig)
 }
