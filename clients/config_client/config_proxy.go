@@ -56,9 +56,9 @@ func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_reques
 	start := time.Now()
 	cp.nacosServer.InjectSecurityInfo(request.GetHeaders())
 	cp.injectCommHeader(request.GetHeaders())
+	cp.nacosServer.InjectSkAk(request.GetHeaders(), cp.clientConfig)
 	signHeaders := nacos_server.GetSignHeaders(request.GetHeaders(), cp.clientConfig.SecretKey)
 	request.PutAllHeaders(signHeaders)
-	//todo Spas-SecurityToken/Spas-AccessKey.
 	//todo Config Limiter
 	response, err := rpcClient.Request(request, int64(timeoutMills))
 	monitor.GetConfigRequestMonitor(constant.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
@@ -174,6 +174,10 @@ type ConfigChangeNotifyRequestHandler struct {
 	client *ConfigClient
 }
 
+func (c *ConfigChangeNotifyRequestHandler) Name() string {
+	return "ConfigChangeNotifyRequestHandler"
+}
+
 func (c *ConfigChangeNotifyRequestHandler) RequestReply(request rpc_request.IRequest, rpcClient *rpc.RpcClient) rpc_response.IResponse {
 	configChangeNotifyRequest, ok := request.(*rpc_request.ConfigChangeNotifyRequest)
 	if ok {
@@ -182,12 +186,12 @@ func (c *ConfigChangeNotifyRequestHandler) RequestReply(request rpc_request.IReq
 
 		cacheKey := util.GetConfigCacheKey(configChangeNotifyRequest.DataId, configChangeNotifyRequest.Group,
 			configChangeNotifyRequest.Tenant)
-		cache, ok := c.client.cacheMap.Get(cacheKey)
+		data, ok := c.client.cacheMap.Get(cacheKey)
 		if !ok {
 			return nil
 		}
-		cacheData := cache.(*cacheData)
-		cacheData.isSyncWithServer = false
+		cData := data.(*cacheData)
+		cData.isSyncWithServer = false
 		c.client.notifyListenConfig()
 		return &rpc_response.NotifySubscriberResponse{
 			Response: &rpc_response.Response{ResultCode: constant.RESPONSE_CODE_SUCCESS},

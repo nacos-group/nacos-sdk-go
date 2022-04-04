@@ -270,10 +270,10 @@ func (r *RpcClient) RegisterServerRequestHandler(request func() rpc_request.IReq
 	requestType := request().GetRequestType()
 	if handler == nil || requestType == "" {
 		logger.Errorf("%s register server push request handler "+
-			"missing required parameters,request:%+v handler", r.Name, requestType, handler)
+			"missing required parameters,request:%+v handler:%+v", r.Name, requestType, handler.Name())
 		return
 	}
-	logger.Infof("%s register server push request:%s handler", r.Name, requestType, handler)
+	logger.Debugf("%s register server push request:%s handler:%+v", r.Name, requestType, handler.Name())
 	r.serverRequestHandlerMapping[requestType] = ServerRequestHandlerMapping{
 		serverRequest: request,
 		handler:       handler,
@@ -281,7 +281,7 @@ func (r *RpcClient) RegisterServerRequestHandler(request func() rpc_request.IReq
 }
 
 func (r *RpcClient) RegisterConnectionListener(listener IConnectionEventListener) {
-	logger.Infof("%s register connection listener [%+v] to current client", r.Name, reflect.TypeOf(listener))
+	logger.Debugf("%s register connection listener [%+v] to current client", r.Name, reflect.TypeOf(listener))
 	listeners := r.connectionEventListeners.Load()
 	connectionEventListeners := listeners.([]IConnectionEventListener)
 	connectionEventListeners = append(connectionEventListeners, listener)
