@@ -26,14 +26,18 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
 )
 
-//ServerRequestHandler, to process the request from server side.
+//IServerRequestHandler to process the request from server side.
 type IServerRequestHandler interface {
-
-	//Handle request from server.
+	Name() string
+	//RequestReply Handle request from server.
 	RequestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse
 }
 
 type ConnectResetRequestHandler struct {
+}
+
+func (c *ConnectResetRequestHandler) Name() string {
+	return "ConnectResetRequestHandler"
 }
 
 func (c *ConnectResetRequestHandler) RequestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse {
@@ -45,7 +49,7 @@ func (c *ConnectResetRequestHandler) RequestReply(request rpc_request.IRequest, 
 			if connectResetRequest.ServerIp != "" {
 				serverPortNum, err := strconv.Atoi(connectResetRequest.ServerPort)
 				if err != nil {
-					logger.Infof("ConnectResetRequest ServerPort type conversion error:%+v", err)
+					logger.Errorf("ConnectResetRequest ServerPort type conversion error:%+v", err)
 					return nil
 				}
 				rpcClient.switchServerAsync(ServerInfo{serverIp: connectResetRequest.ServerIp, serverPort: uint64(serverPortNum)}, false)
@@ -61,6 +65,10 @@ func (c *ConnectResetRequestHandler) RequestReply(request rpc_request.IRequest, 
 type ClientDetectionRequestHandler struct {
 }
 
+func (c *ClientDetectionRequestHandler) Name() string {
+	return "ClientDetectionRequestHandler"
+}
+
 func (c *ClientDetectionRequestHandler) RequestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse {
 	_, ok := request.(*rpc_request.ClientDetectionRequest)
 	if ok {
@@ -73,6 +81,10 @@ func (c *ClientDetectionRequestHandler) RequestReply(request rpc_request.IReques
 
 type NamingPushRequestHandler struct {
 	ServiceInfoHolder *naming_cache.ServiceInfoHolder
+}
+
+func (*NamingPushRequestHandler) Name() string {
+	return "NamingPushRequestHandler"
 }
 
 func (c *NamingPushRequestHandler) RequestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse {

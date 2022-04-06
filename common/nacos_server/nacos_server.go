@@ -379,3 +379,12 @@ func (server *NacosServer) GetNextServer() (constant.ServerConfig, error) {
 	index := atomic.AddInt32(&server.currentIndex, 1) % int32(serverLen)
 	return server.GetServerList()[index], nil
 }
+
+func (server *NacosServer) InjectSkAk(params map[string]string, clientConfig constant.ClientConfig) {
+	if clientConfig.AccessKey != "" {
+		params[constant.KEY_ACCESS_KEY] = clientConfig.AccessKey
+	}
+	if clientConfig.SecretKey != "" {
+		params[constant.KEY_SECRET_KEY] = clientConfig.SecretKey
+	}
+}
