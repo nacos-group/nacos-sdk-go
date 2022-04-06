@@ -75,10 +75,11 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 		LogDir:           clientConfig.LogDir,
 		CustomLogger:     clientConfig.CustomLogger,
 	}
-	err = logger.InitLogger(logger.BuildLoggerConfig(loggerConfig))
+	err = logger.InitLogger(loggerConfig)
 	if err != nil {
 		return naming, err
 	}
+	logger.GetLogger().Infof("logDir:<%s>   cacheDir:<%s>", clientConfig.LogDir, clientConfig.CacheDir)
 	naming.subCallback = NewSubscribeCallback()
 	naming.serviceProxy, err = NewNamingProxy(clientConfig, serverConfig, httpAgent)
 	if err != nil {
@@ -88,11 +89,10 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 		clientConfig.UpdateThreadNum, clientConfig.NotLoadCacheAtStart, naming.subCallback, clientConfig.UpdateCacheWhenEmpty)
 	naming.beatReactor = NewBeatReactor(naming.serviceProxy, clientConfig.BeatInterval)
 	naming.indexMap = cache.NewConcurrentMap()
-
 	return naming, nil
 }
 
-// 注册服务实例
+//RegisterInstance register instance
 func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, error) {
 	if param.ServiceName == "" {
 		return false, errors.New("serviceName cannot be empty!")
@@ -134,7 +134,7 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 
 }
 
-// 注销服务实例
+//DeregisterInstance deregister instance
 func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -148,7 +148,7 @@ func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bo
 	return true, nil
 }
 
-// UpdateInstance Update information for exist instance.
+//UpdateInstance update information for exist instance.
 func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -182,7 +182,7 @@ func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, erro
 	return true, nil
 }
 
-// 获取服务列表
+//GetService get service info
 func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -191,6 +191,7 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, err
 	return service, err
 }
 
+//GetAllServicesInfo get all services info
 func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (model.ServiceList, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -212,6 +213,7 @@ func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (mod
 	return services, nil
 }
 
+//SelectAllInstances select all instances
 func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -223,6 +225,7 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 	return service.Hosts, err
 }
 
+//SelectInstances select instances
 func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -248,6 +251,7 @@ func (sc *NamingClient) selectInstances(service model.Service, healthy bool) ([]
 	return result, nil
 }
 
+//SelectOneHealthyInstance select one healthy instance
 func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanceParam) (*model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -316,7 +320,7 @@ func (chs Chooser) pick() model.Instance {
 	return chs.data[i]
 }
 
-// 服务监听
+//Subscribe subscibe service
 func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -338,7 +342,7 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	return nil
 }
 
-// 取消服务监听
+//Unsubscribe unsubscribe service
 func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
 	sc.subCallback.RemoveCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 	return nil

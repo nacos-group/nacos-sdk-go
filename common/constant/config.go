@@ -51,5 +51,5 @@ type ClientConfig struct {
 	LogSampling          *logger.SamplingConfig // the sampling config of log
 	ContextPath          string                 // the nacos server contextpath
 	LogRollingConfig     *lumberjack.Logger     // the log rolling config
-	CustomLogger         logger.Logger          // a log interface implementation
+	CustomLogger         logger.Logger          // the custom log interface ,With a custom Logger (nacos sdk will not provide log cutting and archiving capabilities)
 }

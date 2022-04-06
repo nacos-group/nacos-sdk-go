@@ -24,7 +24,7 @@ import (
 )
 
 func reset() {
-	SetLogger(nil)
+	setLogger(nil)
 }
 
 func TestInitLogger(t *testing.T) {
@@ -59,7 +59,7 @@ func TestSetLogger(t *testing.T) {
 	// not yet init get default log
 	log := GetLogger()
 	log1 := &mockLogger{}
-	SetLogger(log1)
+	setLogger(log1)
 
 	// after set logger
 	log2 := GetLogger()
@@ -82,7 +82,7 @@ func TestRaceLogger(t *testing.T) {
 		wg.Add(3)
 		go func() {
 			defer wg.Done()
-			SetLogger(&mockLogger{})
+			setLogger(&mockLogger{})
 		}()
 		go func() {
 			defer wg.Done()

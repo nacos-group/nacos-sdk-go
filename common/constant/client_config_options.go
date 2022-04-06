@@ -17,11 +17,12 @@
 package constant
 
 import (
+	"os"
+	"time"
+
 	"github.com/nacos-group/nacos-sdk-go/common/file"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"gopkg.in/natefinch/lumberjack.v2"
-	"os"
-	"time"
 )
 
 func NewClientConfig(opts ...ClientOption) *ClientConfig {
