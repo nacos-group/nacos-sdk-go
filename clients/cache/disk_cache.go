@@ -67,8 +67,8 @@ func ReadServicesFromFile(cacheDir string) map[string]model.Service {
 		if service == nil {
 			continue
 		}
-
-		serviceMap[f.Name()] = *service
+		cacheKey := util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName), service.Clusters)
+		serviceMap[cacheKey] = *service
 	}
 
 	logger.Infof("finish loading name cache, total: %s", strconv.Itoa(len(files)))
