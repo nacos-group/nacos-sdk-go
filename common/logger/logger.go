@@ -91,11 +91,11 @@ func init() {
 
 // InitLogger is init global logger for nacos
 func InitLogger(config Config) (err error) {
-	logger, err = initNacosLogger(config)
+	l, err := initNacosLogger(config)
 	if err != nil {
 		return err
 	}
-	setLogger(logger)
+	setLogger(l)
 	return
 }
 
