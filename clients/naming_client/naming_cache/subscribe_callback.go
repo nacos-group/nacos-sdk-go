@@ -42,7 +42,6 @@ func (ed *SubscribeCallback) IsSubscribed(serviceName, clusters string) bool {
 }
 
 func (ed *SubscribeCallback) AddCallbackFunc(serviceName string, clusters string, callbackFunc *func(services []model.Instance, err error)) {
-	logger.Info("adding " + serviceName + " with " + clusters + " to listener map")
 	key := util.GetServiceCacheKey(serviceName, clusters)
 	defer ed.mux.Unlock()
 	ed.mux.Lock()
@@ -71,12 +70,8 @@ func (ed *SubscribeCallback) RemoveCallbackFunc(serviceName string, clusters str
 
 }
 
-func (ed *SubscribeCallback) ServiceChanged(service *model.Service) {
-	if service == nil || service.Name == "" {
-		return
-	}
-	key := util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName), service.Clusters)
-	funcs, ok := ed.callbackFuncMap.Get(key)
+func (ed *SubscribeCallback) ServiceChanged(cacheKey string, service *model.Service) {
+	funcs, ok := ed.callbackFuncMap.Get(cacheKey)
 	if ok {
 		for _, funcItem := range funcs.([]*func(services []model.Instance, err error)) {
 			if len(service.Hosts) == 0 {

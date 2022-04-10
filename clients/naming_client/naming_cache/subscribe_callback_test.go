@@ -170,6 +170,6 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 		},
 	}
 	ed.AddCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
-
-	ed.ServiceChanged(&service)
+	cacheKey := util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName), service.Clusters)
+	ed.ServiceChanged(cacheKey, &service)
 }

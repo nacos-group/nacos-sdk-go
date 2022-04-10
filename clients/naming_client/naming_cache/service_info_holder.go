@@ -75,16 +75,16 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 	if service == nil {
 		return
 	}
-	cacheKey := util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName), service.Clusters)
-
-	oldDomain, ok := s.ServiceInfoMap.Get(cacheKey)
-	if ok && !s.updateCacheWhenEmpty {
+	if !s.updateCacheWhenEmpty {
 		//if instance list is empty,not to update cache
 		if service.Hosts == nil || len(service.Hosts) == 0 {
-			logger.Errorf("do not have useful host, ignore it, name:%s", service.Name)
+			logger.Warnf("instance list is empty, updateCacheWhenEmpty is set to false, callback is not triggered. service name:%s", service.Name)
 			return
 		}
 	}
+
+	cacheKey := util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName), service.Clusters)
+	oldDomain, ok := s.ServiceInfoMap.Get(cacheKey)
 	if ok && oldDomain.(model.Service).LastRefTime >= service.LastRefTime {
 		logger.Warnf("out of date data received, old-t: %d, new-t: %d", oldDomain.(model.Service).LastRefTime, service.LastRefTime)
 		return
@@ -92,15 +92,10 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 
 	s.UpdateTimeMap.Set(cacheKey, uint64(util.CurrentMillis()))
 	s.ServiceInfoMap.Set(cacheKey, *service)
-	oldService := oldDomain.(model.Service)
-	if !ok || ok && isServiceInstanceChanged(&oldService, service) {
-		if !ok {
-			logger.Infof("service not found in cache,cachekey:%s", cacheKey)
-		} else {
-			logger.Infof("service key:%s was updated to:%s", cacheKey, util.ToJsonString(service))
-		}
+	if !ok || checkInstanceChanged(oldDomain, service) {
+		logger.Infof("service key:%s was updated to:%s", cacheKey, util.ToJsonString(service))
 		cache.WriteServicesToFile(*service, s.cacheDir)
-		s.subCallback.ServiceChanged(service)
+		s.subCallback.ServiceChanged(cacheKey, service)
 	}
 	monitor.GetServiceInfoMapSizeMonitor().Set(float64(s.ServiceInfoMap.Count()))
 }
@@ -130,6 +125,14 @@ func (s *ServiceInfoHolder) StopUpdateIfContain(serviceName, clusters string) {
 
 func (s *ServiceInfoHolder) IsSubscribed(serviceName, clusters string) bool {
 	return s.subCallback.IsSubscribed(serviceName, clusters)
+}
+
+func checkInstanceChanged(oldDomain interface{}, service *model.Service) bool {
+	if oldDomain == nil {
+		return true
+	}
+	oldService := oldDomain.(model.Service)
+	return isServiceInstanceChanged(&oldService, service)
 }
 
 // return true when service instance changed ,otherwise return false.
