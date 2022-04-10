@@ -18,6 +18,7 @@ package naming_client
 
 import (
 	"testing"
+	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
 
@@ -37,6 +38,7 @@ func TestBeatReactor_AddBeatInfo(t *testing.T) {
 		ServiceName: util.GetGroupName(serviceName, groupName),
 		Cluster:     "default",
 		Weight:      1,
+		Period:      time.Second * 5,
 	}
 	br.AddBeatInfo(util.GetGroupName(serviceName, groupName), beatInfo)
 	key := buildKey(util.GetGroupName(serviceName, groupName), beatInfo.Ip, beatInfo.Port)
@@ -56,6 +58,7 @@ func TestBeatReactor_RemoveBeatInfo(t *testing.T) {
 		ServiceName: util.GetGroupName(serviceName, groupName),
 		Cluster:     "default",
 		Weight:      1,
+		Period:      time.Second * 5,
 	}
 	br.AddBeatInfo(util.GetGroupName(serviceName, groupName), beatInfo1)
 	beatInfo2 := &model.BeatInfo{
@@ -65,6 +68,7 @@ func TestBeatReactor_RemoveBeatInfo(t *testing.T) {
 		ServiceName: util.GetGroupName(serviceName, groupName),
 		Cluster:     "default",
 		Weight:      1,
+		Period:      time.Second * 5,
 	}
 	br.AddBeatInfo(util.GetGroupName(serviceName, groupName), beatInfo2)
 	br.RemoveBeatInfo(util.GetGroupName(serviceName, groupName), "127.0.0.1", 8080)
