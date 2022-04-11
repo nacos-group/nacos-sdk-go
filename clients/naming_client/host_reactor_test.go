@@ -80,63 +80,6 @@ func TestHostReactor_GetServiceInfoErr(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestHostReactor_GetServiceInfoConcurrent(t *testing.T) {
-	nc := nacos_client.NacosClient{}
-	_ = nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	_ = nc.SetClientConfig(clientConfigTest)
-	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
-	client, _ := NewNamingClient(&nc)
-	param := vo.RegisterInstanceParam{
-		Ip:          "10.0.0.11",
-		Port:        8848,
-		ServiceName: "test",
-		Weight:      10,
-		ClusterName: "test",
-		Enable:      true,
-		Healthy:     true,
-		Ephemeral:   true,
-	}
-	if param.GroupName == "" {
-		param.GroupName = constant.DEFAULT_GROUP
-	}
-	param.ServiceName = util.GetGroupName(param.ServiceName, param.GroupName)
-	_, _ = client.RegisterInstance(param)
-	for i := 0; i < 10000; i++ {
-		go func() {
-			_, err := client.hostReactor.GetServiceInfo(param.ServiceName, param.ClusterName)
-			assert.Nil(t, err)
-		}()
-
-	}
-}
-
-func BenchmarkHostReactor_GetServiceInfoConcurrent(b *testing.B) {
-	nc := nacos_client.NacosClient{}
-	_ = nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	_ = nc.SetClientConfig(clientConfigTest)
-	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
-	client, _ := NewNamingClient(&nc)
-	param := vo.RegisterInstanceParam{
-		Ip:          "10.0.0.11",
-		Port:        8848,
-		ServiceName: "test",
-		Weight:      10,
-		ClusterName: "test",
-		Enable:      true,
-		Healthy:     true,
-		Ephemeral:   true,
-	}
-	if param.GroupName == "" {
-		param.GroupName = constant.DEFAULT_GROUP
-	}
-	param.ServiceName = util.GetGroupName(param.ServiceName, param.GroupName)
-	_, _ = client.RegisterInstance(param)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, _ = client.hostReactor.GetServiceInfo(param.ServiceName, param.ClusterName)
-	}
-}
-
 func TestHostReactor_isServiceInstanceChanged(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 	defaultIp := createRandomIp()
