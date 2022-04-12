@@ -384,7 +384,4 @@ func (server *NacosServer) InjectSkAk(params map[string]string, clientConfig con
 	if clientConfig.AccessKey != "" {
 		params[constant.KEY_ACCESS_KEY] = clientConfig.AccessKey
 	}
-	if clientConfig.SecretKey != "" {
-		params[constant.KEY_SECRET_KEY] = clientConfig.SecretKey
-	}
 }
