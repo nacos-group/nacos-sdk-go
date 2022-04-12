@@ -382,6 +382,6 @@ func (server *NacosServer) GetNextServer() (constant.ServerConfig, error) {
 
 func (server *NacosServer) InjectSkAk(params map[string]string, clientConfig constant.ClientConfig) {
 	if clientConfig.AccessKey != "" {
-		params[constant.KEY_ACCESS_KEY] = clientConfig.AccessKey
+		params["Spas-AccessKey"] = clientConfig.AccessKey
 	}
 }
