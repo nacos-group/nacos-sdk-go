@@ -163,7 +163,7 @@ func (client *ConfigClient) encrypt(dataId, content string) (string, error) {
 		request.Method = "POST"
 		request.Scheme = "https"
 		request.AcceptFormat = "json"
-		request.KeyId = "alias/acs/acm" // use default key
+		request.KeyId = "alias/acs/mse" // use default key
 		request.Plaintext = content
 		response, err := client.kmsClient.Encrypt(request)
 		if err != nil {
