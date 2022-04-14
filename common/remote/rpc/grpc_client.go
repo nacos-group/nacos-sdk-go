@@ -50,12 +50,12 @@ func NewGrpcClient(clientName string, nacosServer *nacos_server.NacosServer) *Gr
 			rpcClientStatus:             INITIALIZED,
 			eventChan:                   make(chan ConnectionEvent),
 			reconnectionChan:            make(chan ReconnectContext, 1),
-			lastActiveTimeStamp:         time.Now(),
 			nacosServer:                 nacosServer,
 			serverRequestHandlerMapping: make(map[string]ServerRequestHandlerMapping, 8),
 			mux:                         new(sync.Mutex),
 		},
 	}
+	rpcClient.RpcClient.lastActiveTimestamp.Store(time.Now())
 	rpcClient.executeClient = rpcClient
 	listeners := make([]IConnectionEventListener, 0, 8)
 	rpcClient.connectionEventListeners.Store(listeners)

@@ -99,7 +99,7 @@ type RpcClient struct {
 	eventChan                   chan ConnectionEvent
 	reconnectionChan            chan ReconnectContext
 	connectionEventListeners    atomic.Value
-	lastActiveTimeStamp         time.Time
+	lastActiveTimestamp         atomic.Value
 	executeClient               IRpcClient
 	nacosServer                 *nacos_server.NacosServer
 	serverRequestHandlerMapping map[string]ServerRequestHandlerMapping
@@ -379,11 +379,12 @@ func (r *RpcClient) notifyConnectionEvent(event ConnectionEvent) {
 func (r *RpcClient) healthCheck(timer *time.Timer) {
 	defer timer.Reset(constant.KEEP_ALIVE_TIME * time.Second)
 	var reconnectContext ReconnectContext
-	if time.Now().Sub(r.lastActiveTimeStamp) < constant.KEEP_ALIVE_TIME*time.Second {
+	lastActiveTimeStamp := r.lastActiveTimestamp.Load().(time.Time)
+	if time.Now().Sub(lastActiveTimeStamp) < constant.KEEP_ALIVE_TIME*time.Second {
 		return
 	}
 	if r.sendHealthCheck() {
-		r.lastActiveTimeStamp = time.Now()
+		r.lastActiveTimestamp.Store(time.Now())
 		return
 	} else {
 		if r.currentConnection == nil {
@@ -485,7 +486,7 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 				currentErr = waitReconnect(timeoutMills, &retryTimes, request, errors.New(response.GetMessage()))
 				continue
 			}
-			r.lastActiveTimeStamp = time.Now()
+			r.lastActiveTimestamp.Store(time.Now())
 			return response, nil
 		} else {
 			currentErr = waitReconnect(timeoutMills, &retryTimes, request, err)
