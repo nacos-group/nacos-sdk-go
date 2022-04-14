@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients"
@@ -30,7 +31,7 @@ import (
 func main() {
 	//create ServerConfig
 	sc := []constant.ServerConfig{
-		*constant.NewServerConfig("127.0.0.1", 8848, constant.WithContextPath("/nacos")),
+		*constant.NewServerConfig(os.Getenv("nacos_server_address"), 8848, constant.WithContextPath("/nacos")),
 	}
 
 	//create ClientConfig
