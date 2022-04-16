@@ -51,7 +51,7 @@ func ExampleServiceClient_UpdateServiceInstance(client naming_client.INamingClie
 func ExampleServiceClient_GetService(client naming_client.INamingClient, param vo.GetServiceParam) {
 	service, err := client.GetService(param)
 	if err != nil {
-		panic("UpdateInstance failed!")
+		panic("GetService failed!")
 	}
 	fmt.Printf("GetService,param:%+v, result:%+v \n\n", param, service)
 }
@@ -59,7 +59,7 @@ func ExampleServiceClient_GetService(client naming_client.INamingClient, param v
 func ExampleServiceClient_SelectAllInstances(client naming_client.INamingClient, param vo.SelectAllInstancesParam) {
 	instances, err := client.SelectAllInstances(param)
 	if err != nil {
-		panic("UpdateInstance failed!")
+		panic("SelectAllInstances failed!")
 	}
 	fmt.Printf("SelectAllInstance,param:%+v, result:%+v \n\n", param, instances)
 }
@@ -67,7 +67,7 @@ func ExampleServiceClient_SelectAllInstances(client naming_client.INamingClient,
 func ExampleServiceClient_SelectInstances(client naming_client.INamingClient, param vo.SelectInstancesParam) {
 	instances, err := client.SelectInstances(param)
 	if err != nil {
-		panic("UpdateInstance failed!")
+		panic("SelectInstances failed!")
 	}
 	fmt.Printf("SelectInstances,param:%+v, result:%+v \n\n", param, instances)
 }
@@ -75,7 +75,7 @@ func ExampleServiceClient_SelectInstances(client naming_client.INamingClient, pa
 func ExampleServiceClient_SelectOneHealthyInstance(client naming_client.INamingClient, param vo.SelectOneHealthInstanceParam) {
 	instances, err := client.SelectOneHealthyInstance(param)
 	if err != nil {
-		panic("UpdateInstance failed!")
+		panic("SelectOneHealthyInstance failed!")
 	}
 	fmt.Printf("SelectOneHealthyInstance,param:%+v, result:%+v \n\n", param, instances)
 }
@@ -91,7 +91,7 @@ func ExampleServiceClient_UnSubscribe(client naming_client.INamingClient, param 
 func ExampleServiceClient_GetAllService(client naming_client.INamingClient, param vo.GetAllServiceInfoParam) {
 	service, err := client.GetAllServicesInfo(param)
 	if err != nil {
-		panic("UpdateInstance failed!")
+		panic("GetAllService failed!")
 	}
 	fmt.Printf("GetAllService,param:%+v, result:%+v \n\n", param, service)
 }
