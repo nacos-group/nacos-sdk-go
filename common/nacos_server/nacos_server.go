@@ -347,7 +347,7 @@ func GetSignHeaders(params map[string]string, secretKey string) map[string]strin
 	headers := map[string]string{}
 
 	timeStamp := strconv.FormatInt(util.CurrentMillis(), 10)
-	headers["timeStamp"] = timeStamp
+	headers["Timestamp"] = timeStamp
 
 	signature := ""
 
