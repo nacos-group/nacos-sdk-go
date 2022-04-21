@@ -57,7 +57,7 @@ func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_reques
 	cp.nacosServer.InjectSecurityInfo(request.GetHeaders())
 	cp.injectCommHeader(request.GetHeaders())
 	cp.nacosServer.InjectSkAk(request.GetHeaders(), cp.clientConfig)
-	signHeaders := nacos_server.GetSignHeaders(request.GetHeaders(), cp.clientConfig.SecretKey)
+	signHeaders := nacos_server.GetSignHeadersFromRequest(request.(rpc_request.IConfigRequest), cp.clientConfig.SecretKey)
 	request.PutAllHeaders(signHeaders)
 	//todo Config Limiter
 	response, err := rpcClient.Request(request, int64(timeoutMills))
@@ -158,7 +158,8 @@ func (cp *ConfigProxy) createRpcClient(taskId string, client *ConfigClient) *rpc
 	rpcClient := iRpcClient.GetRpcClient()
 	if rpcClient.IsInitialized() {
 		rpcClient.RegisterServerRequestHandler(func() rpc_request.IRequest {
-			return &rpc_request.ConfigChangeNotifyRequest{ConfigRequest: rpc_request.NewConfigRequest()}
+			// TODO fix the group/dataId empty problem
+			return rpc_request.NewConfigChangeNotifyRequest("", "", "")
 		}, &ConfigChangeNotifyRequestHandler{client: client})
 		rpcClient.Tenant = cp.clientConfig.NamespaceId
 		rpcClient.Start()
