@@ -22,6 +22,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -117,10 +118,9 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 		return
 	}
 	headers["RequestId"] = []string{uid.String()}
-	headers["Request-Module"] = []string{"Naming"}
 	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=utf-8"}
 	headers["Spas-AccessKey"] = []string{newHeaders["accessKey"]}
-	headers["Timestamp"] = []string{signHeaders["timeStamp"]}
+	headers["Timestamp"] = []string{signHeaders["Timestamp"]}
 	headers["Spas-Signature"] = []string{signHeaders["Spas-Signature"]}
 	server.InjectSecurityInfo(params)
 
@@ -335,6 +335,33 @@ func getAddress(cfg constant.ServerConfig) string {
 	return cfg.Scheme + "://" + cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
 }
 
+func GetSignHeadersFromRequest(cr rpc_request.IConfigRequest, secretKey string) map[string]string {
+	resource := ""
+
+	if len(cr.GetGroup()) != 0 {
+		resource = cr.GetTenant() + "+" + cr.GetGroup()
+	} else {
+		resource = cr.GetGroup()
+	}
+
+	headers := map[string]string{}
+
+	timeStamp := strconv.FormatInt(util.CurrentMillis(), 10)
+	headers["Timestamp"] = timeStamp
+
+	signature := ""
+
+	if resource == "" {
+		signature = signWithhmacSHA1Encrypt(timeStamp, secretKey)
+	} else {
+		signature = signWithhmacSHA1Encrypt(resource+"+"+timeStamp, secretKey)
+	}
+
+	headers["Spas-Signature"] = signature
+
+	return headers
+}
+
 func GetSignHeaders(params map[string]string, secretKey string) map[string]string {
 	resource := ""
 
@@ -347,7 +374,7 @@ func GetSignHeaders(params map[string]string, secretKey string) map[string]strin
 	headers := map[string]string{}
 
 	timeStamp := strconv.FormatInt(util.CurrentMillis(), 10)
-	headers["timeStamp"] = timeStamp
+	headers["Timestamp"] = timeStamp
 
 	signature := ""
 

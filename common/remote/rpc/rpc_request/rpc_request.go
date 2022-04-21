@@ -31,6 +31,13 @@ type IRequest interface {
 	GetRequestId() string
 }
 
+type IConfigRequest interface {
+
+	GetDataId() string
+	GetGroup() string
+	GetTenant() string
+}
+
 func (r *Request) PutAllHeaders(headers map[string]string) {
 	for k, v := range headers {
 		r.Headers[k] = v
