@@ -23,6 +23,7 @@ type ServerConfig struct {
 	ContextPath string // the nacos server contextpath,defaut=/nacos,this is not required in 2.0
 	IpAddr      string // the nacos server address
 	Port        uint64 // nacos server port
+	GrpcPort    uint64 // nacos server grpc port
 }
 
 type ClientConfig struct {
