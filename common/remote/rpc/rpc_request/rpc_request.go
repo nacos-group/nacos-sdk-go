@@ -32,7 +32,6 @@ type IRequest interface {
 }
 
 type IConfigRequest interface {
-
 	GetDataId() string
 	GetGroup() string
 	GetTenant() string

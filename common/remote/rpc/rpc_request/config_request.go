@@ -32,9 +32,9 @@ func NewConfigRequest(group, dataId, tenant string) *ConfigRequest {
 	}
 	return &ConfigRequest{
 		Request: &request,
-		Group: group,
-		DataId: dataId,
-		Tenant: tenant,
+		Group:   group,
+		DataId:  dataId,
+		Tenant:  tenant,
 		Module:  "config",
 	}
 }
@@ -84,7 +84,7 @@ func (r *ConfigChangeNotifyRequest) GetRequestType() string {
 
 type ConfigQueryRequest struct {
 	*ConfigRequest
-	Tag    string `json:"tag"`
+	Tag string `json:"tag"`
 }
 
 func NewConfigQueryRequest(group, dataId, tenant string) *ConfigQueryRequest {

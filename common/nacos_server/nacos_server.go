@@ -22,7 +22,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -32,6 +31,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 
