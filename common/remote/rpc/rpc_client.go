@@ -87,8 +87,9 @@ type IRpcClient interface {
 }
 
 type ServerInfo struct {
-	serverIp   string
-	serverPort uint64
+	serverIp       string
+	serverPort     uint64
+	serverGrpcPort uint64
 }
 
 type RpcClient struct {
@@ -184,6 +185,7 @@ func (r *RpcClient) Start() {
 					for _, v := range r.nacosServer.GetServerList() {
 						if rc.serverInfo.serverIp == v.IpAddr {
 							rc.serverInfo.serverPort = v.Port
+							rc.serverInfo.serverGrpcPort = v.GrpcPort
 							serverExist = true
 							break
 						}
@@ -424,8 +426,9 @@ func (r *RpcClient) nextRpcServer() (ServerInfo, error) {
 		return ServerInfo{}, err
 	}
 	return ServerInfo{
-		serverIp:   serverConfig.IpAddr,
-		serverPort: serverConfig.Port,
+		serverIp:       serverConfig.IpAddr,
+		serverPort:     serverConfig.Port,
+		serverGrpcPort: serverConfig.GrpcPort,
 	}, nil
 }
 
