@@ -27,7 +27,7 @@ import (
 func ExampleServiceClient_RegisterServiceInstance(client naming_client.INamingClient, param vo.RegisterInstanceParam) {
 	success, err := client.RegisterInstance(param)
 	if !success || err != nil {
-		panic("RegisterServiceInstance failed!")
+		panic(fmt.Errorf("RegisterServiceInstance failed! %t %v", success, err))
 	}
 	fmt.Printf("RegisterServiceInstance,param:%+v,result:%+v \n\n", param, success)
 }
@@ -35,7 +35,7 @@ func ExampleServiceClient_RegisterServiceInstance(client naming_client.INamingCl
 func ExampleServiceClient_DeRegisterServiceInstance(client naming_client.INamingClient, param vo.DeregisterInstanceParam) {
 	success, err := client.DeregisterInstance(param)
 	if !success || err != nil {
-		panic("DeRegisterServiceInstance failed!")
+		panic(fmt.Errorf("DeRegisterServiceInstance failed! %t %v", success, err))
 	}
 	fmt.Printf("DeRegisterServiceInstance,param:%+v,result:%+v \n\n", param, success)
 }
@@ -43,7 +43,7 @@ func ExampleServiceClient_DeRegisterServiceInstance(client naming_client.INaming
 func ExampleServiceClient_UpdateServiceInstance(client naming_client.INamingClient, param vo.UpdateInstanceParam) {
 	success, err := client.UpdateInstance(param)
 	if !success || err != nil {
-		panic("UpdateInstance failed!")
+		panic(fmt.Errorf("UpdateInstance failed! %t %v", success, err))
 	}
 	fmt.Printf("UpdateServiceInstance,param:%+v,result:%+v \n\n", param, success)
 }
@@ -51,7 +51,7 @@ func ExampleServiceClient_UpdateServiceInstance(client naming_client.INamingClie
 func ExampleServiceClient_GetService(client naming_client.INamingClient, param vo.GetServiceParam) {
 	service, err := client.GetService(param)
 	if err != nil {
-		panic("GetService failed!")
+		panic(fmt.Errorf("GetService failed! %v", err))
 	}
 	fmt.Printf("GetService,param:%+v, result:%+v \n\n", param, service)
 }
@@ -59,7 +59,7 @@ func ExampleServiceClient_GetService(client naming_client.INamingClient, param v
 func ExampleServiceClient_SelectAllInstances(client naming_client.INamingClient, param vo.SelectAllInstancesParam) {
 	instances, err := client.SelectAllInstances(param)
 	if err != nil {
-		panic("SelectAllInstances failed!")
+		panic(fmt.Errorf("SelectAllInstances failed! %v", err))
 	}
 	fmt.Printf("SelectAllInstance,param:%+v, result:%+v \n\n", param, instances)
 }
@@ -67,7 +67,7 @@ func ExampleServiceClient_SelectAllInstances(client naming_client.INamingClient,
 func ExampleServiceClient_SelectInstances(client naming_client.INamingClient, param vo.SelectInstancesParam) {
 	instances, err := client.SelectInstances(param)
 	if err != nil {
-		panic("SelectInstances failed!")
+		panic(fmt.Errorf("SelectInstances failed! %v", err))
 	}
 	fmt.Printf("SelectInstances,param:%+v, result:%+v \n\n", param, instances)
 }
@@ -75,23 +75,27 @@ func ExampleServiceClient_SelectInstances(client naming_client.INamingClient, pa
 func ExampleServiceClient_SelectOneHealthyInstance(client naming_client.INamingClient, param vo.SelectOneHealthInstanceParam) {
 	instances, err := client.SelectOneHealthyInstance(param)
 	if err != nil {
-		panic("SelectOneHealthyInstance failed!")
+		panic(fmt.Errorf("SelectOneHealthyInstance failed! %v", err))
 	}
 	fmt.Printf("SelectOneHealthyInstance,param:%+v, result:%+v \n\n", param, instances)
 }
 
 func ExampleServiceClient_Subscribe(client naming_client.INamingClient, param *vo.SubscribeParam) {
-	client.Subscribe(param)
+	if err := client.Subscribe(param); err != nil {
+		panic(fmt.Errorf("subscribe failed! %v", err))
+	}
 }
 
 func ExampleServiceClient_UnSubscribe(client naming_client.INamingClient, param *vo.SubscribeParam) {
-	client.Unsubscribe(param)
+	if err := client.Unsubscribe(param); err != nil {
+		fmt.Println("Unsubscribe failed!", err)
+	}
 }
 
 func ExampleServiceClient_GetAllService(client naming_client.INamingClient, param vo.GetAllServiceInfoParam) {
 	service, err := client.GetAllServicesInfo(param)
 	if err != nil {
-		panic("GetAllService failed!")
+		panic(fmt.Errorf("GetAllService failed!, %v", err))
 	}
 	fmt.Printf("GetAllService,param:%+v, result:%+v \n\n", param, service)
 }

@@ -29,14 +29,18 @@ import (
 )
 
 func main() {
-	//create ServerConfig
+	// create ServerConfig
 	sc := []constant.ServerConfig{
 		*constant.NewServerConfig(os.Getenv("nacos_server_address"), 8848, constant.WithContextPath("/nacos")),
 	}
 
-	//create ClientConfig
+	username := os.Getenv("nacos_username")
+	passwd := os.Getenv("nacos_password")
+	// create ClientConfig
 	cc := *constant.NewClientConfig(
 		constant.WithNamespaceId(""),
+		constant.WithUsername(username),
+		constant.WithPassword(passwd),
 		constant.WithTimeoutMs(5000),
 		constant.WithNotLoadCacheAtStart(true),
 		constant.WithLogDir("/tmp/nacos/log"),
@@ -56,13 +60,14 @@ func main() {
 		panic(err)
 	}
 
-	//Register
+	clusterName := os.Getenv("nacos_cluster_name")
+	// Register
 	ExampleServiceClient_RegisterServiceInstance(client, vo.RegisterInstanceParam{
 		Ip:          "10.0.0.10",
 		Port:        8848,
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		ClusterName: "cluster-a",
+		ClusterName: clusterName,
 		Weight:      10,
 		Enable:      true,
 		Healthy:     true,
@@ -70,23 +75,23 @@ func main() {
 		Metadata:    map[string]string{"idc": "shanghai"},
 	})
 
-	//DeRegister
+	// DeRegister
 	ExampleServiceClient_DeRegisterServiceInstance(client, vo.DeregisterInstanceParam{
 		Ip:          "10.0.0.10",
 		Port:        8848,
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		Cluster:     "cluster-a",
-		Ephemeral:   true, //it must be true
+		Cluster:     clusterName,
+		Ephemeral:   true, // it must be true
 	})
 
-	//Register
+	// Register
 	ExampleServiceClient_RegisterServiceInstance(client, vo.RegisterInstanceParam{
 		Ip:          "10.0.0.10",
 		Port:        8848,
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		ClusterName: "cluster-a",
+		ClusterName: clusterName,
 		Weight:      10,
 		Enable:      true,
 		Healthy:     true,
@@ -96,82 +101,100 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	//Get service with serviceName, groupName , clusters
+	// Get service with serviceName, groupName , clusters
 	ExampleServiceClient_GetService(client, vo.GetServiceParam{
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		Clusters:    []string{"cluster-a"},
+		Clusters:    []string{clusterName},
 	})
 
-	//SelectAllInstance
-	//GroupName=DEFAULT_GROUP
+	// SelectAllInstance
+	// GroupName=DEFAULT_GROUP
 	ExampleServiceClient_SelectAllInstances(client, vo.SelectAllInstancesParam{
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		Clusters:    []string{"cluster-a"},
+		Clusters:    []string{clusterName},
 	})
 
-	//SelectInstances only return the instances of healthy=${HealthyOnly},enable=true and weight>0
-	//ClusterName=DEFAULT,GroupName=DEFAULT_GROUP
+	// SelectInstances only return the instances of healthy=${HealthyOnly},enable=true and weight>0
+	// ClusterName=DEFAULT,GroupName=DEFAULT_GROUP
 	ExampleServiceClient_SelectInstances(client, vo.SelectInstancesParam{
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		Clusters:    []string{"cluster-a"},
+		Clusters:    []string{clusterName},
 	})
 
-	//SelectOneHealthyInstance return one instance by WRR strategy for load balance
-	//And the instance should be health=true,enable=true and weight>0
-	//ClusterName=DEFAULT,GroupName=DEFAULT_GROUP
+	// SelectOneHealthyInstance return one instance by WRR strategy for load balance
+	// And the instance should be health=true,enable=true and weight>0
+	// ClusterName=DEFAULT,GroupName=DEFAULT_GROUP
 	ExampleServiceClient_SelectOneHealthyInstance(client, vo.SelectOneHealthInstanceParam{
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		Clusters:    []string{"cluster-a"},
+		Clusters:    []string{clusterName},
 	})
 
-	//Subscribe key=serviceName+groupName+cluster
-	//Note:We call add multiple SubscribeCallback with the same key.
-	param := &vo.SubscribeParam{
+	// Subscribe key=serviceName+groupName+cluster
+	// Note:We call add multiple SubscribeCallback with the same key.
+	param1 := &vo.SubscribeParam{
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
 		SubscribeCallback: func(services []model.Instance, err error) {
-			fmt.Printf("callback return services:%s \n\n", util.ToJsonString(services))
+			fmt.Printf("callback1 return services:%s \n\n", util.ToJsonString(services))
 		},
 	}
-	ExampleServiceClient_Subscribe(client, param)
+	ExampleServiceClient_Subscribe(client, param1)
+	// Subscribe key=serviceName+groupName+cluster, this is second subscribe
+	// it will append callback2 to the first subscribe callback slice, if the serviceName has some events change,
+	// all callback will be range to call.
+	// NOTE: if you want to unsubscribe, you can call UnSubscribe with the same param struct pointer, otherwise it will not be
+	// removed the old callback in the slice. will cause a memory leak.
+	param2 := &vo.SubscribeParam{
+		ServiceName: "demo.go",
+		GroupName:   "group-a",
+		SubscribeCallback: func(services []model.Instance, err error) {
+			fmt.Printf("callback2 return services:%s \n\n", util.ToJsonString(services))
+		},
+	}
+	ExampleServiceClient_Subscribe(client, param2)
 
 	ExampleServiceClient_RegisterServiceInstance(client, vo.RegisterInstanceParam{
 		Ip:          "10.0.0.10",
 		Port:        8848,
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		ClusterName: "cluster-a",
+		ClusterName: clusterName,
 		Weight:      10,
 		Enable:      true,
 		Healthy:     true,
 		Ephemeral:   true,
 		Metadata:    map[string]string{"idc": "beijing"},
 	})
-	//wait for client pull change from server
+	// wait for client pull change from server
 	time.Sleep(3 * time.Second)
 
 	ExampleServiceClient_UpdateServiceInstance(client, vo.UpdateInstanceParam{
-		Ip:          "10.0.0.11", //update ip
+		Ip:          "10.0.0.11", // update ip
 		Port:        8848,
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		ClusterName: "cluster-a",
+		ClusterName: clusterName,
 		Weight:      10,
 		Enable:      true,
 		Healthy:     true,
 		Ephemeral:   true,
-		Metadata:    map[string]string{"idc": "beijing1"}, //update metadata
+		Metadata:    map[string]string{"idc": "beijing1"}, // update metadata
 	})
 
-	//wait for client pull change from server
+	// wait for client pull change from server
 	time.Sleep(3 * time.Second)
 
-	//Now we just unsubscribe callback1, and callback2 will still receive change event
-	ExampleServiceClient_UnSubscribe(client, param)
+	// Now we just unsubscribe callback1, will remove callback1 in callback slice,
+	// and callback2 will not remove, also not receive change event
+	// if you subscribe again, the callback2 will receive change event
+	ExampleServiceClient_UnSubscribe(client, param1)
+	// Now we unsubscribe callback2, will remove callback2 in callback slice.
+	ExampleServiceClient_UnSubscribe(client, param2)
+
 	ExampleServiceClient_DeRegisterServiceInstance(client, vo.DeregisterInstanceParam{
 		Ip:          "10.0.0.112",
 		Ephemeral:   true,
@@ -179,12 +202,12 @@ func main() {
 		ServiceName: "demo.go",
 		Cluster:     "cluster-b",
 	})
-	//wait for client pull change from server
+	// wait for client pull change from server
 	time.Sleep(3 * time.Second)
 
-	//GeAllService will get the list of service name
-	//NameSpace default value is public.If the client set the namespaceId, NameSpace will use it.
-	//GroupName default value is DEFAULT_GROUP
+	// GeAllService will get the list of service name
+	// NameSpace default value is public.If the client set the namespaceId, NameSpace will use it.
+	// GroupName default value is DEFAULT_GROUP
 	ExampleServiceClient_GetAllService(client, vo.GetAllServiceInfoParam{
 		PageNo:   1,
 		PageSize: 10,
