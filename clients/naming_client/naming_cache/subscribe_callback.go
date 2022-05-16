@@ -17,8 +17,9 @@
 package naming_cache
 
 import (
-	"errors"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"

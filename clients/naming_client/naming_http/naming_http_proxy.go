@@ -17,11 +17,12 @@
 package naming_http
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/buger/jsonparser"
 
