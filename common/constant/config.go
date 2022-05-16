@@ -47,6 +47,7 @@ type ClientConfig struct {
 	LogDir               string                   // the directory for log, default is current path
 	LogLevel             string                   // the level of log, it's must be debug,info,warn,error, default value is info
 	ContextPath          string                   // the nacos server contextpath
+	AppendToStdout       bool                     // if append log to stdout
 	LogSampling          *ClientLogSamplingConfig // the sampling config of log
 	LogRollingConfig     *ClientLogRollingConfig  // log rolling config
 	TLSCfg               TLSConfig                // tls Config
