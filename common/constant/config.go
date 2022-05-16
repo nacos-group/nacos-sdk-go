@@ -48,6 +48,7 @@ type ClientConfig struct {
 	Password             string                 // the password for nacos auth
 	LogDir               string                 // the directory for log, default is current path
 	LogLevel             string                 // the level of log, it's must be debug,info,warn,error, default value is info
+	AppendToStdout       bool                   // if append log to stdout
 	LogSampling          *logger.SamplingConfig // the sampling config of log
 	ContextPath          string                 // the nacos server contextpath
 	LogRollingConfig     *lumberjack.Logger     // the log rolling config

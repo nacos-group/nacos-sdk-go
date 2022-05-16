@@ -70,6 +70,7 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 	loggerConfig := logger.Config{
 		LogFileName:      constant.LOG_FILE_NAME,
 		Level:            clientConfig.LogLevel,
+		AppendToStdout:   clientConfig.AppendToStdout,
 		Sampling:         clientConfig.LogSampling,
 		LogRollingConfig: clientConfig.LogRollingConfig,
 		LogDir:           clientConfig.LogDir,
