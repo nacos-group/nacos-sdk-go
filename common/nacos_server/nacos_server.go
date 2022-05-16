@@ -20,7 +20,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
-	"errors"
+	"github.com/pkg/errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"

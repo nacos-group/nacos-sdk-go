@@ -17,7 +17,6 @@
 package config_client
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"net/url"
@@ -26,6 +25,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"

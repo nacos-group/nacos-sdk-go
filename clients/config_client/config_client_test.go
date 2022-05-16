@@ -17,11 +17,12 @@
 package config_client
 
 import (
-	"errors"
 	"net/http"
 	"runtime"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/golang/mock/gomock"
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"

@@ -20,9 +20,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/go-errors/errors"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/util"
+	"github.com/pkg/errors"
 )
 
 type HttpAgent struct {

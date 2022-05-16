@@ -17,7 +17,7 @@
 package naming_client
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/common/logger"

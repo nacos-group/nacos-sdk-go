@@ -17,7 +17,7 @@
 package clients
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"

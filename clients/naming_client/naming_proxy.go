@@ -17,7 +17,7 @@
 package naming_client
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"fmt"
 	"net/http"
 	"strconv"

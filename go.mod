@@ -5,7 +5,6 @@ go 1.12
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.18
 	github.com/buger/jsonparser v1.1.1
-	github.com/go-errors/errors v1.0.1
 	github.com/golang/mock v1.3.1
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/pkg/errors v0.9.1

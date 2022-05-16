@@ -17,10 +17,11 @@
 package nacos_client
 
 import (
-	"errors"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/file"
