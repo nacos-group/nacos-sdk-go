@@ -34,13 +34,9 @@ func main() {
 		*constant.NewServerConfig(os.Getenv("nacos_server_address"), 8848, constant.WithContextPath("/nacos")),
 	}
 
-	username := os.Getenv("nacos_username")
-	passwd := os.Getenv("nacos_password")
 	// create ClientConfig
 	cc := *constant.NewClientConfig(
 		constant.WithNamespaceId(""),
-		constant.WithUsername(username),
-		constant.WithPassword(passwd),
 		constant.WithTimeoutMs(5000),
 		constant.WithNotLoadCacheAtStart(true),
 		constant.WithLogDir("/tmp/nacos/log"),
