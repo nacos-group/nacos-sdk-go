@@ -73,3 +73,17 @@ func GetCurrentPath() string {
 	}
 	return dir
 }
+
+func IsExistFile(filePath string) bool {
+	if len(filePath) == 0 {
+		return false
+	}
+	_, err := os.Stat(filePath)
+	if err == nil {
+		return true
+	}
+	if os.IsNotExist(err) {
+		return false
+	}
+	return false
+}

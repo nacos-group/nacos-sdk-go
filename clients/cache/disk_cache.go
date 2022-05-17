@@ -100,3 +100,17 @@ func ReadConfigFromFile(cacheKey string, cacheDir string) (string, error) {
 	}
 	return string(b), nil
 }
+
+// get failover content
+func GetFailover(key, dir string) string {
+	filePath := dir + string(os.PathSeparator) + key + "_failover"
+	if !file.IsExistFile(filePath) {
+		return ""
+	}
+	logger.GetLogger().Warn(fmt.Sprintf("reading failover content from path:%v", filePath))
+	fileContent, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return ""
+	}
+	return string(fileContent)
+}
