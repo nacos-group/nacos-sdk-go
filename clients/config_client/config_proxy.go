@@ -18,10 +18,11 @@ package config_client
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 

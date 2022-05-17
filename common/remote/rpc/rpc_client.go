@@ -17,13 +17,13 @@
 package rpc
 
 import (
-	"errors"
-	"fmt"
 	"math"
 	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
@@ -471,7 +471,7 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 	for retryTimes < constant.REQUEST_DOMAIN_RETRY_TIME && util.CurrentMillis() < start+timeoutMills {
 		if r.currentConnection == nil || !r.IsRunning() {
 			currentErr = waitReconnect(timeoutMills, &retryTimes, request,
-				fmt.Errorf("client not connected, current status:%s", r.rpcClientStatus.getDesc()))
+				errors.Errorf("client not connected, current status:%s", r.rpcClientStatus.getDesc()))
 			continue
 		}
 		response, err := r.currentConnection.request(request, timeoutMills, r)
