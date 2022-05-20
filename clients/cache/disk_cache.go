@@ -23,6 +23,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+
 	"github.com/go-errors/errors"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/file"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
@@ -101,15 +103,16 @@ func ReadConfigFromFile(cacheKey string, cacheDir string) (string, error) {
 	return string(b), nil
 }
 
-// get failover content
+// GetFailover , get failover content
 func GetFailover(key, dir string) string {
-	filePath := dir + string(os.PathSeparator) + key + "_failover"
+	filePath := dir + string(os.PathSeparator) + key + constant.FAILOVER_FILE_SUFFIX
 	if !file.IsExistFile(filePath) {
 		return ""
 	}
-	logger.GetLogger().Warn(fmt.Sprintf("reading failover content from path:%v", filePath))
+	logger.GetLogger().Warn(fmt.Sprintf("reading failover content from path:%s", filePath))
 	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
+		logger.GetLogger().Warn(fmt.Sprintf("fail to read failover content from %s", filePath))
 		return ""
 	}
 	return string(fileContent)
