@@ -19,13 +19,14 @@ package rpc
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"os"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
@@ -108,7 +109,10 @@ func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientCon
 	opts = append(opts, grpc.WithInsecure())
 	opts = append(opts, grpc.WithInitialWindowSize(getInitialWindowSize()))
 	opts = append(opts, grpc.WithInitialConnWindowSize(getInitialConnWindowSize()))
-	rpcPort := serverInfo.serverPort + c.rpcPortOffset()
+	rpcPort := serverInfo.serverGrpcPort
+	if rpcPort == 0 {
+		rpcPort = serverInfo.serverPort + c.rpcPortOffset()
+	}
 	return grpc.Dial(serverInfo.serverIp+":"+strconv.FormatUint(rpcPort, 10), opts...)
 
 }

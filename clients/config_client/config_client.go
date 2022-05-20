@@ -17,13 +17,14 @@
 package config_client
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 

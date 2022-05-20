@@ -42,6 +42,7 @@ var levelMap = map[string]zapcore.Level{
 type Config struct {
 	Level            string
 	Sampling         *SamplingConfig
+	AppendToStdout   bool
 	LogRollingConfig *lumberjack.Logger
 }
 
@@ -89,7 +90,8 @@ func init() {
 
 func BuildLoggerConfig(clientConfig constant.ClientConfig) Config {
 	loggerConfig := Config{
-		Level: clientConfig.LogLevel,
+		Level:          clientConfig.LogLevel,
+		AppendToStdout: clientConfig.AppendToStdout,
 	}
 	if clientConfig.LogSampling != nil {
 		loggerConfig.Sampling = &SamplingConfig{
@@ -125,8 +127,10 @@ func InitNacosLogger(config Config) (Logger, error) {
 	logLevel := getLogLevel(config.Level)
 	encoder := getEncoder()
 	writer := config.getLogWriter()
-	core := zapcore.NewCore(zapcore.NewConsoleEncoder(encoder),
-		zapcore.NewMultiWriteSyncer(writer, zapcore.AddSync(os.Stdout)), logLevel)
+	if config.AppendToStdout {
+		writer = zapcore.NewMultiWriteSyncer(writer, zapcore.AddSync(os.Stdout))
+	}
+	core := zapcore.NewCore(zapcore.NewConsoleEncoder(encoder), writer, logLevel)
 	zaplogger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 	return &NacosLogger{zaplogger.Sugar()}, nil
 }

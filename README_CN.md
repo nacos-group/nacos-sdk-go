@@ -52,6 +52,7 @@ constant.ServerConfig{
 	IpAddr      string // Nacos的服务地址
 	Port        uint64 // Nacos的服务端口
 	Scheme      string // Nacos的服务地址前缀，默认http，在2.0中不需要设置
+	GrpcPort    uint64 // Nacos的 grpc 服务端口, 默认为 服务端口+1000, 不是必填
 }
 ```
 
