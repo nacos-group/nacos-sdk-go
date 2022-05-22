@@ -11,9 +11,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/file"
 )
 
-/*
-   test get failover content
-*/
 func TestGetFailover(t *testing.T) {
 	cacheKey := "test_failOver"
 	dir := file.GetCurrentPath()

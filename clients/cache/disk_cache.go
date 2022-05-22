@@ -111,7 +111,7 @@ func GetFailover(key, dir string) string {
 	logger.GetLogger().Warn(fmt.Sprintf("reading failover content from path:%s", filePath))
 	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		logger.GetLogger().Warn(fmt.Sprintf("fail to read failover content from %s", filePath))
+		logger.GetLogger().Error(fmt.Sprintf("fail to read failover content from %s", filePath))
 		return ""
 	}
 	return string(fileContent)
