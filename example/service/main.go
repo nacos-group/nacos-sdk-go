@@ -56,14 +56,12 @@ func main() {
 		panic(err)
 	}
 
-	clusterName := os.Getenv("nacos_cluster_name")
 	// Register
 	ExampleServiceClient_RegisterServiceInstance(client, vo.RegisterInstanceParam{
 		Ip:          "10.0.0.10",
 		Port:        8848,
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		ClusterName: clusterName,
 		Weight:      10,
 		Enable:      true,
 		Healthy:     true,
@@ -77,7 +75,6 @@ func main() {
 		Port:        8848,
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		Cluster:     clusterName,
 		Ephemeral:   true, // it must be true
 	})
 
@@ -87,7 +84,6 @@ func main() {
 		Port:        8848,
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		ClusterName: clusterName,
 		Weight:      10,
 		Enable:      true,
 		Healthy:     true,
@@ -101,7 +97,6 @@ func main() {
 	ExampleServiceClient_GetService(client, vo.GetServiceParam{
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		Clusters:    []string{clusterName},
 	})
 
 	// SelectAllInstance
@@ -109,7 +104,6 @@ func main() {
 	ExampleServiceClient_SelectAllInstances(client, vo.SelectAllInstancesParam{
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		Clusters:    []string{clusterName},
 	})
 
 	// SelectInstances only return the instances of healthy=${HealthyOnly},enable=true and weight>0
@@ -117,7 +111,6 @@ func main() {
 	ExampleServiceClient_SelectInstances(client, vo.SelectInstancesParam{
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		Clusters:    []string{clusterName},
 	})
 
 	// SelectOneHealthyInstance return one instance by WRR strategy for load balance
@@ -126,7 +119,6 @@ func main() {
 	ExampleServiceClient_SelectOneHealthyInstance(client, vo.SelectOneHealthInstanceParam{
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		Clusters:    []string{clusterName},
 	})
 
 	// Subscribe key=serviceName+groupName+cluster
@@ -158,7 +150,6 @@ func main() {
 		Port:        8848,
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		ClusterName: clusterName,
 		Weight:      10,
 		Enable:      true,
 		Healthy:     true,
@@ -173,7 +164,6 @@ func main() {
 		Port:        8848,
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
-		ClusterName: clusterName,
 		Weight:      10,
 		Enable:      true,
 		Healthy:     true,
