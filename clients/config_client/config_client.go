@@ -183,10 +183,15 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 	if len(param.Group) <= 0 {
 		param.Group = constant.DEFAULT_GROUP
 	}
-	//todo 优先使用本地配置
+
 	//todo 获取容灾配置的 EncryptedDataKey LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover
 	clientConfig, _ := client.GetClientConfig()
 	cacheKey := util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
+	content = cache.GetFailover(cacheKey, client.configCacheDir)
+	if len(content) > 0 {
+		logger.GetLogger().Warn(fmt.Sprintf("%s %s %s is using failover content!", clientConfig.NamespaceId, param.Group, param.DataId))
+		return content, nil
+	}
 	response, err := client.configProxy.queryConfig(param.DataId, param.Group, clientConfig.NamespaceId,
 		clientConfig.TimeoutMs, false, client)
 	if err != nil {

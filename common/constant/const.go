@@ -96,4 +96,5 @@ const (
 	LOG_FILE_NAME               = "nacos-sdk.log"
 	HTTPS_SERVER_PORT           = 443
 	GRPC                        = "grpc"
+	FAILOVER_FILE_SUFFIX        = "_failover"
 )
