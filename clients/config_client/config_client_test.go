@@ -17,7 +17,10 @@
 package config_client
 
 import (
+	"errors"
 	"testing"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/util"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
@@ -59,6 +62,10 @@ type MockConfigProxy struct {
 }
 
 func (m *MockConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64, notify bool, client *ConfigClient) (*rpc_response.ConfigQueryResponse, error) {
+	cacheKey := util.GetConfigCacheKey(dataId, group, tenant)
+	if IsLimited(cacheKey) {
+		return nil, errors.New("request is limited")
+	}
 	return &rpc_response.ConfigQueryResponse{Content: "hello world"}, nil
 }
 func (m *MockConfigProxy) searchConfigProxy(param vo.SearchConfigParm, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
