@@ -18,6 +18,7 @@ package config_client
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -107,6 +108,13 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 	}
 	configQueryRequest := rpc_request.NewConfigQueryRequest(group, dataId, tenant)
 	configQueryRequest.Headers["notify"] = strconv.FormatBool(notify)
+	cacheKey := util.GetConfigCacheKey(dataId, group, tenant)
+	// use the same key of config file as the limit checker's key
+	if IsLimited(cacheKey) {
+		fmt.Println("oops. request is limited!")
+		// return error when check limited
+		return nil, errors.New("ConfigQueryRequest is limited")
+	}
 	iResponse, err := cp.requestProxy(cp.getRpcClient(client), configQueryRequest, timeout)
 	if err != nil {
 		return nil, err
@@ -117,7 +125,6 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 	}
 	if response.IsSuccess() {
 		//todo LocalConfigInfoProcessor.saveSnapshot
-		cacheKey := util.GetConfigCacheKey(dataId, group, tenant)
 		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, response.Content)
 		//todo LocalConfigInfoProcessor.saveEncryptDataKeySnapshot
 		if response.ContentType == "" {
@@ -128,7 +135,7 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 
 	if response.GetErrorCode() == 300 {
 		//todo LocalConfigInfoProcessor.saveSnapshot
-		cacheKey := util.GetConfigCacheKey(dataId, group, tenant)
+		//cacheKey := util.GetConfigCacheKey(dataId, group, tenant)
 		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, "")
 		//todo LocalConfigInfoProcessor.saveEncryptDataKeySnapshot
 		return response, nil
