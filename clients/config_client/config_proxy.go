@@ -18,7 +18,6 @@ package config_client
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -111,7 +110,6 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 	cacheKey := util.GetConfigCacheKey(dataId, group, tenant)
 	// use the same key of config file as the limit checker's key
 	if IsLimited(cacheKey) {
-		fmt.Println("oops. request is limited!")
 		// return error when check limited
 		return nil, errors.New("ConfigQueryRequest is limited")
 	}
