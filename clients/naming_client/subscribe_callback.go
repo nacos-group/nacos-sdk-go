@@ -35,9 +35,9 @@ func NewSubscribeCallback() SubscribeCallback {
 	return ed
 }
 
-func (ed *SubscribeCallback) AddCallbackFuncs(serviceName string, clusters string, callbackFunc *func(services []model.SubscribeService, err error)) {
+func (ed *SubscribeCallback) AddCallbackFuncs(serviceName string, clusters string, tenant string, callbackFunc *func(services []model.SubscribeService, err error)) {
 	logger.Info("adding " + serviceName + " with " + clusters + " to listener map")
-	key := util.GetServiceCacheKey(serviceName, clusters)
+	key := util.GetServiceCacheKey(serviceName, clusters, tenant)
 	var funcs []*func(services []model.SubscribeService, err error)
 	old, ok := ed.callbackFuncsMap.Get(key)
 	if ok {
@@ -47,9 +47,9 @@ func (ed *SubscribeCallback) AddCallbackFuncs(serviceName string, clusters strin
 	ed.callbackFuncsMap.Set(key, funcs)
 }
 
-func (ed *SubscribeCallback) RemoveCallbackFuncs(serviceName string, clusters string, callbackFunc *func(services []model.SubscribeService, err error)) {
+func (ed *SubscribeCallback) RemoveCallbackFuncs(serviceName string, clusters string, tenant string, callbackFunc *func(services []model.SubscribeService, err error)) {
 	logger.Info("removing " + serviceName + " with " + clusters + " to listener map")
-	key := util.GetServiceCacheKey(serviceName, clusters)
+	key := util.GetServiceCacheKey(serviceName, clusters, tenant)
 	funcs, ok := ed.callbackFuncsMap.Get(key)
 	if ok && funcs != nil {
 		var newFuncs []*func(services []model.SubscribeService, err error)
@@ -67,7 +67,7 @@ func (ed *SubscribeCallback) ServiceChanged(service *model.Service) {
 	if service == nil || service.Name == "" {
 		return
 	}
-	key := util.GetServiceCacheKey(service.Name, service.Clusters)
+	key := util.GetServiceCacheKey(service.Name, service.Clusters, service.Tenant)
 	funcs, ok := ed.callbackFuncsMap.Get(key)
 	if ok {
 		for _, funcItem := range funcs.([]*func(services []model.SubscribeService, err error)) {

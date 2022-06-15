@@ -187,7 +187,10 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, err
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	if len(param.Tenant) == 0 {
+		param.Tenant = constant.DEFAULT_NAMESPACE_ID
+	}
+	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Tenant, strings.Join(param.Clusters, ","))
 	return service, err
 }
 
@@ -218,7 +221,10 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	if len(param.Tenant) == 0 {
+		param.Tenant = constant.DEFAULT_NAMESPACE_ID
+	}
+	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Tenant, strings.Join(param.Clusters, ","))
 	if err != nil || service.Hosts == nil || len(service.Hosts) == 0 {
 		return []model.Instance{}, err
 	}
@@ -230,7 +236,10 @@ func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	if len(param.Tenant) == 0 {
+		param.Tenant = constant.DEFAULT_NAMESPACE_ID
+	}
+	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Tenant, strings.Join(param.Clusters, ","))
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +265,7 @@ func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanc
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
+	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), constant.DEFAULT_NAMESPACE_ID, strings.Join(param.Clusters, ","))
 	if err != nil {
 		return nil, err
 	}
@@ -325,13 +334,16 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
+	if len(param.Tenant) == 0 {
+		param.Tenant = constant.DEFAULT_NAMESPACE_ID
+	}
 	serviceParam := vo.GetServiceParam{
 		ServiceName: param.ServiceName,
 		GroupName:   param.GroupName,
 		Clusters:    param.Clusters,
 	}
 
-	sc.subCallback.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	sc.subCallback.AddCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), param.Tenant, &param.SubscribeCallback)
 	svc, err := sc.GetService(serviceParam)
 	if err != nil {
 		return err
@@ -344,6 +356,6 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 
 //Unsubscribe unsubscribe service
 func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
-	sc.subCallback.RemoveCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	sc.subCallback.RemoveCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), param.Tenant, &param.SubscribeCallback)
 	return nil
 }

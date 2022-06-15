@@ -50,12 +50,13 @@ func TestHostReactor_GetServiceInfo(t *testing.T) {
 		Healthy:     true,
 		Ephemeral:   true,
 	}
+	tenant := constant.DEFAULT_NAMESPACE_ID
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
 	param.ServiceName = util.GetGroupName(param.ServiceName, param.GroupName)
 	_, _ = client.RegisterInstance(param)
-	_, err := client.hostReactor.GetServiceInfo(param.ServiceName, param.ClusterName)
+	_, err := client.hostReactor.GetServiceInfo(param.ServiceName, param.ClusterName, tenant)
 	assert.Nil(t, err)
 }
 
@@ -75,8 +76,9 @@ func TestHostReactor_GetServiceInfoErr(t *testing.T) {
 		Healthy:     true,
 		Ephemeral:   true,
 	}
+	tenant := constant.DEFAULT_NAMESPACE_ID
 	_, _ = client.RegisterInstance(param)
-	_, err := client.hostReactor.GetServiceInfo(param.ServiceName, param.ClusterName)
+	_, err := client.hostReactor.GetServiceInfo(param.ServiceName, param.ClusterName, tenant)
 	assert.NotNil(t, err)
 }
 

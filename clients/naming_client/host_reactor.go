@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"reflect"
 	"sort"
 	"strconv"
@@ -82,7 +83,7 @@ func (hr *HostReactor) ProcessServiceJson(result string) {
 	if service == nil {
 		return
 	}
-	cacheKey := util.GetServiceCacheKey(service.Name, service.Clusters)
+	cacheKey := util.GetServiceCacheKey(service.Name, service.Clusters, service.Tenant)
 
 	oldDomain, ok := hr.serviceInfoMap.Get(cacheKey)
 	if ok && !hr.updateCacheWhenEmpty {
@@ -106,8 +107,13 @@ func (hr *HostReactor) ProcessServiceJson(result string) {
 	}
 }
 
-func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string) (model.Service, error) {
-	key := util.GetServiceCacheKey(serviceName, clusters)
+func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string, tenant string) (model.Service, error) {
+	var key string
+	if len(tenant) > 0 {
+		key = util.GetServiceCacheKey(serviceName, clusters, tenant)
+	} else {
+		key = util.GetServiceCacheKey(serviceName, clusters, constant.DEFAULT_NAMESPACE_ID)
+	}
 	cacheService, ok := hr.serviceInfoMap.Get(key)
 	if !ok {
 		hr.updateServiceNow(serviceName, clusters)
@@ -161,7 +167,7 @@ func (hr *HostReactor) asyncUpdateService() {
 	for {
 		for _, v := range hr.serviceInfoMap.Items() {
 			service := v.(model.Service)
-			lastRefTime, ok := hr.updateTimeMap.Get(util.GetServiceCacheKey(service.Name, service.Clusters))
+			lastRefTime, ok := hr.updateTimeMap.Get(util.GetServiceCacheKey(service.Name, service.Clusters, service.Tenant))
 			if !ok {
 				lastRefTime = uint64(0)
 			}

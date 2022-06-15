@@ -54,11 +54,11 @@ func GetGroupName(serviceName string, groupName string) string {
 	return groupName + constant.SERVICE_INFO_SPLITER + serviceName
 }
 
-func GetServiceCacheKey(serviceName string, clusters string) string {
+func GetServiceCacheKey(serviceName string, clusters string, tenant string) string {
 	if clusters == "" {
 		return serviceName
 	}
-	return serviceName + constant.SERVICE_INFO_SPLITER + clusters
+	return serviceName + constant.SERVICE_INFO_SPLITER + tenant + constant.TENANT_INFO_SPLITER + clusters
 }
 
 func GetConfigCacheKey(dataId string, group string, tenant string) string {

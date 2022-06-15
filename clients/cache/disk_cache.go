@@ -45,7 +45,7 @@ func GetFileName(cacheKey string, cacheDir string) string {
 func WriteServicesToFile(service model.Service, cacheDir string) {
 	file.MkdirIfNecessary(cacheDir)
 	sb, _ := json.Marshal(service)
-	domFileName := GetFileName(util.GetServiceCacheKey(service.Name, service.Clusters), cacheDir)
+	domFileName := GetFileName(util.GetServiceCacheKey(service.Name, service.Clusters, service.Tenant), cacheDir)
 
 	err := ioutil.WriteFile(domFileName, sb, 0666)
 	if err != nil {

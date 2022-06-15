@@ -56,6 +56,7 @@ type GetServiceParam struct {
 	Clusters    []string `param:"clusters"`    //optional,default:DEFAULT
 	ServiceName string   `param:"serviceName"` //required
 	GroupName   string   `param:"groupName"`   //optional,default:DEFAULT_GROUP
+	Tenant      string   `param:"tenant"`      //optional,default:DEFAULT_GROUP
 }
 
 type GetAllServiceInfoParam struct {
@@ -69,6 +70,7 @@ type SubscribeParam struct {
 	ServiceName       string                                             `param:"serviceName"` //required
 	Clusters          []string                                           `param:"clusters"`    //optional,default:DEFAULT
 	GroupName         string                                             `param:"groupName"`   //optional,default:DEFAULT_GROUP
+	Tenant            string                                             `param:"tenant"`      //optional,default:DEFAULT_GROUP
 	SubscribeCallback func(services []model.SubscribeService, err error) //required
 }
 
@@ -76,6 +78,7 @@ type SelectAllInstancesParam struct {
 	Clusters    []string `param:"clusters"`    //optional,default:DEFAULT
 	ServiceName string   `param:"serviceName"` //required
 	GroupName   string   `param:"groupName"`   //optional,default:DEFAULT_GROUP
+	Tenant      string   `param:"tenant"`      //optional,default:DEFAULT_GROUP
 }
 
 type SelectInstancesParam struct {
@@ -83,10 +86,12 @@ type SelectInstancesParam struct {
 	ServiceName string   `param:"serviceName"` //required
 	GroupName   string   `param:"groupName"`   //optional,default:DEFAULT_GROUP
 	HealthyOnly bool     `param:"healthyOnly"` //optional,return only healthy instance
+	Tenant      string   `param:"tenant"`      //optional,default:DEFAULT_GROUP
 }
 
 type SelectOneHealthInstanceParam struct {
 	Clusters    []string `param:"clusters"`    //optional,default:DEFAULT
 	ServiceName string   `param:"serviceName"` //required
 	GroupName   string   `param:"groupName"`   //optional,default:DEFAULT_GROUP
+	Tenant      string   `param:"tenant"`      //optional,default:DEFAULT_GROUP
 }
