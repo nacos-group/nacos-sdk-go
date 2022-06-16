@@ -56,6 +56,9 @@ func GetGroupName(serviceName string, groupName string) string {
 
 func GetServiceCacheKey(serviceName string, clusters string, tenant string) string {
 	if clusters == "" {
+		if len(tenant) > 0 {
+			return serviceName + constant.SERVICE_INFO_SPLITER + tenant
+		}
 		return serviceName
 	}
 	return serviceName + constant.SERVICE_INFO_SPLITER + tenant + constant.TENANT_INFO_SPLITER + clusters

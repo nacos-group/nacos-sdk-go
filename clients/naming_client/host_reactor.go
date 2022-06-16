@@ -78,11 +78,12 @@ func (hr *HostReactor) loadCacheFromDisk() {
 	}
 }
 
-func (hr *HostReactor) ProcessServiceJson(result string) {
+func (hr *HostReactor) ProcessServiceJson(result, tenant string) {
 	service := util.JsonToService(result)
 	if service == nil {
 		return
 	}
+	service.Tenant = tenant
 	cacheKey := util.GetServiceCacheKey(service.Name, service.Clusters, service.Tenant)
 
 	oldDomain, ok := hr.serviceInfoMap.Get(cacheKey)
@@ -116,7 +117,7 @@ func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string, tenan
 	}
 	cacheService, ok := hr.serviceInfoMap.Get(key)
 	if !ok {
-		hr.updateServiceNow(serviceName, clusters)
+		hr.updateServiceNow(serviceName, clusters, tenant)
 		if cacheService, ok = hr.serviceInfoMap.Get(key); !ok {
 			return model.Service{}, errors.New("get service info failed")
 		}
@@ -148,8 +149,8 @@ func (hr *HostReactor) GetAllServiceInfo(nameSpace, groupName string, pageNo, pa
 	return data
 }
 
-func (hr *HostReactor) updateServiceNow(serviceName, clusters string) {
-	result, err := hr.serviceProxy.QueryList(serviceName, clusters, hr.pushReceiver.port, false)
+func (hr *HostReactor) updateServiceNow(serviceName, clusters, tenant string) {
+	result, err := hr.serviceProxy.QueryList(serviceName, clusters, hr.pushReceiver.port, false, tenant)
 
 	if err != nil {
 		logger.Errorf("QueryList return error!serviceName:%s cluster:%s err:%+v", serviceName, clusters, err)
@@ -159,7 +160,7 @@ func (hr *HostReactor) updateServiceNow(serviceName, clusters string) {
 		logger.Errorf("QueryList result is empty!serviceName:%s cluster:%s", serviceName, clusters)
 		return
 	}
-	hr.ProcessServiceJson(result)
+	hr.ProcessServiceJson(result, tenant)
 }
 
 func (hr *HostReactor) asyncUpdateService() {
@@ -174,7 +175,7 @@ func (hr *HostReactor) asyncUpdateService() {
 			if uint64(util.CurrentMillis())-lastRefTime.(uint64) > service.CacheMillis {
 				sema.Acquire()
 				go func() {
-					hr.updateServiceNow(service.Name, service.Clusters)
+					hr.updateServiceNow(service.Name, service.Clusters, service.Tenant)
 					sema.Release()
 				}()
 			}

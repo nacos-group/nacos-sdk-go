@@ -181,9 +181,13 @@ func (proxy *NamingProxy) ServerHealthy() bool {
 	return false
 }
 
-func (proxy *NamingProxy) QueryList(serviceName string, clusters string, udpPort int, healthyOnly bool) (string, error) {
+func (proxy *NamingProxy) QueryList(serviceName string, clusters string, udpPort int, healthyOnly bool, tenant string) (string, error) {
 	param := make(map[string]string)
-	param["namespaceId"] = proxy.clientConfig.NamespaceId
+	if len(proxy.clientConfig.NamespaceId) > 0 {
+		param["namespaceId"] = proxy.clientConfig.NamespaceId
+	} else {
+		param["namespaceId"] = tenant
+	}
 	param["serviceName"] = serviceName
 	param["app"] = proxy.clientConfig.AppName
 	param["clusters"] = clusters

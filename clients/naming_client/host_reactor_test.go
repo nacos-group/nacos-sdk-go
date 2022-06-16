@@ -56,7 +56,9 @@ func TestHostReactor_GetServiceInfo(t *testing.T) {
 	}
 	param.ServiceName = util.GetGroupName(param.ServiceName, param.GroupName)
 	_, _ = client.RegisterInstance(param)
-	_, err := client.hostReactor.GetServiceInfo(param.ServiceName, param.ClusterName, tenant)
+	_, err := client.hostReactor.GetServiceInfo(param.ServiceName, param.ClusterName, tenant)   //first time set cache key use tenant
+	res, err := client.hostReactor.GetServiceInfo(param.ServiceName, param.ClusterName, tenant) //test get cache key use tenant
+	assert.NotNil(t, res)
 	assert.Nil(t, err)
 }
 

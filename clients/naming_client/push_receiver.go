@@ -129,7 +129,7 @@ func (us *PushReceiver) handleClient(conn *net.UDPConn) {
 	ack := make(map[string]string)
 
 	if pushData.PushType == "dom" || pushData.PushType == "service" {
-		us.hostReactor.ProcessServiceJson(pushData.Data)
+		us.hostReactor.ProcessServiceJson(pushData.Data, "")
 
 		ack["type"] = "push-ack"
 		ack["lastRefTime"] = strconv.FormatInt(pushData.LastRefTime, 10)
