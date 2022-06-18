@@ -94,7 +94,7 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 	s.ServiceInfoMap.Set(cacheKey, *service)
 	if !ok || checkInstanceChanged(oldDomain, service) {
 		logger.Infof("service key:%s was updated to:%s", cacheKey, util.ToJsonString(service))
-		cache.WriteServicesToFile(*service, s.cacheDir)
+		cache.WriteServicesToFile(service, cacheKey, s.cacheDir)
 		s.subCallback.ServiceChanged(cacheKey, service)
 	}
 	monitor.GetServiceInfoMapSizeMonitor().Set(float64(s.ServiceInfoMap.Count()))
