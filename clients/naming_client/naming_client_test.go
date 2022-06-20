@@ -37,7 +37,7 @@ var clientConfigTest = *constant.NewClientConfig(
 	constant.WithNotLoadCacheAtStart(true),
 )
 
-var serverConfigTest = *constant.NewServerConfig("console.nacos.io", 80, constant.WithContextPath("/nacos"))
+var serverConfigTest = *constant.NewServerConfig("http://nacos.test.test-wallet-local.huobiapps.com", 80, constant.WithContextPath("/nacos"))
 
 func Test_RegisterServiceInstance_withoutGroupName(t *testing.T) {
 	ctrl := gomock.NewController(t)

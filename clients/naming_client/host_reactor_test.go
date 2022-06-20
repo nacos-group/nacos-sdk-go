@@ -41,16 +41,18 @@ func TestHostReactor_GetServiceInfo(t *testing.T) {
 	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
 	client, _ := NewNamingClient(&nc)
 	param := vo.RegisterInstanceParam{
-		Ip:          "10.0.0.11",
-		Port:        8848,
-		ServiceName: "test",
-		Weight:      10,
-		ClusterName: "test",
+		Ip:          "10.167.40.94",
+		Port:        3733,
+		ServiceName: "gaia-internal-api",
+		Weight:      1,
+		ClusterName: "",
 		Enable:      true,
 		Healthy:     true,
 		Ephemeral:   true,
+		GroupName:   "GAIA_GROUP",
 	}
 	tenant := constant.DEFAULT_NAMESPACE_ID
+	tenant = "ShenyuRegisterCenter"
 	if param.GroupName == "" {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
