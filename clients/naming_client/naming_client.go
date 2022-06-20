@@ -190,7 +190,7 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, err
 	if len(param.Tenant) == 0 {
 		param.Tenant = constant.DEFAULT_NAMESPACE_ID
 	}
-	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Tenant, strings.Join(param.Clusters, ","))
+	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), param.Tenant)
 	return service, err
 }
 
@@ -224,7 +224,7 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 	if len(param.Tenant) == 0 {
 		param.Tenant = constant.DEFAULT_NAMESPACE_ID
 	}
-	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), param.Tenant, strings.Join(param.Clusters, ","))
+	service, err := sc.hostReactor.GetServiceInfo(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), param.Tenant)
 	if err != nil || service.Hosts == nil || len(service.Hosts) == 0 {
 		return []model.Instance{}, err
 	}
