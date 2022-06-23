@@ -35,16 +35,18 @@ func GetFileName(cacheKey string, cacheDir string) string {
 	return cacheDir + string(os.PathSeparator) + cacheKey
 }
 
-func WriteServicesToFile(service model.Service, cacheDir string) {
-	file.MkdirIfNecessary(cacheDir)
-	sb, _ := json.Marshal(service)
-	domFileName := GetFileName(util.GetServiceCacheKey(service.Name, service.Clusters), cacheDir)
-
-	err := ioutil.WriteFile(domFileName, sb, 0666)
+func WriteServicesToFile(service *model.Service, cacheKey, cacheDir string) {
+	err := file.MkdirIfNecessary(cacheDir)
 	if err != nil {
-		logger.Errorf("failed to write name cache:%s ,value:%s ,err:%+v", domFileName, string(sb), err)
+		logger.Errorf("mkdir cacheDir failed,cacheDir:%s,err:", cacheDir, err)
+		return
 	}
-
+	bytes, _ := json.Marshal(service)
+	domFileName := GetFileName(cacheKey, cacheDir)
+	err = ioutil.WriteFile(domFileName, bytes, 0666)
+	if err != nil {
+		logger.Errorf("failed to write name cache:%s ,value:%s ,err:%v", domFileName, string(bytes), err)
+	}
 }
 
 func ReadServicesFromFile(cacheDir string) map[string]model.Service {
