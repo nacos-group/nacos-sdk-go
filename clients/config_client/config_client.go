@@ -99,7 +99,8 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	if err = initLogger(clientConfig); err != nil {
 		return nil, err
 	}
-	config.configCacheDir = clientConfig.CacheDir + string(os.PathSeparator) + "config"
+	clientConfig.CacheDir = clientConfig.CacheDir + string(os.PathSeparator) + "config"
+	config.configCacheDir = clientConfig.CacheDir
 
 	if config.configProxy, err = NewConfigProxy(serverConfig, clientConfig, httpAgent); err != nil {
 		return nil, err
