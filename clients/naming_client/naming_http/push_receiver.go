@@ -76,8 +76,8 @@ func (us *PushReceiver) startServer() {
 		ok   bool
 	)
 
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < 3; i++ {
-		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 		port := r.Intn(1000) + 54951
 		us.port = port
 		conn, ok = us.tryListen()
