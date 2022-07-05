@@ -17,6 +17,10 @@
 package rpc_request
 
 import (
+	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 )
 
@@ -45,6 +49,14 @@ func NewNamingRequest(namespace, serviceName, groupName string) *NamingRequest {
 		GroupName:   groupName,
 		Module:      "naming",
 	}
+}
+
+func (r *NamingRequest) GetStringToSign() string {
+	data := strconv.FormatInt(time.Now().Unix()*1000, 10)
+	if r.ServiceName != "" || r.GroupName != "" {
+		data = fmt.Sprintf("%s@@%s@@%s", data, r.GroupName, r.ServiceName)
+	}
+	return data
 }
 
 func NewInstanceRequest(namespace, serviceName, groupName, Type string, instance model.Instance) *InstanceRequest {

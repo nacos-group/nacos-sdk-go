@@ -29,6 +29,7 @@ type IRequest interface {
 	GetBody(request IRequest) string
 	PutAllHeaders(headers map[string]string)
 	GetRequestId() string
+	GetStringToSign() string
 }
 
 type IConfigRequest interface {
@@ -56,4 +57,8 @@ func (r *Request) GetBody(request IRequest) string {
 }
 func (r *Request) GetRequestId() string {
 	return r.RequestId
+}
+
+func (r *Request) GetStringToSign() string {
+	return ""
 }
