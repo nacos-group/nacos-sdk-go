@@ -133,7 +133,6 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 
 	if response.GetErrorCode() == 300 {
 		//todo LocalConfigInfoProcessor.saveSnapshot
-		//cacheKey := util.GetConfigCacheKey(dataId, group, tenant)
 		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, "")
 		//todo LocalConfigInfoProcessor.saveEncryptDataKeySnapshot
 		return response, nil
