@@ -180,3 +180,10 @@ func WithLogRollingConfig(rollingConfig *lumberjack.Logger) ClientOption {
 		config.LogRollingConfig = rollingConfig
 	}
 }
+
+// WithLogStdout ...
+func WithLogStdout(logStdout bool) ClientOption {
+	return func(config *ClientConfig) {
+		config.LogStdout = logStdout
+	}
+}
