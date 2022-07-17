@@ -45,6 +45,7 @@ type Config struct {
 	LogRollingConfig *lumberjack.Logger
 	LogDir           string
 	CustomLogger     Logger
+	LogStdout        bool
 }
 
 type SamplingConfig struct {
@@ -108,7 +109,7 @@ func initNacosLogger(config Config) (Logger, error) {
 	encoder := getEncoder()
 	writer := config.getLogWriter()
 
-	core := zapcore.NewCore(zapcore.NewConsoleEncoder(encoder), zapcore.NewMultiWriteSyncer(writer, zapcore.AddSync(os.Stdout)), logLevel)
+	core := zapcore.NewCore(zapcore.NewConsoleEncoder(encoder), writer, logLevel)
 
 	if config.Sampling != nil {
 		core = zapcore.NewSamplerWithOptions(core, config.Sampling.Tick, config.Sampling.Initial, config.Sampling.Thereafter)
@@ -159,5 +160,8 @@ func (c *Config) getLogWriter() zapcore.WriteSyncer {
 		c.LogRollingConfig = &lumberjack.Logger{}
 	}
 	c.LogRollingConfig.Filename = c.LogDir + string(os.PathSeparator) + c.LogFileName
+	if c.LogStdout {
+		return zapcore.NewMultiWriteSyncer(zapcore.AddSync(c.LogRollingConfig), zapcore.AddSync(os.Stdout))
+	}
 	return zapcore.AddSync(c.LogRollingConfig)
 }
