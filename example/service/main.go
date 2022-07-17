@@ -48,6 +48,7 @@ func main() {
 		CacheDir:            "/tmp/nacos/cache",
 		LogRollingConfig:    &lumberjack.Logger{MaxSize: 10},
 		LogLevel:            "debug",
+		LogStdout:           true,
 	}
 	//or a more graceful way to create ClientConfig
 	_ = *constant.NewClientConfig(
@@ -58,6 +59,7 @@ func main() {
 		constant.WithCacheDir("/tmp/nacos/cache"),
 		constant.WithLogLevel("debug"),
 		constant.WithLogRollingConfig(&lumberjack.Logger{MaxSize: 10}),
+		constant.WithLogStdout(true),
 	)
 
 	// a more graceful way to create naming client
