@@ -48,6 +48,7 @@ func main() {
 		LogDir:              "/tmp/nacos/log",
 		CacheDir:            "/tmp/nacos/cache",
 		LogLevel:            "debug",
+		LogStdout:           true,
 	}
 	//or a more graceful way to create ClientConfig
 	_ = *constant.NewClientConfig(
@@ -57,6 +58,7 @@ func main() {
 		constant.WithLogDir("/tmp/nacos/log"),
 		constant.WithCacheDir("/tmp/nacos/cache"),
 		constant.WithLogLevel("debug"),
+		constant.WithLogStdout(true),
 	)
 
 	// a more graceful way to create config client
