@@ -92,7 +92,7 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 
 	s.UpdateTimeMap.Set(cacheKey, uint64(util.CurrentMillis()))
 	s.ServiceInfoMap.Set(cacheKey, *service)
-	if !ok || checkInstanceChanged(oldDomain, service) {
+	if !ok || checkInstanceChanged(oldDomain, *service) {
 		logger.Infof("service key:%s was updated to:%s", cacheKey, util.ToJsonString(service))
 		cache.WriteServicesToFile(service, cacheKey, s.cacheDir)
 		s.subCallback.ServiceChanged(cacheKey, service)
@@ -127,16 +127,16 @@ func (s *ServiceInfoHolder) IsSubscribed(serviceName, clusters string) bool {
 	return s.subCallback.IsSubscribed(serviceName, clusters)
 }
 
-func checkInstanceChanged(oldDomain interface{}, service *model.Service) bool {
+func checkInstanceChanged(oldDomain interface{}, service model.Service) bool {
 	if oldDomain == nil {
 		return true
 	}
 	oldService := oldDomain.(model.Service)
-	return isServiceInstanceChanged(&oldService, service)
+	return isServiceInstanceChanged(oldService, service)
 }
 
 // return true when service instance changed ,otherwise return false.
-func isServiceInstanceChanged(oldService, newService *model.Service) bool {
+func isServiceInstanceChanged(oldService, newService model.Service) bool {
 	oldHostsLen := len(oldService.Hosts)
 	newHostsLen := len(newService.Hosts)
 	if oldHostsLen != newHostsLen {

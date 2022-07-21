@@ -30,7 +30,7 @@ func TestServiceInfoHolder_isServiceInstanceChanged(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 	defaultIp := createRandomIp()
 	defaultPort := creatRandomPort()
-	serviceA := &model.Service{
+	serviceA := model.Service{
 		LastRefTime: 1000,
 		Hosts: []model.Instance{
 			{
@@ -47,7 +47,7 @@ func TestServiceInfoHolder_isServiceInstanceChanged(t *testing.T) {
 			},
 		},
 	}
-	serviceB := &model.Service{
+	serviceB := model.Service{
 		LastRefTime: 1001,
 		Hosts: []model.Instance{
 			{
@@ -65,7 +65,7 @@ func TestServiceInfoHolder_isServiceInstanceChanged(t *testing.T) {
 		},
 	}
 	ip := createRandomIp()
-	serviceC := &model.Service{
+	serviceC := model.Service{
 		LastRefTime: 1001,
 		Hosts: []model.Instance{
 			{
@@ -101,7 +101,7 @@ func TestServiceInfoHolder_isServiceInstanceChanged(t *testing.T) {
 
 func TestHostReactor_isServiceInstanceChangedWithUnOrdered(t *testing.T) {
 	rand.Seed(time.Now().Unix())
-	serviceA := &model.Service{
+	serviceA := model.Service{
 		LastRefTime: 1001,
 		Hosts: []model.Instance{
 			{
@@ -119,7 +119,7 @@ func TestHostReactor_isServiceInstanceChangedWithUnOrdered(t *testing.T) {
 		},
 	}
 
-	serviceB := &model.Service{
+	serviceB := model.Service{
 		LastRefTime: 1001,
 		Hosts: []model.Instance{
 			{
