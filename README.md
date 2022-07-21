@@ -113,13 +113,13 @@ serverConfigs := []constant.ServerConfig{
 }
 
 // Create naming client for service discovery
-_, _ := clients.CreateNamingClient(map[string]interface{}{
+_, _ = clients.CreateNamingClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })
 
 // Create config client for dynamic configuration
-_, _ := clients.CreateConfigClient(map[string]interface{}{
+_, _ = clients.CreateConfigClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })

@@ -114,13 +114,13 @@ serverConfigs := []constant.ServerConfig{
 }
 
 // 创建服务发现客户端
-_, _ := clients.CreateNamingClient(map[string]interface{}{
+_, _ = clients.CreateNamingClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })
 
 // 创建动态配置客户端
-_, _ := clients.CreateConfigClient(map[string]interface{}{
+_, _ = clients.CreateConfigClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })
