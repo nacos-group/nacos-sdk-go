@@ -330,6 +330,20 @@ func (server *NacosServer) InjectSecurityInfo(param map[string]string) {
 	}
 }
 
+func (server *NacosServer) InjectSign(request rpc_request.IRequest, param map[string]string, clientConfig constant.ClientConfig) {
+	if clientConfig.AccessKey == "" || clientConfig.SecretKey == "" {
+		return
+	}
+	sts := request.GetStringToSign()
+	if sts == "" {
+		return
+	}
+	signature := signWithhmacSHA1Encrypt(sts, clientConfig.SecretKey)
+	param["data"] = sts
+	param["signature"] = signature
+	param["ak"] = clientConfig.AccessKey
+}
+
 func getAddress(cfg constant.ServerConfig) string {
 	if strings.Index(cfg.IpAddr, "http://") >= 0 || strings.Index(cfg.IpAddr, "https://") >= 0 {
 		return cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))

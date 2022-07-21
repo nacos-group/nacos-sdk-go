@@ -82,7 +82,7 @@ func NewNamingGrpcProxy(clientCfg constant.ClientConfig, nacosServer *nacos_serv
 
 func (proxy *NamingGrpcProxy) requestToServer(request rpc_request.IRequest) (rpc_response.IResponse, error) {
 	start := time.Now()
-	proxy.nacosServer.InjectSkAk(request.GetHeaders(), proxy.clientConfig)
+	proxy.nacosServer.InjectSign(request, request.GetHeaders(), proxy.clientConfig)
 	proxy.nacosServer.InjectSecurityInfo(request.GetHeaders())
 	response, err := proxy.rpcClient.GetRpcClient().Request(request, int64(proxy.clientConfig.TimeoutMs))
 	monitor.GetConfigRequestMonitor(constant.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
