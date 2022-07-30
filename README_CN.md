@@ -9,14 +9,14 @@
 Nacos-sdk-go是Nacos的Go语言客户端，它实现了服务发现和动态配置的功能
 
 ## 使用限制
-支持Go>v1.12版本
+支持Go>=v1.15版本
 
-支持Nacos>1.x版本
+支持Nacos>2.x版本
 
 ## 安装
 使用`go get`安装SDK：
 ```sh
-$ go get -u github.com/nacos-group/nacos-sdk-go
+$ go get -u github.com/nacos-group/nacos-sdk-go/v2
 ```
 ## 快速使用
 * ClientConfig
@@ -24,8 +24,7 @@ $ go get -u github.com/nacos-group/nacos-sdk-go
 ```go
 constant.ClientConfig{
 	TimeoutMs            uint64 // 请求Nacos服务端的超时时间，默认是10000ms
-	NamespaceId          string // ACM的命名空间Id 
-	AppName              string // App名称
+	NamespaceId          string // ACM的命名空间Id
 	Endpoint             string // 当使用ACM时，需要该配置. https://help.aliyun.com/document_detail/130146.html
 	RegionId             string // ACM&KMS的regionId，用于配置中心的鉴权
 	AccessKey            string // ACM&KMS的AccessKey，用于配置中心的鉴权
@@ -39,9 +38,9 @@ constant.ClientConfig{
 	Username             string // Nacos服务端的API鉴权Username
 	Password             string // Nacos服务端的API鉴权Password
 	LogDir               string // 日志存储路径
-	LogLevel             string // 日志默认级别，值必须是：debug,info,warn,error，默认值是info 
-	LogSampling          *ClientLogSamplingConfig // 日志采样配置 
-	LogRollingConfig     *ClientLogRollingConfig  // 日志归档配置
+	RotateTime           string // 日志轮转周期，比如：30m, 1h, 24h, 默认是24h
+	MaxAge               int64  // 日志最大文件数，默认3
+	LogLevel             string // 日志默认级别，值必须是：debug,info,warn,error，默认值是info
 }
 ```
 
@@ -49,10 +48,11 @@ constant.ClientConfig{
 
 ```go
 constant.ServerConfig{
-	ContextPath string // Nacos的ContextPath
+	ContextPath string // Nacos的ContextPath，默认/nacos，在2.0中不需要设置
 	IpAddr      string // Nacos的服务地址
 	Port        uint64 // Nacos的服务端口
-	Scheme      string // Nacos的服务地址前缀
+	Scheme      string // Nacos的服务地址前缀，默认http，在2.0中不需要设置
+	GrpcPort    uint64 // Nacos的 grpc 服务端口, 默认为 服务端口+1000, 不是必填
 }
 ```
 
@@ -114,13 +114,13 @@ serverConfigs := []constant.ServerConfig{
 }
 
 // 创建服务发现客户端
-_, _ = clients.CreateNamingClient(map[string]interface{}{
+_, _ := clients.CreateNamingClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })
 
 // 创建动态配置客户端
-_, _ = clients.CreateConfigClient(map[string]interface{}{
+_, _ := clients.CreateConfigClient(map[string]interface{}{
 	"serverConfigs": serverConfigs,
 	"clientConfig":  clientConfig,
 })
@@ -262,7 +262,7 @@ err := namingClient.Subscribe(vo.SubscribeParam{
     ServiceName: "demo.go",
     GroupName:   "group-a",             // 默认值DEFAULT_GROUP
     Clusters:    []string{"cluster-a"}, // 默认值DEFAULT
-    SubscribeCallback: func(services []model.SubscribeService, err error) {
+    SubscribeCallback: func(services []model.Instance, err error) {
         log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
     },
 })
@@ -277,7 +277,7 @@ err := namingClient.Unsubscribe(vo.SubscribeParam{
     ServiceName: "demo.go",
     GroupName:   "group-a",             // 默认值DEFAULT_GROUP
     Clusters:    []string{"cluster-a"}, // 默认值DEFAULT
-    SubscribeCallback: func(services []model.SubscribeService, err error) {
+    SubscribeCallback: func(services []model.Instance, err error) {
         log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
     },
 })
@@ -287,7 +287,7 @@ err := namingClient.Unsubscribe(vo.SubscribeParam{
 * 获取服务名列表:GetAllServicesInfo
 ```go
 
-serviceInfos, err := client.GetAllServicesInfo(vo.GetAllServiceInfoParam{
+serviceInfos, err := namingClient.GetAllServicesInfo(vo.GetAllServiceInfoParam{
     NameSpace: "0e83cc81-9d8c-4bb8-a28a-ff703187543f",
     PageNo:   1,
     PageSize: 10,

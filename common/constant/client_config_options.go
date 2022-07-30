@@ -20,9 +20,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/common/file"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
-	"gopkg.in/natefinch/lumberjack.v2"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/file"
 )
 
 func NewClientConfig(opts ...ClientOption) *ClientConfig {
@@ -48,17 +46,17 @@ func NewClientConfig(opts ...ClientOption) *ClientConfig {
 // ClientOption ...
 type ClientOption func(*ClientConfig)
 
-// WithCustomLogger ...
-func WithCustomLogger(logger logger.Logger) ClientOption {
-	return func(config *ClientConfig) {
-		config.CustomLogger = logger
-	}
-}
-
 // WithTimeoutMs ...
 func WithTimeoutMs(timeoutMs uint64) ClientOption {
 	return func(config *ClientConfig) {
 		config.TimeoutMs = timeoutMs
+	}
+}
+
+// WithAppName ...
+func WithAppName(appName string) ClientOption {
+	return func(config *ClientConfig) {
+		config.AppName = appName
 	}
 }
 
@@ -170,20 +168,19 @@ func WithLogLevel(logLevel string) ClientOption {
 // WithLogSampling ...
 func WithLogSampling(tick time.Duration, initial int, thereafter int) ClientOption {
 	return func(config *ClientConfig) {
-		config.LogSampling = &logger.SamplingConfig{Initial: initial, Thereafter: thereafter, Tick: tick}
+		config.LogSampling = &ClientLogSamplingConfig{initial, thereafter, tick}
 	}
 }
 
 // WithLogRollingConfig ...
-func WithLogRollingConfig(rollingConfig *lumberjack.Logger) ClientOption {
+func WithLogRollingConfig(rollingConfig *ClientLogRollingConfig) ClientOption {
 	return func(config *ClientConfig) {
 		config.LogRollingConfig = rollingConfig
 	}
 }
 
-// WithLogStdout ...
-func WithLogStdout(logStdout bool) ClientOption {
+func WithTLS(tlsCfg TLSConfig) ClientOption {
 	return func(config *ClientConfig) {
-		config.LogStdout = logStdout
+		config.TLSCfg = tlsCfg
 	}
 }

@@ -19,38 +19,65 @@ package main
 import (
 	"fmt"
 
-	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 )
 
 func ExampleServiceClient_RegisterServiceInstance(client naming_client.INamingClient, param vo.RegisterInstanceParam) {
-	success, _ := client.RegisterInstance(param)
+	success, err := client.RegisterInstance(param)
+	if !success || err != nil {
+		panic("RegisterServiceInstance failed!")
+	}
 	fmt.Printf("RegisterServiceInstance,param:%+v,result:%+v \n\n", param, success)
 }
 
 func ExampleServiceClient_DeRegisterServiceInstance(client naming_client.INamingClient, param vo.DeregisterInstanceParam) {
-	success, _ := client.DeregisterInstance(param)
+	success, err := client.DeregisterInstance(param)
+	if !success || err != nil {
+		panic("DeRegisterServiceInstance failed!")
+	}
 	fmt.Printf("DeRegisterServiceInstance,param:%+v,result:%+v \n\n", param, success)
 }
 
+func ExampleServiceClient_UpdateServiceInstance(client naming_client.INamingClient, param vo.UpdateInstanceParam) {
+	success, err := client.UpdateInstance(param)
+	if !success || err != nil {
+		panic("UpdateInstance failed!")
+	}
+	fmt.Printf("UpdateServiceInstance,param:%+v,result:%+v \n\n", param, success)
+}
+
 func ExampleServiceClient_GetService(client naming_client.INamingClient, param vo.GetServiceParam) {
-	service, _ := client.GetService(param)
+	service, err := client.GetService(param)
+	if err != nil {
+		panic("GetService failed!")
+	}
 	fmt.Printf("GetService,param:%+v, result:%+v \n\n", param, service)
 }
 
 func ExampleServiceClient_SelectAllInstances(client naming_client.INamingClient, param vo.SelectAllInstancesParam) {
-	instances, _ := client.SelectAllInstances(param)
+	instances, err := client.SelectAllInstances(param)
+	if err != nil {
+		panic("SelectAllInstances failed!")
+	}
 	fmt.Printf("SelectAllInstance,param:%+v, result:%+v \n\n", param, instances)
 }
 
 func ExampleServiceClient_SelectInstances(client naming_client.INamingClient, param vo.SelectInstancesParam) {
-	instances, _ := client.SelectInstances(param)
+	instances, err := client.SelectInstances(param)
+	if err != nil {
+		panic("SelectInstances failed!")
+	}
 	fmt.Printf("SelectInstances,param:%+v, result:%+v \n\n", param, instances)
 }
 
 func ExampleServiceClient_SelectOneHealthyInstance(client naming_client.INamingClient, param vo.SelectOneHealthInstanceParam) {
-	instances, _ := client.SelectOneHealthyInstance(param)
-	fmt.Printf("SelectInstances,param:%+v, result:%+v \n\n", param, instances)
+	instances, err := client.SelectOneHealthyInstance(param)
+	if err != nil {
+		panic("SelectOneHealthyInstance failed!")
+	}
+	fmt.Printf("SelectOneHealthyInstance,param:%+v, result:%+v \n\n", param, instances)
 }
 
 func ExampleServiceClient_Subscribe(client naming_client.INamingClient, param *vo.SubscribeParam) {
@@ -62,6 +89,9 @@ func ExampleServiceClient_UnSubscribe(client naming_client.INamingClient, param 
 }
 
 func ExampleServiceClient_GetAllService(client naming_client.INamingClient, param vo.GetAllServiceInfoParam) {
-	service, _ := client.GetAllServicesInfo(param)
+	service, err := client.GetAllServicesInfo(param)
+	if err != nil {
+		panic("GetAllService failed!")
+	}
 	fmt.Printf("GetAllService,param:%+v, result:%+v \n\n", param, service)
 }

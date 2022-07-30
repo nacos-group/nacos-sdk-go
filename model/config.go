@@ -31,3 +31,16 @@ type ConfigPage struct {
 	PagesAvailable int          `param:"pagesAvailable"`
 	PageItems      []ConfigItem `param:"pageItems"`
 }
+
+type ConfigListenContext struct {
+	Group  string `json:"group"`
+	Md5    string `json:"md5"`
+	DataId string `json:"dataId"`
+	Tenant string `json:"tenant"`
+}
+
+type ConfigContext struct {
+	Group  string `json:"group"`
+	DataId string `json:"dataId"`
+	Tenant string `json:"tenant"`
+}

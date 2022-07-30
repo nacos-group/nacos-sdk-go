@@ -14,30 +14,38 @@
  * limitations under the License.
  */
 
-package naming_client
+package naming_http
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/clients/cache"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/util"
+	"github.com/pkg/errors"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
+
+	"github.com/buger/jsonparser"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
+	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"golang.org/x/sync/semaphore"
 )
 
 type BeatReactor struct {
 	beatMap             cache.ConcurrentMap
-	serviceProxy        NamingProxy
-	clientBeatInterval  int64
+	nacosServer         *nacos_server.NacosServer
 	beatThreadCount     int
 	beatThreadSemaphore *semaphore.Weighted
 	beatRecordMap       cache.ConcurrentMap
+	clientCfg           constant.ClientConfig
 	mux                 *sync.Mutex
 }
 
@@ -45,14 +53,11 @@ const DefaultBeatThreadNum = 20
 
 var ctx = context.Background()
 
-func NewBeatReactor(serviceProxy NamingProxy, clientBeatInterval int64) BeatReactor {
+func NewBeatReactor(clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer) BeatReactor {
 	br := BeatReactor{}
-	if clientBeatInterval <= 0 {
-		clientBeatInterval = 5 * 1000
-	}
 	br.beatMap = cache.NewConcurrentMap()
-	br.serviceProxy = serviceProxy
-	br.clientBeatInterval = clientBeatInterval
+	br.nacosServer = nacosServer
+	br.clientCfg = clientCfg
 	br.beatThreadCount = DefaultBeatThreadNum
 	br.beatRecordMap = cache.NewConcurrentMap()
 	br.beatThreadSemaphore = semaphore.NewWeighted(int64(br.beatThreadCount))
@@ -76,6 +81,7 @@ func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo *model.BeatInfo)
 	}
 	br.beatMap.Set(k, beatInfo)
 	beatInfo.Metadata = util.DeepCopyMap(beatInfo.Metadata)
+	monitor.GetDom2BeatSizeMonitor().Set(float64(br.beatMap.Count()))
 	go br.sendInstanceBeat(k, beatInfo)
 }
 
@@ -89,16 +95,14 @@ func (br *BeatReactor) RemoveBeatInfo(serviceName string, ip string, port uint64
 		beatInfo := data.(*model.BeatInfo)
 		atomic.StoreInt32(&beatInfo.State, int32(model.StateShutdown))
 	}
+	monitor.GetDom2BeatSizeMonitor().Set(float64(br.beatMap.Count()))
 	br.beatMap.Remove(k)
+
 }
 
 func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 	for {
-		err := br.beatThreadSemaphore.Acquire(ctx, 1)
-		if err != nil {
-			logger.Errorf("sendInstanceBeat failed to acquire semaphore: %v", err)
-			return
-		}
+		br.beatThreadSemaphore.Acquire(ctx, 1)
 		//如果当前实例注销，则进行停止心跳
 		if atomic.LoadInt32(&beatInfo.State) == int32(model.StateShutdown) {
 			logger.Infof("instance[%s] stop heartBeating", k)
@@ -107,7 +111,7 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 		}
 
 		//进行心跳通信
-		beatInterval, err := br.serviceProxy.SendBeat(beatInfo)
+		beatInterval, err := br.SendBeat(beatInfo)
 		if err != nil {
 			logger.Errorf("beat to server return error:%+v", err)
 			br.beatThreadSemaphore.Release(1)
@@ -125,4 +129,27 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 		t := time.NewTimer(beatInfo.Period)
 		<-t.C
 	}
+}
+
+func (br *BeatReactor) SendBeat(info *model.BeatInfo) (int64, error) {
+	logger.Infof("namespaceId:<%s> sending beat to server:<%s>",
+		br.clientCfg.NamespaceId, util.ToJsonString(info))
+	params := map[string]string{}
+	params["namespaceId"] = br.clientCfg.NamespaceId
+	params["serviceName"] = info.ServiceName
+	params["beat"] = util.ToJsonString(info)
+	api := constant.SERVICE_BASE_PATH + "/instance/beat"
+	result, err := br.nacosServer.ReqApi(api, params, http.MethodPut)
+	if err != nil {
+		return 0, err
+	}
+	if result != "" {
+		interVal, err := jsonparser.GetInt([]byte(result), "clientBeatInterval")
+		if err != nil {
+			return 0, errors.New(fmt.Sprintf("namespaceId:<%s> sending beat to server:<%s> get 'clientBeatInterval' from <%s> error:<%+v>", br.clientCfg.NamespaceId, util.ToJsonString(info), result, err))
+		} else {
+			return interVal, nil
+		}
+	}
+	return 0, nil
 }
