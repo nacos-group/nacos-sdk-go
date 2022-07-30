@@ -17,14 +17,15 @@
 package clients
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 
-	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
-	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
-	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 )
 
 // CreateConfigClient use to create config client
@@ -61,7 +62,7 @@ func NewNamingClient(param vo.NacosClientParam) (iClient naming_client.INamingCl
 	if err != nil {
 		return
 	}
-	iClient = &naming
+	iClient = naming
 	return
 }
 
@@ -84,9 +85,15 @@ func setConfig(param vo.NacosClientParam) (iClient nacos_client.INacosClient, er
 	client := &nacos_client.NacosClient{}
 	if param.ClientConfig == nil {
 		// default clientConfig
-		_ = client.SetClientConfig(constant.ClientConfig{})
+		_ = client.SetClientConfig(constant.ClientConfig{
+			TimeoutMs:    10 * 1000,
+			BeatInterval: 5 * 1000,
+		})
 	} else {
-		_ = client.SetClientConfig(*param.ClientConfig)
+		err = client.SetClientConfig(*param.ClientConfig)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if len(param.ServerConfigs) == 0 {
@@ -95,7 +102,7 @@ func setConfig(param vo.NacosClientParam) (iClient nacos_client.INacosClient, er
 			err = errors.New("server configs not found in properties")
 			return nil, err
 		}
-		_ = client.SetServerConfig([]constant.ServerConfig{})
+		_ = client.SetServerConfig(nil)
 	} else {
 		err = client.SetServerConfig(param.ServerConfigs)
 		if err != nil {
@@ -104,7 +111,9 @@ func setConfig(param vo.NacosClientParam) (iClient nacos_client.INacosClient, er
 	}
 
 	if _, _err := client.GetHttpAgent(); _err != nil {
-		_ = client.SetHttpAgent(&http_agent.HttpAgent{})
+		if clientCfg, err := client.GetClientConfig(); err == nil {
+			_ = client.SetHttpAgent(&http_agent.HttpAgent{TlsConfig: clientCfg.TLSCfg})
+		}
 	}
 	iClient = client
 	return

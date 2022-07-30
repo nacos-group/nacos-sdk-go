@@ -1,36 +1,38 @@
-/*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package cache
 
 import (
-	"runtime"
+	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/common/file"
 )
 
-func TestGetFileName(t *testing.T) {
+func TestGetFailover(t *testing.T) {
+	cacheKey := "test_failOver"
+	dir := file.GetCurrentPath()
+	fileContent := "test_failover"
+	t.Run("writeContent", func(t *testing.T) {
+		filepath := dir + string(os.PathSeparator) + cacheKey + "_failover"
+		fmt.Println(filepath)
+		err := writeFileContent(filepath, fileContent)
+		assert.Nil(t, err)
+	})
+	t.Run("getContent", func(t *testing.T) {
+		content := GetFailover(cacheKey, dir)
+		assert.Equal(t, content, fileContent)
+	})
+	t.Run("clearContent", func(t *testing.T) {
+		filepath := dir + string(os.PathSeparator) + cacheKey + "_failover"
+		err := writeFileContent(filepath, "")
+		assert.Nil(t, err)
+	})
+}
 
-	name := GetFileName("nacos@@providers:org.apache.dubbo.UserProvider:hangzhou", "tmp")
-
-	if runtime.GOOS == constant.OS_WINDOWS {
-		assert.Equal(t, name, "tmp\\nacos@@providers&&org.apache.dubbo.UserProvider&&hangzhou")
-	} else {
-		assert.Equal(t, name, "tmp/nacos@@providers:org.apache.dubbo.UserProvider:hangzhou")
-	}
+// write file content
+func writeFileContent(filepath, content string) error {
+	return ioutil.WriteFile(filepath, []byte(content), 0666)
 }

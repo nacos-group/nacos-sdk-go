@@ -16,6 +16,8 @@
 
 package constant
 
+import "time"
+
 const (
 	KEY_USERNAME                = "username"
 	KEY_PASSWORD                = "password"
@@ -66,7 +68,7 @@ const (
 	KEY_BEAT                    = "beat"
 	KEY_DOM                     = "dom"
 	DEFAULT_CONTEXT_PATH        = "/nacos"
-	CLIENT_VERSION              = "Nacos-Go-Client:v1.0.1"
+	CLIENT_VERSION              = "Nacos-Go-Client:v2.0.0"
 	REQUEST_DOMAIN_RETRY_TIME   = 3
 	SERVICE_INFO_SPLITER        = "@@"
 	CONFIG_INFO_SPLITER         = "@@"
@@ -75,7 +77,24 @@ const (
 	NAMING_INSTANCE_ID_SPLITTER = "#"
 	DefaultClientErrorCode      = "SDK.NacosError"
 	DEFAULT_SERVER_SCHEME       = "http"
-	WINDOWS_LEGAL_NAME_SPLITER  = "&&"
-	OS_WINDOWS                  = "windows"
+	HTTPS_SERVER_SCHEME         = "https"
+	LABEL_SOURCE                = "source"
+	LABEL_SOURCE_SDK            = "sdk"
+	LABEL_MODULE                = "module"
+	LABEL_MODULE_CONFIG         = "config"
+	LABEL_MODULE_NAMING         = "naming"
+	RESPONSE_CODE_SUCCESS       = 200
+	UN_REGISTER                 = 301
+	KEEP_ALIVE_TIME             = 5
+	DEFAULT_TIMEOUT_MILLS       = 3000
+	ALL_SYNC_INTERNAL           = 5 * time.Minute
+	CLIENT_APPNAME_HEADER       = "Client-AppName"
+	CLIENT_REQUEST_TS_HEADER    = "Client-RequestTS"
+	CLIENT_REQUEST_TOKEN_HEADER = "Client-RequestToken"
+	EX_CONFIG_INFO              = "exConfigInfo"
+	CHARSET_KEY                 = "charset"
 	LOG_FILE_NAME               = "nacos-sdk.log"
+	HTTPS_SERVER_PORT           = 443
+	GRPC                        = "grpc"
+	FAILOVER_FILE_SUFFIX        = "_failover"
 )

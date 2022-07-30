@@ -17,8 +17,8 @@
 package config_client
 
 import (
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 )
 
 //go:generate mockgen -destination ../../mock/mock_config_client_interface.go -package mock -source=./config_client_interface.go
@@ -63,7 +63,8 @@ type IConfigClient interface {
 	// tenant ==>nacos.namespace optional
 	// pageNo  option,default is 1
 	// pageSize option,default is 10
-	SearchConfig(param vo.SearchConfigParam) (*model.ConfigPage, error)
+	SearchConfig(param vo.SearchConfigParm) (*model.ConfigPage, error)
 
-	PublishAggr(param vo.ConfigParam) (published bool, err error)
+	// CloseClient Close the GRPC client
+	CloseClient()
 }

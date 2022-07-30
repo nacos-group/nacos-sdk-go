@@ -20,48 +20,28 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/clients"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 )
 
 func main() {
+	//create ServerConfig
 	sc := []constant.ServerConfig{
-		{
-			IpAddr: "console.nacos.io",
-			Port:   80,
-		},
-	}
-	//or a more graceful way to create ServerConfig
-	_ = []constant.ServerConfig{
-		*constant.NewServerConfig(
-			"console.nacos.io",
-			80,
-			constant.WithScheme("http"),
-			constant.WithContextPath("/nacos")),
+		*constant.NewServerConfig("127.0.0.1", 8848, constant.WithContextPath("/nacos")),
 	}
 
-	cc := constant.ClientConfig{
-		NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", //namespace id
-		TimeoutMs:           5000,
-		NotLoadCacheAtStart: true,
-		LogDir:              "/tmp/nacos/log",
-		CacheDir:            "/tmp/nacos/cache",
-		LogLevel:            "debug",
-		LogStdout:           true,
-	}
-	//or a more graceful way to create ClientConfig
-	_ = *constant.NewClientConfig(
-		constant.WithNamespaceId("e525eafa-f7d7-4029-83d9-008937f9d468"),
+	//create ClientConfig
+	cc := *constant.NewClientConfig(
+		constant.WithNamespaceId(""),
 		constant.WithTimeoutMs(5000),
 		constant.WithNotLoadCacheAtStart(true),
 		constant.WithLogDir("/tmp/nacos/log"),
 		constant.WithCacheDir("/tmp/nacos/cache"),
 		constant.WithLogLevel("debug"),
-		constant.WithLogStdout(true),
 	)
 
-	// a more graceful way to create config client
+	// create config client
 	client, err := clients.NewConfigClient(
 		vo.NacosClientParam{
 			ClientConfig:  &cc,
@@ -88,7 +68,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("PublishConfig err:%+v \n", err)
 	}
-
+	time.Sleep(1 * time.Second)
 	//get config
 	content, err := client.GetConfig(vo.ConfigParam{
 		DataId: "test-data",
@@ -113,13 +93,15 @@ func main() {
 		},
 	})
 
+	time.Sleep(1 * time.Second)
+
 	_, err = client.PublishConfig(vo.ConfigParam{
 		DataId:  "test-data",
 		Group:   "test-group",
 		Content: "test-listen",
 	})
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	_, err = client.PublishConfig(vo.ConfigParam{
 		DataId:  "test-data-2",
@@ -135,14 +117,14 @@ func main() {
 		Group:  "test-group",
 	})
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	_, err = client.DeleteConfig(vo.ConfigParam{
 		DataId: "test-data",
 		Group:  "test-group",
 	})
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
 
-	searchPage, _ := client.SearchConfig(vo.SearchConfigParam{
+	searchPage, _ := client.SearchConfig(vo.SearchConfigParm{
 		Search:   "blur",
 		DataId:   "",
 		Group:    "",

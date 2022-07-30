@@ -18,7 +18,6 @@ package security
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -26,9 +25,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
+	"github.com/pkg/errors"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 )
 
 type AuthClient struct {
@@ -50,7 +51,6 @@ func NewAuthClient(clientCfg constant.ClientConfig, serverCfgs []constant.Server
 		serverCfgs:  serverCfgs,
 		clientCfg:   clientCfg,
 		agent:       agent,
-		tokenTtl:    5, // default refresh token 5 second, if first login error
 		accessToken: &atomic.Value{},
 	}
 
@@ -138,7 +138,7 @@ func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 			return false, err
 		}
 
-		if resp.StatusCode != 200 {
+		if resp.StatusCode != constant.RESPONSE_CODE_SUCCESS {
 			errMsg := string(bytes)
 			return false, errors.New(errMsg)
 		}

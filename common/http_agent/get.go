@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-func get(path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
+func get(client *http.Client, path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
 	if !strings.HasSuffix(path, "?") {
 		path = path + "?"
 	}
@@ -34,7 +34,6 @@ func get(path string, header http.Header, timeoutMs uint64, params map[string]st
 		path = path[:len(path)-1]
 	}
 
-	client := http.Client{}
 	client.Timeout = time.Millisecond * time.Duration(timeoutMs)
 	request, errNew := http.NewRequest(http.MethodGet, path, nil)
 	if errNew != nil {

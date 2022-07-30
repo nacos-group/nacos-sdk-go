@@ -61,3 +61,10 @@ func WithPort(port uint64) ServerOption {
 		config.Port = port
 	}
 }
+
+//WithGrpcPort set grpc port for server
+func WithGrpcPort(port uint64) ServerOption {
+	return func(config *ServerConfig) {
+		config.GrpcPort = port
+	}
+}

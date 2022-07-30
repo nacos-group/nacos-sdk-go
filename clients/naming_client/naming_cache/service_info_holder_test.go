@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package naming_client
+package naming_cache
 
 import (
 	"fmt"
@@ -22,69 +21,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
-
-	"github.com/nacos-group/nacos-sdk-go/model"
-
-	"github.com/nacos-group/nacos-sdk-go/clients/nacos_client"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/util"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHostReactor_GetServiceInfo(t *testing.T) {
-	nc := nacos_client.NacosClient{}
-	_ = nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	_ = nc.SetClientConfig(clientConfigTest)
-	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
-	client, _ := NewNamingClient(&nc)
-	param := vo.RegisterInstanceParam{
-		Ip:          "10.0.0.11",
-		Port:        8848,
-		ServiceName: "test",
-		Weight:      10,
-		ClusterName: "test",
-		Enable:      true,
-		Healthy:     true,
-		Ephemeral:   true,
-	}
-	if param.GroupName == "" {
-		param.GroupName = constant.DEFAULT_GROUP
-	}
-	param.ServiceName = util.GetGroupName(param.ServiceName, param.GroupName)
-	_, _ = client.RegisterInstance(param)
-	_, err := client.hostReactor.GetServiceInfo(param.ServiceName, param.ClusterName)
-	assert.Nil(t, err)
-}
-
-func TestHostReactor_GetServiceInfoErr(t *testing.T) {
-	nc := nacos_client.NacosClient{}
-	_ = nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
-	_ = nc.SetClientConfig(clientConfigTest)
-	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
-	client, _ := NewNamingClient(&nc)
-	param := vo.RegisterInstanceParam{
-		Ip:          "10.0.0.11",
-		Port:        8848,
-		ServiceName: "test",
-		Weight:      10,
-		ClusterName: "test",
-		Enable:      true,
-		Healthy:     true,
-		Ephemeral:   true,
-	}
-	_, _ = client.RegisterInstance(param)
-	_, err := client.hostReactor.GetServiceInfo(param.ServiceName, param.ClusterName)
-	assert.NotNil(t, err)
-}
-
-func TestHostReactor_isServiceInstanceChanged(t *testing.T) {
+func TestServiceInfoHolder_isServiceInstanceChanged(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 	defaultIp := createRandomIp()
 	defaultPort := creatRandomPort()
-	serviceA := &model.Service{
+	serviceA := model.Service{
 		LastRefTime: 1000,
 		Hosts: []model.Instance{
 			{
@@ -101,7 +47,7 @@ func TestHostReactor_isServiceInstanceChanged(t *testing.T) {
 			},
 		},
 	}
-	serviceB := &model.Service{
+	serviceB := model.Service{
 		LastRefTime: 1001,
 		Hosts: []model.Instance{
 			{
@@ -119,7 +65,7 @@ func TestHostReactor_isServiceInstanceChanged(t *testing.T) {
 		},
 	}
 	ip := createRandomIp()
-	serviceC := &model.Service{
+	serviceC := model.Service{
 		LastRefTime: 1001,
 		Hosts: []model.Instance{
 			{
@@ -155,7 +101,7 @@ func TestHostReactor_isServiceInstanceChanged(t *testing.T) {
 
 func TestHostReactor_isServiceInstanceChangedWithUnOrdered(t *testing.T) {
 	rand.Seed(time.Now().Unix())
-	serviceA := &model.Service{
+	serviceA := model.Service{
 		LastRefTime: 1001,
 		Hosts: []model.Instance{
 			{
@@ -173,7 +119,7 @@ func TestHostReactor_isServiceInstanceChangedWithUnOrdered(t *testing.T) {
 		},
 	}
 
-	serviceB := &model.Service{
+	serviceB := model.Service{
 		LastRefTime: 1001,
 		Hosts: []model.Instance{
 			{

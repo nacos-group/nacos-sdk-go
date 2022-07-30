@@ -21,37 +21,32 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"runtime"
 	"strconv"
-	"strings"
 
-	"github.com/go-errors/errors"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/file"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/util"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/file"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
+	"github.com/nacos-group/nacos-sdk-go/v2/util"
+	"github.com/pkg/errors"
 )
 
 func GetFileName(cacheKey string, cacheDir string) string {
-
-	if runtime.GOOS == constant.OS_WINDOWS {
-		cacheKey = strings.ReplaceAll(cacheKey, ":", constant.WINDOWS_LEGAL_NAME_SPLITER)
-	}
-
 	return cacheDir + string(os.PathSeparator) + cacheKey
 }
 
-func WriteServicesToFile(service model.Service, cacheDir string) {
-	file.MkdirIfNecessary(cacheDir)
-	sb, _ := json.Marshal(service)
-	domFileName := GetFileName(util.GetServiceCacheKey(service.Name, service.Clusters), cacheDir)
-
-	err := ioutil.WriteFile(domFileName, sb, 0666)
+func WriteServicesToFile(service *model.Service, cacheKey, cacheDir string) {
+	err := file.MkdirIfNecessary(cacheDir)
 	if err != nil {
-		logger.Errorf("failed to write name cache:%s ,value:%s ,err:%+v", domFileName, string(sb), err)
+		logger.Errorf("mkdir cacheDir failed,cacheDir:%s,err:", cacheDir, err)
+		return
 	}
-
+	bytes, _ := json.Marshal(service)
+	domFileName := GetFileName(cacheKey, cacheDir)
+	err = ioutil.WriteFile(domFileName, bytes, 0666)
+	if err != nil {
+		logger.Errorf("failed to write name cache:%s ,value:%s ,err:%v", domFileName, string(bytes), err)
+	}
 }
 
 func ReadServicesFromFile(cacheDir string) map[string]model.Service {
@@ -75,21 +70,29 @@ func ReadServicesFromFile(cacheDir string) map[string]model.Service {
 		if service == nil {
 			continue
 		}
-
-		serviceMap[f.Name()] = *service
+		cacheKey := util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName), service.Clusters)
+		serviceMap[cacheKey] = *service
 	}
 
-	logger.Info("finish loading name cache, total: " + strconv.Itoa(len(files)))
+	logger.Infof("finish loading name cache, total: %s", strconv.Itoa(len(files)))
 	return serviceMap
 }
 
 func WriteConfigToFile(cacheKey string, cacheDir string, content string) {
 	file.MkdirIfNecessary(cacheDir)
 	fileName := GetFileName(cacheKey, cacheDir)
+	if len(content) == 0 {
+		// delete config snapshot
+		if err := os.Remove(fileName); err != nil {
+			logger.Errorf("failed to delete config file,cache:%s ,value:%s ,err:%+v", fileName, content, err)
+		}
+		return
+	}
 	err := ioutil.WriteFile(fileName, []byte(content), 0666)
 	if err != nil {
 		logger.Errorf("failed to write config  cache:%s ,value:%s ,err:%+v", fileName, content, err)
 	}
+
 }
 
 func ReadConfigFromFile(cacheKey string, cacheDir string) (string, error) {
@@ -99,4 +102,19 @@ func ReadConfigFromFile(cacheKey string, cacheDir string) (string, error) {
 		return "", errors.New(fmt.Sprintf("failed to read config cache file:%s,err:%+v ", fileName, err))
 	}
 	return string(b), nil
+}
+
+// GetFailover , get failover content
+func GetFailover(key, dir string) string {
+	filePath := dir + string(os.PathSeparator) + key + constant.FAILOVER_FILE_SUFFIX
+	if !file.IsExistFile(filePath) {
+		return ""
+	}
+	logger.GetLogger().Warn(fmt.Sprintf("reading failover content from path:%s", filePath))
+	fileContent, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		logger.GetLogger().Error(fmt.Sprintf("fail to read failover content from %s", filePath))
+		return ""
+	}
+	return string(fileContent)
 }

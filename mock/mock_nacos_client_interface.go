@@ -23,9 +23,10 @@ package mock
 import (
 	reflect "reflect"
 
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
+
 	gomock "github.com/golang/mock/gomock"
-	constant "github.com/nacos-group/nacos-sdk-go/common/constant"
-	http_agent "github.com/nacos-group/nacos-sdk-go/common/http_agent"
 )
 
 // MockINacosClient is a mock of INacosClient interface

@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package naming_client
+package naming_http
 
 import (
 	"testing"
-	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
-
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/util"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
+	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestBeatReactor_AddBeatInfo(t *testing.T) {
-	br := NewBeatReactor(NamingProxy{nacosServer: &nacos_server.NacosServer{}}, 5000)
+	br := NewBeatReactor(constant.ClientConfig{}, &nacos_server.NacosServer{})
 	serviceName := "Test"
 	groupName := "public"
 	beatInfo := &model.BeatInfo{
@@ -38,7 +37,6 @@ func TestBeatReactor_AddBeatInfo(t *testing.T) {
 		ServiceName: util.GetGroupName(serviceName, groupName),
 		Cluster:     "default",
 		Weight:      1,
-		Period:      time.Second * 5,
 	}
 	br.AddBeatInfo(util.GetGroupName(serviceName, groupName), beatInfo)
 	key := buildKey(util.GetGroupName(serviceName, groupName), beatInfo.Ip, beatInfo.Port)
@@ -48,7 +46,7 @@ func TestBeatReactor_AddBeatInfo(t *testing.T) {
 }
 
 func TestBeatReactor_RemoveBeatInfo(t *testing.T) {
-	br := NewBeatReactor(NamingProxy{nacosServer: &nacos_server.NacosServer{}}, 5000)
+	br := NewBeatReactor(constant.ClientConfig{}, &nacos_server.NacosServer{})
 	serviceName := "Test"
 	groupName := "public"
 	beatInfo1 := &model.BeatInfo{
@@ -58,7 +56,6 @@ func TestBeatReactor_RemoveBeatInfo(t *testing.T) {
 		ServiceName: util.GetGroupName(serviceName, groupName),
 		Cluster:     "default",
 		Weight:      1,
-		Period:      time.Second * 5,
 	}
 	br.AddBeatInfo(util.GetGroupName(serviceName, groupName), beatInfo1)
 	beatInfo2 := &model.BeatInfo{
@@ -68,7 +65,6 @@ func TestBeatReactor_RemoveBeatInfo(t *testing.T) {
 		ServiceName: util.GetGroupName(serviceName, groupName),
 		Cluster:     "default",
 		Weight:      1,
-		Period:      time.Second * 5,
 	}
 	br.AddBeatInfo(util.GetGroupName(serviceName, groupName), beatInfo2)
 	br.RemoveBeatInfo(util.GetGroupName(serviceName, groupName), "127.0.0.1", 8080)

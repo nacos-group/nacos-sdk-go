@@ -19,13 +19,14 @@ package util
 import (
 	"encoding/json"
 	"net"
+	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/model"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
 )
 
 func CurrentMillis() int64 {
@@ -65,91 +66,37 @@ func GetConfigCacheKey(dataId string, group string, tenant string) string {
 	return dataId + constant.CONFIG_INFO_SPLITER + group + constant.CONFIG_INFO_SPLITER + tenant
 }
 
-var (
-	localIP     = ""
-	privateCIDR []*net.IPNet
-)
+var localIP = ""
 
 func LocalIP() string {
-	if localIP != "" {
-		return localIP
-	}
-
-	faces, err := getFaces()
-	if err != nil {
-		return ""
-	}
-
-	for _, address := range faces {
-		ipNet, ok := address.(*net.IPNet)
-		if !ok || ipNet.IP.To4() == nil || isFilteredIP(ipNet.IP) {
-			continue
+	if localIP == "" {
+		netInterfaces, err := net.Interfaces()
+		if err != nil {
+			logger.Errorf("get Interfaces failed,err:%+v", err)
+			return ""
 		}
 
-		localIP = ipNet.IP.String()
-		break
-	}
+		for i := 0; i < len(netInterfaces); i++ {
+			if ((netInterfaces[i].Flags & net.FlagUp) != 0) && ((netInterfaces[i].Flags & net.FlagLoopback) == 0) {
+				addrs, err := netInterfaces[i].Addrs()
+				if err != nil {
+					logger.Errorf("get InterfaceAddress failed,err:%+v", err)
+					return ""
+				}
+				for _, address := range addrs {
+					if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
+						localIP = ipnet.IP.String()
+						break
+					}
+				}
+			}
+		}
 
-	if localIP != "" {
-		logger.Infof("Local IP:%s", localIP)
+		if len(localIP) > 0 {
+			logger.Infof("Local IP:%s", localIP)
+		}
 	}
-
 	return localIP
-}
-
-// SetFilterNetNumberAndMask ipMask like 127.0.0.0/8
-func SetFilterNetNumberAndMask(ipMask ...string) error {
-	var (
-		err   error
-		ipNet *net.IPNet
-	)
-	for _, b := range ipMask {
-		_, ipNet, err = net.ParseCIDR(b)
-		if err != nil {
-			return err
-		}
-		privateCIDR = append(privateCIDR, ipNet)
-	}
-	return err
-}
-
-// getFaces return addresses from interfaces that is up
-func getFaces() ([]net.Addr, error) {
-	var upAddrs []net.Addr
-
-	interfaces, err := net.Interfaces()
-	if err != nil {
-		logger.Errorf("get Interfaces failed,err:%+v", err)
-		return nil, err
-	}
-
-	for _, iface := range interfaces {
-		if iface.Flags&net.FlagUp == 0 {
-			continue
-		}
-		if (iface.Flags & net.FlagLoopback) != 0 {
-			continue
-		}
-
-		addresses, err := iface.Addrs()
-		if err != nil {
-			logger.Errorf("get InterfaceAddress failed,err:%+v", err)
-			return nil, err
-		}
-
-		upAddrs = append(upAddrs, addresses...)
-	}
-
-	return upAddrs, nil
-}
-
-func isFilteredIP(ip net.IP) bool {
-	for _, privateIP := range privateCIDR {
-		if privateIP.Contains(ip) {
-			return true
-		}
-	}
-	return false
 }
 
 func GetDurationWithDefault(metadata map[string]string, key string, defaultDuration time.Duration) time.Duration {
@@ -172,6 +119,17 @@ func GetUrlFormedMap(source map[string]string) (urlEncoded string) {
 	}
 	urlEncoded = urlEncoder.Encode()
 	return
+}
+
+// get status code by response,default is NA
+func GetStatusCode(response *http.Response) string {
+	var statusCode string
+	if response != nil {
+		statusCode = strconv.Itoa(response.StatusCode)
+	} else {
+		statusCode = "NA"
+	}
+	return statusCode
 }
 
 func DeepCopyMap(params map[string]string) map[string]string {

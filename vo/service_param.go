@@ -16,7 +16,7 @@
 
 package vo
 
-import "github.com/nacos-group/nacos-sdk-go/model"
+import "github.com/nacos-group/nacos-sdk-go/v2/model"
 
 type RegisterInstanceParam struct {
 	Ip          string            `param:"ip"`          //required
@@ -41,15 +41,16 @@ type DeregisterInstanceParam struct {
 }
 
 type UpdateInstanceParam struct {
-	Ip          string            `param:"ip"`          // required
-	Port        uint64            `param:"port"`        // required
-	ClusterName string            `param:"cluster"`     // optional,default:DEFAULT
-	ServiceName string            `param:"serviceName"` // required
-	GroupName   string            `param:"groupName"`   // optional,default:DEFAULT_GROUP
-	Ephemeral   bool              `param:"ephemeral"`   // optional
-	Weight      float64           `param:"weight"`      // required,it must be lager than 0
-	Enable      bool              `param:"enabled"`     // required,the instance can be access or not
-	Metadata    map[string]string `param:"metadata"`    // optional
+	Ip          string            `param:"ip"`          //required
+	Port        uint64            `param:"port"`        //required
+	Weight      float64           `param:"weight"`      //required,it must be lager than 0
+	Enable      bool              `param:"enabled"`     //required,the instance can be access or not
+	Healthy     bool              `param:"healthy"`     //required,the instance is health or not
+	Metadata    map[string]string `param:"metadata"`    //optional
+	ClusterName string            `param:"clusterName"` //optional,default:DEFAULT
+	ServiceName string            `param:"serviceName"` //required
+	GroupName   string            `param:"groupName"`   //optional,default:DEFAULT_GROUP
+	Ephemeral   bool              `param:"ephemeral"`   //optional
 }
 
 type GetServiceParam struct {
@@ -66,10 +67,10 @@ type GetAllServiceInfoParam struct {
 }
 
 type SubscribeParam struct {
-	ServiceName       string                                             `param:"serviceName"` //required
-	Clusters          []string                                           `param:"clusters"`    //optional,default:DEFAULT
-	GroupName         string                                             `param:"groupName"`   //optional,default:DEFAULT_GROUP
-	SubscribeCallback func(services []model.SubscribeService, err error) //required
+	ServiceName       string                                     `param:"serviceName"` //required
+	Clusters          []string                                   `param:"clusters"`    //optional,default:DEFAULT
+	GroupName         string                                     `param:"groupName"`   //optional,default:DEFAULT_GROUP
+	SubscribeCallback func(services []model.Instance, err error) //required
 }
 
 type SelectAllInstancesParam struct {
