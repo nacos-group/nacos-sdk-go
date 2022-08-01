@@ -45,6 +45,7 @@ func NewServiceInfoUpdater(serviceInfoHolder *naming_cache.ServiceInfoHolder, up
 func (s *ServiceInfoUpdater) asyncUpdateService() {
 	sema := util.NewSemaphore(s.updateThreadNum)
 	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
