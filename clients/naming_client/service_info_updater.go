@@ -44,23 +44,26 @@ func NewServiceInfoUpdater(serviceInfoHolder *naming_cache.ServiceInfoHolder, up
 
 func (s *ServiceInfoUpdater) asyncUpdateService() {
 	sema := util.NewSemaphore(s.updateThreadNum)
+	ticker := time.NewTicker(time.Second)
 	for {
-		for _, v := range s.serviceInfoHolder.ServiceInfoMap.Items() {
-			service := v.(model.Service)
-			lastRefTime, ok := s.serviceInfoHolder.UpdateTimeMap.Get(util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName),
-				service.Clusters))
-			if !ok {
-				lastRefTime = uint64(0)
-			}
-			if uint64(util.CurrentMillis())-lastRefTime.(uint64) > service.CacheMillis {
-				sema.Acquire()
-				go func() {
-					s.updateServiceNow(service.Name, service.GroupName, service.Clusters)
-					sema.Release()
-				}()
-			}
+		select {
+		case <-ticker.C:
+			for _, v := range s.serviceInfoHolder.ServiceInfoMap.Items() {
+				service := v.(model.Service)
+				lastRefTime, ok := s.serviceInfoHolder.UpdateTimeMap.Get(util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName),
+					service.Clusters))
+				if !ok {
+					lastRefTime = uint64(0)
+				}
+				if uint64(util.CurrentMillis())-lastRefTime.(uint64) > service.CacheMillis {
+					sema.Acquire()
+					go func() {
+						s.updateServiceNow(service.Name, service.GroupName, service.Clusters)
+						sema.Release()
+					}()
+				}
+			}			
 		}
-		time.Sleep(1 * time.Second)
 	}
 }
 
