@@ -74,7 +74,7 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 		LogRollingConfig: clientConfig.LogRollingConfig,
 		LogDir:           clientConfig.LogDir,
 		CustomLogger:     clientConfig.CustomLogger,
-		LogStdout:        clientConfig.LogStdout,
+		LogStdout:        clientConfig.AppendToStdout,
 	}
 	err = logger.InitLogger(loggerConfig)
 	if err != nil {

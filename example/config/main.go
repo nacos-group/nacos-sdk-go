@@ -48,7 +48,7 @@ func main() {
 		LogDir:              "/tmp/nacos/log",
 		CacheDir:            "/tmp/nacos/cache",
 		LogLevel:            "debug",
-		LogStdout:           true,
+		AppendToStdout:      true,
 	}
 	//or a more graceful way to create ClientConfig
 	_ = *constant.NewClientConfig(

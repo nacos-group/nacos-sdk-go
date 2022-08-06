@@ -184,6 +184,6 @@ func WithLogRollingConfig(rollingConfig *lumberjack.Logger) ClientOption {
 // WithLogStdout ...
 func WithLogStdout(logStdout bool) ClientOption {
 	return func(config *ClientConfig) {
-		config.LogStdout = logStdout
+		config.AppendToStdout = logStdout
 	}
 }
