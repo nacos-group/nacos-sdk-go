@@ -52,5 +52,5 @@ type ClientConfig struct {
 	ContextPath          string                 // the nacos server contextpath
 	LogRollingConfig     *lumberjack.Logger     // the log rolling config
 	CustomLogger         logger.Logger          // the custom log interface ,With a custom Logger (nacos sdk will not provide log cutting and archiving capabilities)
-	LogStdout            bool                   // the stdout redirect for log, default is false
+	AppendToStdout       bool                   // append log to stdout
 }
