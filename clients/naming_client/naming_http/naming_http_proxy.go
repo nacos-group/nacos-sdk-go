@@ -117,9 +117,9 @@ func (proxy *NamingHttpProxy) DeregisterInstance(serviceName string, groupName s
 }
 
 // GetServiceList ...
-func (proxy *NamingHttpProxy) GetServiceList(pageNo uint32, pageSize uint32, groupName string, selector *model.ExpressionSelector) (model.ServiceList, error) {
+func (proxy *NamingHttpProxy) GetServiceList(pageNo uint32, pageSize uint32, groupName, namespaceId string, selector *model.ExpressionSelector) (model.ServiceList, error) {
 	params := map[string]string{}
-	params["namespaceId"] = proxy.clientConfig.NamespaceId
+	params["namespaceId"] = namespaceId
 	params["groupName"] = groupName
 	params["pageNo"] = strconv.Itoa(int(pageNo))
 	params["pageSize"] = strconv.Itoa(int(pageSize))
@@ -147,14 +147,14 @@ func (proxy *NamingHttpProxy) GetServiceList(pageNo uint32, pageSize uint32, gro
 
 	count, err := jsonparser.GetInt([]byte(result), "count")
 	if err != nil {
-		return serviceList, errors.New(fmt.Sprintf("namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'count' from <%s> error:<%+v>", proxy.clientConfig.NamespaceId, pageNo, pageSize, util.ToJsonString(selector), groupName, result, err))
+		return serviceList, errors.New(fmt.Sprintf("namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'count' from <%s> error:<%+v>", namespaceId, pageNo, pageSize, util.ToJsonString(selector), groupName, result, err))
 	}
 	var doms []string
 	_, err = jsonparser.ArrayEach([]byte(result), func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		doms = append(doms, string(value))
 	}, "doms")
 	if err != nil {
-		return serviceList, errors.New(fmt.Sprintf("namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'doms' from <%s> error:<%+v> ", proxy.clientConfig.NamespaceId, pageNo, pageSize, util.ToJsonString(selector), groupName, result, err))
+		return serviceList, errors.New(fmt.Sprintf("namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'doms' from <%s> error:<%+v> ", namespaceId, pageNo, pageSize, util.ToJsonString(selector), groupName, result, err))
 	}
 	serviceList.Count = count
 	serviceList.Doms = doms

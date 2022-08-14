@@ -116,7 +116,7 @@ func (proxy *NamingGrpcProxy) DeregisterInstance(serviceName string, groupName s
 }
 
 // GetServiceList ...
-func (proxy *NamingGrpcProxy) GetServiceList(pageNo uint32, pageSize uint32, groupName string, selector *model.ExpressionSelector) (model.ServiceList, error) {
+func (proxy *NamingGrpcProxy) GetServiceList(pageNo uint32, pageSize uint32, groupName, namespaceId string, selector *model.ExpressionSelector) (model.ServiceList, error) {
 	var selectorStr string
 	if selector != nil {
 		switch selector.Type {
@@ -126,7 +126,7 @@ func (proxy *NamingGrpcProxy) GetServiceList(pageNo uint32, pageSize uint32, gro
 			break
 		}
 	}
-	response, err := proxy.requestToServer(rpc_request.NewServiceListRequest(proxy.clientConfig.NamespaceId, "",
+	response, err := proxy.requestToServer(rpc_request.NewServiceListRequest(namespaceId, "",
 		groupName, int(pageNo), int(pageSize), selectorStr))
 	if err != nil {
 		return model.ServiceList{}, err

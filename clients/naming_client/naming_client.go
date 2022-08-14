@@ -176,7 +176,7 @@ func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (mod
 			param.NameSpace = clientConfig.NamespaceId
 		}
 	}
-	services, err := sc.serviceProxy.GetServiceList(param.PageNo, param.PageSize, param.GroupName, &model.ExpressionSelector{})
+	services, err := sc.serviceProxy.GetServiceList(param.PageNo, param.PageSize, param.GroupName, param.NameSpace, &model.ExpressionSelector{})
 	return services, err
 }
 

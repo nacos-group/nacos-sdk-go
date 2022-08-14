@@ -77,8 +77,8 @@ func (proxy *NamingProxyDelegate) DeregisterInstance(serviceName string, groupNa
 	return proxy.getExecuteClientProxy(instance).DeregisterInstance(serviceName, groupName, instance)
 }
 
-func (proxy *NamingProxyDelegate) GetServiceList(pageNo uint32, pageSize uint32, groupName string, selector *model.ExpressionSelector) (model.ServiceList, error) {
-	return proxy.grpcClientProxy.GetServiceList(pageNo, pageSize, groupName, selector)
+func (proxy *NamingProxyDelegate) GetServiceList(pageNo uint32, pageSize uint32, groupName, namespaceId string, selector *model.ExpressionSelector) (model.ServiceList, error) {
+	return proxy.grpcClientProxy.GetServiceList(pageNo, pageSize, groupName, namespaceId, selector)
 }
 
 func (proxy *NamingProxyDelegate) ServerHealthy() bool {
