@@ -62,7 +62,7 @@ func (mr *MockINamingProxyMockRecorder) DeregisterInstance(serviceName, groupNam
 }
 
 // GetServiceList mocks base method.
-func (m *MockINamingProxy) GetServiceList(pageNo, pageSize uint32, groupName string, selector *model.ExpressionSelector) (model.ServiceList, error) {
+func (m *MockINamingProxy) GetServiceList(pageNo, pageSize uint32, groupName, namespaceId string, selector *model.ExpressionSelector) (model.ServiceList, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetServiceList", pageNo, pageSize, groupName, selector)
 	ret0, _ := ret[0].(model.ServiceList)
@@ -71,7 +71,7 @@ func (m *MockINamingProxy) GetServiceList(pageNo, pageSize uint32, groupName str
 }
 
 // GetServiceList indicates an expected call of GetServiceList.
-func (mr *MockINamingProxyMockRecorder) GetServiceList(pageNo, pageSize, groupName, selector interface{}) *gomock.Call {
+func (mr *MockINamingProxyMockRecorder) GetServiceList(pageNo, pageSize, groupName, namespaceId, selector interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceList", reflect.TypeOf((*MockINamingProxy)(nil).GetServiceList), pageNo, pageSize, groupName, selector)
 }

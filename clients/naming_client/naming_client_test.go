@@ -47,7 +47,7 @@ func (m *MockNamingProxy) DeregisterInstance(serviceName string, groupName strin
 	return true, nil
 }
 
-func (m *MockNamingProxy) GetServiceList(pageNo uint32, pageSize uint32, groupName string, selector *model.ExpressionSelector) (model.ServiceList, error) {
+func (m *MockNamingProxy) GetServiceList(pageNo uint32, pageSize uint32, groupName, namespaceId string, selector *model.ExpressionSelector) (model.ServiceList, error) {
 	return model.ServiceList{Doms: []string{""}}, nil
 }
 

@@ -60,7 +60,7 @@ type GetServiceParam struct {
 }
 
 type GetAllServiceInfoParam struct {
-	NameSpace string `param:"nameSpace"` //optional,default:public
+	NameSpace string `param:"nameSpace"` //optional, namespaceId default:public
 	GroupName string `param:"groupName"` //optional,default:DEFAULT_GROUP
 	PageNo    uint32 `param:"pageNo"`    //optional,default:1
 	PageSize  uint32 `param:"pageSize"`  //optional,default:10
