@@ -25,6 +25,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
+
 	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
@@ -159,4 +161,14 @@ func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 	}
 	return true, nil
 
+}
+
+func (ac *AuthClient) GetLoginContent() model.LoginContent {
+	result := make(map[string]string)
+	result[constant.KEY_ACCESS_TOKEN] = ac.GetAccessToken()
+	return result
+}
+
+func (ac *AuthClient) Name() string {
+	return "default security auth service"
 }

@@ -97,4 +97,5 @@ const (
 	HTTPS_SERVER_PORT           = 443
 	GRPC                        = "grpc"
 	FAILOVER_FILE_SUFFIX        = "_failover"
+	AUTH_MANAGER_STARTED        = 1
 )
