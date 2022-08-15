@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
@@ -32,12 +33,12 @@ import (
 )
 
 type ServiceInfoHolder struct {
-	ServiceInfoMap       cache.ConcurrentMap
+	ServiceInfoMap       sync.Map
 	updateCacheWhenEmpty bool
 	cacheDir             string
 	notLoadCacheAtStart  bool
 	subCallback          *SubscribeCallback
-	UpdateTimeMap        cache.ConcurrentMap
+	UpdateTimeMap        sync.Map
 }
 
 func NewServiceInfoHolder(namespace, cacheDir string, updateCacheWhenEmpty, notLoadCacheAtStart bool) *ServiceInfoHolder {
@@ -47,8 +48,8 @@ func NewServiceInfoHolder(namespace, cacheDir string, updateCacheWhenEmpty, notL
 		notLoadCacheAtStart:  notLoadCacheAtStart,
 		cacheDir:             cacheDir,
 		subCallback:          NewSubscribeCallback(),
-		UpdateTimeMap:        cache.NewConcurrentMap(),
-		ServiceInfoMap:       cache.NewConcurrentMap(),
+		UpdateTimeMap:        sync.Map{},
+		ServiceInfoMap:       sync.Map{},
 	}
 
 	if !notLoadCacheAtStart {
@@ -63,7 +64,7 @@ func (s *ServiceInfoHolder) loadCacheFromDisk() {
 		return
 	}
 	for k, v := range serviceMap {
-		s.ServiceInfoMap.Set(k, v)
+		s.ServiceInfoMap.Store(k, v)
 	}
 }
 
@@ -84,26 +85,31 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 	}
 
 	cacheKey := util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName), service.Clusters)
-	oldDomain, ok := s.ServiceInfoMap.Get(cacheKey)
+	oldDomain, ok := s.ServiceInfoMap.Load(cacheKey)
 	if ok && oldDomain.(model.Service).LastRefTime >= service.LastRefTime {
 		logger.Warnf("out of date data received, old-t: %d, new-t: %d", oldDomain.(model.Service).LastRefTime, service.LastRefTime)
 		return
 	}
 
-	s.UpdateTimeMap.Set(cacheKey, uint64(util.CurrentMillis()))
-	s.ServiceInfoMap.Set(cacheKey, *service)
+	s.UpdateTimeMap.Store(cacheKey, uint64(util.CurrentMillis()))
+	s.ServiceInfoMap.Store(cacheKey, *service)
 	if !ok || checkInstanceChanged(oldDomain, *service) {
 		logger.Infof("service key:%s was updated to:%s", cacheKey, util.ToJsonString(service))
 		cache.WriteServicesToFile(service, cacheKey, s.cacheDir)
 		s.subCallback.ServiceChanged(cacheKey, service)
 	}
-	monitor.GetServiceInfoMapSizeMonitor().Set(float64(s.ServiceInfoMap.Count()))
+	var count int
+	s.ServiceInfoMap.Range(func(key, value interface{}) bool {
+		count++
+		return true
+	})
+	monitor.GetServiceInfoMapSizeMonitor().Set(float64(count))
 }
 
 func (s *ServiceInfoHolder) GetServiceInfo(serviceName, groupName, clusters string) (model.Service, bool) {
 	cacheKey := util.GetServiceCacheKey(util.GetGroupName(serviceName, groupName), clusters)
 	//todo FailoverReactor
-	service, ok := s.ServiceInfoMap.Get(cacheKey)
+	service, ok := s.ServiceInfoMap.Load(cacheKey)
 	if ok {
 		return service.(model.Service), ok
 	}
@@ -120,7 +126,7 @@ func (s *ServiceInfoHolder) DeregisterCallback(serviceName string, clusters stri
 
 func (s *ServiceInfoHolder) StopUpdateIfContain(serviceName, clusters string) {
 	cacheKey := util.GetServiceCacheKey(serviceName, clusters)
-	s.ServiceInfoMap.Remove(cacheKey)
+	s.ServiceInfoMap.Delete(cacheKey)
 }
 
 func (s *ServiceInfoHolder) IsSubscribed(serviceName, clusters string) bool {
