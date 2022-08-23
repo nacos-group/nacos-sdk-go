@@ -45,9 +45,9 @@ func NewServiceInfoUpdater(serviceInfoHolder *naming_cache.ServiceInfoHolder, up
 func (s *ServiceInfoUpdater) asyncUpdateService() {
 	sema := util.NewSemaphore(s.updateThreadNum)
 	for {
-		for _, v := range s.serviceInfoHolder.ServiceInfoMap.Items() {
-			service := v.(model.Service)
-			lastRefTime, ok := s.serviceInfoHolder.UpdateTimeMap.Get(util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName),
+		s.serviceInfoHolder.ServiceInfoMap.Range(func(key, value interface{}) bool {
+			service := value.(model.Service)
+			lastRefTime, ok := s.serviceInfoHolder.UpdateTimeMap.Load(util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName),
 				service.Clusters))
 			if !ok {
 				lastRefTime = uint64(0)
@@ -55,11 +55,12 @@ func (s *ServiceInfoUpdater) asyncUpdateService() {
 			if uint64(util.CurrentMillis())-lastRefTime.(uint64) > service.CacheMillis {
 				sema.Acquire()
 				go func() {
+					defer sema.Release()
 					s.updateServiceNow(service.Name, service.GroupName, service.Clusters)
-					sema.Release()
 				}()
 			}
-		}
+			return true
+		})
 		time.Sleep(1 * time.Second)
 	}
 }

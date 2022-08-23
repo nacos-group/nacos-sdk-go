@@ -50,7 +50,7 @@ func NewGrpcClient(clientName string, nacosServer *nacos_server.NacosServer) *Gr
 			labels:                      make(map[string]string, 8),
 			rpcClientStatus:             INITIALIZED,
 			eventChan:                   make(chan ConnectionEvent),
-			reconnectionChan:            make(chan ReconnectContext, 1),
+			reconnectionChan:            make(chan ReconnectContext),
 			nacosServer:                 nacosServer,
 			serverRequestHandlerMapping: make(map[string]ServerRequestHandlerMapping, 8),
 			mux:                         new(sync.Mutex),
