@@ -102,5 +102,5 @@ type INamingClient interface {
 	Unsubscribe(param *vo.SubscribeParam) error
 
 	//GetAllServicesInfo use to get all service info by page
-	GetAllServicesInfo(param vo.GetAllServiceInfoParam) (model.ServiceList, error)
+	GetAllServicesInfo(param vo.GetAllServiceInfoParam) (*model.ServiceList, error)
 }

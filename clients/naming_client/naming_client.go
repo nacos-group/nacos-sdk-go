@@ -93,7 +93,7 @@ func NewNamingClient(nc nacos_client.INacosClient) (NamingClient, error) {
 	return naming, nil
 }
 
-//RegisterInstance register instance
+// RegisterInstance register instance
 func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, error) {
 	if param.ServiceName == "" {
 		return false, errors.New("serviceName cannot be empty!")
@@ -135,7 +135,7 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 
 }
 
-//DeregisterInstance deregister instance
+// DeregisterInstance deregister instance
 func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -149,7 +149,7 @@ func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bo
 	return true, nil
 }
 
-//UpdateInstance update information for exist instance.
+// UpdateInstance update information for exist instance.
 func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -183,7 +183,7 @@ func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, erro
 	return true, nil
 }
 
-//GetService get service info
+// GetService get service info
 func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -192,8 +192,8 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (model.Service, err
 	return service, err
 }
 
-//GetAllServicesInfo get all services info
-func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (model.ServiceList, error) {
+// GetAllServicesInfo get all services info
+func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (*model.ServiceList, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
@@ -210,11 +210,11 @@ func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (mod
 	if param.PageSize == 0 {
 		param.PageSize = 10
 	}
-	services := sc.hostReactor.GetAllServiceInfo(param.NameSpace, param.GroupName, param.PageNo, param.PageSize)
-	return services, nil
+	services, err := sc.hostReactor.GetAllServiceInfo(param.NameSpace, param.GroupName, param.PageNo, param.PageSize)
+	return services, err
 }
 
-//SelectAllInstances select all instances
+// SelectAllInstances select all instances
 func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -226,7 +226,7 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 	return service.Hosts, err
 }
 
-//SelectInstances select instances
+// SelectInstances select instances
 func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -252,7 +252,7 @@ func (sc *NamingClient) selectInstances(service model.Service, healthy bool) ([]
 	return result, nil
 }
 
-//SelectOneHealthyInstance select one healthy instance
+// SelectOneHealthyInstance select one healthy instance
 func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanceParam) (*model.Instance, error) {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -321,7 +321,7 @@ func (chs Chooser) pick() model.Instance {
 	return chs.data[i]
 }
 
-//Subscribe subscibe service
+// Subscribe subscibe service
 func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -343,7 +343,7 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	return nil
 }
 
-//Unsubscribe unsubscribe service
+// Unsubscribe unsubscribe service
 func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) error {
 	sc.subCallback.RemoveCallbackFuncs(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 	return nil

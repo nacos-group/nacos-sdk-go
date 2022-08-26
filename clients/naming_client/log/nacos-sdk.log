@@ -1,0 +1,5 @@
+2022-08-26T13:09:13.784+0800	[34mINFO[0m	naming_client/naming_client_test.go:71	logDir:</Users/chenzhiguo/Projects/nacos-sdk-go/clients/naming_client/log>   cacheDir:</Users/chenzhiguo/Projects/nacos-sdk-go/clients/naming_client/cache>
+2022-08-26T13:09:13.785+0800	[34mINFO[0m	naming_client/push_receiver.go:81	udp server start, port: 55717
+2022-08-26T13:09:13.785+0800	[34mINFO[0m	naming_client/naming_proxy.go:54	register instance namespaceId:<>,serviceName:<DEFAULT_GROUP@@DEMO> with instance:<{"valid":false,"marked":false,"instanceId":"","port":80,"ip":"10.0.0.10","weight":0,"metadata":{},"clusterName":"","serviceName":"","enabled":false,"healthy":false,"ephemeral":false}>
+2022-08-26T13:10:47.029+0800	[34mINFO[0m	naming_client/naming_client_test.go:682	logDir:</Users/chenzhiguo/Projects/nacos-sdk-go/clients/naming_client/log>   cacheDir:</Users/chenzhiguo/Projects/nacos-sdk-go/clients/naming_client/cache>
+2022-08-26T13:10:47.029+0800	[34mINFO[0m	naming_client/push_receiver.go:81	udp server start, port: 55710
