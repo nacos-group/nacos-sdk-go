@@ -87,6 +87,14 @@ func getInitialConnWindowSize() int32 {
 	return int32(initialConnWindowSize)
 }
 
+func getInitialGrpcTimeout() int32 {
+	initialGrpcTimeout, err := strconv.Atoi(os.Getenv("nacos.remote.client.grpc.timeout"))
+	if err != nil {
+		return constant.DEFAULT_TIMEOUT_MILLS
+	}
+	return int32(initialGrpcTimeout)
+}
+
 func getKeepAliveTimeMillis() keepalive.ClientParameters {
 	keepAliveTimeMillisInt, err := strconv.Atoi(os.Getenv("nacos.remote.grpc.keep.alive.millis"))
 	var keepAliveTime time.Duration
@@ -204,8 +212,10 @@ func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiReque
 
 func serverCheck(client nacos_grpc_service.RequestClient) (rpc_response.IResponse, error) {
 	var response rpc_response.ServerCheckResponse
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getInitialGrpcTimeout())*time.Millisecond)
+	defer cancel()
 	for i := 0; i <= 30; i++ {
-		payload, err := client.Request(context.Background(), convertRequest(rpc_request.NewServerCheckRequest()))
+		payload, err := client.Request(ctx, convertRequest(rpc_request.NewServerCheckRequest()))
 		if err != nil {
 			return nil, err
 		}
