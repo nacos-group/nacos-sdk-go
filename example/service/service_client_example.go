@@ -27,7 +27,7 @@ import (
 func ExampleServiceClient_RegisterServiceInstance(client naming_client.INamingClient, param vo.RegisterInstanceParam) {
 	success, err := client.RegisterInstance(param)
 	if !success || err != nil {
-		panic("RegisterServiceInstance failed!")
+		panic("RegisterServiceInstance failed!" + err.Error())
 	}
 	fmt.Printf("RegisterServiceInstance,param:%+v,result:%+v \n\n", param, success)
 }
