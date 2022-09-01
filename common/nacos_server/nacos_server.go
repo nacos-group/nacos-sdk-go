@@ -48,7 +48,7 @@ import (
 
 type NacosServer struct {
 	sync.RWMutex
-	securityLogin         security.AuthClient
+	securityManager       *security.AuthClientDelegate
 	serverList            []constant.ServerConfig
 	httpAgent             http_agent.IHttpAgent
 	timeoutMs             uint64
@@ -66,11 +66,14 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 		return &NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
 	}
 
+	services := clientCfg.AuthServices
+	// always add default auth client
 	securityLogin := security.NewAuthClient(clientCfg, serverList, httpAgent)
-
+	services = append(services, &securityLogin)
+	securityManager := security.NewAuthClientDelegate(services)
 	ns := NacosServer{
 		serverList:            serverList,
-		securityLogin:         securityLogin,
+		securityManager:       securityManager,
 		httpAgent:             httpAgent,
 		timeoutMs:             timeoutMs,
 		endpoint:              endpoint,
@@ -83,13 +86,12 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 	}
 
 	ns.initRefreshSrvIfNeed()
-	_, err := securityLogin.Login()
+	err := securityManager.Login()
 
 	if err != nil {
 		return &ns, err
 	}
-
-	securityLogin.AutoRefresh()
+	securityManager.StartAutoRefresh()
 	return &ns, nil
 }
 
@@ -324,9 +326,11 @@ func (server *NacosServer) GetServerList() []constant.ServerConfig {
 }
 
 func (server *NacosServer) InjectSecurityInfo(param map[string]string) {
-	accessToken := server.securityLogin.GetAccessToken()
-	if accessToken != "" {
-		param[constant.KEY_ACCESS_TOKEN] = accessToken
+	content := server.securityManager.GetAllContent()
+	if len(content) > 0 {
+		for k, v := range content {
+			param[k] = v
+		}
 	}
 }
 
