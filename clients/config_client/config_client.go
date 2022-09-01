@@ -185,7 +185,6 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 		param.Group = constant.DEFAULT_GROUP
 	}
 
-	//todo 获取容灾配置的 EncryptedDataKey LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover
 	clientConfig, _ := client.GetClientConfig()
 	cacheKey := util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
 	content = cache.GetFailover(cacheKey, client.configCacheDir)
