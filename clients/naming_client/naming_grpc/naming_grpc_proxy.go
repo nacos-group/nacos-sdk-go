@@ -154,6 +154,10 @@ func (proxy *NamingGrpcProxy) QueryInstancesOfService(serviceName, groupName, cl
 	return &queryServiceResponse.ServiceInfo, nil
 }
 
+func (proxy *NamingGrpcProxy) IsSubscribed(serviceName, groupName string, clusters string) bool {
+	return proxy.eventListener.IsSubscriberCached(util.GetServiceCacheKey(util.GetGroupName(serviceName, groupName), clusters))
+}
+
 // Subscribe ...
 func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters string) (model.Service, error) {
 	proxy.eventListener.CacheSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
