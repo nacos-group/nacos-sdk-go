@@ -132,7 +132,7 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 	}
 }
 
-func (server *NacosServer) callServer(api string, params map[string]string, method string, curServer string, contextPath string) (result string, err error) {
+func (server *NacosServer) callServer(api string, params map[string]string, header map[string]string, method string, curServer string, contextPath string) (result string, err error) {
 	if contextPath == "" {
 		contextPath = constant.WEB_CONTEXT
 	}
@@ -140,6 +140,11 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 	url := curServer + contextPath + api
 
 	headers := map[string][]string{}
+	for k, v := range header {
+		if k != "secretKey" {
+			headers[k] = []string{v}
+		}
+	}
 	headers["Client-Version"] = []string{constant.CLIENT_VERSION}
 	headers["User-Agent"] = []string{constant.CLIENT_VERSION}
 	//headers["Accept-Encoding"] = []string{"gzip,deflate,sdch"}
@@ -219,25 +224,25 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 		err    error
 	)
 	injectSecurityInfo(server, params)
-	getSignHeadersForNaming(params, security)
+	signHeader := getSignHeadersForNaming(params, security)
 	//only one server,retry request when error
 	if len(srvs) == 1 {
 		for i := 0; i < constant.REQUEST_DOMAIN_RETRY_TIME; i++ {
-			result, err = server.callServer(api, params, method, getAddress(srvs[0]), srvs[0].ContextPath)
+			result, err = server.callServer(api, params, signHeader, method, getAddress(srvs[0]), srvs[0].ContextPath)
 			if err == nil {
 				return result, nil
 			}
-			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), err, result)
+			logger.Errorf("api<%s>,method:<%s>, params:<%s>, header:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), util.ToJsonString(signHeader), err, result)
 		}
 	} else {
 		index := rand.Intn(len(srvs))
 		for i := 1; i <= len(srvs); i++ {
 			curServer := srvs[index]
-			result, err = server.callServer(api, params, method, getAddress(curServer), curServer.ContextPath)
+			result, err = server.callServer(api, params, signHeader, method, getAddress(curServer), curServer.ContextPath)
 			if err == nil {
 				return result, nil
 			}
-			logger.Errorf("api<%s>,method:<%s>, params:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), err, result)
+			logger.Errorf("api<%s>,method:<%s>, params:<%s>, header:<%s>, call domain error:<%+v> , result:<%s>", api, method, util.ToJsonString(params), util.ToJsonString(signHeader), err, result)
 			index = (index + i) % len(srvs)
 		}
 	}
@@ -348,11 +353,12 @@ func getSignHeaders(params map[string]string, newHeaders map[string]string) map[
 	return headers
 }
 
-func getSignHeadersForNaming(params map[string]string, newHeaders map[string]string) {
+func getSignHeadersForNaming(params map[string]string, newHeaders map[string]string) map[string]string {
 	accessKey, containAk := newHeaders["accessKey"]
 	secretKey, containSk := newHeaders["secretKey"]
-	if !containAk || containSk {
-		return
+	result := map[string]string{}
+	if !containAk || !containSk {
+		return result
 	}
 	signData := ""
 	timeStamp := strconv.FormatInt(time.Now().UnixNano()/1e6, 10)
@@ -368,9 +374,10 @@ func getSignHeadersForNaming(params map[string]string, newHeaders map[string]str
 		signData = timeStamp
 	}
 	signature := signWithhmacSHA1Encrypt(signData, secretKey)
-	params["signature"] = signature
-	params["ak"] = accessKey
-	params["data"] = signData
+	result["signature"] = signature
+	result["ak"] = accessKey
+	result["data"] = signData
+	return result
 }
 
 func signWithhmacSHA1Encrypt(encryptText, encryptKey string) string {
