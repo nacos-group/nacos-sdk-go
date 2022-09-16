@@ -66,7 +66,7 @@ func (proxy *NamingProxy) RegisterInstance(serviceName string, groupName string,
 	params["healthy"] = strconv.FormatBool(instance.Healthy)
 	params["metadata"] = util.ToJsonString(instance.Metadata)
 	params["ephemeral"] = strconv.FormatBool(instance.Ephemeral)
-	return proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodPost)
+	return proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodPost, proxy.getSecurityMap())
 }
 
 func (proxy *NamingProxy) DeregisterInstance(serviceName string, ip string, port uint64, clusterName string, ephemeral bool) (string, error) {
@@ -79,7 +79,7 @@ func (proxy *NamingProxy) DeregisterInstance(serviceName string, ip string, port
 	params["ip"] = ip
 	params["port"] = strconv.Itoa(int(port))
 	params["ephemeral"] = strconv.FormatBool(ephemeral)
-	return proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodDelete)
+	return proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodDelete, proxy.getSecurityMap())
 }
 
 func (proxy *NamingProxy) UpdateInstance(serviceName string, ip string, port uint64, clusterName string, ephemeral bool, weight float64, enable bool, metadata map[string]string) (string, error) {
@@ -95,7 +95,7 @@ func (proxy *NamingProxy) UpdateInstance(serviceName string, ip string, port uin
 	params["weight"] = strconv.FormatFloat(weight, 'f', -1, 64)
 	params["enable"] = strconv.FormatBool(enable)
 	params["metadata"] = util.ToJsonString(metadata)
-	return proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodPut)
+	return proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodPut, proxy.getSecurityMap())
 }
 
 func (proxy *NamingProxy) SendBeat(info *model.BeatInfo) (int64, error) {
@@ -107,7 +107,7 @@ func (proxy *NamingProxy) SendBeat(info *model.BeatInfo) (int64, error) {
 	params["serviceName"] = info.ServiceName
 	params["beat"] = util.ToJsonString(info)
 	api := constant.SERVICE_BASE_PATH + "/instance/beat"
-	result, err := proxy.nacosServer.ReqApi(api, params, http.MethodPut)
+	result, err := proxy.nacosServer.ReqApi(api, params, http.MethodPut, proxy.getSecurityMap())
 	if err != nil {
 		return 0, err
 	}
@@ -138,7 +138,7 @@ func (proxy *NamingProxy) GetServiceList(pageNo int, pageSize int, groupName str
 	}
 
 	api := constant.SERVICE_BASE_PATH + "/service/list"
-	result, err := proxy.nacosServer.ReqApi(api, params, http.MethodGet)
+	result, err := proxy.nacosServer.ReqApi(api, params, http.MethodGet, proxy.getSecurityMap())
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func (proxy *NamingProxy) GetServiceList(pageNo int, pageSize int, groupName str
 
 func (proxy *NamingProxy) ServerHealthy() bool {
 	api := constant.SERVICE_BASE_PATH + "/operator/metrics"
-	result, err := proxy.nacosServer.ReqApi(api, map[string]string{}, http.MethodGet)
+	result, err := proxy.nacosServer.ReqApi(api, map[string]string{}, http.MethodGet, proxy.getSecurityMap())
 	if err != nil {
 		logger.Errorf("namespaceId:[%s] sending server healthy failed!,result:%s error:%+v", proxy.clientConfig.NamespaceId, result, err)
 		return false
@@ -191,7 +191,7 @@ func (proxy *NamingProxy) QueryList(serviceName string, clusters string, udpPort
 	param["healthyOnly"] = strconv.FormatBool(healthyOnly)
 	param["clientIP"] = util.LocalIP()
 	api := constant.SERVICE_PATH + "/list"
-	return proxy.nacosServer.ReqApi(api, param, http.MethodGet)
+	return proxy.nacosServer.ReqApi(api, param, http.MethodGet, proxy.getSecurityMap())
 }
 
 func (proxy *NamingProxy) GetAllServiceInfoList(namespace, groupName string, pageNo, pageSize uint32) (string, error) {
@@ -201,5 +201,14 @@ func (proxy *NamingProxy) GetAllServiceInfoList(namespace, groupName string, pag
 	param["pageNo"] = strconv.Itoa(int(pageNo))
 	param["pageSize"] = strconv.Itoa(int(pageSize))
 	api := constant.SERVICE_INFO_PATH + "/list"
-	return proxy.nacosServer.ReqApi(api, param, http.MethodGet)
+	return proxy.nacosServer.ReqApi(api, param, http.MethodGet, proxy.getSecurityMap())
+}
+
+func (proxy *NamingProxy) getSecurityMap() map[string]string {
+	result := make(map[string]string)
+	if len(proxy.clientConfig.AccessKey) != 0 && len(proxy.clientConfig.SecretKey) != 0 {
+		result["accessKey"] = proxy.clientConfig.AccessKey
+		result["secretKey"] = proxy.clientConfig.SecretKey
+	}
+	return result
 }

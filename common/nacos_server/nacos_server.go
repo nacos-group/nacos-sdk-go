@@ -209,7 +209,7 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 	}
 }
 
-func (server *NacosServer) ReqApi(api string, params map[string]string, method string) (string, error) {
+func (server *NacosServer) ReqApi(api string, params map[string]string, method string, security map[string]string) (string, error) {
 	srvs := server.serverList
 	if srvs == nil || len(srvs) == 0 {
 		return "", errors.New("server list is empty")
@@ -219,7 +219,7 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 		err    error
 	)
 	injectSecurityInfo(server, params)
-
+	getSignHeadersForNaming(params, security)
 	//only one server,retry request when error
 	if len(srvs) == 1 {
 		for i := 0; i < constant.REQUEST_DOMAIN_RETRY_TIME; i++ {
@@ -346,6 +346,31 @@ func getSignHeaders(params map[string]string, newHeaders map[string]string) map[
 	headers["Spas-Signature"] = signature
 
 	return headers
+}
+
+func getSignHeadersForNaming(params map[string]string, newHeaders map[string]string) {
+	accessKey, containAk := newHeaders["accessKey"]
+	secretKey, containSk := newHeaders["secretKey"]
+	if !containAk || containSk {
+		return
+	}
+	signData := ""
+	timeStamp := strconv.FormatInt(time.Now().UnixNano()/1e6, 10)
+	serviceName, containService := params["serviceName"]
+	groupName, containGroup := params["groupName"]
+	if containService {
+		if strings.Contains(serviceName, constant.SERVICE_INFO_SPLITER) || !containGroup {
+			signData = timeStamp + constant.SERVICE_INFO_SPLITER + serviceName
+		} else {
+			signData = timeStamp + constant.SERVICE_INFO_SPLITER + util.GetGroupName(serviceName, groupName)
+		}
+	} else {
+		signData = timeStamp
+	}
+	signature := signWithhmacSHA1Encrypt(signData, secretKey)
+	params["signature"] = signature
+	params["ak"] = accessKey
+	params["data"] = signData
 }
 
 func signWithhmacSHA1Encrypt(encryptText, encryptKey string) string {
