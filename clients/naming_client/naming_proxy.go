@@ -205,10 +205,10 @@ func (proxy *NamingProxy) GetAllServiceInfoList(namespace, groupName string, pag
 }
 
 func (proxy *NamingProxy) getSecurityMap() map[string]string {
-	result := make(map[string]string)
+	result := make(map[string]string, 2)
 	if len(proxy.clientConfig.AccessKey) != 0 && len(proxy.clientConfig.SecretKey) != 0 {
-		result["accessKey"] = proxy.clientConfig.AccessKey
-		result["secretKey"] = proxy.clientConfig.SecretKey
+		result[constant.KEY_ACCESS_KEY] = proxy.clientConfig.AccessKey
+		result[constant.KEY_SECRET_KEY] = proxy.clientConfig.SecretKey
 	}
 	return result
 }
