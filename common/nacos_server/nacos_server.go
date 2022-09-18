@@ -139,9 +139,9 @@ func (server *NacosServer) callServer(api string, params map[string]string, head
 
 	url := curServer + contextPath + api
 
-	headers := map[string][]string{}
+	headers := make(map[string][]string, len(header))
 	for k, v := range header {
-		if k != "secretKey" {
+		if k != constant.KEY_SECRET_KEY {
 			headers[k] = []string{v}
 		}
 	}
@@ -354,18 +354,17 @@ func getSignHeaders(params map[string]string, newHeaders map[string]string) map[
 }
 
 func getSignHeadersForNaming(params map[string]string, newHeaders map[string]string) map[string]string {
-	accessKey, containAk := newHeaders["accessKey"]
-	secretKey, containSk := newHeaders["secretKey"]
+	accessKey, containAk := newHeaders[constant.KEY_ACCESS_KEY]
+	secretKey, containSk := newHeaders[constant.KEY_SECRET_KEY]
 	result := map[string]string{}
 	if !containAk || !containSk {
 		return result
 	}
-	signData := ""
+	var signData string
 	timeStamp := strconv.FormatInt(time.Now().UnixNano()/1e6, 10)
-	serviceName, containService := params["serviceName"]
-	groupName, containGroup := params["groupName"]
-	if containService {
-		if strings.Contains(serviceName, constant.SERVICE_INFO_SPLITER) || !containGroup {
+	if serviceName, ok := params["serviceName"]; ok {
+		if groupName, containGroup := params["groupName"]; strings.Contains(serviceName, constant.SERVICE_INFO_SPLITER) ||
+			!containGroup {
 			signData = timeStamp + constant.SERVICE_INFO_SPLITER + serviceName
 		} else {
 			signData = timeStamp + constant.SERVICE_INFO_SPLITER + util.GetGroupName(serviceName, groupName)
@@ -373,8 +372,7 @@ func getSignHeadersForNaming(params map[string]string, newHeaders map[string]str
 	} else {
 		signData = timeStamp
 	}
-	signature := signWithhmacSHA1Encrypt(signData, secretKey)
-	result["signature"] = signature
+	result["signature"] = signWithhmacSHA1Encrypt(signData, secretKey)
 	result["ak"] = accessKey
 	result["data"] = signData
 	return result
