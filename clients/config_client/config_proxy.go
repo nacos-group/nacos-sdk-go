@@ -57,8 +57,8 @@ func (cp *ConfigProxy) GetConfigProxy(param vo.ConfigParam, tenant, accessKey, s
 	}
 
 	var headers = map[string]string{}
-	headers["accessKey"] = accessKey
-	headers["secretKey"] = secretKey
+	headers[constant.KEY_ACCESS_KEY] = accessKey
+	headers[constant.KEY_SECRET_KEY] = secretKey
 
 	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_PATH, params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
 	return result, err
