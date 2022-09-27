@@ -42,6 +42,7 @@ type AuthClient struct {
 	agent              http_agent.IHttpAgent
 	clientCfg          constant.ClientConfig
 	serverCfgs         []constant.ServerConfig
+	stopChan           chan struct{}
 }
 
 func NewAuthClient(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig, agent http_agent.IHttpAgent) AuthClient {
@@ -52,6 +53,7 @@ func NewAuthClient(clientCfg constant.ClientConfig, serverCfgs []constant.Server
 		clientCfg:   clientCfg,
 		agent:       agent,
 		accessToken: &atomic.Value{},
+		stopChan:    make(chan struct{}),
 	}
 
 	return client
@@ -66,9 +68,7 @@ func (ac *AuthClient) GetAccessToken() string {
 }
 
 func (ac *AuthClient) AutoRefresh() {
-
 	// If the username is not set, the automatic refresh Token is not enabled
-
 	if ac.username == "" {
 		return
 	}
@@ -84,6 +84,10 @@ func (ac *AuthClient) AutoRefresh() {
 					logger.Errorf("login has error %+v", err)
 				}
 				timer.Reset(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
+			case <-ac.stopChan:
+				timer.Stop()
+				logger.Info("auto refresh procedure for user:%s has been stopped", ac.username)
+				return
 			}
 		}
 	}()
@@ -159,4 +163,8 @@ func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 	}
 	return true, nil
 
+}
+
+func (ac *AuthClient) Close() {
+	close(ac.stopChan)
 }

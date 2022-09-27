@@ -30,6 +30,7 @@ type ServiceInfoUpdater struct {
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 	updateThreadNum   int
 	namingProxy       naming_proxy.INamingProxy
+	stopChan          chan struct{}
 }
 
 func NewServiceInfoUpdater(serviceInfoHolder *naming_cache.ServiceInfoHolder, updateThreadNum int,
@@ -39,12 +40,20 @@ func NewServiceInfoUpdater(serviceInfoHolder *naming_cache.ServiceInfoHolder, up
 		serviceInfoHolder: serviceInfoHolder,
 		updateThreadNum:   updateThreadNum,
 		namingProxy:       namingProxy,
+		stopChan:          make(chan struct{}),
 	}
 }
 
 func (s *ServiceInfoUpdater) asyncUpdateService() {
 	sema := util.NewSemaphore(s.updateThreadNum)
+	timer := time.NewTimer(time.Second)
 	for {
+		select {
+		case <-timer.C:
+		case <-s.stopChan:
+			timer.Stop()
+			return
+		}
 		s.serviceInfoHolder.ServiceInfoMap.Range(func(key, value interface{}) bool {
 			service := value.(model.Service)
 			lastRefTime, ok := s.serviceInfoHolder.UpdateTimeMap.Load(util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName),
@@ -61,7 +70,7 @@ func (s *ServiceInfoUpdater) asyncUpdateService() {
 			}
 			return true
 		})
-		time.Sleep(1 * time.Second)
+		timer.Reset(time.Second)
 	}
 }
 
@@ -73,4 +82,8 @@ func (s *ServiceInfoUpdater) updateServiceNow(serviceName, groupName, clusters s
 		return
 	}
 	s.serviceInfoHolder.ProcessService(result)
+}
+
+func (s *ServiceInfoUpdater) Close() {
+	close(s.stopChan)
 }

@@ -54,6 +54,7 @@ func NewGrpcClient(clientName string, nacosServer *nacos_server.NacosServer) *Gr
 			nacosServer:                 nacosServer,
 			serverRequestHandlerMapping: make(map[string]ServerRequestHandlerMapping, 8),
 			mux:                         new(sync.Mutex),
+			stopChan:                    make(chan struct{}),
 		},
 	}
 	rpcClient.RpcClient.lastActiveTimestamp.Store(time.Now())

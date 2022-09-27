@@ -35,6 +35,8 @@ type PushReceiver struct {
 	port              int
 	host              string
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
+	stopChan          chan struct{}
+	conn              *net.UDPConn
 }
 
 type PushData struct {
@@ -50,6 +52,7 @@ var (
 func NewPushReceiver(serviceInfoHolder *naming_cache.ServiceInfoHolder) *PushReceiver {
 	pr := PushReceiver{
 		serviceInfoHolder: serviceInfoHolder,
+		stopChan:          make(chan struct{}),
 	}
 	return &pr
 }
@@ -96,10 +99,18 @@ func (us *PushReceiver) startServer() {
 		return
 	}
 
+	us.conn = conn
+
 	go func() {
 		defer conn.Close()
 		for {
-			us.handleClient(conn)
+			select {
+			case <-us.stopChan:
+				logger.Infof("push recever of port:%d has been stopped", us.port)
+				return
+			default:
+				us.handleClient(conn)
+			}
 		}
 	}()
 }
@@ -108,7 +119,11 @@ func (us *PushReceiver) handleClient(conn *net.UDPConn) {
 	data := make([]byte, 4024)
 	n, remoteAddr, err := conn.ReadFromUDP(data)
 	if err != nil {
-		logger.Errorf("failed to read UDP msg because of %+v", err)
+		select {
+		case <-us.stopChan:
+		default:
+			logger.Errorf("failed to read UDP msg because of %+v", err)
+		}
 		return
 	}
 
@@ -144,6 +159,13 @@ func (us *PushReceiver) handleClient(conn *net.UDPConn) {
 	c, err := conn.WriteToUDP(bs, remoteAddr)
 	if err != nil {
 		logger.Errorf("WriteToUDP failed,return:%d,err:%+v", c, err)
+	}
+}
+
+func (us *PushReceiver) Close() {
+	close(us.stopChan)
+	if us.conn != nil {
+		us.conn.Close()
 	}
 }
 

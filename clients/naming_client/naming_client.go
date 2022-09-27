@@ -39,6 +39,7 @@ type NamingClient struct {
 	nacos_client.INacosClient
 	serviceProxy      naming_proxy.INamingProxy
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
+	svcInfoUpdater    *ServiceInfoUpdater
 }
 
 // NewNamingClient ...
@@ -70,11 +71,18 @@ func NewNamingClient(nc nacos_client.INacosClient) (*NamingClient, error) {
 		clientConfig.UpdateCacheWhenEmpty, clientConfig.NotLoadCacheAtStart)
 
 	naming.serviceProxy, err = NewNamingProxyDelegate(clientConfig, serverConfig, httpAgent, naming.serviceInfoHolder)
-
-	go NewServiceInfoUpdater(naming.serviceInfoHolder, clientConfig.UpdateThreadNum, naming.serviceProxy).asyncUpdateService()
 	if err != nil {
 		return naming, err
 	}
+
+	naming.svcInfoUpdater = NewServiceInfoUpdater(naming.serviceInfoHolder,
+		clientConfig.UpdateThreadNum, naming.serviceProxy)
+
+	go func() {
+		defer logger.Infof("goroutine for updating service of client: <%s:%s:%s> exit",
+			clientConfig.NamespaceId, clientConfig.AppName, clientConfig.AppKey)
+		naming.svcInfoUpdater.asyncUpdateService()
+	}()
 
 	return naming, nil
 }
@@ -309,4 +317,5 @@ func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) (err error) {
 // CloseClient ...
 func (sc *NamingClient) CloseClient() {
 	sc.serviceProxy.CloseClient()
+	sc.svcInfoUpdater.Close()
 }

@@ -30,6 +30,7 @@ import (
 
 // NamingProxyDelegate ...
 type NamingProxyDelegate struct {
+	nacosServer       *nacos_server.NacosServer
 	httpClientProxy   *naming_http.NamingHttpProxy
 	grpcClientProxy   *naming_grpc.NamingGrpcProxy
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
@@ -54,6 +55,7 @@ func NewNamingProxyDelegate(clientCfg constant.ClientConfig, serverCfgs []consta
 	}
 
 	return &NamingProxyDelegate{
+		nacosServer:       nacosServer,
 		httpClientProxy:   httpClientProxy,
 		grpcClientProxy:   grpcClientProxy,
 		serviceInfoHolder: serviceInfoHolder,
@@ -110,5 +112,7 @@ func (proxy *NamingProxyDelegate) Unsubscribe(serviceName, groupName, clusters s
 }
 
 func (proxy *NamingProxyDelegate) CloseClient() {
+	proxy.nacosServer.Close()
+	proxy.httpClientProxy.CloseClient()
 	proxy.grpcClientProxy.CloseClient()
 }

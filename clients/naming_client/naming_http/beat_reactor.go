@@ -47,11 +47,11 @@ type BeatReactor struct {
 	beatRecordMap       cache.ConcurrentMap
 	clientCfg           constant.ClientConfig
 	mux                 *sync.Mutex
+	cancelBeating       func()
+	beatingCtx          context.Context
 }
 
 const DefaultBeatThreadNum = 20
-
-var ctx = context.Background()
 
 func NewBeatReactor(clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer) BeatReactor {
 	br := BeatReactor{}
@@ -62,6 +62,8 @@ func NewBeatReactor(clientCfg constant.ClientConfig, nacosServer *nacos_server.N
 	br.beatRecordMap = cache.NewConcurrentMap()
 	br.beatThreadSemaphore = semaphore.NewWeighted(int64(br.beatThreadCount))
 	br.mux = new(sync.Mutex)
+	bctx, cancelBeating := context.WithCancel(context.Background())
+	br.beatingCtx, br.cancelBeating = bctx, cancelBeating
 	return br
 }
 
@@ -101,8 +103,25 @@ func (br *BeatReactor) RemoveBeatInfo(serviceName string, ip string, port uint64
 }
 
 func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
+	defer func() {
+		logger.Infof("beating of instance: %s@%s:%d has been cancelled",
+			beatInfo.ServiceName, beatInfo.Ip, beatInfo.Port)
+	}()
+
+	beatTimer := time.NewTimer(beatInfo.Period)
+
 	for {
-		br.beatThreadSemaphore.Acquire(ctx, 1)
+		select {
+		case <-beatTimer.C:
+		case <-br.beatingCtx.Done():
+			beatTimer.Stop()
+			return
+		}
+
+		if err := br.beatThreadSemaphore.Acquire(br.beatingCtx, 1); err != nil {
+			return
+		}
+
 		//如果当前实例注销，则进行停止心跳
 		if atomic.LoadInt32(&beatInfo.State) == int32(model.StateShutdown) {
 			logger.Infof("instance[%s] stop heartBeating", k)
@@ -114,20 +133,14 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 		beatInterval, err := br.SendBeat(beatInfo)
 		if err != nil {
 			logger.Errorf("beat to server return error:%+v", err)
-			br.beatThreadSemaphore.Release(1)
-			t := time.NewTimer(beatInfo.Period)
-			<-t.C
-			continue
+		} else {
+			if beatInterval > 0 {
+				beatInfo.Period = time.Duration(time.Millisecond.Nanoseconds() * beatInterval)
+			}
+			br.beatRecordMap.Set(k, util.CurrentMillis())
 		}
-		if beatInterval > 0 {
-			beatInfo.Period = time.Duration(time.Millisecond.Nanoseconds() * beatInterval)
-		}
-
-		br.beatRecordMap.Set(k, util.CurrentMillis())
 		br.beatThreadSemaphore.Release(1)
-
-		t := time.NewTimer(beatInfo.Period)
-		<-t.C
+		beatTimer.Reset(beatInfo.Period)
 	}
 }
 
@@ -152,4 +165,8 @@ func (br *BeatReactor) SendBeat(info *model.BeatInfo) (int64, error) {
 		}
 	}
 	return 0, nil
+}
+
+func (br *BeatReactor) Close() {
+	br.cancelBeating()
 }

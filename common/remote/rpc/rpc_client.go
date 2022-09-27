@@ -107,6 +107,7 @@ type RpcClient struct {
 	mux                         *sync.Mutex
 	clientAbilities             rpc_request.ClientAbilities
 	Tenant                      string
+	stopChan                    chan struct{}
 }
 
 type ServerRequestHandlerMapping struct {
@@ -168,14 +169,28 @@ func (r *RpcClient) Start() {
 		return
 	}
 	r.registerServerRequestHandlers()
+
 	go func() {
+		defer func() {
+			logger.Infof("goroutine for notifying connection events of rpc client:%s exit", r.Name)
+		}()
+
 		for {
 			event := <-r.eventChan
 			r.notifyConnectionEvent(event)
+			select {
+			case <-r.stopChan:
+				return
+			default:
+			}
 		}
 	}()
 
 	go func() {
+		defer func() {
+			logger.Infof("goroutine for reconnecting to server of rpc client:%s exit", r.Name)
+		}()
+
 		timer := time.NewTimer(5 * time.Second)
 		for {
 			select {
@@ -200,6 +215,9 @@ func (r *RpcClient) Start() {
 				r.healthCheck(timer)
 			case <-r.nacosServer.ServerSrcChangeSignal:
 				r.notifyServerSrvChange()
+			case <-r.stopChan:
+				timer.Stop()
+				return
 			}
 		}
 	}()
@@ -266,6 +284,7 @@ func (r *RpcClient) registerServerRequestHandlers() {
 func (r *RpcClient) Shutdown() {
 	atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(SHUTDOWN))
 	r.closeConnection()
+	close(r.stopChan)
 }
 
 func (r *RpcClient) RegisterServerRequestHandler(request func() rpc_request.IRequest, handler IServerRequestHandler) {

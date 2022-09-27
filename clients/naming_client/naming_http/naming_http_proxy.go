@@ -40,6 +40,7 @@ type NamingHttpProxy struct {
 	nacosServer       *nacos_server.NacosServer
 	beatReactor       BeatReactor
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
+	pushReceiver      *PushReceiver
 }
 
 // NewNamingHttpProxy  create naming http proxy
@@ -52,8 +53,9 @@ func NewNamingHttpProxy(clientCfg constant.ClientConfig, nacosServer *nacos_serv
 	}
 
 	srvProxy.beatReactor = NewBeatReactor(clientCfg, nacosServer)
+	srvProxy.pushReceiver = NewPushReceiver(serviceInfoHolder)
 
-	NewPushReceiver(serviceInfoHolder).startServer()
+	srvProxy.pushReceiver.startServer()
 
 	return &srvProxy, nil
 }
@@ -210,5 +212,6 @@ func (proxy *NamingHttpProxy) Unsubscribe(serviceName, groupName, clusters strin
 }
 
 func (proxy *NamingHttpProxy) CloseClient() {
-
+	proxy.beatReactor.Close()
+	proxy.pushReceiver.Close()
 }

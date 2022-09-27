@@ -58,6 +58,7 @@ type NacosServer struct {
 	contextPath           string
 	currentIndex          int32
 	ServerSrcChangeSignal chan struct{}
+	stopChan              chan struct{}
 }
 
 func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
@@ -77,6 +78,7 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 		vipSrvRefInterMills:   10000,
 		contextPath:           clientCfg.ContextPath,
 		ServerSrcChangeSignal: make(chan struct{}, 1),
+		stopChan:              make(chan struct{}),
 	}
 	if severLen > 0 {
 		ns.currentIndex = rand.Int31n(int32(severLen))
@@ -264,10 +266,18 @@ func (server *NacosServer) initRefreshSrvIfNeed() {
 		return
 	}
 	server.refreshServerSrvIfNeed()
+
 	go func() {
 		for {
-			time.Sleep(time.Duration(1) * time.Second)
-			server.refreshServerSrvIfNeed()
+			refreshTimer := time.NewTimer(time.Second)
+			select {
+			case <-refreshTimer.C:
+				server.refreshServerSrvIfNeed()
+				refreshTimer.Reset(time.Second)
+			case <-server.stopChan:
+				refreshTimer.Stop()
+				return
+			}
 		}
 	}()
 
@@ -427,4 +437,9 @@ func (server *NacosServer) InjectSkAk(params map[string]string, clientConfig con
 	if clientConfig.AccessKey != "" {
 		params["Spas-AccessKey"] = clientConfig.AccessKey
 	}
+}
+
+func (server *NacosServer) Close() {
+	close(server.stopChan)
+	server.securityLogin.Close()
 }
