@@ -17,6 +17,7 @@
 package nacos_server
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
@@ -60,7 +61,7 @@ type NacosServer struct {
 	ServerSrcChangeSignal chan struct{}
 }
 
-func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
+func NewNacosServer(ctx context.Context, serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
 	severLen := len(serverList)
 	if severLen == 0 && endpoint == "" {
 		return &NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
@@ -82,14 +83,14 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 		ns.currentIndex = rand.Int31n(int32(severLen))
 	}
 
-	ns.initRefreshSrvIfNeed()
+	ns.initRefreshSrvIfNeed(ctx)
 	_, err := securityLogin.Login()
 
 	if err != nil {
 		return &ns, err
 	}
 
-	securityLogin.AutoRefresh()
+	securityLogin.AutoRefresh(ctx)
 	return &ns, nil
 }
 
@@ -259,15 +260,20 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 	return "", errors.Wrapf(err, "retry %d times request failed!", constant.REQUEST_DOMAIN_RETRY_TIME)
 }
 
-func (server *NacosServer) initRefreshSrvIfNeed() {
+func (server *NacosServer) initRefreshSrvIfNeed(ctx context.Context) {
 	if server.endpoint == "" {
 		return
 	}
 	server.refreshServerSrvIfNeed()
 	go func() {
 		for {
-			time.Sleep(time.Duration(1) * time.Second)
-			server.refreshServerSrvIfNeed()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				time.Sleep(time.Duration(1) * time.Second)
+				server.refreshServerSrvIfNeed()
+			}
 		}
 	}()
 

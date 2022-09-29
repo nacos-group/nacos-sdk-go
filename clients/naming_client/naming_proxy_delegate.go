@@ -17,6 +17,8 @@
 package naming_client
 
 import (
+	"context"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_grpc"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http"
@@ -35,20 +37,20 @@ type NamingProxyDelegate struct {
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
-func NewNamingProxyDelegate(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig,
+func NewNamingProxyDelegate(ctx context.Context, clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig,
 	httpAgent http_agent.IHttpAgent, serviceInfoHolder *naming_cache.ServiceInfoHolder) (naming_proxy.INamingProxy, error) {
 
-	nacosServer, err := nacos_server.NewNacosServer(serverCfgs, clientCfg, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint)
+	nacosServer, err := nacos_server.NewNacosServer(ctx, serverCfgs, clientCfg, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	httpClientProxy, err := naming_http.NewNamingHttpProxy(clientCfg, nacosServer, serviceInfoHolder)
+	httpClientProxy, err := naming_http.NewNamingHttpProxy(ctx, clientCfg, nacosServer, serviceInfoHolder)
 	if err != nil {
 		return nil, err
 	}
 
-	grpcClientProxy, err := naming_grpc.NewNamingGrpcProxy(clientCfg, nacosServer, serviceInfoHolder)
+	grpcClientProxy, err := naming_grpc.NewNamingGrpcProxy(ctx, clientCfg, nacosServer, serviceInfoHolder)
 	if err != nil {
 		return nil, err
 	}

@@ -17,6 +17,7 @@
 package naming_client
 
 import (
+	"context"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
@@ -27,15 +28,17 @@ import (
 )
 
 type ServiceInfoUpdater struct {
+	ctx               context.Context
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 	updateThreadNum   int
 	namingProxy       naming_proxy.INamingProxy
 }
 
-func NewServiceInfoUpdater(serviceInfoHolder *naming_cache.ServiceInfoHolder, updateThreadNum int,
+func NewServiceInfoUpdater(ctx context.Context, serviceInfoHolder *naming_cache.ServiceInfoHolder, updateThreadNum int,
 	namingProxy naming_proxy.INamingProxy) *ServiceInfoUpdater {
 
 	return &ServiceInfoUpdater{
+		ctx:               ctx,
 		serviceInfoHolder: serviceInfoHolder,
 		updateThreadNum:   updateThreadNum,
 		namingProxy:       namingProxy,
@@ -45,23 +48,28 @@ func NewServiceInfoUpdater(serviceInfoHolder *naming_cache.ServiceInfoHolder, up
 func (s *ServiceInfoUpdater) asyncUpdateService() {
 	sema := util.NewSemaphore(s.updateThreadNum)
 	for {
-		s.serviceInfoHolder.ServiceInfoMap.Range(func(key, value interface{}) bool {
-			service := value.(model.Service)
-			lastRefTime, ok := s.serviceInfoHolder.UpdateTimeMap.Load(util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName),
-				service.Clusters))
-			if !ok {
-				lastRefTime = uint64(0)
-			}
-			if uint64(util.CurrentMillis())-lastRefTime.(uint64) > service.CacheMillis {
-				sema.Acquire()
-				go func() {
-					defer sema.Release()
-					s.updateServiceNow(service.Name, service.GroupName, service.Clusters)
-				}()
-			}
-			return true
-		})
-		time.Sleep(1 * time.Second)
+		select {
+		case <-s.ctx.Done():
+			return
+		default:
+			s.serviceInfoHolder.ServiceInfoMap.Range(func(key, value interface{}) bool {
+				service := value.(model.Service)
+				lastRefTime, ok := s.serviceInfoHolder.UpdateTimeMap.Load(util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName),
+					service.Clusters))
+				if !ok {
+					lastRefTime = uint64(0)
+				}
+				if uint64(util.CurrentMillis())-lastRefTime.(uint64) > service.CacheMillis {
+					sema.Acquire()
+					go func() {
+						defer sema.Release()
+						s.updateServiceNow(service.Name, service.GroupName, service.Clusters)
+					}()
+				}
+				return true
+			})
+			time.Sleep(1 * time.Second)
+		}
 	}
 }
 

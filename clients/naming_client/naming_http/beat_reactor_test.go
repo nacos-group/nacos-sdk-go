@@ -17,6 +17,7 @@
 package naming_http
 
 import (
+	"context"
 	"testing"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
@@ -27,7 +28,7 @@ import (
 )
 
 func TestBeatReactor_AddBeatInfo(t *testing.T) {
-	br := NewBeatReactor(constant.ClientConfig{}, &nacos_server.NacosServer{})
+	br := NewBeatReactor(context.Background(), constant.ClientConfig{}, &nacos_server.NacosServer{})
 	serviceName := "Test"
 	groupName := "public"
 	beatInfo := &model.BeatInfo{
@@ -46,7 +47,7 @@ func TestBeatReactor_AddBeatInfo(t *testing.T) {
 }
 
 func TestBeatReactor_RemoveBeatInfo(t *testing.T) {
-	br := NewBeatReactor(constant.ClientConfig{}, &nacos_server.NacosServer{})
+	br := NewBeatReactor(context.Background(), constant.ClientConfig{}, &nacos_server.NacosServer{})
 	serviceName := "Test"
 	groupName := "public"
 	beatInfo1 := &model.BeatInfo{

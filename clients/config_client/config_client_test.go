@@ -17,6 +17,7 @@
 package config_client
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -74,7 +75,7 @@ func (m *MockConfigProxy) searchConfigProxy(param vo.SearchConfigParm, tenant, a
 func (m *MockConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_request.IRequest, timeoutMills uint64) (rpc_response.IResponse, error) {
 	return &rpc_response.MockResponse{Response: &rpc_response.Response{Success: true}}, nil
 }
-func (m *MockConfigProxy) createRpcClient(taskId string, client *ConfigClient) *rpc.RpcClient {
+func (m *MockConfigProxy) createRpcClient(ctx context.Context, taskId string, client *ConfigClient) *rpc.RpcClient {
 	return &rpc.RpcClient{}
 }
 func (m *MockConfigProxy) getRpcClient(client *ConfigClient) *rpc.RpcClient {

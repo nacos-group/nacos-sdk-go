@@ -17,6 +17,7 @@
 package naming_grpc
 
 import (
+	"context"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
@@ -42,7 +43,7 @@ type NamingGrpcProxy struct {
 }
 
 // NewNamingGrpcProxy create naming grpc proxy
-func NewNamingGrpcProxy(clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer,
+func NewNamingGrpcProxy(ctx context.Context, clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer,
 	serviceInfoHolder *naming_cache.ServiceInfoHolder) (*NamingGrpcProxy, error) {
 	srvProxy := NamingGrpcProxy{
 		clientConfig:      clientCfg,
@@ -60,7 +61,7 @@ func NewNamingGrpcProxy(clientCfg constant.ClientConfig, nacosServer *nacos_serv
 		constant.LABEL_MODULE: constant.LABEL_MODULE_NAMING,
 	}
 
-	iRpcClient, err := rpc.CreateClient(uid.String(), rpc.GRPC, labels, srvProxy.nacosServer)
+	iRpcClient, err := rpc.CreateClient(ctx, uid.String(), rpc.GRPC, labels, srvProxy.nacosServer)
 	if err != nil {
 		return nil, err
 	}
