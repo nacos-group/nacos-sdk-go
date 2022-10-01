@@ -17,6 +17,7 @@
 package naming_http
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -43,7 +44,7 @@ type NamingHttpProxy struct {
 }
 
 // NewNamingHttpProxy  create naming http proxy
-func NewNamingHttpProxy(clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer,
+func NewNamingHttpProxy(ctx context.Context, clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer,
 	serviceInfoHolder *naming_cache.ServiceInfoHolder) (*NamingHttpProxy, error) {
 	srvProxy := NamingHttpProxy{
 		clientConfig:      clientCfg,
@@ -51,9 +52,9 @@ func NewNamingHttpProxy(clientCfg constant.ClientConfig, nacosServer *nacos_serv
 		serviceInfoHolder: serviceInfoHolder,
 	}
 
-	srvProxy.beatReactor = NewBeatReactor(clientCfg, nacosServer)
+	srvProxy.beatReactor = NewBeatReactor(ctx, clientCfg, nacosServer)
 
-	NewPushReceiver(serviceInfoHolder).startServer()
+	NewPushReceiver(ctx, serviceInfoHolder).startServer()
 
 	return &srvProxy, nil
 }

@@ -17,6 +17,7 @@
 package config_client
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"os"
@@ -48,6 +49,8 @@ const (
 )
 
 type ConfigClient struct {
+	ctx    context.Context
+	cancel context.CancelFunc
 	nacos_client.INacosClient
 	kmsClient       *kms.Client
 	localConfigs    []vo.ConfigParam
@@ -82,6 +85,7 @@ type cacheDataListener struct {
 
 func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	config := &ConfigClient{}
+	config.ctx, config.cancel = context.WithCancel(context.Background())
 	config.INacosClient = nc
 	clientConfig, err := nc.GetClientConfig()
 	if err != nil {
@@ -102,7 +106,7 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	clientConfig.CacheDir = clientConfig.CacheDir + string(os.PathSeparator) + "config"
 	config.configCacheDir = clientConfig.CacheDir
 
-	if config.configProxy, err = NewConfigProxy(serverConfig, clientConfig, httpAgent); err != nil {
+	if config.configProxy, err = NewConfigProxy(config.ctx, serverConfig, clientConfig, httpAgent); err != nil {
 		return nil, err
 	}
 
@@ -326,6 +330,7 @@ func (client *ConfigClient) SearchConfig(param vo.SearchConfigParm) (*model.Conf
 
 func (client *ConfigClient) CloseClient() {
 	client.configProxy.getRpcClient(client).Shutdown()
+	client.cancel()
 }
 
 func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParm) (*model.ConfigPage, error) {
@@ -357,14 +362,17 @@ func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParm) (*model
 }
 
 func (client *ConfigClient) startInternal() {
-	timer := time.NewTimer(executorErrDelay)
 	go func() {
+		timer := time.NewTimer(executorErrDelay)
+		defer timer.Stop()
 		for {
 			select {
 			case <-client.listenExecute:
 				client.executeConfigListen()
 			case <-timer.C:
 				client.executeConfigListen()
+			case <-client.ctx.Done():
+				return
 			}
 			timer.Reset(executorErrDelay)
 		}
@@ -401,7 +409,7 @@ func (client *ConfigClient) executeConfigListen() {
 	if len(listenCachesMap) > 0 {
 		for taskId, listenCaches := range listenCachesMap {
 			request := buildConfigBatchListenRequest(listenCaches)
-			rpcClient := client.configProxy.createRpcClient(fmt.Sprintf("%d", taskId), client)
+			rpcClient := client.configProxy.createRpcClient(client.ctx, fmt.Sprintf("%d", taskId), client)
 			iResponse, err := client.configProxy.requestProxy(rpcClient, request, 3000)
 			if err != nil {
 				logger.Warnf("ConfigBatchListenRequest failure,err:%+v", err)

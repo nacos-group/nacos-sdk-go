@@ -17,6 +17,7 @@
 package security
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -65,7 +66,7 @@ func (ac *AuthClient) GetAccessToken() string {
 	return v.(string)
 }
 
-func (ac *AuthClient) AutoRefresh() {
+func (ac *AuthClient) AutoRefresh(ctx context.Context) {
 
 	// If the username is not set, the automatic refresh Token is not enabled
 
@@ -75,7 +76,7 @@ func (ac *AuthClient) AutoRefresh() {
 
 	go func() {
 		timer := time.NewTimer(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
-
+		defer timer.Stop()
 		for {
 			select {
 			case <-timer.C:
@@ -84,6 +85,8 @@ func (ac *AuthClient) AutoRefresh() {
 					logger.Errorf("login has error %+v", err)
 				}
 				timer.Reset(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()

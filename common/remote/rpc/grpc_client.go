@@ -43,10 +43,11 @@ type GrpcClient struct {
 	*RpcClient
 }
 
-func NewGrpcClient(clientName string, nacosServer *nacos_server.NacosServer) *GrpcClient {
+func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_server.NacosServer) *GrpcClient {
 	rpcClient := &GrpcClient{
 		&RpcClient{
-			Name:                        clientName,
+			ctx:                         ctx,
+			name:                        clientName,
 			labels:                      make(map[string]string, 8),
 			rpcClientStatus:             INITIALIZED,
 			eventChan:                   make(chan ConnectionEvent),
