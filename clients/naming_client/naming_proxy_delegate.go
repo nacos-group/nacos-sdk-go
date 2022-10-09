@@ -93,8 +93,8 @@ func (proxy *NamingProxyDelegate) Subscribe(serviceName, groupName string, clust
 	var err error
 	isSubscribed := proxy.grpcClientProxy.IsSubscribed(serviceName, groupName, clusters)
 	serviceNameWithGroup := util.GetServiceCacheKey(util.GetGroupName(serviceName, groupName), clusters)
-	serviceInfo, cacheExist := proxy.serviceInfoHolder.ServiceInfoMap.Load(serviceNameWithGroup)
-	if !isSubscribed || !cacheExist {
+	serviceInfo, ok := proxy.serviceInfoHolder.ServiceInfoMap.Load(serviceNameWithGroup)
+	if !isSubscribed || !ok {
 		serviceInfo, err = proxy.grpcClientProxy.Subscribe(serviceName, groupName, clusters)
 		if err != nil {
 			return model.Service{}, err
