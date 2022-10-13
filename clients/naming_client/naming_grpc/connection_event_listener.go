@@ -113,9 +113,14 @@ func (c *ConnectionEventListener) RemoveInstanceForRedo(serviceName, groupName s
 
 func (c *ConnectionEventListener) CacheSubscriberForRedo(fullServiceName, clusters string) {
 	key := util.GetServiceCacheKey(fullServiceName, clusters)
-	if _, ok := c.subscribes.Get(key); !ok {
+	if !c.IsSubscriberCached(key) {
 		c.subscribes.Set(key, struct{}{})
 	}
+}
+
+func (c *ConnectionEventListener) IsSubscriberCached(key string) bool {
+	_, ok := c.subscribes.Get(key)
+	return ok
 }
 
 func (c *ConnectionEventListener) RemoveSubscriberForRedo(fullServiceName, clusters string) {

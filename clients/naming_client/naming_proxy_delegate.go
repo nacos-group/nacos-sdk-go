@@ -92,15 +92,17 @@ func (proxy *NamingProxyDelegate) QueryInstancesOfService(serviceName, groupName
 }
 
 func (proxy *NamingProxyDelegate) Subscribe(serviceName, groupName string, clusters string) (model.Service, error) {
+	var err error
+	isSubscribed := proxy.grpcClientProxy.IsSubscribed(serviceName, groupName, clusters)
 	serviceNameWithGroup := util.GetServiceCacheKey(util.GetGroupName(serviceName, groupName), clusters)
 	serviceInfo, ok := proxy.serviceInfoHolder.ServiceInfoMap.Load(serviceNameWithGroup)
-	if !ok {
-		result, err := proxy.grpcClientProxy.Subscribe(serviceName, groupName, clusters)
+	if !isSubscribed || !ok {
+		serviceInfo, err = proxy.grpcClientProxy.Subscribe(serviceName, groupName, clusters)
 		if err != nil {
 			return model.Service{}, err
 		}
-		serviceInfo = result
 	}
+
 	service := serviceInfo.(model.Service)
 	proxy.serviceInfoHolder.ProcessService(&service)
 	return service, nil
