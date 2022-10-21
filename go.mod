@@ -1,6 +1,6 @@
 module github.com/nacos-group/nacos-sdk-go
 
-go 1.12
+go 1.15
 
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.18
@@ -13,6 +13,7 @@ require (
 	github.com/stretchr/testify v1.5.1
 	go.uber.org/zap v1.15.0
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
+	golang.org/x/sys v0.1.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
