@@ -18,6 +18,7 @@ package config_client
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"runtime"
 	"testing"
@@ -31,23 +32,14 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/mock"
 	"github.com/nacos-group/nacos-sdk-go/util"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
 var goVersion = runtime.Version()
 
 var clientConfigTest = constant.ClientConfig{
-	TimeoutMs:      10000,
-	ListenInterval: 20000,
-	BeatInterval:   10000,
-}
-
-var clientConfigTestWithTenant = constant.ClientConfig{
-	TimeoutMs:      10000,
-	ListenInterval: 20000,
-	BeatInterval:   10000,
-	NamespaceId:    "tenant",
+	TimeoutMs:    10000,
+	BeatInterval: 10000,
 }
 
 var serverConfigTest = constant.ServerConfig{
@@ -71,9 +63,6 @@ var (
 	configNoChangeKey                 = goVersion + "ConfigNoChange"
 	multipleClientsKey                = goVersion + "MultipleClients"
 	multipleClientsMultipleConfigsKey = goVersion + "MultipleClientsMultipleConfig"
-	cancelOneKey                      = goVersion + "CancelOne"
-	cancelOne1Key                     = goVersion + "CancelOne1"
-	cancelListenConfigKey             = goVersion + "cancel_listen_config"
 	specialSymbolKey                  = goVersion + "special_symbol"
 )
 
@@ -472,33 +461,33 @@ type mockLogger struct {
 }
 
 func (m mockLogger) Info(args ...interface{}) {
-	logrus.Info(args...)
+	fmt.Println(args...)
 }
 
 func (m mockLogger) Warn(args ...interface{}) {
-	logrus.Info(args...)
+	fmt.Println(args...)
 }
 
 func (m mockLogger) Error(args ...interface{}) {
-	logrus.Info(args...)
+	fmt.Println(args...)
 }
 
 func (m mockLogger) Debug(args ...interface{}) {
-	logrus.Info(args...)
+	fmt.Println(args...)
 }
 
 func (m mockLogger) Infof(format string, args ...interface{}) {
-	logrus.Infof(format, args...)
+	fmt.Println(fmt.Sprintf(format, args...))
 }
 
 func (m mockLogger) Warnf(format string, args ...interface{}) {
-	logrus.Warnf(format, args...)
+	fmt.Println(fmt.Sprintf(format, args...))
 }
 
 func (m mockLogger) Errorf(format string, args ...interface{}) {
-	logrus.Errorf(format, args...)
+	fmt.Println(fmt.Sprintf(format, args...))
 }
 
 func (m mockLogger) Debugf(format string, args ...interface{}) {
-	logrus.Debugf("implement me")
+	fmt.Println("implement me")
 }

@@ -119,27 +119,27 @@ func (hr *HostReactor) GetServiceInfo(serviceName string, clusters string) (mode
 	return cacheService.(model.Service), nil
 }
 
-func (hr *HostReactor) GetAllServiceInfo(nameSpace, groupName string, pageNo, pageSize uint32) model.ServiceList {
+func (hr *HostReactor) GetAllServiceInfo(nameSpace, groupName string, pageNo, pageSize uint32) (model.ServiceList, error) {
 	data := model.ServiceList{}
 	result, err := hr.serviceProxy.GetAllServiceInfoList(nameSpace, groupName, pageNo, pageSize)
 	if err != nil {
 		logger.Errorf("GetAllServiceInfoList return error!nameSpace:%s groupName:%s pageNo:%d, pageSize:%d err:%+v",
 			nameSpace, groupName, pageNo, pageSize, err)
-		return data
+		return data, err
 	}
 	if result == "" {
-		logger.Errorf("GetAllServiceInfoList result is empty!nameSpace:%s  groupName:%s pageNo:%d, pageSize:%d",
+		logger.Warnf("GetAllServiceInfoList result is empty!nameSpace:%s  groupName:%s pageNo:%d, pageSize:%d",
 			nameSpace, groupName, pageNo, pageSize)
-		return data
+		return data, nil
 	}
 
 	err = json.Unmarshal([]byte(result), &data)
 	if err != nil {
 		logger.Errorf("GetAllServiceInfoList result json.Unmarshal error!nameSpace:%s groupName:%s pageNo:%d, pageSize:%d",
 			nameSpace, groupName, pageNo, pageSize)
-		return data
+		return data, err
 	}
-	return data
+	return data, nil
 }
 
 func (hr *HostReactor) updateServiceNow(serviceName, clusters string) {
