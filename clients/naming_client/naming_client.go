@@ -210,8 +210,7 @@ func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (mod
 	if param.PageSize == 0 {
 		param.PageSize = 10
 	}
-	services := sc.hostReactor.GetAllServiceInfo(param.NameSpace, param.GroupName, param.PageNo, param.PageSize)
-	return services, nil
+	return sc.hostReactor.GetAllServiceInfo(param.NameSpace, param.GroupName, param.PageNo, param.PageSize)
 }
 
 // SelectAllInstances select all instances
