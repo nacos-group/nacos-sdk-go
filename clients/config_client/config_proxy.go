@@ -75,7 +75,7 @@ func (cp *ConfigProxy) injectCommHeader(param map[string]string) {
 	param[constant.CHARSET_KEY] = "utf-8"
 }
 
-func (cp *ConfigProxy) searchConfigProxy(param vo.SearchConfigParm, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
+func (cp *ConfigProxy) searchConfigProxy(param vo.SearchConfigParam, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
 	params := util.TransformObject2Param(param)
 	if len(tenant) > 0 {
 		params["tenant"] = tenant

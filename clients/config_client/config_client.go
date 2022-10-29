@@ -262,7 +262,7 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, er
 	return false, err
 }
 
-//Cancel Listen Config
+// Cancel Listen Config
 func (client *ConfigClient) CancelListenConfig(param vo.ConfigParam) (err error) {
 	clientConfig, err := client.GetClientConfig()
 	if err != nil {
@@ -324,7 +324,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	return
 }
 
-func (client *ConfigClient) SearchConfig(param vo.SearchConfigParm) (*model.ConfigPage, error) {
+func (client *ConfigClient) SearchConfig(param vo.SearchConfigParam) (*model.ConfigPage, error) {
 	return client.searchConfigInner(param)
 }
 
@@ -333,7 +333,7 @@ func (client *ConfigClient) CloseClient() {
 	client.cancel()
 }
 
-func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParm) (*model.ConfigPage, error) {
+func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParam) (*model.ConfigPage, error) {
 	if param.Search != "accurate" && param.Search != "blur" {
 		return nil, errors.New("[client.searchConfigInner] param.search must be accurate or blur")
 	}

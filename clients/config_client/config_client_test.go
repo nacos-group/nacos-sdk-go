@@ -69,7 +69,7 @@ func (m *MockConfigProxy) queryConfig(dataId, group, tenant string, timeout uint
 	}
 	return &rpc_response.ConfigQueryResponse{Content: "hello world"}, nil
 }
-func (m *MockConfigProxy) searchConfigProxy(param vo.SearchConfigParm, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
+func (m *MockConfigProxy) searchConfigProxy(param vo.SearchConfigParam, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
 	return &model.ConfigPage{TotalCount: 1}, nil
 }
 func (m *MockConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_request.IRequest, timeoutMills uint64) (rpc_response.IResponse, error) {
@@ -106,7 +106,7 @@ func Test_SearchConfig(t *testing.T) {
 		DataId:  localConfigTest.DataId,
 		Group:   "DEFAULT_GROUP",
 		Content: "hello world"})
-	configPage, err := client.SearchConfig(vo.SearchConfigParm{
+	configPage, err := client.SearchConfig(vo.SearchConfigParam{
 		Search:   "accurate",
 		DataId:   localConfigTest.DataId,
 		Group:    "DEFAULT_GROUP",
