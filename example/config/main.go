@@ -124,7 +124,7 @@ func main() {
 	})
 	time.Sleep(1 * time.Second)
 
-	searchPage, _ := client.SearchConfig(vo.SearchConfigParm{
+	searchPage, _ := client.SearchConfig(vo.SearchConfigParam{
 		Search:   "blur",
 		DataId:   "",
 		Group:    "",
