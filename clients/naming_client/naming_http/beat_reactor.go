@@ -144,7 +144,7 @@ func (br *BeatReactor) SendBeat(info *model.BeatInfo) (int64, error) {
 	params["serviceName"] = info.ServiceName
 	params["beat"] = util.ToJsonString(info)
 	api := constant.SERVICE_BASE_PATH + "/instance/beat"
-	result, err := br.nacosServer.ReqApi(api, params, http.MethodPut)
+	result, err := br.nacosServer.ReqApi(api, params, http.MethodPut, br.clientCfg)
 	if err != nil {
 		return 0, err
 	}

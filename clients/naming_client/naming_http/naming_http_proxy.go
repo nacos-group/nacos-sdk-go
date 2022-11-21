@@ -77,7 +77,7 @@ func (proxy *NamingHttpProxy) RegisterInstance(serviceName string, groupName str
 	params["healthy"] = strconv.FormatBool(instance.Healthy)
 	params["metadata"] = util.ToJsonString(instance.Metadata)
 	params["ephemeral"] = strconv.FormatBool(instance.Ephemeral)
-	_, err := proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodPost)
+	_, err := proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodPost, proxy.clientConfig)
 	if err != nil {
 		return false, err
 	}
@@ -110,7 +110,7 @@ func (proxy *NamingHttpProxy) DeregisterInstance(serviceName string, groupName s
 	params["ip"] = instance.Ip
 	params["port"] = strconv.Itoa(int(instance.Port))
 	params["ephemeral"] = strconv.FormatBool(instance.Ephemeral)
-	_, err := proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodDelete)
+	_, err := proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodDelete, proxy.clientConfig)
 	if err != nil {
 		return false, err
 	}
@@ -138,7 +138,7 @@ func (proxy *NamingHttpProxy) GetServiceList(pageNo uint32, pageSize uint32, gro
 	serviceList := model.ServiceList{}
 
 	api := constant.SERVICE_BASE_PATH + "/service/list"
-	result, err := proxy.nacosServer.ReqApi(api, params, http.MethodGet)
+	result, err := proxy.nacosServer.ReqApi(api, params, http.MethodGet, proxy.clientConfig)
 	if err != nil {
 		return serviceList, err
 	}
@@ -165,7 +165,7 @@ func (proxy *NamingHttpProxy) GetServiceList(pageNo uint32, pageSize uint32, gro
 // ServerHealthy ...
 func (proxy *NamingHttpProxy) ServerHealthy() bool {
 	api := constant.SERVICE_BASE_PATH + "/operator/metrics"
-	result, err := proxy.nacosServer.ReqApi(api, map[string]string{}, http.MethodGet)
+	result, err := proxy.nacosServer.ReqApi(api, map[string]string{}, http.MethodGet, proxy.clientConfig)
 	if err != nil {
 		logger.Errorf("namespaceId:[%s] sending server healthy failed!,result:%s error:%+v", proxy.clientConfig.NamespaceId, result, err)
 		return false
@@ -192,7 +192,7 @@ func (proxy *NamingHttpProxy) QueryInstancesOfService(serviceName, groupName, cl
 	param["healthyOnly"] = strconv.FormatBool(healthyOnly)
 	param["clientIP"] = util.LocalIP()
 	api := constant.SERVICE_PATH + "/list"
-	result, err := proxy.nacosServer.ReqApi(api, param, http.MethodGet)
+	result, err := proxy.nacosServer.ReqApi(api, param, http.MethodGet, proxy.clientConfig)
 	if err != nil {
 		return nil, err
 	}
