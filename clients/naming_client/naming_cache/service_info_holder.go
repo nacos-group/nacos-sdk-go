@@ -33,12 +33,12 @@ import (
 )
 
 type ServiceInfoHolder struct {
-	ServiceInfoMap       sync.Map
+	ServiceInfoMap       *sync.Map
 	updateCacheWhenEmpty bool
 	cacheDir             string
 	notLoadCacheAtStart  bool
 	subCallback          *SubscribeCallback
-	UpdateTimeMap        sync.Map
+	UpdateTimeMap        *sync.Map
 }
 
 func NewServiceInfoHolder(namespace, cacheDir string, updateCacheWhenEmpty, notLoadCacheAtStart bool) *ServiceInfoHolder {
@@ -48,8 +48,8 @@ func NewServiceInfoHolder(namespace, cacheDir string, updateCacheWhenEmpty, notL
 		notLoadCacheAtStart:  notLoadCacheAtStart,
 		cacheDir:             cacheDir,
 		subCallback:          NewSubscribeCallback(),
-		UpdateTimeMap:        sync.Map{},
-		ServiceInfoMap:       sync.Map{},
+		UpdateTimeMap:        &sync.Map{},
+		ServiceInfoMap:       &sync.Map{},
 	}
 
 	if !notLoadCacheAtStart {
@@ -60,7 +60,7 @@ func NewServiceInfoHolder(namespace, cacheDir string, updateCacheWhenEmpty, notL
 
 func (s *ServiceInfoHolder) loadCacheFromDisk() {
 	serviceMap := cache.ReadServicesFromFile(s.cacheDir)
-	if serviceMap == nil || len(serviceMap) == 0 {
+	if len(serviceMap) == 0 {
 		return
 	}
 	for k, v := range serviceMap {

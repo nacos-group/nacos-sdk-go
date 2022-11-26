@@ -30,10 +30,7 @@ func get(client *http.Client, path string, header http.Header, timeoutMs uint64,
 	for key, value := range params {
 		path = path + key + "=" + value + "&"
 	}
-	if strings.HasSuffix(path, "&") {
-		path = path[:len(path)-1]
-	}
-
+	path = strings.TrimSuffix(path, "&")
 	client.Timeout = time.Millisecond * time.Duration(timeoutMs)
 	request, errNew := http.NewRequest(http.MethodGet, path, nil)
 	if errNew != nil {

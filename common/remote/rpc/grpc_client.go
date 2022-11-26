@@ -27,16 +27,15 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 
 	nacos_grpc_service "github.com/nacos-group/nacos-sdk-go/v2/api/grpc"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
 )
 
 type GrpcClient struct {

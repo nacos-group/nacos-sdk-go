@@ -68,9 +68,7 @@ func TransformObject2Param(object interface{}) (params map[string]string) {
 						for _, sv := range ss {
 							pv += sv + ","
 						}
-						if strings.HasSuffix(pv, ",") {
-							pv = pv[:len(pv)-1]
-						}
+						pv = strings.TrimSuffix(pv, ",")
 						if len(pv) > 0 {
 							params[tag] = pv
 						}

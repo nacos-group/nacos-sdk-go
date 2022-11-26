@@ -47,16 +47,12 @@ func (agent *HttpAgent) RequestOnlyResult(method string, path string, header htt
 	switch method {
 	case http.MethodGet:
 		response, err = agent.Get(path, header, timeoutMs, params)
-		break
 	case http.MethodPost:
 		response, err = agent.Post(path, header, timeoutMs, params)
-		break
 	case http.MethodPut:
 		response, err = agent.Put(path, header, timeoutMs, params)
-		break
 	case http.MethodDelete:
 		response, err = agent.Delete(path, header, timeoutMs, params)
-		break
 	default:
 		logger.Errorf("request method[%s], path[%s],header:[%s],params:[%s], not avaliable method ", method, path, util.ToJsonString(header), util.ToJsonString(params))
 	}

@@ -18,10 +18,10 @@ package nacos_server
 
 import (
 	"context"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
 	"testing"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
 	"github.com/stretchr/testify/assert"
 )
 

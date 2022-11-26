@@ -23,9 +23,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"github.com/buger/jsonparser"
+	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
@@ -129,10 +128,7 @@ func (proxy *NamingHttpProxy) GetServiceList(pageNo uint32, pageSize uint32, gro
 		switch selector.Type {
 		case "label":
 			params["selector"] = util.ToJsonString(selector)
-			break
 		default:
-			break
-
 		}
 	}
 	serviceList := model.ServiceList{}

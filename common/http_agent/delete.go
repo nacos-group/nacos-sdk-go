@@ -29,9 +29,7 @@ func delete(client *http.Client, path string, header http.Header, timeoutMs uint
 	for key, value := range params {
 		path = path + key + "=" + value + "&"
 	}
-	if strings.HasSuffix(path, "&") {
-		path = path[:len(path)-1]
-	}
+	path = strings.TrimSuffix(path, "&")
 	client.Timeout = time.Millisecond * time.Duration(timeoutMs)
 	request, errNew := http.NewRequest(http.MethodDelete, path, nil)
 	if errNew != nil {

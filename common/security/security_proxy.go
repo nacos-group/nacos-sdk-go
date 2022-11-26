@@ -112,9 +112,7 @@ func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 			contextPath = "/" + contextPath
 		}
 
-		if strings.HasSuffix(contextPath, "/") {
-			contextPath = contextPath[0 : len(contextPath)-1]
-		}
+		contextPath = strings.TrimSuffix(contextPath, "/")
 
 		if server.Scheme == "" {
 			server.Scheme = "http"

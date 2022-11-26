@@ -32,19 +32,16 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
-
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
-
-	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
-
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_error"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
 	"github.com/nacos-group/nacos-sdk-go/v2/inner/uuid"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
+	"github.com/pkg/errors"
 )
 
 type NacosServer struct {
@@ -194,7 +191,7 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 
 func (server *NacosServer) ReqConfigApi(api string, params map[string]string, headers map[string]string, method string, timeoutMS uint64) (string, error) {
 	srvs := server.serverList
-	if srvs == nil || len(srvs) == 0 {
+	if len(srvs) == 0 {
 		return "", errors.New("server list is empty")
 	}
 
@@ -228,7 +225,7 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 
 func (server *NacosServer) ReqApi(api string, params map[string]string, method string, config constant.ClientConfig) (string, error) {
 	srvs := server.serverList
-	if srvs == nil || len(srvs) == 0 {
+	if len(srvs) == 0 {
 		return "", errors.New("server list is empty")
 	}
 
@@ -321,9 +318,7 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 			server.lastSrvRefTime = util.CurrentMillis()
 			server.Unlock()
 		}
-
 	}
-	return
 }
 
 func (server *NacosServer) GetServerList() []constant.ServerConfig {

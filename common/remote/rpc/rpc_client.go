@@ -390,7 +390,7 @@ func (r *RpcClient) healthCheck(timer *time.Timer) {
 	defer timer.Reset(constant.KEEP_ALIVE_TIME * time.Second)
 	var reconnectContext ReconnectContext
 	lastActiveTimeStamp := r.lastActiveTimestamp.Load().(time.Time)
-	if time.Now().Sub(lastActiveTimeStamp) < constant.KEEP_ALIVE_TIME*time.Second {
+	if time.Since(lastActiveTimeStamp) < constant.KEEP_ALIVE_TIME*time.Second {
 		return
 	}
 	if r.sendHealthCheck() {
