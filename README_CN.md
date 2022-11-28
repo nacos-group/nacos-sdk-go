@@ -63,7 +63,7 @@ constant.ServerConfig{
 ```go
 // 创建clientConfig
 clientConfig := constant.ClientConfig{
-	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", // 如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId。当namespace是public时，此处填空字符串。
+	NamespaceId:         "e525eafa-f7d7-4029-83d9-008937f9d468", // 如果需要支持多namespace，我们可以创建多个client,它们有不同的NamespaceId。当namespace是public时，此处填空字符串。
 	TimeoutMs:           5000,
 	NotLoadCacheAtStart: true,
 	LogDir:              "/tmp/nacos/log",
