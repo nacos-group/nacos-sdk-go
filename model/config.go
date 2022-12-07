@@ -16,14 +16,18 @@
 
 package model
 
+import (
+	"encoding/json"
+)
+
 type ConfigItem struct {
-	Id      string `param:"id"`
-	DataId  string `param:"dataId"`
-	Group   string `param:"group"`
-	Content string `param:"content"`
-	Md5     string `param:"md5"`
-	Tenant  string `param:"tenant"`
-	Appname string `param:"appname"`
+	Id      json.Number `param:"id"`
+	DataId  string      `param:"dataId"`
+	Group   string      `param:"group"`
+	Content string      `param:"content"`
+	Md5     string      `param:"md5"`
+	Tenant  string      `param:"tenant"`
+	Appname string      `param:"appname"`
 }
 type ConfigPage struct {
 	TotalCount     int          `param:"totalCount"`
