@@ -481,7 +481,13 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData *cacheData, notify 
 	}
 	cacheData.md5 = util.Md5(cacheData.content)
 	if cacheData.md5 != cacheData.cacheDataListener.lastMd5 {
-		go cacheData.cacheDataListener.listener(cacheData.tenant, cacheData.group, cacheData.dataId, cacheData.content)
+		decryptedContent, err := client.decrypt(cacheData.dataId, cacheData.content)
+		if err != nil {
+			logger.Errorf("decrypt content fail ,dataId=%s,group=%s,tenant=%s ", cacheData.dataId,
+				cacheData.group, cacheData.tenant)
+			return
+		}
+		go cacheData.cacheDataListener.listener(cacheData.tenant, cacheData.group, cacheData.dataId, decryptedContent)
 		cacheData.cacheDataListener.lastMd5 = cacheData.md5
 		client.cacheMap.Set(util.GetConfigCacheKey(cacheData.dataId, cacheData.group, cacheData.tenant), cacheData)
 	}
