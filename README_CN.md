@@ -103,13 +103,13 @@ serverConfigs := []constant.ServerConfig{
         "console1.nacos.io",
         80,
         constant.WithScheme("http"),
-        constant.WithContextPath("/nacos")
+        constant.WithContextPath("/nacos"),
     ),
     *constant.NewServerConfig(
         "console2.nacos.io",
         80,
         constant.WithScheme("http"),
-        constant.WithContextPath("/nacos")
+        constant.WithContextPath("/nacos"),
     ),
 }
 
