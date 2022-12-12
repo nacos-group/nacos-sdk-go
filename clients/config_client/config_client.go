@@ -397,12 +397,9 @@ func (client *ConfigClient) executeConfigListen() {
 				continue
 			}
 		}
-		var cacheDatas []*cacheData
-		if cacheDatas, ok = listenCachesMap[cache.taskId]; ok {
-			cacheDatas = append(cacheDatas, cache)
-		} else {
-			cacheDatas = append(cacheDatas, cache)
-		}
+
+		cacheDatas := listenCachesMap[cache.taskId]
+		cacheDatas = append(cacheDatas, cache)
 		listenCachesMap[cache.taskId] = cacheDatas
 	}
 	hasChangedKeys := false
