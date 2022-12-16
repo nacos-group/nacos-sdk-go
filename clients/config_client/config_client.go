@@ -84,13 +84,14 @@ type cacheDataListener struct {
 }
 
 func (cacheData *cacheData) executeListener() {
+	cacheData.cacheDataListener.lastMd5 = cacheData.md5
+
 	decryptedContent, err := cacheData.configClient.decrypt(cacheData.dataId, cacheData.content)
 	if err != nil {
 		logger.Errorf("decrypt content fail ,dataId=%s,group=%s,tenant=%s,err:%+v ", cacheData.dataId,
 			cacheData.group, cacheData.tenant, err)
 		return
 	}
-	cacheData.cacheDataListener.lastMd5 = cacheData.md5
 	go cacheData.cacheDataListener.listener(cacheData.tenant, cacheData.group, cacheData.dataId, decryptedContent)
 }
 
