@@ -83,6 +83,18 @@ type cacheDataListener struct {
 	lastMd5  string
 }
 
+func (cacheData *cacheData) executeListener() {
+	cacheData.cacheDataListener.lastMd5 = cacheData.md5
+
+	decryptedContent, err := cacheData.configClient.decrypt(cacheData.dataId, cacheData.content)
+	if err != nil {
+		logger.Errorf("decrypt content fail ,dataId=%s,group=%s,tenant=%s,err:%+v ", cacheData.dataId,
+			cacheData.group, cacheData.tenant, err)
+		return
+	}
+	go cacheData.cacheDataListener.listener(cacheData.tenant, cacheData.group, cacheData.dataId, decryptedContent)
+}
+
 func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	config := &ConfigClient{}
 	config.ctx, config.cancel = context.WithCancel(context.Background())
@@ -390,8 +402,7 @@ func (client *ConfigClient) executeConfigListen() {
 
 		if cache.isSyncWithServer {
 			if cache.md5 != cache.cacheDataListener.lastMd5 {
-				go cache.cacheDataListener.listener(cache.tenant, cache.group, cache.dataId, cache.content)
-				cache.cacheDataListener.lastMd5 = cache.md5
+				cache.executeListener()
 			}
 			if !needAllSync {
 				continue
@@ -478,9 +489,9 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData *cacheData, notify 
 	}
 	cacheData.md5 = util.Md5(cacheData.content)
 	if cacheData.md5 != cacheData.cacheDataListener.lastMd5 {
-		go cacheData.cacheDataListener.listener(cacheData.tenant, cacheData.group, cacheData.dataId, cacheData.content)
-		cacheData.cacheDataListener.lastMd5 = cacheData.md5
 		client.cacheMap.Set(util.GetConfigCacheKey(cacheData.dataId, cacheData.group, cacheData.tenant), cacheData)
+
+		cacheData.executeListener()
 	}
 }
 
