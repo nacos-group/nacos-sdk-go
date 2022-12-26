@@ -414,6 +414,7 @@ func (r *RpcClient) sendHealthCheck() bool {
 	response, err := r.currentConnection.request(rpc_request.NewHealthCheckRequest(),
 		constant.DEFAULT_TIMEOUT_MILLS, r)
 	if err != nil {
+		logger.Errorf("client sendHealthCheck failed,err=%v", err)
 		return false
 	}
 	if !response.IsSuccess() {
@@ -448,12 +449,12 @@ func (c *ConnectionEvent) isDisConnected() bool {
 	return c.eventType == DISCONNECTED
 }
 
-//check is this client is shutdown.
+// check is this client is shutdown.
 func (r *RpcClient) isShutdown() bool {
 	return atomic.LoadInt32((*int32)(&r.rpcClientStatus)) == (int32)(SHUTDOWN)
 }
 
-//IsRunning check is this client is running.
+// IsRunning check is this client is running.
 func (r *RpcClient) IsRunning() bool {
 	return atomic.LoadInt32((*int32)(&r.rpcClientStatus)) == (int32)(RUNNING)
 }
@@ -483,25 +484,23 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 			continue
 		}
 		response, err := r.currentConnection.request(request, timeoutMills, r)
-		if err == nil {
-			if response, ok := response.(*rpc_response.ErrorResponse); ok {
-				if response.GetErrorCode() == constant.UN_REGISTER {
-					r.mux.Lock()
-					if atomic.CompareAndSwapInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING), (int32)(UNHEALTHY)) {
-						logger.Infof("Connection is unregistered, switch server, connectionId=%s, request=%s",
-							r.currentConnection.getConnectionId(), request.GetRequestType())
-						r.switchServerAsync(ServerInfo{}, false)
-					}
-					r.mux.Unlock()
-				}
-				currentErr = waitReconnect(timeoutMills, &retryTimes, request, errors.New(response.GetMessage()))
-				continue
-			}
-			r.lastActiveTimestamp.Store(time.Now())
-			return response, nil
-		} else {
+		if err != nil {
 			currentErr = waitReconnect(timeoutMills, &retryTimes, request, err)
+			continue
 		}
+		if resp, ok := response.(*rpc_response.ErrorResponse); ok && resp.GetErrorCode() == constant.UN_REGISTER {
+			r.mux.Lock()
+			if atomic.CompareAndSwapInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING), (int32)(UNHEALTHY)) {
+				logger.Infof("Connection is unregistered, switch server, connectionId=%s, request=%s",
+					r.currentConnection.getConnectionId(), request.GetRequestType())
+				r.switchServerAsync(ServerInfo{}, false)
+			}
+			r.mux.Unlock()
+			currentErr = waitReconnect(timeoutMills, &retryTimes, request, errors.New(response.GetMessage()))
+			continue
+		}
+		r.lastActiveTimestamp.Store(time.Now())
+		return response, nil
 	}
 
 	if atomic.CompareAndSwapInt32((*int32)(&r.rpcClientStatus), int32(RUNNING), int32(UNHEALTHY)) {

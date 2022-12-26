@@ -26,7 +26,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
 )
 
-//IServerRequestHandler to process the request from server side.
+// IServerRequestHandler to process the request from server side.
 type IServerRequestHandler interface {
 	Name() string
 	//RequestReply Handle request from server.
