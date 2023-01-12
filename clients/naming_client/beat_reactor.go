@@ -70,8 +70,8 @@ func (br *BeatReactor) AddBeatInfo(serviceName string, beatInfo *model.BeatInfo)
 	defer br.mux.Unlock()
 	br.mux.Lock()
 	if data, ok := br.beatMap.Get(k); ok {
-		beatInfo = data.(*model.BeatInfo)
-		atomic.StoreInt32(&beatInfo.State, int32(model.StateShutdown))
+		oldBeatInfo := data.(*model.BeatInfo)
+		atomic.StoreInt32(&oldBeatInfo.State, int32(model.StateShutdown))
 		br.beatMap.Remove(k)
 	}
 	br.beatMap.Set(k, beatInfo)
@@ -111,8 +111,7 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 		if err != nil {
 			logger.Errorf("beat to server return error:%+v", err)
 			br.beatThreadSemaphore.Release(1)
-			t := time.NewTimer(beatInfo.Period)
-			<-t.C
+			time.Sleep(beatInfo.Period)
 			continue
 		}
 		if beatInterval > 0 {
@@ -122,7 +121,6 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 		br.beatRecordMap.Set(k, util.CurrentMillis())
 		br.beatThreadSemaphore.Release(1)
 
-		t := time.NewTimer(beatInfo.Period)
-		<-t.C
+		time.Sleep(beatInfo.Period)
 	}
 }
