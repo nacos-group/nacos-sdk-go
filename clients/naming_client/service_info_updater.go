@@ -47,11 +47,13 @@ func NewServiceInfoUpdater(ctx context.Context, serviceInfoHolder *naming_cache.
 
 func (s *ServiceInfoUpdater) asyncUpdateService() {
 	sema := util.NewSemaphore(s.updateThreadNum)
+	duration := 1 * time.Second
+	timer := time.NewTimer(duration) // new timer
 	for {
 		select {
 		case <-s.ctx.Done():
 			return
-		default:
+		case <-timer.C:
 			s.serviceInfoHolder.ServiceInfoMap.Range(func(key, value interface{}) bool {
 				service := value.(model.Service)
 				lastRefTime, ok := s.serviceInfoHolder.UpdateTimeMap.Load(util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName),
@@ -68,7 +70,7 @@ func (s *ServiceInfoUpdater) asyncUpdateService() {
 				}
 				return true
 			})
-			time.Sleep(1 * time.Second)
+			timer.Reset(duration)
 		}
 	}
 }
