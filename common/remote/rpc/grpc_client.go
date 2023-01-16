@@ -205,7 +205,6 @@ func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiReque
 				} else {
 					c.handleServerRequest(payload, grpcConn)
 				}
-
 			}
 		}
 	}()
