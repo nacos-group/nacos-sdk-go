@@ -67,6 +67,11 @@ func NewNamingClient(nc nacos_client.INacosClient) (*NamingClient, error) {
 	if err = initLogger(clientConfig); err != nil {
 		return naming, err
 	}
+
+	if clientConfig.NamespaceId == "" {
+		clientConfig.NamespaceId = constant.DEFAULT_NAMESPACE_ID
+	}
+
 	naming.serviceInfoHolder = naming_cache.NewServiceInfoHolder(clientConfig.NamespaceId, clientConfig.CacheDir,
 		clientConfig.UpdateCacheWhenEmpty, clientConfig.NotLoadCacheAtStart)
 
