@@ -366,7 +366,7 @@ func (client *ConfigClient) listenConfigExecutor() func() error {
 		if taskCount > currentTaskCount {
 			for i := currentTaskCount; i < taskCount; i++ {
 				client.schedulerMap.Set(strconv.Itoa(i), true)
-				go client.delayScheduler(time.NewTimer(1*time.Millisecond), 1*time.Second, strconv.Itoa(i), client.longPulling(i))
+				go client.delayScheduler(time.NewTimer(1*time.Millisecond), 500*time.Millisecond, strconv.Itoa(i), client.longPulling(i))
 			}
 			atomic.StoreInt32(&client.currentTaskCount, int32(taskCount))
 		} else if taskCount < currentTaskCount {
