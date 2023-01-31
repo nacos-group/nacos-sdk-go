@@ -212,6 +212,12 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 		clientConfig.TimeoutMs, false, client)
 	if err != nil {
 		logger.Infof("get config from server error:%+v ", err)
+		if clientConfig, err := client.GetClientConfig(); err == nil {
+			if clientConfig.DisableUseSnapShot {
+				logger.Errorf("get config from cache  error:%+v ", err)
+				return "", errors.New("get config from remote nacos server fail, and is not allowed to read local file")
+			}
+		}
 		content, err = cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
 		if err != nil {
 			logger.Errorf("get config from cache  error:%+v ", err)
@@ -423,6 +429,11 @@ func (client *ConfigClient) executeConfigListen() {
 				logger.Warnf("ConfigBatchListenRequest failure,err:%+v", err)
 				continue
 			}
+			if !iResponse.IsSuccess() {
+				logger.Warnf("ConfigBatchListenRequest failure, error code:%+v", iResponse.GetErrorCode())
+				continue
+			}
+
 			if iResponse == nil && !iResponse.IsSuccess() {
 				continue
 			}
