@@ -164,7 +164,7 @@ func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 
 		if val, ok := result[constant.KEY_ACCESS_TOKEN]; ok {
 			ac.accessToken.Store(val)
-			ac.lastRefreshTime = time.Now().UnixMilli()
+			ac.lastRefreshTime = time.Now().Unix()
 			ac.tokenTtl = int64(result[constant.KEY_TOKEN_TTL].(float64))
 			ac.tokenRefreshWindow = ac.tokenTtl / 10
 		}
