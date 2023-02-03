@@ -87,7 +87,7 @@ func NewNacosServer(ctx context.Context, serverList []constant.ServerConfig, cli
 	_, err := securityLogin.Login()
 
 	if err != nil {
-		return &ns, err
+		logger.Errorf("login in err:%v", err)
 	}
 
 	securityLogin.AutoRefresh(ctx)

@@ -152,11 +152,20 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 	return response, nil
 }
 
+func appName(client *ConfigClient) string {
+	if clientConfig, err := client.GetClientConfig(); err == nil {
+		appName := clientConfig.AppName
+		return appName
+	}
+	return "unknown"
+}
+
 func (cp *ConfigProxy) createRpcClient(ctx context.Context, taskId string, client *ConfigClient) *rpc.RpcClient {
 	labels := map[string]string{
-		constant.LABEL_SOURCE: constant.LABEL_SOURCE_SDK,
-		constant.LABEL_MODULE: constant.LABEL_MODULE_CONFIG,
-		"taskId":              taskId,
+		constant.LABEL_SOURCE:   constant.LABEL_SOURCE_SDK,
+		constant.LABEL_MODULE:   constant.LABEL_MODULE_CONFIG,
+		constant.APPNAME_HEADER: appName(client),
+		"taskId":                taskId,
 	}
 
 	iRpcClient, _ := rpc.CreateClient(ctx, "config-"+taskId+"-"+client.uid, rpc.GRPC, labels, cp.nacosServer)

@@ -89,6 +89,7 @@ const (
 	DEFAULT_TIMEOUT_MILLS       = 3000
 	ALL_SYNC_INTERNAL           = 5 * time.Minute
 	CLIENT_APPNAME_HEADER       = "Client-AppName"
+	APPNAME_HEADER              = "AppName"
 	CLIENT_REQUEST_TS_HEADER    = "Client-RequestTS"
 	CLIENT_REQUEST_TOKEN_HEADER = "Client-RequestToken"
 	EX_CONFIG_INFO              = "exConfigInfo"

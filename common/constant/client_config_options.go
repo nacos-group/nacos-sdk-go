@@ -116,6 +116,13 @@ func WithCacheDir(cacheDir string) ClientOption {
 	}
 }
 
+// WithDisableUseSnapShot ...
+func WithDisableUseSnapShot(disableUseSnapShot bool) ClientOption {
+	return func(config *ClientConfig) {
+		config.DisableUseSnapShot = disableUseSnapShot
+	}
+}
+
 // WithUpdateThreadNum ...
 func WithUpdateThreadNum(updateThreadNum int) ClientOption {
 	return func(config *ClientConfig) {
