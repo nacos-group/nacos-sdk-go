@@ -92,11 +92,24 @@ func (proxy *NamingGrpcProxy) requestToServer(request rpc_request.IRequest) (rpc
 
 // RegisterInstance ...
 func (proxy *NamingGrpcProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
-	logger.Infof("instance namespaceId:<%s>,serviceName:<%s> with instance:<%s>",
+	logger.Infof("register instance namespaceId:<%s>,serviceName:<%s> with instance:<%s>",
 		proxy.clientConfig.NamespaceId, serviceName, util.ToJsonString(instance))
+	proxy.eventListener.CacheInstanceForRedo(serviceName, groupName, instance)
 	instanceRequest := rpc_request.NewInstanceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName, "registerInstance", instance)
 	response, err := proxy.requestToServer(instanceRequest)
-	proxy.eventListener.CacheInstanceForRedo(serviceName, groupName, instance)
+	if err != nil {
+		return false, err
+	}
+	return response.IsSuccess(), err
+}
+
+// BatchRegisterInstance ...
+func (proxy *NamingGrpcProxy) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) (bool, error) {
+	logger.Infof("batch register instance namespaceId:<%s>,serviceName:<%s> with instance:<%s>",
+		proxy.clientConfig.NamespaceId, serviceName, util.ToJsonString(instances))
+	proxy.eventListener.CacheInstancesForRedo(serviceName, groupName, instances)
+	batchInstanceRequest := rpc_request.NewBatchInstanceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName, "batchRegisterInstance", instances)
+	response, err := proxy.requestToServer(batchInstanceRequest)
 	if err != nil {
 		return false, err
 	}

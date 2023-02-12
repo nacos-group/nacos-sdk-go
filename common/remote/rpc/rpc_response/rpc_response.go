@@ -87,6 +87,11 @@ func registerClientResponses() {
 		return &InstanceResponse{Response: &Response{}}
 	})
 
+	// register BatchInstanceResponse.
+	registerClientResponse(func() IResponse {
+		return &BatchInstanceResponse{Response: &Response{}}
+	})
+
 	// register QueryServiceResponse.
 	registerClientResponse(func() IResponse {
 		return &QueryServiceResponse{Response: &Response{}}

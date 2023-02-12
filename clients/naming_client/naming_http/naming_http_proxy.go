@@ -97,6 +97,10 @@ func (proxy *NamingHttpProxy) RegisterInstance(serviceName string, groupName str
 	return true, nil
 }
 
+func (proxy *NamingHttpProxy) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) (bool, error) {
+	panic("implement me")
+}
+
 // DeregisterInstance ...
 func (proxy *NamingHttpProxy) DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
 	serviceName = util.GetGroupName(serviceName, groupName)

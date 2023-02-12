@@ -75,6 +75,10 @@ func (proxy *NamingProxyDelegate) RegisterInstance(serviceName string, groupName
 	return proxy.getExecuteClientProxy(instance).RegisterInstance(serviceName, groupName, instance)
 }
 
+func (proxy *NamingProxyDelegate) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) (bool, error) {
+	return proxy.grpcClientProxy.BatchRegisterInstance(serviceName, groupName, instances)
+}
+
 func (proxy *NamingProxyDelegate) DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
 	return proxy.getExecuteClientProxy(instance).DeregisterInstance(serviceName, groupName, instance)
 }
