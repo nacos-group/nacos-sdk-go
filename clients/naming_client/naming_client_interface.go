@@ -39,6 +39,13 @@ type INamingClient interface {
 	// Ephemeral optional
 	RegisterInstance(param vo.RegisterInstanceParam) (bool, error)
 
+	// BatchRegisterInstance use to batch register instance
+	// ClusterName  optional,default:DEFAULT
+	// ServiceName require
+	// GroupName optional,default:DEFAULT_GROUP
+	// Instances require,batch register instance list (serviceName, groupName in instances do not need to be set)
+	BatchRegisterInstance(param vo.BatchRegisterInstanceParam) (bool, error)
+
 	// DeregisterInstance use to deregister instance
 	// Ip required
 	// Port required

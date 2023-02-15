@@ -110,9 +110,37 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 		Weight:      param.Weight,
 		Ephemeral:   param.Ephemeral,
 	}
-
 	return sc.serviceProxy.RegisterInstance(param.ServiceName, param.GroupName, instance)
+}
 
+func (sc *NamingClient) BatchRegisterInstance(param vo.BatchRegisterInstanceParam) (bool, error) {
+	if param.ServiceName == "" {
+		return false, errors.New("serviceName cannot be empty!")
+	}
+	if len(param.GroupName) == 0 {
+		param.GroupName = constant.DEFAULT_GROUP
+	}
+	if len(param.Instances) == 0 {
+		return false, errors.New("instances cannot be empty!")
+	}
+	var modelInstances []model.Instance
+	for _, param := range param.Instances {
+		if !param.Ephemeral {
+			return false, errors.Errorf("Batch registration does not allow persistent instance registration! instance:%+v", param)
+		}
+		modelInstances = append(modelInstances, model.Instance{
+			Ip:          param.Ip,
+			Port:        param.Port,
+			Metadata:    param.Metadata,
+			ClusterName: param.ClusterName,
+			Healthy:     param.Healthy,
+			Enable:      param.Enable,
+			Weight:      param.Weight,
+			Ephemeral:   param.Ephemeral,
+		})
+	}
+
+	return sc.serviceProxy.BatchRegisterInstance(param.ServiceName, param.GroupName, modelInstances)
 }
 
 // DeregisterInstance ...

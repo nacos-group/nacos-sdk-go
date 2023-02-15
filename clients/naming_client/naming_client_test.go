@@ -43,6 +43,10 @@ func (m *MockNamingProxy) RegisterInstance(serviceName string, groupName string,
 	return true, nil
 }
 
+func (m *MockNamingProxy) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) (bool, error) {
+	return true, nil
+}
+
 func (m *MockNamingProxy) DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
 	return true, nil
 }

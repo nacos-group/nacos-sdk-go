@@ -53,6 +53,14 @@ func (c *InstanceResponse) GetResponseType() string {
 	return "InstanceResponse"
 }
 
+type BatchInstanceResponse struct {
+	*Response
+}
+
+func (c *BatchInstanceResponse) GetResponseType() string {
+	return "BatchInstanceResponse"
+}
+
 type QueryServiceResponse struct {
 	*Response
 	ServiceInfo model.Service `json:"serviceInfo"`
