@@ -138,7 +138,9 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 
 	config.cacheMap = cache.NewConcurrentMap()
 	// maximum buffered queue to prevent chan deadlocks during frequent configuration file updates
-	config.listenExecute = make(chan struct{}, math.MaxInt64)
+	// fix overflows on ARM 32-bits
+	max := int64(math.MaxInt64)
+	config.listenExecute = make(chan struct{}, max)
 
 	config.startInternal()
 
