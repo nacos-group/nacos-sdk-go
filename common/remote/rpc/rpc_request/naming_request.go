@@ -138,15 +138,15 @@ func (r *SubscribeServiceRequest) GetRequestType() string {
 
 type ServiceQueryRequest struct {
 	*NamingRequest
-	Clusters    string `json:"clusters"`
+	Cluster     string `json:"cluster"`
 	HealthyOnly bool   `json:"healthyOnly"`
 	UdpPort     int    `json:"udpPort"`
 }
 
-func NewServiceQueryRequest(namespace, serviceName, groupName, clusters string, healthyOnly bool, udpPort int) *ServiceQueryRequest {
+func NewServiceQueryRequest(namespace, serviceName, groupName, cluster string, healthyOnly bool, udpPort int) *ServiceQueryRequest {
 	return &ServiceQueryRequest{
 		NamingRequest: NewNamingRequest(namespace, serviceName, groupName),
-		Clusters:      clusters,
+		Cluster:       cluster,
 		HealthyOnly:   healthyOnly,
 		UdpPort:       udpPort,
 	}

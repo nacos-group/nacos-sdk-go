@@ -158,8 +158,8 @@ func (proxy *NamingGrpcProxy) ServerHealthy() bool {
 }
 
 // QueryInstancesOfService ...
-func (proxy *NamingGrpcProxy) QueryInstancesOfService(serviceName, groupName, clusters string, udpPort int, healthyOnly bool) (*model.Service, error) {
-	response, err := proxy.requestToServer(rpc_request.NewServiceQueryRequest(proxy.clientConfig.NamespaceId, serviceName, groupName, clusters,
+func (proxy *NamingGrpcProxy) QueryInstancesOfService(serviceName, groupName, cluster string, udpPort int, healthyOnly bool) (*model.Service, error) {
+	response, err := proxy.requestToServer(rpc_request.NewServiceQueryRequest(proxy.clientConfig.NamespaceId, serviceName, groupName, cluster,
 		healthyOnly, udpPort))
 	if err != nil {
 		return nil, err

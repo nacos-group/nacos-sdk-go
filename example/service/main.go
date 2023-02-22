@@ -129,6 +129,7 @@ func main() {
 		ServiceName: "demo.go",
 		GroupName:   "group-a",
 		Clusters:    []string{"cluster-a"},
+		HealthyOnly: true,
 	})
 
 	//SelectOneHealthyInstance return one instance by WRR strategy for load balance
@@ -154,7 +155,7 @@ func main() {
 	//wait for client pull change from server
 	time.Sleep(3 * time.Second)
 
-	/*updateServiceInstance(client, vo.UpdateInstanceParam{
+	updateServiceInstance(client, vo.UpdateInstanceParam{
 		Ip:          "10.0.0.11", //update ip
 		Port:        8848,
 		ServiceName: "demo.go",
@@ -165,7 +166,7 @@ func main() {
 		Healthy:     true,
 		Ephemeral:   true,
 		Metadata:    map[string]string{"idc": "beijing1"}, //update metadata
-	})*/
+	})
 
 	//wait for client pull change from server
 	time.Sleep(3 * time.Second)

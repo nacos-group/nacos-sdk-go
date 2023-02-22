@@ -89,7 +89,7 @@ type SelectInstancesParam struct {
 	Clusters    []string `param:"clusters"`    //optional
 	ServiceName string   `param:"serviceName"` //required
 	GroupName   string   `param:"groupName"`   //optional,default:DEFAULT_GROUP
-	HealthyOnly bool     `param:"healthyOnly"` //optional,return only healthy instance
+	HealthyOnly bool     `param:"healthyOnly"` //optional,value = true return only healthy instance, value = false return only unHealthy instance
 }
 
 type SelectOneHealthInstanceParam struct {
