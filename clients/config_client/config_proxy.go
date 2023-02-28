@@ -175,6 +175,7 @@ func (cp *ConfigProxy) createRpcClient(ctx context.Context, taskId string, clien
 			// TODO fix the group/dataId empty problem
 			return rpc_request.NewConfigChangeNotifyRequest("", "", "")
 		}, &ConfigChangeNotifyRequestHandler{client: client})
+		rpcClient.RegisterConnectionListener(NewConnectionEventListener(rpcClient, client))
 		rpcClient.Tenant = cp.clientConfig.NamespaceId
 		rpcClient.Start()
 	}

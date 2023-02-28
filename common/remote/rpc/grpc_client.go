@@ -50,8 +50,8 @@ func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_se
 			name:                        clientName,
 			labels:                      make(map[string]string, 8),
 			rpcClientStatus:             INITIALIZED,
-			eventChan:                   make(chan ConnectionEvent),
-			reconnectionChan:            make(chan ReconnectContext),
+			eventChan:                   make(chan ConnectionEvent, 16),
+			reconnectionChan:            make(chan ReconnectContext, 1),
 			nacosServer:                 nacosServer,
 			serverRequestHandlerMapping: make(map[string]ServerRequestHandlerMapping, 8),
 			mux:                         new(sync.Mutex),
@@ -138,7 +138,7 @@ func (c *GrpcClient) connectToServer(serverInfo ServerInfo) (IConnection, error)
 	client = nacos_grpc_service.NewRequestClient(conn)
 	response, err := serverCheck(client)
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, errors.Errorf("server check request failed , err:%v", err)
 	}
 	serverCheckResponse := response.(*rpc_response.ServerCheckResponse)
@@ -194,7 +194,7 @@ func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiReque
 							logger.Errorf("%s Request stream error, switch server, error=%+v", grpcConn.getConnectionId(), err)
 						}
 						if atomic.CompareAndSwapInt32((*int32)(&c.rpcClientStatus), int32(RUNNING), int32(UNHEALTHY)) {
-							c.switchServerAsync(ServerInfo{}, false)
+							_ = c.switchServerAsync(ServerInfo{}, false)
 							return
 						}
 					} else {

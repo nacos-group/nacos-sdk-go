@@ -52,9 +52,9 @@ func (c *ConnectResetRequestHandler) RequestReply(request rpc_request.IRequest, 
 					logger.Errorf("ConnectResetRequest ServerPort type conversion error:%+v", err)
 					return nil
 				}
-				rpcClient.switchServerAsync(ServerInfo{serverIp: connectResetRequest.ServerIp, serverPort: uint64(serverPortNum)}, false)
+				_ = rpcClient.switchServerAsync(ServerInfo{serverIp: connectResetRequest.ServerIp, serverPort: uint64(serverPortNum)}, false)
 			} else {
-				rpcClient.switchServerAsync(ServerInfo{}, true)
+				_ = rpcClient.switchServerAsync(ServerInfo{}, true)
 			}
 		}
 		return &rpc_response.ConnectResetResponse{Response: &rpc_response.Response{ResultCode: constant.RESPONSE_CODE_SUCCESS}}

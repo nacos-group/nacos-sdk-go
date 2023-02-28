@@ -237,13 +237,13 @@ func (r *RpcClient) Start() {
 		atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
 		r.eventChan <- ConnectionEvent{eventType: CONNECTED}
 	} else {
-		r.switchServerAsync(ServerInfo{}, false)
+		_ = r.switchServerAsync(ServerInfo{}, false)
 	}
 }
 
 func (r *RpcClient) notifyServerSrvChange() {
 	if r.currentConnection == nil {
-		r.switchServerAsync(ServerInfo{}, false)
+		_ = r.switchServerAsync(ServerInfo{}, false)
 		return
 	}
 	curServerInfo := r.currentConnection.getServerInfo()
@@ -255,7 +255,7 @@ func (r *RpcClient) notifyServerSrvChange() {
 	}
 	if !found {
 		logger.Infof("Current connected server %s:%d is not in latest server list, switch switchServerAsync", curServerInfo.serverIp, curServerInfo.serverPort)
-		r.switchServerAsync(ServerInfo{}, false)
+		_ = r.switchServerAsync(ServerInfo{}, false)
 	}
 }
 
@@ -298,8 +298,13 @@ func (r *RpcClient) RegisterConnectionListener(listener IConnectionEventListener
 	r.connectionEventListeners.Store(connectionEventListeners)
 }
 
-func (r *RpcClient) switchServerAsync(recommendServerInfo ServerInfo, onRequestFail bool) {
-	r.reconnectionChan <- ReconnectContext{serverInfo: recommendServerInfo, onRequestFail: onRequestFail}
+func (r *RpcClient) switchServerAsync(recommendServerInfo ServerInfo, onRequestFail bool) error {
+	select {
+	case r.reconnectionChan <- ReconnectContext{serverInfo: recommendServerInfo, onRequestFail: onRequestFail}:
+		return nil
+	default:
+		return errors.New("reconnect ch is not empty")
+	}
 }
 
 func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
@@ -523,4 +528,8 @@ func waitReconnect(timeoutMills int64, retryTimes *int, request rpc_request.IReq
 
 func (r *RpcClient) Name() string {
 	return r.name
+}
+
+func (r *RpcClient) Labels() map[string]string {
+	return r.labels
 }

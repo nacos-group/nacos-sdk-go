@@ -95,6 +95,10 @@ func (cacheData *cacheData) executeListener() {
 	go cacheData.cacheDataListener.listener(cacheData.tenant, cacheData.group, cacheData.dataId, decryptedContent)
 }
 
+func (cacheData *cacheData) SetIsSyncWithServer(isSyncWithServer bool) {
+	cacheData.isSyncWithServer = isSyncWithServer
+}
+
 func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	config := &ConfigClient{}
 	config.ctx, config.cancel = context.WithCancel(context.Background())
