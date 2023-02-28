@@ -303,7 +303,7 @@ func (r *RpcClient) switchServerAsync(recommendServerInfo ServerInfo, onRequestF
 	case r.reconnectionChan <- ReconnectContext{serverInfo: recommendServerInfo, onRequestFail: onRequestFail}:
 		return nil
 	default:
-		return errors.New("reconnect ch is not empty")
+		return errors.New("reconnection channel is not empty")
 	}
 }
 
