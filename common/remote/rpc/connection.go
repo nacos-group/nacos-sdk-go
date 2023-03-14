@@ -55,5 +55,5 @@ func (c *Connection) getAbandon() bool {
 }
 
 func (c *Connection) close() {
-	c.conn.Close()
+	_ = c.conn.Close()
 }
