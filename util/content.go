@@ -1,5 +1,3 @@
-package util
-
 /*
  * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
@@ -15,6 +13,8 @@ package util
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package util
 
 const SHOW_CONTENT_SIZE = 100
 
