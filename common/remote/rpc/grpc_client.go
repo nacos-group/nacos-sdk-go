@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"math"
 	"os"
 	"strconv"
 	"sync"
@@ -50,7 +51,7 @@ func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_se
 			name:                        clientName,
 			labels:                      make(map[string]string, 8),
 			rpcClientStatus:             INITIALIZED,
-			eventChan:                   make(chan ConnectionEvent),
+			eventChan:                   make(chan ConnectionEvent, math.MaxInt32),
 			reconnectionChan:            make(chan ReconnectContext),
 			nacosServer:                 nacosServer,
 			serverRequestHandlerMapping: make(map[string]ServerRequestHandlerMapping, 8),
@@ -138,7 +139,7 @@ func (c *GrpcClient) connectToServer(serverInfo ServerInfo) (IConnection, error)
 	client = nacos_grpc_service.NewRequestClient(conn)
 	response, err := serverCheck(client)
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, errors.Errorf("server check request failed , err:%v", err)
 	}
 	serverCheckResponse := response.(*rpc_response.ServerCheckResponse)

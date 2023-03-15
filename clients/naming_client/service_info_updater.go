@@ -77,7 +77,7 @@ func (s *ServiceInfoUpdater) updateServiceNow(serviceName, groupName, clusters s
 	result, err := s.namingProxy.QueryInstancesOfService(serviceName, groupName, clusters, 0, false)
 
 	if err != nil {
-		logger.Errorf("QueryList return error!serviceName:%s cluster:%s err:%+v", serviceName, clusters, err)
+		logger.Errorf("QueryInstances error, serviceName:%s, cluster:%s, err:%v", serviceName, clusters, err)
 		return
 	}
 	s.serviceInfoHolder.ProcessService(result)
