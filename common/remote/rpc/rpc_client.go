@@ -105,7 +105,7 @@ type RpcClient struct {
 	lastActiveTimestamp         atomic.Value
 	executeClient               IRpcClient
 	nacosServer                 *nacos_server.NacosServer
-	serverRequestHandlerMapping map[string]ServerRequestHandlerMapping
+	serverRequestHandlerMapping sync.Map
 	mux                         *sync.Mutex
 	clientAbilities             rpc_request.ClientAbilities
 	Tenant                      string
@@ -284,10 +284,10 @@ func (r *RpcClient) RegisterServerRequestHandler(request func() rpc_request.IReq
 		return
 	}
 	logger.Debugf("%s register server push request:%s handler:%+v", r.name, requestType, handler.Name())
-	r.serverRequestHandlerMapping[requestType] = ServerRequestHandlerMapping{
+	r.serverRequestHandlerMapping.Store(requestType, ServerRequestHandlerMapping{
 		serverRequest: request,
 		handler:       handler,
-	}
+	})
 }
 
 func (r *RpcClient) RegisterConnectionListener(listener IConnectionEventListener) {
