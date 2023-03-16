@@ -9,6 +9,10 @@ func (m *MockNamingGrpc) RegisterInstance(serviceName string, groupName string, 
 	return true, nil
 }
 
+func (m *MockNamingGrpc) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) (bool, error) {
+	return true, nil
+}
+
 func (m *MockNamingGrpc) DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
 	return true, nil
 }
@@ -29,4 +33,8 @@ func (m *MockNamingGrpc) Subscribe(serviceName, groupName, clusters string) (mod
 	return model.Service{}, nil
 }
 
-func (m *MockNamingGrpc) Unsubscribe(serviceName, groupName, clusters string) {}
+func (m *MockNamingGrpc) Unsubscribe(serviceName, groupName, clusters string) error {
+	return nil
+}
+
+func (m *MockNamingGrpc) CloseClient() {}

@@ -17,6 +17,7 @@
 package naming_client
 
 import (
+	"context"
 	"math"
 	"math/rand"
 	"strings"
@@ -37,14 +38,17 @@ import (
 // NamingClient ...
 type NamingClient struct {
 	nacos_client.INacosClient
+	ctx               context.Context
+	cancel            context.CancelFunc
 	serviceProxy      naming_proxy.INamingProxy
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
 // NewNamingClient ...
 func NewNamingClient(nc nacos_client.INacosClient) (*NamingClient, error) {
+	ctx, cancel := context.WithCancel(context.Background())
 	rand.Seed(time.Now().UnixNano())
-	naming := &NamingClient{INacosClient: nc}
+	naming := &NamingClient{INacosClient: nc, ctx: ctx, cancel: cancel}
 	clientConfig, err := nc.GetClientConfig()
 	if err != nil {
 		return naming, err
@@ -63,15 +67,17 @@ func NewNamingClient(nc nacos_client.INacosClient) (*NamingClient, error) {
 	if err = initLogger(clientConfig); err != nil {
 		return naming, err
 	}
+
 	if clientConfig.NamespaceId == "" {
 		clientConfig.NamespaceId = constant.DEFAULT_NAMESPACE_ID
 	}
+
 	naming.serviceInfoHolder = naming_cache.NewServiceInfoHolder(clientConfig.NamespaceId, clientConfig.CacheDir,
 		clientConfig.UpdateCacheWhenEmpty, clientConfig.NotLoadCacheAtStart)
 
-	naming.serviceProxy, err = NewNamingProxyDelegate(clientConfig, serverConfig, httpAgent, naming.serviceInfoHolder)
+	naming.serviceProxy, err = NewNamingProxyDelegate(ctx, clientConfig, serverConfig, httpAgent, naming.serviceInfoHolder)
 
-	go NewServiceInfoUpdater(naming.serviceInfoHolder, clientConfig.UpdateThreadNum, naming.serviceProxy).asyncUpdateService()
+	go NewServiceInfoUpdater(ctx, naming.serviceInfoHolder, clientConfig.UpdateThreadNum, naming.serviceProxy).asyncUpdateService()
 	if err != nil {
 		return naming, err
 	}
@@ -104,9 +110,37 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 		Weight:      param.Weight,
 		Ephemeral:   param.Ephemeral,
 	}
-
 	return sc.serviceProxy.RegisterInstance(param.ServiceName, param.GroupName, instance)
+}
 
+func (sc *NamingClient) BatchRegisterInstance(param vo.BatchRegisterInstanceParam) (bool, error) {
+	if param.ServiceName == "" {
+		return false, errors.New("serviceName cannot be empty!")
+	}
+	if len(param.GroupName) == 0 {
+		param.GroupName = constant.DEFAULT_GROUP
+	}
+	if len(param.Instances) == 0 {
+		return false, errors.New("instances cannot be empty!")
+	}
+	var modelInstances []model.Instance
+	for _, param := range param.Instances {
+		if !param.Ephemeral {
+			return false, errors.Errorf("Batch registration does not allow persistent instance registration! instance:%+v", param)
+		}
+		modelInstances = append(modelInstances, model.Instance{
+			Ip:          param.Ip,
+			Port:        param.Port,
+			Metadata:    param.Metadata,
+			ClusterName: param.ClusterName,
+			Healthy:     param.Healthy,
+			Enable:      param.Enable,
+			Weight:      param.Weight,
+			Ephemeral:   param.Ephemeral,
+		})
+	}
+
+	return sc.serviceProxy.BatchRegisterInstance(param.ServiceName, param.GroupName, modelInstances)
 }
 
 // DeregisterInstance ...
@@ -309,4 +343,5 @@ func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) (err error) {
 // CloseClient ...
 func (sc *NamingClient) CloseClient() {
 	sc.serviceProxy.CloseClient()
+	sc.cancel()
 }

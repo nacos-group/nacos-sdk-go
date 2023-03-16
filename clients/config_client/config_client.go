@@ -17,6 +17,7 @@
 package config_client
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"os"
@@ -48,6 +49,8 @@ const (
 )
 
 type ConfigClient struct {
+	ctx    context.Context
+	cancel context.CancelFunc
 	nacos_client.INacosClient
 	kmsClient       *kms.Client
 	localConfigs    []vo.ConfigParam
@@ -80,8 +83,21 @@ type cacheDataListener struct {
 	lastMd5  string
 }
 
+func (cacheData *cacheData) executeListener() {
+	cacheData.cacheDataListener.lastMd5 = cacheData.md5
+
+	decryptedContent, err := cacheData.configClient.decrypt(cacheData.dataId, cacheData.content)
+	if err != nil {
+		logger.Errorf("decrypt content fail ,dataId=%s,group=%s,tenant=%s,err:%+v ", cacheData.dataId,
+			cacheData.group, cacheData.tenant, err)
+		return
+	}
+	go cacheData.cacheDataListener.listener(cacheData.tenant, cacheData.group, cacheData.dataId, decryptedContent)
+}
+
 func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	config := &ConfigClient{}
+	config.ctx, config.cancel = context.WithCancel(context.Background())
 	config.INacosClient = nc
 	clientConfig, err := nc.GetClientConfig()
 	if err != nil {
@@ -102,7 +118,7 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	clientConfig.CacheDir = clientConfig.CacheDir + string(os.PathSeparator) + "config"
 	config.configCacheDir = clientConfig.CacheDir
 
-	if config.configProxy, err = NewConfigProxy(serverConfig, clientConfig, httpAgent); err != nil {
+	if config.configProxy, err = NewConfigProxy(config.ctx, serverConfig, clientConfig, httpAgent); err != nil {
 		return nil, err
 	}
 
@@ -122,7 +138,8 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 
 	config.cacheMap = cache.NewConcurrentMap()
 	// maximum buffered queue to prevent chan deadlocks during frequent configuration file updates
-	config.listenExecute = make(chan struct{}, math.MaxInt64)
+	// use Math.MaxInt32 to avoid overflows on ARM 32-bits
+	config.listenExecute = make(chan struct{}, math.MaxInt32)
 
 	config.startInternal()
 
@@ -185,7 +202,6 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 		param.Group = constant.DEFAULT_GROUP
 	}
 
-	//todo 获取容灾配置的 EncryptedDataKey LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover
 	clientConfig, _ := client.GetClientConfig()
 	cacheKey := util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
 	content = cache.GetFailover(cacheKey, client.configCacheDir)
@@ -197,6 +213,10 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 		clientConfig.TimeoutMs, false, client)
 	if err != nil {
 		logger.Infof("get config from server error:%+v ", err)
+		if clientConfig, err := client.GetClientConfig(); err == nil && clientConfig.DisableUseSnapShot {
+			logger.Errorf("get config from cache  error:%+v ", err)
+			return "", errors.New("get config from remote nacos server fail, and is not allowed to read local file")
+		}
 		content, err = cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
 		if err != nil {
 			logger.Errorf("get config from cache  error:%+v ", err)
@@ -259,7 +279,7 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, er
 	return false, err
 }
 
-//Cancel Listen Config
+// Cancel Listen Config
 func (client *ConfigClient) CancelListenConfig(param vo.ConfigParam) (err error) {
 	clientConfig, err := client.GetClientConfig()
 	if err != nil {
@@ -321,15 +341,16 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	return
 }
 
-func (client *ConfigClient) SearchConfig(param vo.SearchConfigParm) (*model.ConfigPage, error) {
+func (client *ConfigClient) SearchConfig(param vo.SearchConfigParam) (*model.ConfigPage, error) {
 	return client.searchConfigInner(param)
 }
 
 func (client *ConfigClient) CloseClient() {
 	client.configProxy.getRpcClient(client).Shutdown()
+	client.cancel()
 }
 
-func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParm) (*model.ConfigPage, error) {
+func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParam) (*model.ConfigPage, error) {
 	if param.Search != "accurate" && param.Search != "blur" {
 		return nil, errors.New("[client.searchConfigInner] param.search must be accurate or blur")
 	}
@@ -358,14 +379,17 @@ func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParm) (*model
 }
 
 func (client *ConfigClient) startInternal() {
-	timer := time.NewTimer(executorErrDelay)
 	go func() {
+		timer := time.NewTimer(executorErrDelay)
+		defer timer.Stop()
 		for {
 			select {
 			case <-client.listenExecute:
 				client.executeConfigListen()
 			case <-timer.C:
 				client.executeConfigListen()
+			case <-client.ctx.Done():
+				return
 			}
 			timer.Reset(executorErrDelay)
 		}
@@ -383,32 +407,33 @@ func (client *ConfigClient) executeConfigListen() {
 
 		if cache.isSyncWithServer {
 			if cache.md5 != cache.cacheDataListener.lastMd5 {
-				go cache.cacheDataListener.listener(cache.tenant, cache.group, cache.dataId, cache.content)
-				cache.cacheDataListener.lastMd5 = cache.md5
+				cache.executeListener()
 			}
 			if !needAllSync {
 				continue
 			}
 		}
-		var cacheDatas []*cacheData
-		if cacheDatas, ok = listenCachesMap[cache.taskId]; ok {
-			cacheDatas = append(cacheDatas, cache)
-		} else {
-			cacheDatas = append(cacheDatas, cache)
-		}
+
+		cacheDatas := listenCachesMap[cache.taskId]
+		cacheDatas = append(cacheDatas, cache)
 		listenCachesMap[cache.taskId] = cacheDatas
 	}
 	hasChangedKeys := false
 	if len(listenCachesMap) > 0 {
 		for taskId, listenCaches := range listenCachesMap {
 			request := buildConfigBatchListenRequest(listenCaches)
-			rpcClient := client.configProxy.createRpcClient(fmt.Sprintf("%d", taskId), client)
+			rpcClient := client.configProxy.createRpcClient(client.ctx, fmt.Sprintf("%d", taskId), client)
 			iResponse, err := client.configProxy.requestProxy(rpcClient, request, 3000)
 			if err != nil {
 				logger.Warnf("ConfigBatchListenRequest failure,err:%+v", err)
 				continue
 			}
-			if iResponse == nil && !iResponse.IsSuccess() {
+			if iResponse == nil {
+				logger.Warnf("ConfigBatchListenRequest failure, response is nil")
+				continue
+			}
+			if !iResponse.IsSuccess() {
+				logger.Warnf("ConfigBatchListenRequest failure, error code:%+v", iResponse.GetErrorCode())
 				continue
 			}
 			changeKeys := make(map[string]struct{})
@@ -474,9 +499,9 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData *cacheData, notify 
 	}
 	cacheData.md5 = util.Md5(cacheData.content)
 	if cacheData.md5 != cacheData.cacheDataListener.lastMd5 {
-		go cacheData.cacheDataListener.listener(cacheData.tenant, cacheData.group, cacheData.dataId, cacheData.content)
-		cacheData.cacheDataListener.lastMd5 = cacheData.md5
 		client.cacheMap.Set(util.GetConfigCacheKey(cacheData.dataId, cacheData.group, cacheData.tenant), cacheData)
+
+		cacheData.executeListener()
 	}
 }
 

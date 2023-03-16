@@ -26,7 +26,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
 )
 
-//IServerRequestHandler to process the request from server side.
+// IServerRequestHandler to process the request from server side.
 type IServerRequestHandler interface {
 	Name() string
 	//RequestReply Handle request from server.
@@ -69,7 +69,7 @@ func (c *ClientDetectionRequestHandler) Name() string {
 	return "ClientDetectionRequestHandler"
 }
 
-func (c *ClientDetectionRequestHandler) RequestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse {
+func (c *ClientDetectionRequestHandler) RequestReply(request rpc_request.IRequest, _ *RpcClient) rpc_response.IResponse {
 	_, ok := request.(*rpc_request.ClientDetectionRequest)
 	if ok {
 		return &rpc_response.ClientDetectionResponse{
@@ -87,7 +87,7 @@ func (*NamingPushRequestHandler) Name() string {
 	return "NamingPushRequestHandler"
 }
 
-func (c *NamingPushRequestHandler) RequestReply(request rpc_request.IRequest, rpcClient *RpcClient) rpc_response.IResponse {
+func (c *NamingPushRequestHandler) RequestReply(request rpc_request.IRequest, _ *RpcClient) rpc_response.IResponse {
 	notifySubscriberRequest, ok := request.(*rpc_request.NotifySubscriberRequest)
 	if ok {
 		c.ServiceInfoHolder.ProcessService(&notifySubscriberRequest.ServiceInfo)

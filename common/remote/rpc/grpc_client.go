@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"math"
 	"os"
 	"strconv"
 	"sync"
@@ -43,13 +44,14 @@ type GrpcClient struct {
 	*RpcClient
 }
 
-func NewGrpcClient(clientName string, nacosServer *nacos_server.NacosServer) *GrpcClient {
+func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_server.NacosServer) *GrpcClient {
 	rpcClient := &GrpcClient{
 		&RpcClient{
-			Name:                        clientName,
+			ctx:                         ctx,
+			name:                        clientName,
 			labels:                      make(map[string]string, 8),
 			rpcClientStatus:             INITIALIZED,
-			eventChan:                   make(chan ConnectionEvent),
+			eventChan:                   make(chan ConnectionEvent, math.MaxInt32),
 			reconnectionChan:            make(chan ReconnectContext),
 			nacosServer:                 nacosServer,
 			serverRequestHandlerMapping: make(map[string]ServerRequestHandlerMapping, 8),
@@ -131,24 +133,23 @@ func (c *GrpcClient) connectToServer(serverInfo ServerInfo) (IConnection, error)
 
 	conn, err := c.createNewConnection(serverInfo)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("grpc create new connection failed , err:%v", err)
 	}
 
 	client = nacos_grpc_service.NewRequestClient(conn)
 	response, err := serverCheck(client)
 	if err != nil {
-		conn.Close()
-		return nil, err
+		_ = conn.Close()
+		return nil, errors.Errorf("server check request failed , err:%v", err)
 	}
-
-	biStreamClient = nacos_grpc_service.NewBiRequestStreamClient(conn)
-
 	serverCheckResponse := response.(*rpc_response.ServerCheckResponse)
 
+	biStreamClient = nacos_grpc_service.NewBiRequestStreamClient(conn)
 	biStreamRequestClient, err := biStreamClient.RequestBiStream(context.Background())
-
+	if err != nil {
+		return nil, errors.Errorf("create biStreamRequestClient failed , err:%v", err)
+	}
 	grpcConn := NewGrpcConnection(serverInfo, serverCheckResponse.ConnectionId, conn, client, biStreamRequestClient)
-
 	c.bindBiRequestStream(biStreamRequestClient, grpcConn)
 	err = c.sendConnectionSetupRequest(grpcConn)
 	return grpcConn, err
@@ -204,7 +205,6 @@ func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiReque
 				} else {
 					c.handleServerRequest(payload, grpcConn)
 				}
-
 			}
 		}
 	}()

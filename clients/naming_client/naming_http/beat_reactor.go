@@ -40,6 +40,7 @@ import (
 )
 
 type BeatReactor struct {
+	ctx                 context.Context
 	beatMap             cache.ConcurrentMap
 	nacosServer         *nacos_server.NacosServer
 	beatThreadCount     int
@@ -51,10 +52,9 @@ type BeatReactor struct {
 
 const DefaultBeatThreadNum = 20
 
-var ctx = context.Background()
-
-func NewBeatReactor(clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer) BeatReactor {
+func NewBeatReactor(ctx context.Context, clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer) BeatReactor {
 	br := BeatReactor{}
+	br.ctx = ctx
 	br.beatMap = cache.NewConcurrentMap()
 	br.nacosServer = nacosServer
 	br.clientCfg = clientCfg
@@ -101,8 +101,10 @@ func (br *BeatReactor) RemoveBeatInfo(serviceName string, ip string, port uint64
 }
 
 func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
+	t := time.NewTimer(beatInfo.Period)
+	defer t.Stop()
 	for {
-		br.beatThreadSemaphore.Acquire(ctx, 1)
+		br.beatThreadSemaphore.Acquire(br.ctx, 1)
 		//如果当前实例注销，则进行停止心跳
 		if atomic.LoadInt32(&beatInfo.State) == int32(model.StateShutdown) {
 			logger.Infof("instance[%s] stop heartBeating", k)
@@ -125,9 +127,12 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 
 		br.beatRecordMap.Set(k, util.CurrentMillis())
 		br.beatThreadSemaphore.Release(1)
-
-		t := time.NewTimer(beatInfo.Period)
-		<-t.C
+		t.Reset(beatInfo.Period)
+		select {
+		case <-t.C:
+		case <-br.ctx.Done():
+			return
+		}
 	}
 }
 
@@ -139,7 +144,7 @@ func (br *BeatReactor) SendBeat(info *model.BeatInfo) (int64, error) {
 	params["serviceName"] = info.ServiceName
 	params["beat"] = util.ToJsonString(info)
 	api := constant.SERVICE_BASE_PATH + "/instance/beat"
-	result, err := br.nacosServer.ReqApi(api, params, http.MethodPut)
+	result, err := br.nacosServer.ReqApi(api, params, http.MethodPut, br.clientCfg)
 	if err != nil {
 		return 0, err
 	}

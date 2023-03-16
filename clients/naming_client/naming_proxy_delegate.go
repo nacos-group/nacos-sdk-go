@@ -17,6 +17,8 @@
 package naming_client
 
 import (
+	"context"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_grpc"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http"
@@ -35,20 +37,20 @@ type NamingProxyDelegate struct {
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
-func NewNamingProxyDelegate(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig,
+func NewNamingProxyDelegate(ctx context.Context, clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig,
 	httpAgent http_agent.IHttpAgent, serviceInfoHolder *naming_cache.ServiceInfoHolder) (naming_proxy.INamingProxy, error) {
 
-	nacosServer, err := nacos_server.NewNacosServer(serverCfgs, clientCfg, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint)
+	nacosServer, err := nacos_server.NewNacosServer(ctx, serverCfgs, clientCfg, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	httpClientProxy, err := naming_http.NewNamingHttpProxy(clientCfg, nacosServer, serviceInfoHolder)
+	httpClientProxy, err := naming_http.NewNamingHttpProxy(ctx, clientCfg, nacosServer, serviceInfoHolder)
 	if err != nil {
 		return nil, err
 	}
 
-	grpcClientProxy, err := naming_grpc.NewNamingGrpcProxy(clientCfg, nacosServer, serviceInfoHolder)
+	grpcClientProxy, err := naming_grpc.NewNamingGrpcProxy(ctx, clientCfg, nacosServer, serviceInfoHolder)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +75,10 @@ func (proxy *NamingProxyDelegate) RegisterInstance(serviceName string, groupName
 	return proxy.getExecuteClientProxy(instance).RegisterInstance(serviceName, groupName, instance)
 }
 
+func (proxy *NamingProxyDelegate) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) (bool, error) {
+	return proxy.grpcClientProxy.BatchRegisterInstance(serviceName, groupName, instances)
+}
+
 func (proxy *NamingProxyDelegate) DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
 	return proxy.getExecuteClientProxy(instance).DeregisterInstance(serviceName, groupName, instance)
 }
@@ -90,15 +96,17 @@ func (proxy *NamingProxyDelegate) QueryInstancesOfService(serviceName, groupName
 }
 
 func (proxy *NamingProxyDelegate) Subscribe(serviceName, groupName string, clusters string) (model.Service, error) {
+	var err error
+	isSubscribed := proxy.grpcClientProxy.IsSubscribed(serviceName, groupName, clusters)
 	serviceNameWithGroup := util.GetServiceCacheKey(util.GetGroupName(serviceName, groupName), clusters)
 	serviceInfo, ok := proxy.serviceInfoHolder.ServiceInfoMap.Load(serviceNameWithGroup)
-	if !ok {
-		result, err := proxy.grpcClientProxy.Subscribe(serviceName, groupName, clusters)
+	if !isSubscribed || !ok {
+		serviceInfo, err = proxy.grpcClientProxy.Subscribe(serviceName, groupName, clusters)
 		if err != nil {
 			return model.Service{}, err
 		}
-		serviceInfo = result
 	}
+
 	service := serviceInfo.(model.Service)
 	proxy.serviceInfoHolder.ProcessService(&service)
 	return service, nil

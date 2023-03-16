@@ -17,6 +17,7 @@
 package nacos_server
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
@@ -60,7 +61,7 @@ type NacosServer struct {
 	ServerSrcChangeSignal chan struct{}
 }
 
-func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
+func NewNacosServer(ctx context.Context, serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
 	severLen := len(serverList)
 	if severLen == 0 && endpoint == "" {
 		return &NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
@@ -82,14 +83,14 @@ func NewNacosServer(serverList []constant.ServerConfig, clientCfg constant.Clien
 		ns.currentIndex = rand.Int31n(int32(severLen))
 	}
 
-	ns.initRefreshSrvIfNeed()
+	ns.initRefreshSrvIfNeed(ctx)
 	_, err := securityLogin.Login()
 
 	if err != nil {
-		return &ns, err
+		logger.Errorf("login in err:%v", err)
 	}
 
-	securityLogin.AutoRefresh()
+	securityLogin.AutoRefresh(ctx)
 	return &ns, nil
 }
 
@@ -225,13 +226,14 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 	return "", errors.Wrapf(err, "retry %d times request failed!", constant.REQUEST_DOMAIN_RETRY_TIME)
 }
 
-func (server *NacosServer) ReqApi(api string, params map[string]string, method string) (string, error) {
+func (server *NacosServer) ReqApi(api string, params map[string]string, method string, config constant.ClientConfig) (string, error) {
 	srvs := server.serverList
 	if srvs == nil || len(srvs) == 0 {
 		return "", errors.New("server list is empty")
 	}
 
 	server.InjectSecurityInfo(params)
+	server.InjectSignForNamingHttp(params, config)
 
 	//only one server,retry request when error
 	var err error
@@ -259,15 +261,20 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 	return "", errors.Wrapf(err, "retry %d times request failed!", constant.REQUEST_DOMAIN_RETRY_TIME)
 }
 
-func (server *NacosServer) initRefreshSrvIfNeed() {
+func (server *NacosServer) initRefreshSrvIfNeed(ctx context.Context) {
 	if server.endpoint == "" {
 		return
 	}
 	server.refreshServerSrvIfNeed()
 	go func() {
 		for {
-			time.Sleep(time.Duration(1) * time.Second)
-			server.refreshServerSrvIfNeed()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				time.Sleep(time.Duration(1) * time.Second)
+				server.refreshServerSrvIfNeed()
+			}
 		}
 	}()
 
@@ -328,6 +335,26 @@ func (server *NacosServer) InjectSecurityInfo(param map[string]string) {
 	if accessToken != "" {
 		param[constant.KEY_ACCESS_TOKEN] = accessToken
 	}
+}
+
+func (server *NacosServer) InjectSignForNamingHttp(param map[string]string, clientConfig constant.ClientConfig) {
+	if clientConfig.AccessKey == "" || clientConfig.SecretKey == "" {
+		return
+	}
+	var signData string
+	timeStamp := strconv.FormatInt(time.Now().UnixNano()/1e6, 10)
+	if serviceName, hasServiceName := param["serviceName"]; hasServiceName {
+		if groupName, hasGroup := param["groupName"]; strings.Contains(serviceName, constant.SERVICE_INFO_SPLITER) || !hasGroup || groupName == "" {
+			signData = timeStamp + constant.SERVICE_INFO_SPLITER + serviceName
+		} else {
+			signData = timeStamp + constant.SERVICE_INFO_SPLITER + util.GetGroupName(serviceName, groupName)
+		}
+	} else {
+		signData = timeStamp
+	}
+	param["signature"] = signWithhmacSHA1Encrypt(signData, clientConfig.SecretKey)
+	param["ak"] = clientConfig.AccessKey
+	param["data"] = signData
 }
 
 func (server *NacosServer) InjectSign(request rpc_request.IRequest, param map[string]string, clientConfig constant.ClientConfig) {

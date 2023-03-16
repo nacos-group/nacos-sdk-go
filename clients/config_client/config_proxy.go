@@ -17,6 +17,7 @@
 package config_client
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -45,10 +46,10 @@ type ConfigProxy struct {
 	clientConfig constant.ClientConfig
 }
 
-func NewConfigProxy(serverConfig []constant.ServerConfig, clientConfig constant.ClientConfig, httpAgent http_agent.IHttpAgent) (IConfigProxy, error) {
+func NewConfigProxy(ctx context.Context, serverConfig []constant.ServerConfig, clientConfig constant.ClientConfig, httpAgent http_agent.IHttpAgent) (IConfigProxy, error) {
 	proxy := ConfigProxy{}
 	var err error
-	proxy.nacosServer, err = nacos_server.NewNacosServer(serverConfig, clientConfig, httpAgent, clientConfig.TimeoutMs, clientConfig.Endpoint)
+	proxy.nacosServer, err = nacos_server.NewNacosServer(ctx, serverConfig, clientConfig, httpAgent, clientConfig.TimeoutMs, clientConfig.Endpoint)
 	proxy.clientConfig = clientConfig
 	return &proxy, err
 }
@@ -60,7 +61,6 @@ func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_reques
 	cp.nacosServer.InjectSkAk(request.GetHeaders(), cp.clientConfig)
 	signHeaders := nacos_server.GetSignHeadersFromRequest(request.(rpc_request.IConfigRequest), cp.clientConfig.SecretKey)
 	request.PutAllHeaders(signHeaders)
-	//todo Config Limiter
 	response, err := rpcClient.Request(request, int64(timeoutMills))
 	monitor.GetConfigRequestMonitor(constant.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
 	return response, err
@@ -75,7 +75,7 @@ func (cp *ConfigProxy) injectCommHeader(param map[string]string) {
 	param[constant.CHARSET_KEY] = "utf-8"
 }
 
-func (cp *ConfigProxy) searchConfigProxy(param vo.SearchConfigParm, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
+func (cp *ConfigProxy) searchConfigProxy(param vo.SearchConfigParam, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
 	params := util.TransformObject2Param(param)
 	if len(tenant) > 0 {
 		params["tenant"] = tenant
@@ -152,14 +152,23 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 	return response, nil
 }
 
-func (cp *ConfigProxy) createRpcClient(taskId string, client *ConfigClient) *rpc.RpcClient {
+func appName(client *ConfigClient) string {
+	if clientConfig, err := client.GetClientConfig(); err == nil {
+		appName := clientConfig.AppName
+		return appName
+	}
+	return "unknown"
+}
+
+func (cp *ConfigProxy) createRpcClient(ctx context.Context, taskId string, client *ConfigClient) *rpc.RpcClient {
 	labels := map[string]string{
-		constant.LABEL_SOURCE: constant.LABEL_SOURCE_SDK,
-		constant.LABEL_MODULE: constant.LABEL_MODULE_CONFIG,
-		"taskId":              taskId,
+		constant.LABEL_SOURCE:   constant.LABEL_SOURCE_SDK,
+		constant.LABEL_MODULE:   constant.LABEL_MODULE_CONFIG,
+		constant.APPNAME_HEADER: appName(client),
+		"taskId":                taskId,
 	}
 
-	iRpcClient, _ := rpc.CreateClient("config-"+taskId+"-"+client.uid, rpc.GRPC, labels, cp.nacosServer)
+	iRpcClient, _ := rpc.CreateClient(ctx, "config-"+taskId+"-"+client.uid, rpc.GRPC, labels, cp.nacosServer)
 	rpcClient := iRpcClient.GetRpcClient()
 	if rpcClient.IsInitialized() {
 		rpcClient.RegisterServerRequestHandler(func() rpc_request.IRequest {
@@ -173,7 +182,7 @@ func (cp *ConfigProxy) createRpcClient(taskId string, client *ConfigClient) *rpc
 }
 
 func (cp *ConfigProxy) getRpcClient(client *ConfigClient) *rpc.RpcClient {
-	return cp.createRpcClient("0", client)
+	return cp.createRpcClient(client.ctx, "0", client)
 }
 
 type ConfigChangeNotifyRequestHandler struct {
@@ -187,7 +196,7 @@ func (c *ConfigChangeNotifyRequestHandler) Name() string {
 func (c *ConfigChangeNotifyRequestHandler) RequestReply(request rpc_request.IRequest, rpcClient *rpc.RpcClient) rpc_response.IResponse {
 	configChangeNotifyRequest, ok := request.(*rpc_request.ConfigChangeNotifyRequest)
 	if ok {
-		logger.Infof("%s [server-push] config changed. dataId=%s, group=%s,tenant=%s", rpcClient.Name,
+		logger.Infof("%s [server-push] config changed. dataId=%s, group=%s,tenant=%s", rpcClient.Name(),
 			configChangeNotifyRequest.DataId, configChangeNotifyRequest.Group, configChangeNotifyRequest.Tenant)
 
 		cacheKey := util.GetConfigCacheKey(configChangeNotifyRequest.DataId, configChangeNotifyRequest.Group,

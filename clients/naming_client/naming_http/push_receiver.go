@@ -19,6 +19,7 @@ package naming_http
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"math/rand"
@@ -32,6 +33,7 @@ import (
 )
 
 type PushReceiver struct {
+	ctx               context.Context
 	port              int
 	host              string
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
@@ -47,8 +49,9 @@ var (
 	GZIP_MAGIC = []byte("\x1F\x8B")
 )
 
-func NewPushReceiver(serviceInfoHolder *naming_cache.ServiceInfoHolder) *PushReceiver {
+func NewPushReceiver(ctx context.Context, serviceInfoHolder *naming_cache.ServiceInfoHolder) *PushReceiver {
 	pr := PushReceiver{
+		ctx:               ctx,
 		serviceInfoHolder: serviceInfoHolder,
 	}
 	return &pr
@@ -99,7 +102,12 @@ func (us *PushReceiver) startServer() {
 	go func() {
 		defer conn.Close()
 		for {
-			us.handleClient(conn)
+			select {
+			case <-us.ctx.Done():
+				return
+			default:
+				us.handleClient(conn)
+			}
 		}
 	}()
 }

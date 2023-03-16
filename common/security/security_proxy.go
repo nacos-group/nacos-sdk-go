@@ -17,6 +17,7 @@
 package security
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -65,7 +66,7 @@ func (ac *AuthClient) GetAccessToken() string {
 	return v.(string)
 }
 
-func (ac *AuthClient) AutoRefresh() {
+func (ac *AuthClient) AutoRefresh(ctx context.Context) {
 
 	// If the username is not set, the automatic refresh Token is not enabled
 
@@ -74,16 +75,26 @@ func (ac *AuthClient) AutoRefresh() {
 	}
 
 	go func() {
-		timer := time.NewTimer(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
-
+		var timer *time.Timer
+		if lastLoginSuccess := ac.lastRefreshTime > 0 && ac.tokenTtl > 0 && ac.tokenRefreshWindow > 0; lastLoginSuccess {
+			timer = time.NewTimer(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
+		} else {
+			timer = time.NewTimer(time.Second * time.Duration(5))
+		}
+		defer timer.Stop()
 		for {
 			select {
 			case <-timer.C:
 				_, err := ac.Login()
 				if err != nil {
 					logger.Errorf("login has error %+v", err)
+					timer.Reset(time.Second * time.Duration(5))
+				} else {
+					logger.Infof("login success, tokenTtl: %+v seconds, tokenRefreshWindow: %+v seconds", ac.tokenTtl, ac.tokenRefreshWindow)
+					timer.Reset(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
 				}
-				timer.Reset(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
@@ -153,6 +164,7 @@ func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 
 		if val, ok := result[constant.KEY_ACCESS_TOKEN]; ok {
 			ac.accessToken.Store(val)
+			ac.lastRefreshTime = time.Now().Unix()
 			ac.tokenTtl = int64(result[constant.KEY_TOKEN_TTL].(float64))
 			ac.tokenRefreshWindow = ac.tokenTtl / 10
 		}

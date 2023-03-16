@@ -31,7 +31,7 @@ type ConfigParam struct {
 	OnChange         func(namespace, group, dataId, data string)
 }
 
-type SearchConfigParm struct {
+type SearchConfigParam struct {
 	Search   string `param:"search"`
 	DataId   string `param:"dataId"`
 	Group    string `param:"group"`

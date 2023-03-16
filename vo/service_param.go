@@ -25,16 +25,22 @@ type RegisterInstanceParam struct {
 	Enable      bool              `param:"enabled"`     //required,the instance can be access or not
 	Healthy     bool              `param:"healthy"`     //required,the instance is health or not
 	Metadata    map[string]string `param:"metadata"`    //optional
-	ClusterName string            `param:"clusterName"` //optional,default:DEFAULT
+	ClusterName string            `param:"clusterName"` //optional
 	ServiceName string            `param:"serviceName"` //required
 	GroupName   string            `param:"groupName"`   //optional,default:DEFAULT_GROUP
 	Ephemeral   bool              `param:"ephemeral"`   //optional
 }
 
+type BatchRegisterInstanceParam struct {
+	ServiceName string                  `param:"serviceName"` //required
+	GroupName   string                  `param:"groupName"`   //optional,default:DEFAULT_GROUP
+	Instances   []RegisterInstanceParam //required
+}
+
 type DeregisterInstanceParam struct {
 	Ip          string `param:"ip"`          //required
 	Port        uint64 `param:"port"`        //required
-	Cluster     string `param:"cluster"`     //optional,default:DEFAULT
+	Cluster     string `param:"cluster"`     //optional
 	ServiceName string `param:"serviceName"` //required
 	GroupName   string `param:"groupName"`   //optional,default:DEFAULT_GROUP
 	Ephemeral   bool   `param:"ephemeral"`   //optional
@@ -47,14 +53,14 @@ type UpdateInstanceParam struct {
 	Enable      bool              `param:"enabled"`     //required,the instance can be access or not
 	Healthy     bool              `param:"healthy"`     //required,the instance is health or not
 	Metadata    map[string]string `param:"metadata"`    //optional
-	ClusterName string            `param:"clusterName"` //optional,default:DEFAULT
+	ClusterName string            `param:"clusterName"` //optional
 	ServiceName string            `param:"serviceName"` //required
 	GroupName   string            `param:"groupName"`   //optional,default:DEFAULT_GROUP
 	Ephemeral   bool              `param:"ephemeral"`   //optional
 }
 
 type GetServiceParam struct {
-	Clusters    []string `param:"clusters"`    //optional,default:DEFAULT
+	Clusters    []string `param:"clusters"`    //optional
 	ServiceName string   `param:"serviceName"` //required
 	GroupName   string   `param:"groupName"`   //optional,default:DEFAULT_GROUP
 }
@@ -68,26 +74,26 @@ type GetAllServiceInfoParam struct {
 
 type SubscribeParam struct {
 	ServiceName       string                                     `param:"serviceName"` //required
-	Clusters          []string                                   `param:"clusters"`    //optional,default:DEFAULT
+	Clusters          []string                                   `param:"clusters"`    //optional
 	GroupName         string                                     `param:"groupName"`   //optional,default:DEFAULT_GROUP
 	SubscribeCallback func(services []model.Instance, err error) //required
 }
 
 type SelectAllInstancesParam struct {
-	Clusters    []string `param:"clusters"`    //optional,default:DEFAULT
+	Clusters    []string `param:"clusters"`    //optional
 	ServiceName string   `param:"serviceName"` //required
 	GroupName   string   `param:"groupName"`   //optional,default:DEFAULT_GROUP
 }
 
 type SelectInstancesParam struct {
-	Clusters    []string `param:"clusters"`    //optional,default:DEFAULT
+	Clusters    []string `param:"clusters"`    //optional
 	ServiceName string   `param:"serviceName"` //required
 	GroupName   string   `param:"groupName"`   //optional,default:DEFAULT_GROUP
-	HealthyOnly bool     `param:"healthyOnly"` //optional,return only healthy instance
+	HealthyOnly bool     `param:"healthyOnly"` //optional,value = true return only healthy instance, value = false return only unHealthy instance
 }
 
 type SelectOneHealthInstanceParam struct {
-	Clusters    []string `param:"clusters"`    //optional,default:DEFAULT
+	Clusters    []string `param:"clusters"`    //optional
 	ServiceName string   `param:"serviceName"` //required
 	GroupName   string   `param:"groupName"`   //optional,default:DEFAULT_GROUP
 }

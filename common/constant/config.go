@@ -39,7 +39,8 @@ type ClientConfig struct {
 	SecretKey            string                   // the SecretKey for kms
 	OpenKMS              bool                     // it's to open kms,default is false. https://help.aliyun.com/product/28933.html
 	CacheDir             string                   // the directory for persist nacos service info,default value is current path
-	UpdateThreadNum      int                      // the number of gorutine for update nacos service info,default value is 20
+	DisableUseSnapShot   bool                     // It's a switch, default is false, means that when get remote config fail, use local cache file instead
+	UpdateThreadNum      int                      // the number of goroutine for update nacos service info,default value is 20
 	NotLoadCacheAtStart  bool                     // not to load persistent nacos service info in CacheDir at start time
 	UpdateCacheWhenEmpty bool                     // update cache when get empty service instance from server
 	Username             string                   // the username for nacos auth

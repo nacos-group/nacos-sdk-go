@@ -68,7 +68,7 @@ const (
 	KEY_BEAT                    = "beat"
 	KEY_DOM                     = "dom"
 	DEFAULT_CONTEXT_PATH        = "/nacos"
-	CLIENT_VERSION              = "Nacos-Go-Client:v2.0.0"
+	CLIENT_VERSION              = "Nacos-Go-Client:v2.2.0"
 	REQUEST_DOMAIN_RETRY_TIME   = 3
 	SERVICE_INFO_SPLITER        = "@@"
 	CONFIG_INFO_SPLITER         = "@@"
@@ -89,6 +89,7 @@ const (
 	DEFAULT_TIMEOUT_MILLS       = 3000
 	ALL_SYNC_INTERNAL           = 5 * time.Minute
 	CLIENT_APPNAME_HEADER       = "Client-AppName"
+	APPNAME_HEADER              = "AppName"
 	CLIENT_REQUEST_TS_HEADER    = "Client-RequestTS"
 	CLIENT_REQUEST_TOKEN_HEADER = "Client-RequestToken"
 	EX_CONFIG_INFO              = "exConfigInfo"

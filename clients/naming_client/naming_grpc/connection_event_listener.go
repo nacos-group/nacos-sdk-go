@@ -17,7 +17,6 @@
 package naming_grpc
 
 import (
-	"reflect"
 	"strings"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
@@ -81,25 +80,29 @@ func (c *ConnectionEventListener) redoRegisterEachService() {
 		info := strings.Split(k, constant.SERVICE_INFO_SPLITER)
 		serviceName := info[1]
 		groupName := info[0]
-		instance, ok := v.(model.Instance)
-		if !ok {
-			logger.Warnf("redo register service:%s faild,instances type not is model.instance", info[1])
-			return
+		if instance, ok := v.(model.Instance); ok {
+			if _, err := c.clientProxy.RegisterInstance(serviceName, groupName, instance); err != nil {
+				logger.Warnf("redo register service:%s groupName:%s faild:%s", info[1], info[0], err.Error())
+				continue
+			}
 		}
-		_, err := c.clientProxy.RegisterInstance(serviceName, groupName, instance)
-		if err != nil {
-			logger.Warnf("redo register service:%s groupName:%s faild:%s", info[1], info[0], err.Error())
+		if instances, ok := v.([]model.Instance); ok {
+			if _, err := c.clientProxy.BatchRegisterInstance(serviceName, groupName, instances); err != nil {
+				logger.Warnf("redo batch register service:%s groupName:%s faild:%s", info[1], info[0], err.Error())
+				continue
+			}
 		}
 	}
 }
 
 func (c *ConnectionEventListener) CacheInstanceForRedo(serviceName, groupName string, instance model.Instance) {
 	key := util.GetGroupName(serviceName, groupName)
-	getInstance, _ := c.registeredInstanceCached.Get(key)
-	if getInstance != nil && reflect.DeepEqual(getInstance.(model.Instance), instance) {
-		return
-	}
 	c.registeredInstanceCached.Set(key, instance)
+}
+
+func (c *ConnectionEventListener) CacheInstancesForRedo(serviceName, groupName string, instances []model.Instance) {
+	key := util.GetGroupName(serviceName, groupName)
+	c.registeredInstanceCached.Set(key, instances)
 }
 
 func (c *ConnectionEventListener) RemoveInstanceForRedo(serviceName, groupName string, instance model.Instance) {
@@ -113,9 +116,14 @@ func (c *ConnectionEventListener) RemoveInstanceForRedo(serviceName, groupName s
 
 func (c *ConnectionEventListener) CacheSubscriberForRedo(fullServiceName, clusters string) {
 	key := util.GetServiceCacheKey(fullServiceName, clusters)
-	if _, ok := c.subscribes.Get(key); !ok {
+	if !c.IsSubscriberCached(key) {
 		c.subscribes.Set(key, struct{}{})
 	}
+}
+
+func (c *ConnectionEventListener) IsSubscriberCached(key string) bool {
+	_, ok := c.subscribes.Get(key)
+	return ok
 }
 
 func (c *ConnectionEventListener) RemoveSubscriberForRedo(fullServiceName, clusters string) {

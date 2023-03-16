@@ -32,12 +32,6 @@ type NamingRequest struct {
 	Module      string `json:"module"`
 }
 
-type InstanceRequest struct {
-	*NamingRequest
-	Type     string         `json:"type"`
-	Instance model.Instance `json:"instance"`
-}
-
 func NewNamingRequest(namespace, serviceName, groupName string) *NamingRequest {
 	request := Request{
 		Headers: make(map[string]string, 8),
@@ -59,6 +53,12 @@ func (r *NamingRequest) GetStringToSign() string {
 	return data
 }
 
+type InstanceRequest struct {
+	*NamingRequest
+	Type     string         `json:"type"`
+	Instance model.Instance `json:"instance"`
+}
+
 func NewInstanceRequest(namespace, serviceName, groupName, Type string, instance model.Instance) *InstanceRequest {
 	return &InstanceRequest{
 		NamingRequest: NewNamingRequest(namespace, serviceName, groupName),
@@ -69,6 +69,24 @@ func NewInstanceRequest(namespace, serviceName, groupName, Type string, instance
 
 func (r *InstanceRequest) GetRequestType() string {
 	return "InstanceRequest"
+}
+
+type BatchInstanceRequest struct {
+	*NamingRequest
+	Type      string           `json:"type"`
+	Instances []model.Instance `json:"instances"`
+}
+
+func NewBatchInstanceRequest(namespace, serviceName, groupName, Type string, instances []model.Instance) *BatchInstanceRequest {
+	return &BatchInstanceRequest{
+		NamingRequest: NewNamingRequest(namespace, serviceName, groupName),
+		Type:          Type,
+		Instances:     instances,
+	}
+}
+
+func (r *BatchInstanceRequest) GetRequestType() string {
+	return "BatchInstanceRequest"
 }
 
 type NotifySubscriberRequest struct {
@@ -120,15 +138,15 @@ func (r *SubscribeServiceRequest) GetRequestType() string {
 
 type ServiceQueryRequest struct {
 	*NamingRequest
-	Clusters    string `json:"clusters"`
+	Cluster     string `json:"cluster"`
 	HealthyOnly bool   `json:"healthyOnly"`
 	UdpPort     int    `json:"udpPort"`
 }
 
-func NewServiceQueryRequest(namespace, serviceName, groupName, clusters string, healthyOnly bool, udpPort int) *ServiceQueryRequest {
+func NewServiceQueryRequest(namespace, serviceName, groupName, cluster string, healthyOnly bool, udpPort int) *ServiceQueryRequest {
 	return &ServiceQueryRequest{
 		NamingRequest: NewNamingRequest(namespace, serviceName, groupName),
-		Clusters:      clusters,
+		Cluster:       cluster,
 		HealthyOnly:   healthyOnly,
 		UdpPort:       udpPort,
 	}
