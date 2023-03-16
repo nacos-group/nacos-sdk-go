@@ -18,6 +18,10 @@ package config_client
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"os"
@@ -224,7 +228,59 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 		}
 		return content, nil
 	}
+	if strings.HasPrefix(param.DataId, constant.CipherPrefix) {
+		return decryptAes(response.EncryptedDataKey, response.Content), nil
+	}
 	return response.Content, nil
+}
+
+func decryptAes(secretKey string, content string) string {
+	if secretKey == "" || content == "" {
+		return content
+	}
+
+	secretKeyBytesTmp, err := base64.StdEncoding.DecodeString(secretKey)
+	if err != nil {
+		return content
+	}
+	secretKey = string(secretKeyBytesTmp)
+	secretKeyBytes, err := hex.DecodeString(secretKey)
+	if err != nil {
+		return content
+	}
+
+	key, err := aes.NewCipher(secretKeyBytes)
+	if err != nil {
+		return content
+	}
+	var iv []byte
+	if secretKey == "" || len(secretKey) < constant.IvLength {
+		iv = []byte(constant.IvParameter)
+	} else {
+		iv = make([]byte, constant.IvLength)
+		copy(iv, secretKey[:constant.IvLength])
+	}
+
+	contentBytes, err := hex.DecodeString(content)
+	if err != nil {
+		return content
+	}
+
+	mode := cipher.NewCBCDecrypter(key, iv)
+	mode.CryptBlocks(contentBytes, contentBytes)
+	return string(unPaddingPKCS5(contentBytes))
+}
+
+func unPaddingPKCS5(data []byte) []byte {
+	length := len(data)
+	if length == 0 {
+		return data
+	}
+	unPadding := int(data[length-1])
+	if unPadding > length {
+		return data
+	}
+	return data[:(length - unPadding)]
 }
 
 func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool, err error) {

@@ -98,4 +98,7 @@ const (
 	HTTPS_SERVER_PORT           = 443
 	GRPC                        = "grpc"
 	FAILOVER_FILE_SUFFIX        = "_failover"
+	CipherPrefix                = "cipher-"
+	IvParameter                 = "fa6fa5207b3286b2"
+	IvLength                    = 16
 )
