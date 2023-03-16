@@ -61,7 +61,12 @@ func (client *NacosClient) SetClientConfig(config constant.ClientConfig) (err er
 	if config.LogDir == "" {
 		config.LogDir = file.GetCurrentPath() + string(os.PathSeparator) + "log"
 	}
-	log.Printf("[INFO] logDir:<%s>   cacheDir:<%s>", config.LogDir, config.CacheDir)
+
+	if config.LogLevel == "info" {
+		log.SetOutput(os.Stdout)
+		log.Printf("[INFO] logDir:<%s>   cacheDir:<%s>", config.LogDir, config.CacheDir)
+	}
+
 	client.clientConfig = config
 	client.clientConfigValid = true
 
