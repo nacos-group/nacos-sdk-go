@@ -122,7 +122,6 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 		return nil, errors.New("ConfigQueryRequest returns type error")
 	}
 	if response.IsSuccess() {
-		//todo LocalConfigInfoProcessor.saveSnapshot
 		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, response.Content)
 		//todo LocalConfigInfoProcessor.saveEncryptDataKeySnapshot
 		if response.ContentType == "" {
@@ -132,7 +131,6 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 	}
 
 	if response.GetErrorCode() == 300 {
-		//todo LocalConfigInfoProcessor.saveSnapshot
 		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, "")
 		//todo LocalConfigInfoProcessor.saveEncryptDataKeySnapshot
 		return response, nil
