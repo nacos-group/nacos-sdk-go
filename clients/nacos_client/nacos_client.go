@@ -25,7 +25,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/file"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 )
 
 type NacosClient struct {
