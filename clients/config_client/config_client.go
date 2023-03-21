@@ -152,11 +152,9 @@ func initLogger(clientConfig constant.ClientConfig) error {
 
 func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err error) {
 	content, err = client.getConfigInner(param)
-
 	if err != nil {
 		return "", err
 	}
-
 	return client.decrypt(param.DataId, content)
 }
 
@@ -212,17 +210,15 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 	response, err := client.configProxy.queryConfig(param.DataId, param.Group, clientConfig.NamespaceId,
 		clientConfig.TimeoutMs, false, client)
 	if err != nil {
-		logger.Infof("get config from server error:%+v ", err)
-		if clientConfig, err := client.GetClientConfig(); err == nil && clientConfig.DisableUseSnapShot {
-			logger.Errorf("get config from cache  error:%+v ", err)
-			return "", errors.New("get config from remote nacos server fail, and is not allowed to read local file")
+		logger.Infof("get config from server error:%v ", err)
+		if clientConfig.DisableUseSnapShot {
+			return "", errors.Errorf("get config from remote nacos server fail, and is not allowed to read local file, err:%v", err)
 		}
-		content, err = cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
+		cacheContent, cacheErr := cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
 		if err != nil {
-			logger.Errorf("get config from cache  error:%+v ", err)
-			return "", errors.New("read config from both server and cache fail")
+			return "", errors.Errorf("read config from both server and cache fail, err=%v", cacheErr)
 		}
-		return content, nil
+		return cacheContent, nil
 	}
 	return response.Content, nil
 }
