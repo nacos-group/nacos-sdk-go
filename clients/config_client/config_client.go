@@ -19,7 +19,6 @@ package config_client
 import (
 	"context"
 	"fmt"
-	"math"
 	"os"
 	"strings"
 	"sync"
@@ -134,15 +133,11 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	config.uid = uid.String()
-
 	config.cacheMap = cache.NewConcurrentMap()
-	// maximum buffered queue to prevent chan deadlocks during frequent configuration file updates
-	// use Math.MaxInt32 to avoid overflows on ARM 32-bits
-	config.listenExecute = make(chan struct{}, math.MaxInt32)
-
+	config.listenExecute = make(chan struct{})
 	config.startInternal()
-
 	return config, err
 }
 
@@ -204,7 +199,7 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 	cacheKey := util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
 	content = cache.GetFailover(cacheKey, client.configCacheDir)
 	if len(content) > 0 {
-		logger.GetLogger().Warn(fmt.Sprintf("%s %s %s is using failover content!", clientConfig.NamespaceId, param.Group, param.DataId))
+		logger.Warnf("%s %s %s is using failover content!", clientConfig.NamespaceId, param.Group, param.DataId)
 		return content, nil
 	}
 	response, err := client.configProxy.queryConfig(param.DataId, param.Group, clientConfig.NamespaceId,
@@ -464,7 +459,7 @@ func (client *ConfigClient) executeConfigListen() {
 	}
 
 	if hasChangedKeys {
-		client.notifyListenConfig()
+		client.asyncNotifyListenConfig()
 	}
 	monitor.GetListenConfigCountMonitor().Set(float64(client.cacheMap.Count()))
 }
@@ -501,6 +496,8 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData *cacheData, notify 
 	}
 }
 
-func (client *ConfigClient) notifyListenConfig() {
-	client.listenExecute <- struct{}{}
+func (client *ConfigClient) asyncNotifyListenConfig() {
+	go func() {
+		client.listenExecute <- struct{}{}
+	}()
 }
