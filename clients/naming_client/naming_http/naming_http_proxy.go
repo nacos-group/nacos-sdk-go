@@ -18,7 +18,6 @@ package naming_http
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -152,14 +151,14 @@ func (proxy *NamingHttpProxy) GetServiceList(pageNo uint32, pageSize uint32, gro
 
 	count, err := jsonparser.GetInt([]byte(result), "count")
 	if err != nil {
-		return serviceList, errors.New(fmt.Sprintf("namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'count' from <%s> error:<%+v>", namespaceId, pageNo, pageSize, util.ToJsonString(selector), groupName, result, err))
+		return serviceList, errors.Errorf("namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'count' from <%s> error:<%+v>", namespaceId, pageNo, pageSize, util.ToJsonString(selector), groupName, result, err)
 	}
 	var doms []string
 	_, err = jsonparser.ArrayEach([]byte(result), func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		doms = append(doms, string(value))
 	}, "doms")
 	if err != nil {
-		return serviceList, errors.New(fmt.Sprintf("namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'doms' from <%s> error:<%+v> ", namespaceId, pageNo, pageSize, util.ToJsonString(selector), groupName, result, err))
+		return serviceList, errors.Errorf("namespaceId:<%s> get service list pageNo:<%d> pageSize:<%d> selector:<%s> from <%s> get 'doms' from <%s> error:<%+v> ", namespaceId, pageNo, pageSize, util.ToJsonString(selector), groupName, result, err)
 	}
 	serviceList.Count = count
 	serviceList.Doms = doms

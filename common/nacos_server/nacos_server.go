@@ -21,7 +21,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
-	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -187,7 +186,7 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 	if response.StatusCode == constant.RESPONSE_CODE_SUCCESS {
 		return
 	} else {
-		err = errors.New(fmt.Sprintf("request return error code %d", response.StatusCode))
+		err = errors.Errorf("request return error code %d", response.StatusCode)
 		return
 	}
 }

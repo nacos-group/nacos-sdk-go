@@ -205,7 +205,7 @@ func (c *ConfigChangeNotifyRequestHandler) RequestReply(request rpc_request.IReq
 		}
 		cData := data.(*cacheData)
 		cData.isSyncWithServer = false
-		c.client.notifyListenConfig()
+		c.client.asyncNotifyListenConfig()
 		return &rpc_response.NotifySubscriberResponse{
 			Response: &rpc_response.Response{ResultCode: constant.RESPONSE_CODE_SUCCESS},
 		}

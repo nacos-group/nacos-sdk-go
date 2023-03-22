@@ -18,7 +18,6 @@ package cache
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -100,7 +99,7 @@ func ReadConfigFromFile(cacheKey string, cacheDir string) (string, error) {
 	b, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		logger.Errorf("get config from cache, cacheKey:%s, cacheDir:%s, error:%v ", cacheKey, cacheDir, err)
-		return "", errors.New(fmt.Sprintf("failed to read config cache file:%s, cacheDir=%s, err:%v ", fileName, cacheDir, err))
+		return "", errors.Errorf("failed to read config cache file:%s, cacheDir:%s, err:%v ", fileName, cacheDir, err)
 	}
 	return string(b), nil
 }
@@ -111,10 +110,10 @@ func GetFailover(key, dir string) string {
 	if !file.IsExistFile(filePath) {
 		return ""
 	}
-	logger.GetLogger().Warn(fmt.Sprintf("reading failover content from path:%s", filePath))
+	logger.Warnf("reading failover content from path:%s", filePath)
 	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		logger.GetLogger().Error(fmt.Sprintf("fail to read failover content from %s", filePath))
+		logger.Errorf("fail to read failover content from %s", filePath)
 		return ""
 	}
 	return string(fileContent)

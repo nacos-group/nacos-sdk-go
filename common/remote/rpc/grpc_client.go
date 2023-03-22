@@ -20,7 +20,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"math"
 	"os"
 	"strconv"
 	"sync"
@@ -51,7 +50,7 @@ func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_se
 			name:                        clientName,
 			labels:                      make(map[string]string, 8),
 			rpcClientStatus:             INITIALIZED,
-			eventChan:                   make(chan ConnectionEvent, math.MaxInt32),
+			eventChan:                   make(chan ConnectionEvent),
 			reconnectionChan:            make(chan ReconnectContext),
 			nacosServer:                 nacosServer,
 			serverRequestHandlerMapping: make(map[string]ServerRequestHandlerMapping, 8),

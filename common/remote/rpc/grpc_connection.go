@@ -19,7 +19,6 @@ package rpc
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/any"
@@ -63,8 +62,8 @@ func (g *GrpcConnection) request(request rpc_request.IRequest, timeoutMills int6
 	responseFunc, ok := rpc_response.ClientResponseMapping[responsePayload.Metadata.GetType()]
 
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("request:%s,unsupported response type:%s", request.GetRequestType(),
-			responsePayload.Metadata.GetType()))
+		return nil, errors.Errorf("request:%s,unsupported response type:%s", request.GetRequestType(),
+			responsePayload.Metadata.GetType())
 	}
 	response := responseFunc()
 	err = json.Unmarshal(responsePayload.GetBody().Value, response)
