@@ -98,4 +98,5 @@ const (
 	HTTPS_SERVER_PORT           = 443
 	GRPC                        = "grpc"
 	FAILOVER_FILE_SUFFIX        = "_failover"
+	RpcPortOffset               = 1000
 )

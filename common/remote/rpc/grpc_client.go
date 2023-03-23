@@ -172,7 +172,7 @@ func (c *GrpcClient) getConnectionType() ConnectionType {
 }
 
 func (c *GrpcClient) rpcPortOffset() uint64 {
-	return 1000
+	return constant.RpcPortOffset
 }
 
 func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiRequestStream_RequestBiStreamClient, grpcConn *GrpcConnection) {
