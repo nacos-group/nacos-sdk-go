@@ -18,7 +18,6 @@ package cache
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -60,7 +59,7 @@ func ReadServicesFromFile(cacheDir string) map[string]model.Service {
 		fileName := GetFileName(f.Name(), cacheDir)
 		b, err := ioutil.ReadFile(fileName)
 		if err != nil {
-			logger.Errorf("failed to read name cache file:%s,err:%+v ", fileName, err)
+			logger.Errorf("failed to read name cache file:%s,err:%v ", fileName, err)
 			continue
 		}
 
@@ -84,13 +83,13 @@ func WriteConfigToFile(cacheKey string, cacheDir string, content string) {
 	if len(content) == 0 {
 		// delete config snapshot
 		if err := os.Remove(fileName); err != nil {
-			logger.Errorf("failed to delete config file,cache:%s ,value:%s ,err:%+v", fileName, content, err)
+			logger.Errorf("failed to delete config file,cache:%s ,value:%s ,err:%v", fileName, content, err)
 		}
 		return
 	}
 	err := ioutil.WriteFile(fileName, []byte(content), 0666)
 	if err != nil {
-		logger.Errorf("failed to write config  cache:%s ,value:%s ,err:%+v", fileName, content, err)
+		logger.Errorf("failed to write config  cache:%s ,value:%s ,err:%v", fileName, content, err)
 	}
 
 }
@@ -99,7 +98,8 @@ func ReadConfigFromFile(cacheKey string, cacheDir string) (string, error) {
 	fileName := GetFileName(cacheKey, cacheDir)
 	b, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("failed to read config cache file:%s,err:%+v ", fileName, err))
+		logger.Errorf("get config from cache, cacheKey:%s, cacheDir:%s, error:%v ", cacheKey, cacheDir, err)
+		return "", errors.Errorf("failed to read config cache file:%s, cacheDir:%s, err:%v ", fileName, cacheDir, err)
 	}
 	return string(b), nil
 }
@@ -110,10 +110,10 @@ func GetFailover(key, dir string) string {
 	if !file.IsExistFile(filePath) {
 		return ""
 	}
-	logger.GetLogger().Warn(fmt.Sprintf("reading failover content from path:%s", filePath))
+	logger.Warnf("reading failover content from path:%s", filePath)
 	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		logger.GetLogger().Error(fmt.Sprintf("fail to read failover content from %s", filePath))
+		logger.Errorf("fail to read failover content from %s", filePath)
 		return ""
 	}
 	return string(fileContent)

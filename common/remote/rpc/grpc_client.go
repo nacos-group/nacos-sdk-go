@@ -20,7 +20,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"math"
 	"os"
 	"strconv"
 	"sync"

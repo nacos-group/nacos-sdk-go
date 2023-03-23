@@ -174,6 +174,8 @@ func (proxy *NamingGrpcProxy) IsSubscribed(serviceName, groupName string, cluste
 
 // Subscribe ...
 func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters string) (model.Service, error) {
+	logger.Infof("Subscribe Service namespaceId:<%s>, serviceName:<%s>, groupName:<%s>, clusters:<%s>",
+		proxy.clientConfig.NamespaceId, serviceName, groupName, clusters)
 	proxy.eventListener.CacheSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
 	request := rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName,
 		groupName, clusters, true)
@@ -188,6 +190,8 @@ func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters 
 
 // Unsubscribe ...
 func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters string) error {
+	logger.Infof("Unsubscribe Service namespaceId:<%s>, serviceName:<%s>, groupName:<%s>, clusters:<%s>",
+		proxy.clientConfig.NamespaceId, serviceName, groupName, clusters)
 	proxy.eventListener.RemoveSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
 	_, err := proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
 		clusters, false))
@@ -195,5 +199,6 @@ func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters strin
 }
 
 func (proxy *NamingGrpcProxy) CloseClient() {
+	logger.Info("Close Nacos Go SDK Client...")
 	proxy.rpcClient.GetRpcClient().Shutdown()
 }

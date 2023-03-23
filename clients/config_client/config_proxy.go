@@ -122,7 +122,6 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 		return nil, errors.New("ConfigQueryRequest returns type error")
 	}
 	if response.IsSuccess() {
-		//todo LocalConfigInfoProcessor.saveSnapshot
 		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, response.Content)
 		//todo LocalConfigInfoProcessor.saveEncryptDataKeySnapshot
 		if response.ContentType == "" {
@@ -132,7 +131,6 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 	}
 
 	if response.GetErrorCode() == 300 {
-		//todo LocalConfigInfoProcessor.saveSnapshot
 		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, "")
 		//todo LocalConfigInfoProcessor.saveEncryptDataKeySnapshot
 		return response, nil
@@ -207,7 +205,7 @@ func (c *ConfigChangeNotifyRequestHandler) RequestReply(request rpc_request.IReq
 		}
 		cData := data.(*cacheData)
 		cData.isSyncWithServer = false
-		c.client.notifyListenConfig()
+		c.client.asyncNotifyListenConfig()
 		return &rpc_response.NotifySubscriberResponse{
 			Response: &rpc_response.Response{ResultCode: constant.RESPONSE_CODE_SUCCESS},
 		}

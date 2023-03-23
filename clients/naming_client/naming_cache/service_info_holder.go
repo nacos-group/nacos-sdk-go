@@ -17,7 +17,6 @@
 package naming_cache
 
 import (
-	"fmt"
 	"os"
 	"reflect"
 	"sort"
@@ -152,7 +151,7 @@ func isServiceInstanceChanged(oldService, newService model.Service) bool {
 	oldRefTime := oldService.LastRefTime
 	newRefTime := newService.LastRefTime
 	if oldRefTime > newRefTime {
-		logger.Warn(fmt.Sprintf("out of date data received, old-t: %v , new-t:  %v", oldRefTime, newRefTime))
+		logger.Warnf("out of date data received, old-t: %v , new-t:  %v", oldRefTime, newRefTime)
 		return false
 	}
 	// sort instance list
