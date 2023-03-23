@@ -34,7 +34,7 @@ func CreateConfigClient(properties map[string]interface{}) (iClient config_clien
 	return NewConfigClient(param)
 }
 
-//CreateNamingClient use to create a nacos naming client
+// CreateNamingClient use to create a nacos naming client
 func CreateNamingClient(properties map[string]interface{}) (iClient naming_client.INamingClient, err error) {
 	param := getConfigParam(properties)
 	return NewNamingClient(param)
@@ -104,6 +104,11 @@ func setConfig(param vo.NacosClientParam) (iClient nacos_client.INacosClient, er
 		}
 		_ = client.SetServerConfig(nil)
 	} else {
+		for i := range param.ServerConfigs {
+			if param.ServerConfigs[i].GrpcPort == 0 {
+				param.ServerConfigs[i].GrpcPort = param.ServerConfigs[i].Port + constant.RpcPortOffset
+			}
+		}
 		err = client.SetServerConfig(param.ServerConfigs)
 		if err != nil {
 			return nil, err

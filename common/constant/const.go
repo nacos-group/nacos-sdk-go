@@ -68,7 +68,7 @@ const (
 	KEY_BEAT                    = "beat"
 	KEY_DOM                     = "dom"
 	DEFAULT_CONTEXT_PATH        = "/nacos"
-	CLIENT_VERSION              = "Nacos-Go-Client:v2.2.0"
+	CLIENT_VERSION              = "Nacos-Go-Client:v2.2.1"
 	REQUEST_DOMAIN_RETRY_TIME   = 3
 	SERVICE_INFO_SPLITER        = "@@"
 	CONFIG_INFO_SPLITER         = "@@"
@@ -98,4 +98,5 @@ const (
 	HTTPS_SERVER_PORT           = 443
 	GRPC                        = "grpc"
 	FAILOVER_FILE_SUFFIX        = "_failover"
+	RpcPortOffset               = 1000
 )
