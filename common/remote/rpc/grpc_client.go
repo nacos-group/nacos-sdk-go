@@ -46,15 +46,14 @@ type GrpcClient struct {
 func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_server.NacosServer) *GrpcClient {
 	rpcClient := &GrpcClient{
 		&RpcClient{
-			ctx:                         ctx,
-			name:                        clientName,
-			labels:                      make(map[string]string, 8),
-			rpcClientStatus:             INITIALIZED,
-			eventChan:                   make(chan ConnectionEvent),
-			reconnectionChan:            make(chan ReconnectContext),
-			nacosServer:                 nacosServer,
-			serverRequestHandlerMapping: make(map[string]ServerRequestHandlerMapping, 8),
-			mux:                         new(sync.Mutex),
+			ctx:              ctx,
+			name:             clientName,
+			labels:           make(map[string]string, 8),
+			rpcClientStatus:  INITIALIZED,
+			eventChan:        make(chan ConnectionEvent),
+			reconnectionChan: make(chan ReconnectContext),
+			nacosServer:      nacosServer,
+			mux:              new(sync.Mutex),
 		},
 	}
 	rpcClient.RpcClient.lastActiveTimestamp.Store(time.Now())
@@ -240,11 +239,13 @@ func (c *GrpcClient) handleServerRequest(p *nacos_grpc_service.Payload, grpcConn
 	client := c.GetRpcClient()
 	payLoadType := p.GetMetadata().GetType()
 
-	mapping, ok := client.serverRequestHandlerMapping[payLoadType]
+	handlerMapping, ok := client.serverRequestHandlerMapping.Load(payLoadType)
 	if !ok {
 		logger.Errorf("%s Unsupported payload type", grpcConn.getConnectionId())
 		return
 	}
+
+	mapping := handlerMapping.(ServerRequestHandlerMapping)
 
 	serverRequest := mapping.serverRequest()
 	err := json.Unmarshal(p.GetBody().Value, serverRequest)
