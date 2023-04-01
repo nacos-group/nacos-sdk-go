@@ -205,14 +205,20 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 	response, err := client.configProxy.queryConfig(param.DataId, param.Group, clientConfig.NamespaceId,
 		clientConfig.TimeoutMs, false, client)
 	if err != nil {
-		logger.Infof("get config from server error:%v ", err)
+		logger.Errorf("get config from server error:%v, dataId=%s, group=%s, namespaceId=%s", err,
+			param.DataId, param.Group, clientConfig.NamespaceId)
+
 		if clientConfig.DisableUseSnapShot {
 			return "", errors.Errorf("get config from remote nacos server fail, and is not allowed to read local file, err:%v", err)
 		}
+
 		cacheContent, cacheErr := cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
-		if err != nil {
-			return "", errors.Errorf("read config from both server and cache fail, err=%v", cacheErr)
+		if cacheErr != nil {
+			return "", errors.Errorf("read config from both server and cache fail, err=%v，dataId=%s, group=%s, namespaceId=%s",
+				cacheErr, param.DataId, param.Group, clientConfig.NamespaceId)
 		}
+
+		logger.Warnf("read config from cache success, dataId=%s, group=%s, namespaceId=%s", param.DataId, param.Group, clientConfig.NamespaceId)
 		return cacheContent, nil
 	}
 	return response.Content, nil
