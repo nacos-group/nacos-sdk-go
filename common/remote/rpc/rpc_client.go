@@ -343,7 +343,9 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 				r.currentConnection.setAbandon(true)
 				r.closeConnection()
 			}
+			r.mux.Lock()
 			r.currentConnection = connectionNew
+			r.mux.Unlock()
 			atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
 			r.asyncNotifyConnectionChange(CONNECTED)
 			return
