@@ -25,6 +25,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 )
 
+// TransformObject2Param method
 func TransformObject2Param(object interface{}) (params map[string]string) {
 	params = make(map[string]string)
 	if object != nil {
@@ -57,7 +58,7 @@ func TransformObject2Param(object interface{}) (params map[string]string) {
 					if !valueOf.Field(i).IsNil() {
 						bytes, err := json.Marshal(valueOf.Field(i).Interface())
 						if err != nil {
-							logger.Errorf("[TransformObject2Param] json.Marshal err:%+v", err)
+							// logger.Errorf("[TransformObject2Param] json.Marshal err:%+v", err)
 						} else {
 							params[tag] = string(bytes)
 						}
@@ -75,9 +76,23 @@ func TransformObject2Param(object interface{}) (params map[string]string) {
 							params[tag] = pv
 						}
 					}
+				default:
+					if !valueOf.Field(i).IsNil() && !valueOf.Field(i).IsZero() {
+						if ss, ok := valueOf.Field(i).Interface().(TransformInterface); ok {
+							if ss != nil {
+								params[tag] = ss.String()
+							}
+						}
+					}
 				}
 			}
 		}
 	}
 	return
 }
+
+// TransformInterface need used user set the object in param object String
+type TransformInterface interface {
+	String() string
+}
+
