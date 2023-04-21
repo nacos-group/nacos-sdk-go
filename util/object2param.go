@@ -58,7 +58,7 @@ func TransformObject2Param(object interface{}) (params map[string]string) {
 					if !valueOf.Field(i).IsNil() {
 						bytes, err := json.Marshal(valueOf.Field(i).Interface())
 						if err != nil {
-							// logger.Errorf("[TransformObject2Param] json.Marshal err:%+v", err)
+							logger.Errorf("[TransformObject2Param] json.Marshal err:%+v", err)
 						} else {
 							params[tag] = string(bytes)
 						}
