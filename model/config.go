@@ -16,10 +16,8 @@
 
 package model
 
-import "encoding/json"
-
 type ConfigItem struct {
-	Id      json.Number `param:"id"`
+	Id      string `param:"id"`
 	DataId  string `param:"dataId"`
 	Group   string `param:"group"`
 	Content string `param:"content"`
