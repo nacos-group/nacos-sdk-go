@@ -380,7 +380,7 @@ func getAddress(cfg constant.ServerConfig) string {
 func GetSignHeadersFromRequest(cr rpc_request.IConfigRequest, secretKey string) map[string]string {
 	resource := ""
 
-	if len(cr.GetGroup()) != 0 {
+	if len(cr.GetTenant()) != 0 {
 		resource = cr.GetTenant() + "+" + cr.GetGroup()
 	} else {
 		resource = cr.GetGroup()
