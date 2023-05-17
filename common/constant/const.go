@@ -68,7 +68,7 @@ const (
 	KEY_BEAT                    = "beat"
 	KEY_DOM                     = "dom"
 	DEFAULT_CONTEXT_PATH        = "/nacos"
-	CLIENT_VERSION              = "Nacos-Go-Client:v2.2.1"
+	CLIENT_VERSION              = "Nacos-Go-Client:v2.2.2"
 	REQUEST_DOMAIN_RETRY_TIME   = 3
 	SERVICE_INFO_SPLITER        = "@@"
 	CONFIG_INFO_SPLITER         = "@@"
