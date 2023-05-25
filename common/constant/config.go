@@ -52,6 +52,7 @@ type ClientConfig struct {
 	LogSampling          *ClientLogSamplingConfig // the sampling config of log
 	LogRollingConfig     *ClientLogRollingConfig  // log rolling config
 	TLSCfg               TLSConfig                // tls Config
+	AsyncUpdateService   bool                     // open async update service by query
 }
 
 type ClientLogSamplingConfig struct {
