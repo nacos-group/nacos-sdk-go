@@ -92,7 +92,7 @@ func (c *NamingPushRequestHandler) RequestReply(request rpc_request.IRequest, _ 
 	if ok {
 		c.ServiceInfoHolder.ProcessService(&notifySubscriberRequest.ServiceInfo)
 		return &rpc_response.NotifySubscriberResponse{
-			Response: &rpc_response.Response{ResultCode: constant.RESPONSE_CODE_SUCCESS},
+			Response: &rpc_response.Response{ResultCode: constant.RESPONSE_CODE_SUCCESS, Success: true},
 		}
 	}
 	return nil

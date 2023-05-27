@@ -77,7 +77,9 @@ func NewNamingClient(nc nacos_client.INacosClient) (*NamingClient, error) {
 
 	naming.serviceProxy, err = NewNamingProxyDelegate(ctx, clientConfig, serverConfig, httpAgent, naming.serviceInfoHolder)
 
-	go NewServiceInfoUpdater(ctx, naming.serviceInfoHolder, clientConfig.UpdateThreadNum, naming.serviceProxy).asyncUpdateService()
+	if clientConfig.AsyncUpdateService {
+		go NewServiceInfoUpdater(ctx, naming.serviceInfoHolder, clientConfig.UpdateThreadNum, naming.serviceProxy).asyncUpdateService()
+	}
 	if err != nil {
 		return naming, err
 	}
