@@ -19,6 +19,7 @@ package config_client
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -131,9 +132,11 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 	}
 
 	if response.GetErrorCode() == 300 {
-		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, "")
+		format := fmt.Sprintf("%s, dataId=%s, group=%s, tenant=%s", response.GetMessage(), dataId, group, tenant)
+		logger.Errorf(
+			"[config_rpc_client] [sub-server-error] " + format)
 		//todo LocalConfigInfoProcessor.saveEncryptDataKeySnapshot
-		return response, nil
+		return nil, fmt.Errorf(format)
 	}
 
 	if response.GetErrorCode() == 400 {
