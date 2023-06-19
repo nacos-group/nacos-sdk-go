@@ -247,6 +247,7 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	request.AdditionMap["appName"] = param.AppName
 	request.AdditionMap["betaIps"] = param.BetaIps
 	request.AdditionMap["type"] = param.Type
+	request.AdditionMap["src_user"] = param.SrcUser
 	request.AdditionMap["encryptedDataKey"] = param.EncryptedDataKey
 	rpcClient := client.configProxy.getRpcClient(client)
 	response, err := client.configProxy.requestProxy(rpcClient, request, constant.DEFAULT_TIMEOUT_MILLS)
