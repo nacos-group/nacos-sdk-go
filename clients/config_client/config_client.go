@@ -205,6 +205,14 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 	response, err := client.configProxy.queryConfig(param.DataId, param.Group, clientConfig.NamespaceId,
 		clientConfig.TimeoutMs, false, client)
 	if err != nil {
+		if _, ok := err.(*nacos_error.NacosError); ok {
+			nacosErr := err.(*nacos_error.NacosError)
+
+			if nacosErr.ErrorCode() == "403" {
+				return "", errors.New(nacosErr.Error())
+			}
+		}
+
 		logger.Errorf("get config from server error:%v, dataId=%s, group=%s, namespaceId=%s", err,
 			param.DataId, param.Group, clientConfig.NamespaceId)
 

@@ -19,6 +19,7 @@ package config_client
 import (
 	"context"
 	"encoding/json"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_error"
 	"net/http"
 	"strconv"
 	"time"
@@ -62,6 +63,11 @@ func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_reques
 	signHeaders := nacos_server.GetSignHeadersFromRequest(request.(rpc_request.IConfigRequest), cp.clientConfig.SecretKey)
 	request.PutAllHeaders(signHeaders)
 	response, err := rpcClient.Request(request, int64(timeoutMills))
+	if response != nil && response.GetErrorCode() == 403 {
+		logger.Debugf(
+			"[config_rpc_client] [sub-server-error] request being forbidden, reason: %s", response.GetMessage())
+		return nil, nacos_error.NewNacosError("403", "request being forbidden, reason: "+response.GetMessage(), nil)
+	}
 	monitor.GetConfigRequestMonitor(constant.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
 	return response, err
 }
@@ -141,6 +147,12 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 			"[config_rpc_client] [sub-server-error] get server config being modified concurrently, dataId=%s, group=%s, "+
 				"tenant=%s", dataId, group, tenant)
 		return nil, errors.New("data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant)
+	}
+
+	if response.GetErrorCode() == 403 {
+		logger.Debugf(
+			"[config_rpc_client] [sub-server-error] get server config being forbidden, reason: %s", response.GetMessage())
+		return nil, nacos_error.NewNacosError("403", "get server config being forbidden, reason: "+response.GetMessage(), nil)
 	}
 
 	if response.GetErrorCode() > 0 {
