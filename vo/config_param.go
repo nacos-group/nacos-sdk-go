@@ -27,6 +27,7 @@ type ConfigParam struct {
 	BetaIps          string `param:"betaIps"`
 	CasMd5           string `param:"casMd5"`
 	Type             string `param:"type"`
+	SrcUser          string `param:"srcUser"`
 	EncryptedDataKey string `param:"encryptedDataKey"`
 	OnChange         func(namespace, group, dataId, data string)
 }

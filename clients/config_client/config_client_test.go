@@ -145,6 +145,7 @@ func Test_PublishConfig(t *testing.T) {
 	success, err := client.PublishConfig(vo.ConfigParam{
 		DataId:  localConfigTest.DataId,
 		Group:   "group",
+		SrcUser: "nacos-client-go",
 		Content: "hello world"})
 
 	assert.Nil(t, err)
