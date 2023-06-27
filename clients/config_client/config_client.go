@@ -207,10 +207,7 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 	if err != nil {
 		if _, ok := err.(*nacos_error.NacosError); ok {
 			nacosErr := err.(*nacos_error.NacosError)
-
-			if nacosErr.ErrorCode() == "403" {
-				return "", errors.New(nacosErr.Error())
-			}
+			return "", errors.New(nacosErr.Error())
 		}
 
 		logger.Errorf("get config from server error:%v, dataId=%s, group=%s, namespaceId=%s", err,
@@ -258,10 +255,15 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	request.AdditionMap["encryptedDataKey"] = param.EncryptedDataKey
 	rpcClient := client.configProxy.getRpcClient(client)
 	response, err := client.configProxy.requestProxy(rpcClient, request, constant.DEFAULT_TIMEOUT_MILLS)
-	if response != nil {
-		return response.IsSuccess(), err
+	if err != nil {
+		return false, err
 	}
-	return false, err
+	if !response.IsSuccess() {
+		logger.Errorf("[client.PublishConfig] failed ,dataId="+param.DataId+",group="+param.Group+",tenant="+clientConfig.NamespaceId+",msg:%s", response.GetMessage())
+		return false, errors.New(response.GetMessage())
+	} else {
+		return true, nil
+	}
 }
 
 func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, err error) {
@@ -278,10 +280,15 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, er
 	request := rpc_request.NewConfigRemoveRequest(param.Group, param.DataId, clientConfig.NamespaceId)
 	rpcClient := client.configProxy.getRpcClient(client)
 	response, err := client.configProxy.requestProxy(rpcClient, request, constant.DEFAULT_TIMEOUT_MILLS)
-	if response != nil {
-		return response.IsSuccess(), err
+	if err != nil {
+		return false, err
 	}
-	return false, err
+	if !response.IsSuccess() {
+		logger.Errorf("[client.DeleteConfig] failed ,dataId="+param.DataId+",group="+param.Group+",tenant="+clientConfig.NamespaceId+",msg:%s", response.GetMessage())
+		return false, errors.New(response.GetMessage())
+	} else {
+		return true, nil
+	}
 }
 
 // Cancel Listen Config
@@ -371,12 +378,7 @@ func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParam) (*mode
 		logger.Errorf("search config from server error:%+v ", err)
 		if _, ok := err.(*nacos_error.NacosError); ok {
 			nacosErr := err.(*nacos_error.NacosError)
-			if nacosErr.ErrorCode() == "404" {
-				return nil, errors.New("config not found")
-			}
-			if nacosErr.ErrorCode() == "403" {
-				return nil, errors.New("get config forbidden")
-			}
+			return nil, errors.New(nacosErr.Error())
 		}
 		return nil, err
 	}

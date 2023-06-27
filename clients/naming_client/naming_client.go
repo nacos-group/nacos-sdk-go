@@ -112,6 +112,9 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 		Weight:      param.Weight,
 		Ephemeral:   param.Ephemeral,
 	}
+	if pass, err := util.CheckInstanceIsLegal(instance); !pass {
+		return false, err
+	}
 	return sc.serviceProxy.RegisterInstance(param.ServiceName, param.GroupName, instance)
 }
 

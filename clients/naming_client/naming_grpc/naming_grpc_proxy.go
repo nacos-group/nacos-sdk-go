@@ -18,6 +18,8 @@ package naming_grpc
 
 import (
 	"context"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_error"
+	"strconv"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
@@ -86,6 +88,13 @@ func (proxy *NamingGrpcProxy) requestToServer(request rpc_request.IRequest) (rpc
 	proxy.nacosServer.InjectSign(request, request.GetHeaders(), proxy.clientConfig)
 	proxy.nacosServer.InjectSecurityInfo(request.GetHeaders())
 	response, err := proxy.rpcClient.GetRpcClient().Request(request, int64(proxy.clientConfig.TimeoutMs))
+	if err != nil {
+		return nil, err
+	}
+	if response.GetResultCode() != 200 {
+		logger.Errorf("Request nacos server failed:code=" + strconv.Itoa(response.GetErrorCode()) + ",msg=" + response.GetMessage())
+		return nil, nacos_error.NewNacosError(strconv.Itoa(response.GetErrorCode()), response.GetMessage(), nil)
+	}
 	monitor.GetConfigRequestMonitor(constant.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
 	return response, err
 }
@@ -122,10 +131,10 @@ func (proxy *NamingGrpcProxy) DeregisterInstance(serviceName string, groupName s
 		proxy.clientConfig.NamespaceId, serviceName, instance.Ip, instance.Port, instance.ClusterName)
 	instanceRequest := rpc_request.NewInstanceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName, "deregisterInstance", instance)
 	response, err := proxy.requestToServer(instanceRequest)
-	proxy.eventListener.RemoveInstanceForRedo(serviceName, groupName, instance)
 	if err != nil {
 		return false, err
 	}
+	proxy.eventListener.RemoveInstanceForRedo(serviceName, groupName, instance)
 	return response.IsSuccess(), err
 }
 

@@ -18,6 +18,11 @@ package rpc_response
 
 import "github.com/nacos-group/nacos-sdk-go/v2/model"
 
+const (
+	CONFIG_NOT_FOUND      = 300
+	CONFIG_QUERY_CONFLICT = 400
+)
+
 type ConfigChangeBatchListenResponse struct {
 	*Response
 	ChangedConfigs []model.ConfigContext `json:"changedConfigs"`
