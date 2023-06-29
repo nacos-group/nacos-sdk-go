@@ -261,9 +261,8 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	if !response.IsSuccess() {
 		logger.Errorf("[client.PublishConfig] failed ,dataId="+param.DataId+",group="+param.Group+",tenant="+clientConfig.NamespaceId+",msg:%s", response.GetMessage())
 		return false, errors.New(response.GetMessage())
-	} else {
-		return true, nil
 	}
+	return true, nil
 }
 
 func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, err error) {
@@ -286,9 +285,8 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, er
 	if !response.IsSuccess() {
 		logger.Errorf("[client.DeleteConfig] failed ,dataId="+param.DataId+",group="+param.Group+",tenant="+clientConfig.NamespaceId+",msg:%s", response.GetMessage())
 		return false, errors.New(response.GetMessage())
-	} else {
-		return true, nil
 	}
+	return true, nil
 }
 
 // Cancel Listen Config

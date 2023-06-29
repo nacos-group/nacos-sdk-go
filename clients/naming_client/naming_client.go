@@ -133,7 +133,7 @@ func (sc *NamingClient) BatchRegisterInstance(param vo.BatchRegisterInstancePara
 		if !param.Ephemeral {
 			return false, errors.Errorf("Batch registration does not allow persistent instance registration! instance:%+v", param)
 		}
-		modelInstances = append(modelInstances, model.Instance{
+		instance := model.Instance{
 			Ip:          param.Ip,
 			Port:        param.Port,
 			Metadata:    param.Metadata,
@@ -142,7 +142,11 @@ func (sc *NamingClient) BatchRegisterInstance(param vo.BatchRegisterInstancePara
 			Enable:      param.Enable,
 			Weight:      param.Weight,
 			Ephemeral:   param.Ephemeral,
-		})
+		}
+		if pass, err := util.CheckInstanceIsLegal(instance); !pass {
+			return false, err
+		}
+		modelInstances = append(modelInstances, instance)
 	}
 
 	return sc.serviceProxy.BatchRegisterInstance(param.ServiceName, param.GroupName, modelInstances)
@@ -182,6 +186,9 @@ func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, erro
 		Enable:      param.Enable,
 		Weight:      param.Weight,
 		Ephemeral:   param.Ephemeral,
+	}
+	if pass, err := util.CheckInstanceIsLegal(instance); !pass {
+		return false, err
 	}
 
 	return sc.serviceProxy.RegisterInstance(param.ServiceName, param.GroupName, instance)
