@@ -53,6 +53,7 @@ type ClientConfig struct {
 	LogRollingConfig     *ClientLogRollingConfig  // log rolling config
 	TLSCfg               TLSConfig                // tls Config
 	AsyncUpdateService   bool                     // open async update service by query
+	ProxyTimeoutMs       uint64                   // timeout for requesting config proxy, default value is DEFAULT_TIMEOUT_MILLS
 }
 
 type ClientLogSamplingConfig struct {

@@ -60,6 +60,7 @@ type ConfigClient struct {
 	cacheMap        cache.ConcurrentMap
 	uid             string
 	listenExecute   chan struct{}
+	timeout         uint64
 }
 
 type cacheData struct {
@@ -110,7 +111,7 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	config.timeout = clientConfig.ProxyTimeoutMs
 	if err = initLogger(clientConfig); err != nil {
 		return nil, err
 	}
@@ -133,7 +134,6 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	config.uid = uid.String()
 	config.cacheMap = cache.NewConcurrentMap()
 	config.listenExecute = make(chan struct{})
@@ -250,7 +250,10 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	request.AdditionMap["src_user"] = param.SrcUser
 	request.AdditionMap["encryptedDataKey"] = param.EncryptedDataKey
 	rpcClient := client.configProxy.getRpcClient(client)
-	response, err := client.configProxy.requestProxy(rpcClient, request, constant.DEFAULT_TIMEOUT_MILLS)
+	if client.timeout == 0 {
+		client.timeout = constant.DEFAULT_TIMEOUT_MILLS
+	}
+	response, err := client.configProxy.requestProxy(rpcClient, request, client.timeout)
 	if response != nil {
 		return response.IsSuccess(), err
 	}
@@ -270,7 +273,10 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, er
 	clientConfig, _ := client.GetClientConfig()
 	request := rpc_request.NewConfigRemoveRequest(param.Group, param.DataId, clientConfig.NamespaceId)
 	rpcClient := client.configProxy.getRpcClient(client)
-	response, err := client.configProxy.requestProxy(rpcClient, request, constant.DEFAULT_TIMEOUT_MILLS)
+	if client.timeout == 0 {
+		client.timeout = constant.DEFAULT_TIMEOUT_MILLS
+	}
+	response, err := client.configProxy.requestProxy(rpcClient, request, client.timeout)
 	if response != nil {
 		return response.IsSuccess(), err
 	}
@@ -481,8 +487,11 @@ func buildConfigBatchListenRequest(caches []*cacheData) *rpc_request.ConfigBatch
 }
 
 func (client *ConfigClient) refreshContentAndCheck(cacheData *cacheData, notify bool) {
+	if client.timeout == 0 {
+		client.timeout = constant.DEFAULT_TIMEOUT_MILLS
+	}
 	configQueryResponse, err := client.configProxy.queryConfig(cacheData.dataId, cacheData.group, cacheData.tenant,
-		constant.DEFAULT_TIMEOUT_MILLS, notify, client)
+		client.timeout, notify, client)
 	if err != nil {
 		logger.Errorf("refresh content and check md5 fail ,dataId=%s,group=%s,tenant=%s ", cacheData.dataId,
 			cacheData.group, cacheData.tenant)
