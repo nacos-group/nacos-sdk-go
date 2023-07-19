@@ -1,6 +1,6 @@
 module github.com/nacos-group/nacos-sdk-go/v2
 
-go 1.15
+go 1.18
 
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1704
