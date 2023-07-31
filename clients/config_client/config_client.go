@@ -305,9 +305,9 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	}
 
 	key := util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
-	var cData *cacheData
+	var cData cacheData
 	if v, ok := client.cacheMap.Get(key); ok {
-		cData = v.(*cacheData)
+		cData = v.(cacheData)
 		cData.isInitializing = true
 	} else {
 		var (
@@ -323,7 +323,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 			lastMd5:  md5Str,
 		}
 
-		cData = &cacheData{
+		cData = cacheData{
 			isInitializing:    true,
 			dataId:            param.DataId,
 			group:             param.Group,
@@ -395,10 +395,10 @@ func (client *ConfigClient) startInternal() {
 }
 
 func (client *ConfigClient) executeConfigListen() {
-	listenCachesMap := make(map[int][]*cacheData, 16)
+	listenCachesMap := make(map[int][]cacheData, 16)
 	needAllSync := time.Since(client.lastAllSyncTime) >= constant.ALL_SYNC_INTERNAL
 	for _, v := range client.cacheMap.Items() {
-		cache, ok := v.(*cacheData)
+		cache, ok := v.(cacheData)
 		if !ok {
 			continue
 		}
@@ -444,7 +444,7 @@ func (client *ConfigClient) executeConfigListen() {
 						if cache, ok := client.cacheMap.Get(changeKey); !ok {
 							continue
 						} else {
-							cacheData := cache.(*cacheData)
+							cacheData := cache.(cacheData)
 							client.refreshContentAndCheck(cacheData, !cacheData.isInitializing)
 						}
 					}
@@ -471,7 +471,7 @@ func (client *ConfigClient) executeConfigListen() {
 	monitor.GetListenConfigCountMonitor().Set(float64(client.cacheMap.Count()))
 }
 
-func buildConfigBatchListenRequest(caches []*cacheData) *rpc_request.ConfigBatchListenRequest {
+func buildConfigBatchListenRequest(caches []cacheData) *rpc_request.ConfigBatchListenRequest {
 	request := rpc_request.NewConfigBatchListenRequest(len(caches))
 	for _, cache := range caches {
 		request.ConfigListenContexts = append(request.ConfigListenContexts,
@@ -480,7 +480,7 @@ func buildConfigBatchListenRequest(caches []*cacheData) *rpc_request.ConfigBatch
 	return request
 }
 
-func (client *ConfigClient) refreshContentAndCheck(cacheData *cacheData, notify bool) {
+func (client *ConfigClient) refreshContentAndCheck(cacheData cacheData, notify bool) {
 	configQueryResponse, err := client.configProxy.queryConfig(cacheData.dataId, cacheData.group, cacheData.tenant,
 		constant.DEFAULT_TIMEOUT_MILLS, notify, client)
 	if err != nil {
