@@ -24,15 +24,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
-
-	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
-
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_error"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
@@ -40,6 +37,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -84,6 +82,7 @@ type cacheDataListener struct {
 
 func (cacheData *cacheData) executeListener() {
 	cacheData.cacheDataListener.lastMd5 = cacheData.md5
+	cacheData.configClient.cacheMap.Set(util.GetConfigCacheKey(cacheData.dataId, cacheData.group, cacheData.tenant), *cacheData)
 
 	decryptedContent, err := cacheData.configClient.decrypt(cacheData.dataId, cacheData.content)
 	if err != nil {
@@ -497,9 +496,8 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData cacheData, notify b
 	}
 	cacheData.md5 = util.Md5(cacheData.content)
 	if cacheData.md5 != cacheData.cacheDataListener.lastMd5 {
-		client.cacheMap.Set(util.GetConfigCacheKey(cacheData.dataId, cacheData.group, cacheData.tenant), cacheData)
-
-		cacheData.executeListener()
+		cacheDataPtr := &cacheData
+		cacheDataPtr.executeListener()
 	}
 }
 

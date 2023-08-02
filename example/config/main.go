@@ -111,18 +111,18 @@ func main() {
 
 	time.Sleep(2 * time.Second)
 
-	//cancel config change
-	err = client.CancelListenConfig(vo.ConfigParam{
-		DataId: "test-data",
-		Group:  "test-group",
-	})
-
 	time.Sleep(1 * time.Second)
 	_, err = client.DeleteConfig(vo.ConfigParam{
 		DataId: "test-data",
 		Group:  "test-group",
 	})
 	time.Sleep(1 * time.Second)
+
+	//cancel config change
+	err = client.CancelListenConfig(vo.ConfigParam{
+		DataId: "test-data",
+		Group:  "test-group",
+	})
 
 	searchPage, _ := client.SearchConfig(vo.SearchConfigParam{
 		Search:   "blur",
