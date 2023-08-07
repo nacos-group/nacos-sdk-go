@@ -438,14 +438,15 @@ func (client *ConfigClient) executeConfigListen() {
 			}
 		}
 
-		for _, v := range caches {
-			changeKey := util.GetConfigCacheKey(v.dataId, v.group, v.tenant)
+		for _, v := range client.cacheMap.Items() {
+			data := v.(cacheData)
+			changeKey := util.GetConfigCacheKey(data.dataId, data.group, data.tenant)
 			if _, ok := changeKeys[changeKey]; !ok {
-				v.isSyncWithServer = true
+				data.isSyncWithServer = true
 				client.cacheMap.Set(changeKey, v)
 				continue
 			}
-			v.isInitializing = true
+			data.isInitializing = true
 			client.cacheMap.Set(changeKey, v)
 		}
 
