@@ -443,11 +443,11 @@ func (client *ConfigClient) executeConfigListen() {
 			changeKey := util.GetConfigCacheKey(data.dataId, data.group, data.tenant)
 			if _, ok := changeKeys[changeKey]; !ok {
 				data.isSyncWithServer = true
-				client.cacheMap.Set(changeKey, v)
+				client.cacheMap.Set(changeKey, data)
 				continue
 			}
 			data.isInitializing = true
-			client.cacheMap.Set(changeKey, v)
+			client.cacheMap.Set(changeKey, data)
 		}
 
 	}
