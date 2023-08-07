@@ -218,7 +218,7 @@ func (r *RpcClient) Start() {
 		startUpRetryTimes--
 		serverInfo, err := r.nextRpcServer()
 		if err != nil {
-			logger.Errorf("[RpcClient.nextRpcServer],err:%+v", err)
+			logger.Errorf("[RpcClient.nextRpcServer],err:%v", err)
 			break
 		}
 		logger.Infof("[RpcClient.Start] %s try to connect to server on start up, server: %+v", r.name, serverInfo)
@@ -235,16 +235,14 @@ func (r *RpcClient) Start() {
 			currentConnection.getServerInfo(), currentConnection.getConnectionId())
 		r.currentConnection = currentConnection
 		atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
-		r.asyncNotifyConnectionChange(CONNECTED)
+		r.notifyConnectionChange(CONNECTED)
 	} else {
 		r.switchServerAsync(ServerInfo{}, false)
 	}
 }
 
-func (r *RpcClient) asyncNotifyConnectionChange(eventType ConnectionStatus) {
-	go func() {
-		r.eventChan <- ConnectionEvent{eventType: eventType}
-	}()
+func (r *RpcClient) notifyConnectionChange(eventType ConnectionStatus) {
+	r.eventChan <- ConnectionEvent{eventType: eventType}
 }
 
 func (r *RpcClient) notifyServerSrvChange() {
@@ -345,7 +343,7 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 			}
 			r.currentConnection = connectionNew
 			atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
-			r.asyncNotifyConnectionChange(CONNECTED)
+			r.notifyConnectionChange(CONNECTED)
 			return
 		}
 		if r.isShutdown() {
@@ -371,7 +369,7 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 func (r *RpcClient) closeConnection() {
 	if r.currentConnection != nil {
 		r.currentConnection.close()
-		r.asyncNotifyConnectionChange(DISCONNECTED)
+		r.notifyConnectionChange(DISCONNECTED)
 	}
 }
 
@@ -381,7 +379,7 @@ func (r *RpcClient) notifyConnectionEvent(event ConnectionEvent) {
 	if len(listeners) == 0 {
 		return
 	}
-	logger.Infof("%s notify %s event to listeners.", r.name, event.toString())
+	logger.Infof("%s notify %s event to listeners , connectionId=%s", r.name, event.toString(), r.currentConnection.getConnectionId())
 	for _, v := range listeners {
 		if event.isConnected() {
 			v.OnConnected()
