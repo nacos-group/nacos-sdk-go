@@ -506,7 +506,7 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 			continue
 		}
 		if response != nil && !response.IsSuccess() {
-			logger.Warnf("%s request received fail response, error code %d, result code %d, message %s", request.GetRequestType(), response.GetErrorCode(), response.GetResultCode(), response.GetMessage())
+			logger.Warnf("%s request received fail response, error code: %d, result code: %d, message: [%s]", request.GetRequestType(), response.GetErrorCode(), response.GetResultCode(), response.GetMessage())
 		}
 		r.lastActiveTimestamp.Store(time.Now())
 		return response, nil
