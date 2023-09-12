@@ -19,6 +19,8 @@ package config_client
 import (
 	"context"
 	"fmt"
+	"github.com/alibabacloud-go/tea/tea"
+	dkms_api "github.com/aliyun/alibabacloud-dkms-gcs-go-sdk/openapi"
 	"os"
 	"strings"
 	"sync"
@@ -35,6 +37,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
 	"github.com/nacos-group/nacos-sdk-go/v2/inner/uuid"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
+	nacos_inner_kms "github.com/nacos-group/nacos-sdk-go/v2/pkg/kms"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"github.com/pkg/errors"
@@ -49,7 +52,7 @@ type ConfigClient struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	nacos_client.INacosClient
-	kmsClient       *kms.Client
+	kmsClient       *nacos_inner_kms.KmsClient
 	localConfigs    []vo.ConfigParam
 	mutex           sync.Mutex
 	configProxy     IConfigProxy
@@ -120,12 +123,27 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 		return nil, err
 	}
 
-	if clientConfig.OpenKMS {
-		kmsClient, err := kms.NewClientWithAccessKey(clientConfig.RegionId, clientConfig.AccessKey, clientConfig.SecretKey)
-		if err != nil {
-			return nil, err
+	var kmsClient *nacos_inner_kms.KmsClient
+	if clientConfig.OpenKMS && !clientConfig.OpenKMSv3 {
+		kmsClient, err = nacos_inner_kms.NewKmsV1ClientWithAccessKey(clientConfig.RegionId, clientConfig.AccessKey, clientConfig.SecretKey)
+	} else if clientConfig.OpenKMSv3 {
+		kmsClient, err = nacos_inner_kms.NewKmsV3ClientWithConfig(&dkms_api.Config{
+			Protocol:         tea.String("https"),
+			Endpoint:         tea.String(clientConfig.KMSv3Config.Endpoint),
+			ClientKeyContent: tea.String(clientConfig.KMSv3Config.ClientKeyContent),
+			Password:         tea.String(clientConfig.KMSv3Config.Password),
+		})
+	}
+	if err != nil {
+		return nil, err
+	}
+	config.kmsClient = kmsClient
+	if config.kmsClient.GetKmsVersion() == constant.KMSv3 {
+		if len(strings.TrimSpace(clientConfig.KMSv3Config.CaContent)) != 0 {
+			config.kmsClient.SetVerify(clientConfig.KMSv3Config.CaContent)
+		} else {
+			config.kmsClient.SetHTTPSInsecure(false)
 		}
-		config.kmsClient = kmsClient
 	}
 
 	uid, err := uuid.NewV4()
@@ -168,14 +186,18 @@ func (client *ConfigClient) decrypt(dataId, content string) (string, error) {
 	return content, nil
 }
 
-func (client *ConfigClient) encrypt(dataId, content string) (string, error) {
+func (client *ConfigClient) encrypt(dataId, content, kmsKeyId string) (string, error) {
 	if client.kmsClient != nil && strings.HasPrefix(dataId, "cipher-") {
 		request := kms.CreateEncryptRequest()
 		request.Method = "POST"
 		request.Scheme = "https"
 		request.AcceptFormat = "json"
-		request.KeyId = "alias/acs/mse" // use default key
 		request.Plaintext = content
+		if len(strings.TrimSpace(kmsKeyId)) == 0 || client.kmsClient.GetKmsVersion() == constant.KMSv1 {
+			request.KeyId = nacos_inner_kms.GetDefaultKMSv1KeyId() // use default key
+		} else {
+			request.KeyId = kmsKeyId
+		}
 		response, err := client.kmsClient.Encrypt(request)
 		if err != nil {
 			return "", fmt.Errorf("kms encrypt failed: %v", err)
@@ -236,7 +258,7 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	if len(param.Group) <= 0 {
 		param.Group = constant.DEFAULT_GROUP
 	}
-	if param.Content, err = client.encrypt(param.DataId, param.Content); err != nil {
+	if param.Content, err = client.encrypt(param.DataId, param.Content, param.KmsKeyId); err != nil {
 		return
 	}
 

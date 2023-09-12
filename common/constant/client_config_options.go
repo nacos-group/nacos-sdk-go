@@ -28,6 +28,7 @@ func NewClientConfig(opts ...ClientOption) *ClientConfig {
 		TimeoutMs:            10 * 1000,
 		BeatInterval:         5 * 1000,
 		OpenKMS:              false,
+		OpenKMSv3:            false,
 		CacheDir:             file.GetCurrentPath() + string(os.PathSeparator) + "cache",
 		UpdateThreadNum:      20,
 		NotLoadCacheAtStart:  false,
@@ -106,6 +107,19 @@ func WithSecretKey(secretKey string) ClientOption {
 func WithOpenKMS(openKMS bool) ClientOption {
 	return func(config *ClientConfig) {
 		config.OpenKMS = openKMS
+	}
+}
+
+// WithOpenKMS ...
+func WithOpenKMSv3(openKMSv3 bool) ClientOption {
+	return func(config *ClientConfig) {
+		config.OpenKMSv3 = openKMSv3
+	}
+}
+
+func WithKMSv3Config(kmsv3Config *KMSv3Config) ClientOption {
+	return func(config *ClientConfig) {
+		config.KMSv3Config = kmsv3Config
 	}
 }
 

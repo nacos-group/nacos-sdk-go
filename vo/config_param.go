@@ -29,6 +29,7 @@ type ConfigParam struct {
 	Type             string `param:"type"`
 	SrcUser          string `param:"srcUser"`
 	EncryptedDataKey string `param:"encryptedDataKey"`
+	KmsKeyId         string `param:"kmsKeyId"`
 	OnChange         func(namespace, group, dataId, data string)
 }
 
