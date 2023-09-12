@@ -185,6 +185,13 @@ func (client *ConfigClient) decrypt(dataId, content string) (string, error) {
 	}
 	return content, nil
 }
+func (client *ConfigClient) KMSv3Decrypt(dataId, content string) (string, error) {
+	return client.decrypt(dataId, content)
+}
+
+func (client *ConfigClient) KMSv3Encrypt(dataId, content, kmsKeyId string) (string, error) {
+	return client.encrypt(dataId, content, kmsKeyId)
+}
 
 func (client *ConfigClient) encrypt(dataId, content, kmsKeyId string) (string, error) {
 	if client.kmsClient != nil && strings.HasPrefix(dataId, "cipher-") {
