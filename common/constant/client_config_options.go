@@ -28,7 +28,6 @@ func NewClientConfig(opts ...ClientOption) *ClientConfig {
 		TimeoutMs:            10 * 1000,
 		BeatInterval:         5 * 1000,
 		OpenKMS:              false,
-		OpenKMSv3:            false,
 		CacheDir:             file.GetCurrentPath() + string(os.PathSeparator) + "cache",
 		UpdateThreadNum:      20,
 		NotLoadCacheAtStart:  false,
