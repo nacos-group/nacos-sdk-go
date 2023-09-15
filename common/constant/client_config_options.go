@@ -111,9 +111,9 @@ func WithOpenKMS(openKMS bool) ClientOption {
 }
 
 // WithOpenKMS ...
-func WithOpenKMSv3(openKMSv3 bool) ClientOption {
+func WithKMSVersion(kmsVersion KMSVersion) ClientOption {
 	return func(config *ClientConfig) {
-		config.OpenKMSv3 = openKMSv3
+		config.KMSVersion = kmsVersion
 	}
 }
 

@@ -13,34 +13,33 @@ type KmsClient struct {
 }
 
 func NewKmsV1ClientWithAccessKey(regionId, ak, sk string) (*KmsClient, error) {
-	logger.Info("init kms v1 client with ak/sk")
+	logger.Infof("init kms client with region:[%s], ak:[%s], sk:[%s]\n", regionId, ak, sk)
 	return newKmsClient(regionId, ak, sk, nil)
 }
 
 func NewKmsV3ClientWithConfig(config *dkms_api.Config) (*KmsClient, error) {
-	logger.Info("init kms v3 client with config")
+	logger.Infof("init kms client with endpoint:[%s], clientKeyContent:[%s], password:[%s]\n",
+		config.Endpoint, config.ClientKeyContent, config.Password)
 	return newKmsClient("", "", "", config)
 }
 
 func newKmsClient(regionId, ak, sk string, config *dkms_api.Config) (*KmsClient, error) {
-	var kmsVersion constant.KMSVersion
-	if config != nil {
-		kmsVersion = constant.KMSv3
-	} else {
-		kmsVersion = constant.KMSv1
-	}
 	client, err := dkms_transfer.NewClientWithAccessKey(regionId, ak, sk, config)
 	if err != nil {
 		return nil, err
 	}
 	return &KmsClient{
 		KmsTransferClient: client,
-		kmsVersion:        kmsVersion,
 	}, nil
 }
 
 func (kmsClient *KmsClient) GetKmsVersion() constant.KMSVersion {
 	return kmsClient.kmsVersion
+}
+
+func (kmsClient *KmsClient) SetKmsVersion(kmsVersion constant.KMSVersion) {
+	logger.Info("successfully change kms client version to " + kmsVersion)
+	kmsClient.kmsVersion = kmsVersion
 }
 
 func GetDefaultKMSv1KeyId() string {

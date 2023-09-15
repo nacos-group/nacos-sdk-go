@@ -26,7 +26,7 @@ var localClientConfigWithOptions = constant.NewClientConfig(
 	constant.WithSecretKey(getFileContent(path.Join(getWDR(), "sk"))),
 	constant.WithNamespaceId("791fd262-3735-40df-a605-e3236f8ff495"),
 	constant.WithOpenKMS(true),
-	constant.WithOpenKMSv3(true),
+	constant.WithKMSVersion(constant.KMSv3),
 	constant.WithKMSv3Config(&constant.KMSv3Config{
 		ClientKeyContent: getFileContent(path.Join(getWDR(), "client_key.json")),
 		Password:         getFileContent(path.Join(getWDR(), "password")),

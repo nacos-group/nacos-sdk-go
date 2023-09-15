@@ -37,8 +37,8 @@ type ClientConfig struct {
 	RegionId             string                   // the regionId for kms
 	AccessKey            string                   // the AccessKey for kms
 	SecretKey            string                   // the SecretKey for kms
-	OpenKMS              bool                     // it's to open kmsv1,default is false. https://help.aliyun.com/product/28933.html
-	OpenKMSv3            bool                     // it's to open kmsv3, default is false. https://help.aliyun.com/document_detail/380927.html
+	OpenKMS              bool                     // it's to open kms, default is false. https://help.aliyun.com/product/28933.html
+	KMSVersion           KMSVersion               // kms client version. https://help.aliyun.com/document_detail/380927.html
 	KMSv3Config          *KMSv3Config             //KMSv3 configuration. https://help.aliyun.com/document_detail/601596.html
 	CacheDir             string                   // the directory for persist nacos service info,default value is current path
 	DisableUseSnapShot   bool                     // It's a switch, default is false, means that when get remote config fail, use local cache file instead

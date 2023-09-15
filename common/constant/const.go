@@ -21,9 +21,10 @@ import "time"
 type KMSVersion string
 
 const (
-	KMSv1   KMSVersion = "KMSv1"
-	KMSv3   KMSVersion = "KMSv3"
-	NotOpen KMSVersion = "NOT_OPEN"
+	KMSv1               KMSVersion = "KMSv1"
+	KMSv3               KMSVersion = "KMSv3"
+	DEFAULT_KMS_VERSION KMSVersion = "" //to fit original version
+	UNKNOWN_KMS_VERSION KMSVersion = "UNKNOWN_KMS_VERSION"
 )
 const (
 	KEY_USERNAME                = "username"

@@ -123,27 +123,33 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 		return nil, err
 	}
 
-	var kmsClient *nacos_inner_kms.KmsClient
-	if clientConfig.OpenKMS && !clientConfig.OpenKMSv3 {
-		kmsClient, err = nacos_inner_kms.NewKmsV1ClientWithAccessKey(clientConfig.RegionId, clientConfig.AccessKey, clientConfig.SecretKey)
-	} else if clientConfig.OpenKMSv3 {
-		kmsClient, err = nacos_inner_kms.NewKmsV3ClientWithConfig(&dkms_api.Config{
-			Protocol:         tea.String("https"),
-			Endpoint:         tea.String(clientConfig.KMSv3Config.Endpoint),
-			ClientKeyContent: tea.String(clientConfig.KMSv3Config.ClientKeyContent),
-			Password:         tea.String(clientConfig.KMSv3Config.Password),
-		})
-	}
-	if err != nil {
-		return nil, err
-	}
-	config.kmsClient = kmsClient
-	if config.kmsClient.GetKmsVersion() == constant.KMSv3 {
-		if len(strings.TrimSpace(clientConfig.KMSv3Config.CaContent)) != 0 {
-			config.kmsClient.SetVerify(clientConfig.KMSv3Config.CaContent)
-		} else {
-			config.kmsClient.SetHTTPSInsecure(false)
+	if clientConfig.OpenKMS {
+		var kmsClient *nacos_inner_kms.KmsClient
+		switch clientConfig.KMSVersion {
+		case constant.KMSv1, constant.DEFAULT_KMS_VERSION:
+			kmsClient, err = nacos_inner_kms.NewKmsV1ClientWithAccessKey(clientConfig.RegionId, clientConfig.AccessKey, clientConfig.SecretKey)
+			kmsClient.SetKmsVersion(constant.KMSv1)
+		case constant.KMSv3:
+			kmsClient, err = nacos_inner_kms.NewKmsV3ClientWithConfig(&dkms_api.Config{
+				Protocol:         tea.String("https"),
+				Endpoint:         tea.String(clientConfig.KMSv3Config.Endpoint),
+				ClientKeyContent: tea.String(clientConfig.KMSv3Config.ClientKeyContent),
+				Password:         tea.String(clientConfig.KMSv3Config.Password),
+			})
+			kmsClient.SetKmsVersion(constant.KMSv3)
+			if len(strings.TrimSpace(clientConfig.KMSv3Config.CaContent)) != 0 {
+				logger.Infof("set kms client Ca with content: %s\n", clientConfig.KMSv3Config.CaContent)
+				kmsClient.SetVerify(clientConfig.KMSv3Config.CaContent)
+			} else {
+				kmsClient.SetHTTPSInsecure(false)
+			}
+		default:
+			err = fmt.Errorf("init kms client failed. unknown kms version:%s\n", clientConfig.KMSVersion)
 		}
+		if err != nil {
+			return nil, err
+		}
+		config.kmsClient = kmsClient
 	}
 
 	uid, err := uuid.NewV4()
