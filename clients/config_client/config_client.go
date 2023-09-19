@@ -140,8 +140,6 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 			if len(strings.TrimSpace(clientConfig.KMSv3Config.CaContent)) != 0 {
 				logger.Infof("set kms client Ca with content: %s\n", clientConfig.KMSv3Config.CaContent)
 				kmsClient.SetVerify(clientConfig.KMSv3Config.CaContent)
-			} else {
-				kmsClient.SetHTTPSInsecure(false)
 			}
 		default:
 			err = fmt.Errorf("init kms client failed. unknown kms version:%s\n", clientConfig.KMSVersion)

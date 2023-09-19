@@ -3,7 +3,9 @@ module github.com/nacos-group/nacos-sdk-go/v2
 go 1.18
 
 require (
+	github.com/alibabacloud-go/tea v1.1.17
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1800
+	github.com/aliyun/alibabacloud-dkms-gcs-go-sdk v0.2.2
 	github.com/aliyun/alibabacloud-dkms-transfer-go-sdk v0.1.7
 	github.com/buger/jsonparser v1.1.1
 	github.com/golang/mock v1.6.0
@@ -21,9 +23,7 @@ require (
 
 require (
 	github.com/alibabacloud-go/debug v0.0.0-20190504072949-9472017b5c68 // indirect
-	github.com/alibabacloud-go/tea v1.1.17 // indirect
 	github.com/alibabacloud-go/tea-utils v1.4.4 // indirect
-	github.com/aliyun/alibabacloud-dkms-gcs-go-sdk v0.2.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
