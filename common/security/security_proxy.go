@@ -19,7 +19,7 @@ package security
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -143,7 +143,7 @@ func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 		}
 
 		var bytes []byte
-		bytes, err = ioutil.ReadAll(resp.Body)
+		bytes, err = io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 		if err != nil {
 			return false, err
