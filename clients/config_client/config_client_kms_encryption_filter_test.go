@@ -81,17 +81,29 @@ func TestConfigEncryptionFilter(t *testing.T) {
 				DataId:  localConfig.DataId,
 				Group:   localConfig.Group,
 				Content: localConfig.Content,
+				OnChange: func(namespace, group, dataId, data string) {
+					fmt.Printf("successfully receive changed config: \n"+
+						"group[%s], dataId[%s], data[%s]\n", group, dataId, data)
+				},
 			}
-			published, err := client.PublishConfig(configParam)
 
+			err := client.ListenConfig(configParam)
+			localAssert.Nil(err)
+
+			published, err := client.PublishConfig(configParam)
 			localAssert.True(published)
 			localAssert.Nil(err)
 
+			//wait for config change callback to execute
+			//time.Sleep(2 * time.Second)
+
 			//get config
 			content, err := client.GetConfig(configParam)
-
 			localAssert.True(content == localConfig.Content)
 			localAssert.Nil(err)
+
+			//wait for config change callback to execute
+			//time.Sleep(2 * time.Second)
 		})
 	}
 

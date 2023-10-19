@@ -43,62 +43,87 @@ var localConfigList = []vo.ConfigParam{
 		DataId:   "common-config",
 		Group:    "default",
 		Content:  "common",
-		KmsKeyId: "key-bjj64f83e7b2qxb20nwv4", //可以识别
+		KmsKeyId: "key-xxx", //可以识别
 	},
 	{
 		DataId:   "cipher-crypt",
 		Group:    "default",
 		Content:  "cipher",
-		KmsKeyId: "key-bjj64f83e7b2qxb20nwv4", //可以识别
+		KmsKeyId: "key-xxx", //可以识别
 	},
 	{
 		DataId:   "cipher-kms-aes-128-crypt",
 		Group:    "default",
 		Content:  "cipher-aes-128",
-		KmsKeyId: "key-bjj64f83e7b2qxb20nwv4", //可以识别
+		KmsKeyId: "key-xxx", //可以识别
 	},
 	{
 		DataId:   "cipher-kms-aes-256-crypt",
 		Group:    "default",
 		Content:  "cipher-aes-256",
-		KmsKeyId: "key-bjj64f83e7b2qxb20nwv4", //可以识别
+		KmsKeyId: "key-xxx", //可以识别
 	},
 }
 
 func main() {
-	//usingKMSv3ClientAndStoredByNacos()
-	onlyUsingFilters()
+	usingKMSv3ClientAndStoredByNacos()
+	//onlyUsingFilters()
 }
 
 func usingKMSv3ClientAndStoredByNacos() {
 	client := createConfigClient()
 	if client == nil {
-		logger.Error("init ConfigClient failed")
+		panic("init ConfigClient failed")
 	}
+
 	for _, localConfig := range localConfigList {
-		published, err := client.PublishConfig(vo.ConfigParam{
+		// to enable encrypt/decrypt, DataId should be start with "cipher-"
+		configParam := vo.ConfigParam{
 			DataId:   localConfig.DataId,
 			Group:    localConfig.Group,
 			Content:  localConfig.Content,
 			KmsKeyId: localConfig.KmsKeyId,
-		})
-
-		if published {
-			fmt.Println("successfully publish content: " + localConfig.Content)
-		} else {
-			fmt.Println("failed to publish content: " + localConfig.Content + ", with error: " + err.Error())
+			OnChange: func(namespace, group, dataId, data string) {
+				fmt.Printf("successfully receive changed config: \n"+
+					"group[%s], dataId[%s], data[%s]\n", group, dataId, data)
+			},
 		}
 
-		time.Sleep(1 * time.Second)
-
-		content, err := client.GetConfig(vo.ConfigParam{
-			DataId: localConfig.DataId,
-			Group:  localConfig.Group,
-		})
+		err := client.ListenConfig(configParam)
 		if err != nil {
-			fmt.Println("failed with err:" + err.Error())
+			fmt.Printf("failed to listen: group[%s], dataId[%s] with error: %s\n",
+				configParam.Group, configParam.DataId, err)
+		} else {
+			fmt.Printf("successfully ListenConfig: group[%s], dataId[%s]\n", configParam.Group, configParam.DataId)
 		}
-		fmt.Println("successfully get content:" + content)
+
+		published, err := client.PublishConfig(configParam)
+		if published && err == nil {
+			fmt.Printf("successfully publish: group[%s], dataId[%s], data[%s]\n", configParam.Group, configParam.DataId, configParam.Content)
+		} else {
+			fmt.Printf("failed to publish: group[%s], dataId[%s], data[%s]\n with error: %s\n",
+				configParam.Group, configParam.DataId, configParam.Content, err)
+		}
+
+		//wait for config change callback to execute
+		time.Sleep(2 * time.Second)
+
+		//get config
+		content, err := client.GetConfig(configParam)
+		if err == nil {
+			fmt.Printf("successfully get config: group[%s], dataId[%s], data[%s]\n", configParam.Group, configParam.DataId, configParam.Content)
+		} else {
+			fmt.Printf("failed to get config: group[%s], dataId[%s], data[%s]\n with error: %s\n",
+				configParam.Group, configParam.DataId, configParam.Content, err)
+		}
+
+		if content != localConfig.Content {
+			panic("publish/get encrypted config failed.")
+		} else {
+			fmt.Println("publish/get encrypted config success.")
+		}
+		//wait for config change callback to execute
+		//time.Sleep(2 * time.Second)
 	}
 }
 
