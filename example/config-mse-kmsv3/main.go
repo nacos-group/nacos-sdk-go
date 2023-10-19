@@ -7,6 +7,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/filter"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"io/ioutil"
 	"os"
@@ -66,12 +67,14 @@ var localConfigList = []vo.ConfigParam{
 
 func main() {
 	//usingKMSv3ClientAndStoredByNacos()
-	//onlyUsingKMSv3()
 	onlyUsingFilters()
 }
 
 func usingKMSv3ClientAndStoredByNacos() {
 	client := createConfigClient()
+	if client == nil {
+		logger.Error("init ConfigClient failed")
+	}
 	for _, localConfig := range localConfigList {
 		published, err := client.PublishConfig(vo.ConfigParam{
 			DataId:   localConfig.DataId,
@@ -99,23 +102,6 @@ func usingKMSv3ClientAndStoredByNacos() {
 	}
 }
 
-func onlyUsingKMSv3() error {
-	client := createConfigClient()
-	for _, localConfig := range localConfigList {
-		encrypt, err := client.KMSv3Encrypt(localConfig.DataId, localConfig.Content, localConfig.KmsKeyId)
-		if err != nil {
-			return err
-		}
-		fmt.Println("encrypt : " + string(encrypt))
-		decrypt, err := client.KMSv3Decrypt(localConfig.DataId, encrypt)
-		if err != nil {
-			return err
-		}
-		fmt.Println("decrypt : " + string(decrypt))
-	}
-	return nil
-}
-
 func onlyUsingFilters() error {
 	createConfigClient()
 	for _, param := range localConfigList {
@@ -141,7 +127,8 @@ func createConfigClient() *config_client.ConfigClient {
 	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
 	client, err := config_client.NewConfigClient(&nc)
 	if err != nil {
-		fmt.Println("create config client failed: " + err.Error())
+		logger.Errorf("create config client failed: " + err.Error())
+		return nil
 	}
 	return client
 }

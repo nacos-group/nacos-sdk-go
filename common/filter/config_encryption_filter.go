@@ -3,6 +3,7 @@ package filter
 import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	nacos_inner_encryption "github.com/nacos-group/nacos-sdk-go/v2/common/encryption"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"sync"
 )
@@ -23,6 +24,7 @@ func GetDefaultConfigEncryptionFilter() IConfigFilter {
 	if defaultConfigEncryptionFilter == nil {
 		initDefaultConfigEncryptionFilterOnce.Do(func() {
 			defaultConfigEncryptionFilter = &DefaultConfigEncryptionFilter{}
+			logger.Infof("successfully create ConfigFilter[%s]", defaultConfigEncryptionFilter.GetFilterName())
 		})
 	}
 	return defaultConfigEncryptionFilter
@@ -35,11 +37,9 @@ func (d *DefaultConfigEncryptionFilter) DoFilter(param *vo.ConfigParam) error {
 			Content: param.Content,
 			KeyId:   param.KmsKeyId,
 		}
-
 		if len(encryptionParam.KeyId) == 0 && nacos_inner_encryption.GetDefaultKmsClient().GetKmsVersion() == constant.KMSv1 {
 			encryptionParam.KeyId = nacos_inner_encryption.GetDefaultKMSv1KeyId()
 		}
-
 		if err := nacos_inner_encryption.GetDefaultHandler().EncryptionHandler(encryptionParam); err != nil {
 			return err
 		}

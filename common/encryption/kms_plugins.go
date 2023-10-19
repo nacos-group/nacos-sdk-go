@@ -2,12 +2,27 @@ package encryption
 
 import (
 	inner_encoding "github.com/nacos-group/nacos-sdk-go/v2/common/encoding"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"strings"
 )
 
 func init() {
-	_ = GetDefaultHandler().RegisterPlugin(&KmsAes128Plugin{})
-	_ = GetDefaultHandler().RegisterPlugin(&KmsAes256Plugin{})
-	_ = GetDefaultHandler().RegisterPlugin(&KmsBasePlugin{})
+	if err := GetDefaultHandler().RegisterPlugin(&KmsAes128Plugin{}); err != nil {
+		logger.Error("failed to register encryption plugin[%s] to defaultHandler", KmsAes128AlgorithmName)
+	} else {
+		logger.Infof("successfully register encryption plugin[%s] to defaultHandler", KmsAes128AlgorithmName)
+	}
+	if err := GetDefaultHandler().RegisterPlugin(&KmsAes256Plugin{}); err != nil {
+		logger.Error("failed to register encryption plugin[%s] to defaultHandler", KmsAes256AlgorithmName)
+	} else {
+		logger.Infof("successfully register encryption plugin[%s] to defaultHandler", KmsAes256AlgorithmName)
+	}
+	if err := GetDefaultHandler().RegisterPlugin(&KmsBasePlugin{}); err != nil {
+		logger.Error("failed to register encryption plugin[%s] to defaultHandler", KmsAlgorithmName)
+	} else {
+		logger.Infof("successfully register encryption plugin[%s] to defaultHandler", KmsAlgorithmName)
+
+	}
 }
 
 type kmsPlugin struct {
@@ -63,6 +78,9 @@ func (k *kmsPlugin) GenerateSecretKey(param *HandlerParam) (string, error) {
 }
 
 func (k *kmsPlugin) EncryptSecretKey(param *HandlerParam) (string, error) {
+	if err := keyIdParamCheck(param.KeyId); err != nil {
+		return "", err
+	}
 	if len(param.PlainDataKey) == 0 {
 		return "", nil
 	}
@@ -103,6 +121,9 @@ func (k *KmsAes128Plugin) AlgorithmName() string {
 }
 
 func (k *KmsAes128Plugin) GenerateSecretKey(param *HandlerParam) (string, error) {
+	if err := keyIdParamCheck(param.KeyId); err != nil {
+		return "", err
+	}
 	plainSecretKey, encryptedSecretKey, err := GetDefaultKmsClient().GenerateDataKey(param.KeyId, kmsAes128KeySpec)
 	if err != nil {
 		return "", err
@@ -138,6 +159,9 @@ func (k *KmsAes256Plugin) AlgorithmName() string {
 }
 
 func (k *KmsAes256Plugin) GenerateSecretKey(param *HandlerParam) (string, error) {
+	if err := keyIdParamCheck(param.KeyId); err != nil {
+		return "", err
+	}
 	plainSecretKey, encryptedSecretKey, err := GetDefaultKmsClient().GenerateDataKey(param.KeyId, kmsAes256KeySpec)
 	if err != nil {
 		return "", err
@@ -159,6 +183,9 @@ type KmsBasePlugin struct {
 }
 
 func (k *KmsBasePlugin) Encrypt(param *HandlerParam) error {
+	if err := keyIdParamCheck(param.KeyId); err != nil {
+		return err
+	}
 	encryptedContent, err := GetDefaultKmsClient().Encrypt(param.Content, param.KeyId)
 	if err != nil {
 		return err
@@ -190,4 +217,11 @@ func (k *KmsBasePlugin) EncryptSecretKey(param *HandlerParam) (string, error) {
 
 func (k *KmsBasePlugin) DecryptSecretKey(param *HandlerParam) (string, error) {
 	return "", nil
+}
+
+func keyIdParamCheck(keyId string) error {
+	if len(strings.TrimSpace(keyId)) == 0 {
+		return KeyIdParamCheckError
+	}
+	return nil
 }

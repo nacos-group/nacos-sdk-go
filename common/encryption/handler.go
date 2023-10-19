@@ -47,6 +47,7 @@ func initDefaultHandler() {
 		defaultHandler = &DefaultHandler{
 			encryptionPlugins: make(map[string]Plugin, 2),
 		}
+		logger.Info("successfully create encryption defaultHandler")
 	})
 }
 
@@ -128,9 +129,6 @@ func (d *DefaultHandler) encryptionParamCheck(param HandlerParam) error {
 	if err := d.contentParamCheck(param.Content); err != nil {
 		return ContentParamCheckError
 	}
-	if err := d.keyIdParamCheck(param.Content); err != nil {
-		return KeyIdParamCheckError
-	}
 	return nil
 }
 
@@ -154,13 +152,6 @@ func (d *DefaultHandler) dataIdParamCheck(dataId string) error {
 func (d *DefaultHandler) contentParamCheck(content string) error {
 	if len(content) == 0 {
 		return fmt.Errorf("content need to encrypt is nil")
-	}
-	return nil
-}
-
-func (d *DefaultHandler) keyIdParamCheck(keyId string) error {
-	if len(keyId) == 0 {
-		return fmt.Errorf("keyId is nil, need to be set")
 	}
 	return nil
 }

@@ -30,6 +30,9 @@ func init() {
 	if err != nil {
 		logger.Errorf("failed to register configFilter[%s] to DefaultConfigFilterChainManager",
 			GetDefaultConfigEncryptionFilter().GetFilterName())
+		return
+	} else {
+		logger.Infof("successfully register ConfigFilter[%s] to DefaultConfigFilterChainManager", GetDefaultConfigEncryptionFilter().GetFilterName())
 	}
 }
 
@@ -37,6 +40,7 @@ func GetDefaultConfigFilterChainManager() IConfigFilterChain {
 	if defaultConfigFilterChainManagerInstance == nil {
 		initConfigFilterChainManagerOnce.Do(func() {
 			defaultConfigFilterChainManagerInstance = newDefaultConfigFilterChainManager()
+			logger.Info("successfully create DefaultConfigFilterChainManager")
 		})
 	}
 	return defaultConfigFilterChainManagerInstance

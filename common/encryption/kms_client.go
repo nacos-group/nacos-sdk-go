@@ -29,8 +29,8 @@ func InitDefaultKmsV1ClientWithAccessKey(regionId, ak, sk string) (*KmsClient, e
 			if err != nil {
 				rErr = err
 			} else {
+				client.SetKmsVersion(constant.KMSv1)
 				kmsClient = client
-				kmsClient.SetKmsVersion(constant.KMSv1)
 			}
 		})
 	}
@@ -46,7 +46,7 @@ func InitDefaultKmsV3ClientWithConfig(config *dkms_api.Config, caVerify string) 
 				rErr = err
 			} else {
 				if len(strings.TrimSpace(caVerify)) != 0 {
-					logger.Infof("set kms client Ca with content: %s\n", caVerify)
+					logger.Infof("set kms client Ca with content: %s\n", caVerify[:len(caVerify)/maskUnit32Width])
 					client.SetVerify(caVerify)
 				}
 				client.SetKmsVersion(constant.KMSv3)
@@ -62,13 +62,15 @@ func GetDefaultKmsClient() *KmsClient {
 }
 
 func NewKmsV1ClientWithAccessKey(regionId, ak, sk string) (*KmsClient, error) {
-	logger.Infof("init kms client with region:[%s], ak:[%s], sk:[%s]\n", regionId, ak, sk)
+	logger.Infof("init kms client with region:[%s], ak:[%s]xxx, sk:[%s]xxx\n",
+		regionId, ak[:len(ak)/maskUnit8Width], sk[:len(sk)/maskUnit8Width])
 	return newKmsClient(regionId, ak, sk, nil)
 }
 
 func NewKmsV3ClientWithConfig(config *dkms_api.Config) (*KmsClient, error) {
 	logger.Infof("init kms client with endpoint:[%s], clientKeyContent:[%s], password:[%s]\n",
-		config.Endpoint, config.ClientKeyContent, config.Password)
+		config.Endpoint, (*config.ClientKeyContent)[:len(*config.ClientKeyContent)/maskUnit8Width],
+		(*config.Password)[:len(*config.Password)/maskUnit8Width])
 	return newKmsClient("", "", "", config)
 }
 
@@ -87,7 +89,7 @@ func (kmsClient *KmsClient) GetKmsVersion() constant.KMSVersion {
 }
 
 func (kmsClient *KmsClient) SetKmsVersion(kmsVersion constant.KMSVersion) {
-	logger.Info("successfully change kms client version to " + kmsVersion)
+	logger.Info("successfully set kms client version to " + kmsVersion)
 	kmsClient.kmsVersion = kmsVersion
 }
 

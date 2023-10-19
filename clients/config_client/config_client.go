@@ -199,13 +199,6 @@ func (client *ConfigClient) decrypt(dataId, content string) (string, error) {
 	}
 	return plainContent, nil
 }
-func (client *ConfigClient) KMSv3Decrypt(dataId, content string) (string, error) {
-	return client.decrypt(dataId, content)
-}
-
-func (client *ConfigClient) KMSv3Encrypt(dataId, content, kmsKeyId string) (string, error) {
-	return client.encrypt(dataId, content, kmsKeyId)
-}
 
 func (client *ConfigClient) encrypt(dataId, content, kmsKeyId string) (string, error) {
 	var cipherContent string
