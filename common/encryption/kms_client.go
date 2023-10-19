@@ -7,6 +7,7 @@ import (
 	dkms_transfer "github.com/aliyun/alibabacloud-dkms-transfer-go-sdk/sdk"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"strings"
 	"sync"
 )
 
@@ -36,7 +37,7 @@ func InitDefaultKmsV1ClientWithAccessKey(regionId, ak, sk string) (*KmsClient, e
 	return GetDefaultKmsClient(), rErr
 }
 
-func InitDefaultKmsV3ClientWithConfig(config *dkms_api.Config) (*KmsClient, error) {
+func InitDefaultKmsV3ClientWithConfig(config *dkms_api.Config, caVerify string) (*KmsClient, error) {
 	var rErr error
 	if GetDefaultKmsClient() == nil {
 		initKmsClientOnce.Do(func() {
@@ -44,8 +45,12 @@ func InitDefaultKmsV3ClientWithConfig(config *dkms_api.Config) (*KmsClient, erro
 			if err != nil {
 				rErr = err
 			} else {
+				if len(strings.TrimSpace(caVerify)) != 0 {
+					logger.Infof("set kms client Ca with content: %s\n", caVerify)
+					client.SetVerify(caVerify)
+				}
+				client.SetKmsVersion(constant.KMSv3)
 				kmsClient = client
-				kmsClient.SetKmsVersion(constant.KMSv3)
 			}
 		})
 	}

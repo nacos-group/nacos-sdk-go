@@ -5,6 +5,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/filter"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"io/ioutil"
@@ -14,7 +15,7 @@ import (
 )
 
 var localServerConfigWithOptions = constant.NewServerConfig(
-	"mse-b3c2b0a2-p.nacos-ans.mse.aliyuncs.com",
+	"mse-d12e6112-p.nacos-ans.mse.aliyuncs.com",
 	8848,
 )
 
@@ -36,57 +37,100 @@ var localClientConfigWithOptions = constant.NewClientConfig(
 	constant.WithRegionId("cn-beijing"),
 )
 
-var localConfig = vo.ConfigParam{
-	DataId:   "cipher-crypt",
-	Group:    "default",
-	Content:  "crypt",
-	KmsKeyId: "key-xxxwv4", //可以识别
+var localConfigList = []vo.ConfigParam{
+	{
+		DataId:   "common-config",
+		Group:    "default",
+		Content:  "common",
+		KmsKeyId: "key-bjj64f83e7b2qxb20nwv4", //可以识别
+	},
+	{
+		DataId:   "cipher-crypt",
+		Group:    "default",
+		Content:  "cipher",
+		KmsKeyId: "key-bjj64f83e7b2qxb20nwv4", //可以识别
+	},
+	{
+		DataId:   "cipher-kms-aes-128-crypt",
+		Group:    "default",
+		Content:  "cipher-aes-128",
+		KmsKeyId: "key-bjj64f83e7b2qxb20nwv4", //可以识别
+	},
+	{
+		DataId:   "cipher-kms-aes-256-crypt",
+		Group:    "default",
+		Content:  "cipher-aes-256",
+		KmsKeyId: "key-bjj64f83e7b2qxb20nwv4", //可以识别
+	},
 }
 
 func main() {
-	usingKMSv3ClientAndStoredByNacos()
+	//usingKMSv3ClientAndStoredByNacos()
+	//onlyUsingKMSv3()
+	onlyUsingFilters()
 }
 
 func usingKMSv3ClientAndStoredByNacos() {
 	client := createConfigClient()
-	published, err := client.PublishConfig(vo.ConfigParam{
-		DataId:   localConfig.DataId,
-		Group:    localConfig.Group,
-		Content:  localConfig.Content,
-		KmsKeyId: localConfig.KmsKeyId,
-	})
+	for _, localConfig := range localConfigList {
+		published, err := client.PublishConfig(vo.ConfigParam{
+			DataId:   localConfig.DataId,
+			Group:    localConfig.Group,
+			Content:  localConfig.Content,
+			KmsKeyId: localConfig.KmsKeyId,
+		})
 
-	if published {
-		fmt.Println("successfully publish content: " + localConfig.Content)
-	} else {
-		fmt.Println("failed to publish content: " + localConfig.Content + ", with error: " + err.Error())
+		if published {
+			fmt.Println("successfully publish content: " + localConfig.Content)
+		} else {
+			fmt.Println("failed to publish content: " + localConfig.Content + ", with error: " + err.Error())
+		}
+
+		time.Sleep(1 * time.Second)
+
+		content, err := client.GetConfig(vo.ConfigParam{
+			DataId: localConfig.DataId,
+			Group:  localConfig.Group,
+		})
+		if err != nil {
+			fmt.Println("failed with err:" + err.Error())
+		}
+		fmt.Println("successfully get content:" + content)
 	}
-
-	time.Sleep(1 * time.Second)
-
-	content, err := client.GetConfig(vo.ConfigParam{
-		DataId: localConfig.DataId,
-		Group:  localConfig.Group,
-	})
-	if err != nil {
-		fmt.Println("failed with err:" + err.Error())
-	}
-	fmt.Println("successfully get content:" + content)
-
 }
 
 func onlyUsingKMSv3() error {
 	client := createConfigClient()
-	encrypt, err := client.KMSv3Encrypt(localConfig.DataId, localConfig.Content, localConfig.KmsKeyId)
-	if err != nil {
-		return err
+	for _, localConfig := range localConfigList {
+		encrypt, err := client.KMSv3Encrypt(localConfig.DataId, localConfig.Content, localConfig.KmsKeyId)
+		if err != nil {
+			return err
+		}
+		fmt.Println("encrypt : " + string(encrypt))
+		decrypt, err := client.KMSv3Decrypt(localConfig.DataId, encrypt)
+		if err != nil {
+			return err
+		}
+		fmt.Println("decrypt : " + string(decrypt))
 	}
-	fmt.Println("encrypt : " + string(encrypt))
-	decrypt, err := client.KMSv3Decrypt(localConfig.DataId, encrypt)
-	if err != nil {
-		return err
+	return nil
+}
+
+func onlyUsingFilters() error {
+	createConfigClient()
+	for _, param := range localConfigList {
+		param.UsageType = vo.RequestType
+		fmt.Println("param = ", param)
+		if err := filter.GetDefaultConfigFilterChainManager().DoFilters(&param); err != nil {
+			return err
+		}
+		fmt.Println("after encrypt param = ", param)
+		param.UsageType = vo.ResponseType
+		if err := filter.GetDefaultConfigFilterChainManager().DoFilters(&param); err != nil {
+			return err
+		}
+		fmt.Println("after decrypt param = ", param)
 	}
-	fmt.Println("decrypt : " + string(decrypt))
 	return nil
 }
 

@@ -95,8 +95,9 @@ func (cacheData *cacheData) executeListener() {
 		UsageType:        vo.ResponseType,
 	}
 	if err := filter.GetDefaultConfigFilterChainManager().DoFilters(param); err != nil {
-		logger.Errorf("decrypt content fail ,dataId=%s,group=%s,tenant=%s,err:%+v ", cacheData.dataId,
+		logger.Errorf("do filters failed ,dataId=%s,group=%s,tenant=%s,err:%+v ", cacheData.dataId,
 			cacheData.group, cacheData.tenant, err)
+		return
 	}
 	decryptedContent := param.Content
 	go cacheData.cacheDataListener.listener(cacheData.tenant, cacheData.group, cacheData.dataId, decryptedContent)
@@ -166,17 +167,12 @@ func initKmsV1Client(clientConfig constant.ClientConfig) (*nacos_inner_encryptio
 }
 
 func initKmsV3Client(clientConfig constant.ClientConfig) (*nacos_inner_encryption.KmsClient, error) {
-	kmsClient, err := nacos_inner_encryption.NewKmsV3ClientWithConfig(&dkms_api.Config{
+	return nacos_inner_encryption.InitDefaultKmsV3ClientWithConfig(&dkms_api.Config{
 		Protocol:         tea.String("https"),
 		Endpoint:         tea.String(clientConfig.KMSv3Config.Endpoint),
 		ClientKeyContent: tea.String(clientConfig.KMSv3Config.ClientKeyContent),
 		Password:         tea.String(clientConfig.KMSv3Config.Password),
-	})
-	if len(strings.TrimSpace(clientConfig.KMSv3Config.CaContent)) != 0 {
-		logger.Infof("set kms client Ca with content: %s\n", clientConfig.KMSv3Config.CaContent)
-		kmsClient.SetVerify(clientConfig.KMSv3Config.CaContent)
-	}
-	return kmsClient, err
+	}, clientConfig.KMSv3Config.CaContent)
 }
 
 func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err error) {
