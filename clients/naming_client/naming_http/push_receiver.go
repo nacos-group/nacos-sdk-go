@@ -21,7 +21,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net"
 	"strconv"
@@ -168,7 +168,7 @@ func TryDecompressData(data []byte) string {
 	}
 
 	defer reader.Close()
-	bs, err := ioutil.ReadAll(reader)
+	bs, err := io.ReadAll(reader)
 
 	if err != nil {
 		logger.Errorf("failed to decompress gzip data,err:%+v", err)

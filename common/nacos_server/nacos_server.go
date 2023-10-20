@@ -21,7 +21,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"reflect"
@@ -133,7 +133,7 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 		return
 	}
 	var bytes []byte
-	bytes, err = ioutil.ReadAll(response.Body)
+	bytes, err = io.ReadAll(response.Body)
 	defer response.Body.Close()
 	if err != nil {
 		return
@@ -176,7 +176,7 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 		return
 	}
 	var bytes []byte
-	bytes, err = ioutil.ReadAll(response.Body)
+	bytes, err = io.ReadAll(response.Body)
 	defer response.Body.Close()
 	if err != nil {
 		return
