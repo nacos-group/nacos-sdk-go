@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package encryption
 
 import (
@@ -8,6 +24,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/pkg/errors"
+	"net/http"
 	"strings"
 	"sync"
 )
@@ -24,37 +41,39 @@ type KmsClient struct {
 
 func InitDefaultKmsV1ClientWithAccessKey(regionId, ak, sk string) (*KmsClient, error) {
 	var rErr error
-	if GetDefaultKmsClient() == nil {
-		initKmsClientOnce.Do(func() {
-			client, err := NewKmsV1ClientWithAccessKey(regionId, ak, sk)
-			if err != nil {
-				rErr = errors.Wrap(err, "init kms v1 client with ak/sk failed")
-			} else {
-				client.SetKmsVersion(constant.KMSv1)
-				kmsClient = client
-			}
-		})
+	if GetDefaultKmsClient() != nil {
+		return GetDefaultKmsClient(), rErr
 	}
+	initKmsClientOnce.Do(func() {
+		client, err := NewKmsV1ClientWithAccessKey(regionId, ak, sk)
+		if err != nil {
+			rErr = errors.Wrap(err, "init kms v1 client with ak/sk failed")
+		} else {
+			client.SetKmsVersion(constant.KMSv1)
+			kmsClient = client
+		}
+	})
 	return GetDefaultKmsClient(), rErr
 }
 
 func InitDefaultKmsV3ClientWithConfig(config *dkms_api.Config, caVerify string) (*KmsClient, error) {
 	var rErr error
-	if GetDefaultKmsClient() == nil {
-		initKmsClientOnce.Do(func() {
-			client, err := NewKmsV3ClientWithConfig(config)
-			if err != nil {
-				rErr = errors.Wrap(err, "init kms v3 client with config failed")
-			} else {
-				if len(strings.TrimSpace(caVerify)) != 0 {
-					logger.Infof("set kms client Ca with content: %s\n", caVerify[:len(caVerify)/maskUnit32Width])
-					client.SetVerify(caVerify)
-				}
-				client.SetKmsVersion(constant.KMSv3)
-				kmsClient = client
-			}
-		})
+	if GetDefaultKmsClient() != nil {
+		return GetDefaultKmsClient(), rErr
 	}
+	initKmsClientOnce.Do(func() {
+		client, err := NewKmsV3ClientWithConfig(config)
+		if err != nil {
+			rErr = errors.Wrap(err, "init kms v3 client with config failed")
+		} else {
+			if len(strings.TrimSpace(caVerify)) != 0 {
+				logger.Infof("set kms client Ca with content: %s\n", caVerify[:len(caVerify)/maskUnit32Width])
+				client.SetVerify(caVerify)
+			}
+			client.SetKmsVersion(constant.KMSv3)
+			kmsClient = client
+		}
+	})
 	return GetDefaultKmsClient(), rErr
 }
 
@@ -96,8 +115,8 @@ func (kmsClient *KmsClient) SetKmsVersion(kmsVersion constant.KMSVersion) {
 
 func (kmsClient *KmsClient) GenerateDataKey(keyId, keySpec string) (string, string, error) {
 	generateDataKeyRequest := kms.CreateGenerateDataKeyRequest()
-	generateDataKeyRequest.Scheme = "https"
-	generateDataKeyRequest.AcceptFormat = "JSON"
+	generateDataKeyRequest.Scheme = kmsScheme
+	generateDataKeyRequest.AcceptFormat = kmsAcceptFormat
 	generateDataKeyRequest.KeyId = keyId
 	generateDataKeyRequest.KeySpec = keySpec
 	generateDataKeyResponse, err := kmsClient.KmsTransferClient.GenerateDataKey(generateDataKeyRequest)
@@ -109,9 +128,9 @@ func (kmsClient *KmsClient) GenerateDataKey(keyId, keySpec string) (string, stri
 
 func (kmsClient *KmsClient) Decrypt(cipherContent string) (string, error) {
 	request := kms.CreateDecryptRequest()
-	request.Method = "POST"
-	request.Scheme = "https"
-	request.AcceptFormat = "JSON"
+	request.Method = http.MethodPost
+	request.Scheme = kmsScheme
+	request.AcceptFormat = kmsAcceptFormat
 	request.CiphertextBlob = cipherContent
 	response, err := kmsClient.KmsTransferClient.Decrypt(request)
 	if err != nil {
@@ -122,9 +141,9 @@ func (kmsClient *KmsClient) Decrypt(cipherContent string) (string, error) {
 
 func (kmsClient *KmsClient) Encrypt(content, keyId string) (string, error) {
 	request := kms.CreateEncryptRequest()
-	request.Method = "POST"
-	request.Scheme = "https"
-	request.AcceptFormat = "JSON"
+	request.Method = http.MethodPost
+	request.Scheme = kmsScheme
+	request.AcceptFormat = kmsAcceptFormat
 	request.Plaintext = content
 	request.KeyId = keyId
 	response, err := kmsClient.KmsTransferClient.Encrypt(request)
