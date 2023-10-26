@@ -17,10 +17,12 @@
 package filter
 
 import (
+	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	nacos_inner_encryption "github.com/nacos-group/nacos-sdk-go/v2/common/encryption"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"strings"
 	"sync"
 )
 
@@ -47,6 +49,9 @@ func GetDefaultConfigEncryptionFilter() IConfigFilter {
 }
 
 func (d *DefaultConfigEncryptionFilter) DoFilter(param *vo.ConfigParam) error {
+	if nacos_inner_encryption.GetDefaultKmsClient() == nil && strings.HasPrefix(param.DataId, nacos_inner_encryption.CipherPrefix) {
+		return fmt.Errorf("kms client hasn't inited, can't publish config dataId start with: %s", nacos_inner_encryption.CipherPrefix)
+	}
 	if param.UsageType == vo.RequestType {
 		encryptionParam := &nacos_inner_encryption.HandlerParam{
 			DataId:  param.DataId,
