@@ -56,6 +56,9 @@ type NacosServer struct {
 	lastSrvRefTime        int64
 	vipSrvRefInterMills   int64
 	contextPath           string
+	endpointContextPath   string
+	endpointQueryParams   string
+	clusterName           string
 	currentIndex          int32
 	ServerSrcChangeSignal chan struct{}
 }
@@ -285,7 +288,16 @@ func (server *NacosServer) refreshServerSrvIfNeed() {
 	}
 
 	var list []string
-	urlString := "http://" + server.endpoint + "/nacos/serverlist"
+	if len(server.endpointContextPath) == 0 {
+		server.endpointContextPath = "nacos"
+	}
+	if len(server.clusterName) == 0 {
+		server.clusterName = "serverlist"
+	}
+	urlString := "http://" + server.endpoint + "/" + server.endpointContextPath + "/" + server.clusterName
+	if len(server.endpointQueryParams) != 0 {
+		urlString += "?" + server.endpointQueryParams
+	}
 	result := server.httpAgent.RequestOnlyResult(http.MethodGet, urlString, nil, server.timeoutMs, nil)
 	list = strings.Split(result, "\n")
 	logger.Infof("http nacos server list: <%s>", result)
