@@ -49,7 +49,10 @@ func GetDefaultConfigEncryptionFilter() IConfigFilter {
 }
 
 func (d *DefaultConfigEncryptionFilter) DoFilter(param *vo.ConfigParam) error {
-	if nacos_inner_encryption.GetDefaultKmsClient() == nil && strings.HasPrefix(param.DataId, nacos_inner_encryption.CipherPrefix) {
+	if !strings.HasPrefix(param.DataId, nacos_inner_encryption.CipherPrefix) {
+		return nil
+	}
+	if nacos_inner_encryption.GetDefaultKmsClient() == nil {
 		return fmt.Errorf("kms client hasn't inited, can't publish config dataId start with: %s", nacos_inner_encryption.CipherPrefix)
 	}
 	if param.UsageType == vo.RequestType {
