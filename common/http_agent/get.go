@@ -23,11 +23,14 @@ import (
 )
 
 func get(client *http.Client, path string, header http.Header, timeoutMs uint64, params map[string]string) (response *http.Response, err error) {
-	if !strings.HasSuffix(path, "?") {
+	if !strings.Contains(path, "?") {
 		path = path + "?"
 	}
 
 	for key, value := range params {
+		if !strings.HasSuffix(path, "&") {
+			path = path + "&"
+		}
 		path = path + key + "=" + value + "&"
 	}
 	if strings.HasSuffix(path, "&") {

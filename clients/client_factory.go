@@ -105,6 +105,9 @@ func setConfig(param vo.NacosClientParam) (iClient nacos_client.INacosClient, er
 		_ = client.SetServerConfig(nil)
 	} else {
 		for i := range param.ServerConfigs {
+			if param.ServerConfigs[i].Port == 0 {
+				param.ServerConfigs[i].Port = 8848
+			}
 			if param.ServerConfigs[i].GrpcPort == 0 {
 				param.ServerConfigs[i].GrpcPort = param.ServerConfigs[i].Port + constant.RpcPortOffset
 			}
