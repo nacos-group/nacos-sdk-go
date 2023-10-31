@@ -44,6 +44,9 @@ func InitDefaultKmsV1ClientWithAccessKey(regionId, ak, sk string) (*KmsClient, e
 	if GetDefaultKmsClient() != nil {
 		return GetDefaultKmsClient(), rErr
 	}
+	if rErr = checkKmsV1InitParam(regionId, ak, sk); rErr != nil {
+		return nil, rErr
+	}
 	initKmsClientOnce.Do(func() {
 		client, err := NewKmsV1ClientWithAccessKey(regionId, ak, sk)
 		if err != nil {
@@ -56,10 +59,26 @@ func InitDefaultKmsV1ClientWithAccessKey(regionId, ak, sk string) (*KmsClient, e
 	return GetDefaultKmsClient(), rErr
 }
 
+func checkKmsV1InitParam(regionId, ak, sk string) error {
+	if len(regionId) == 0 {
+		return EmptyRegionKmsV1ClientInitError
+	}
+	if len(ak) == 0 {
+		return EmptyAkKmsV1ClientInitError
+	}
+	if len(sk) == 0 {
+		return EmptySkKmsV1ClientInitError
+	}
+	return nil
+}
+
 func InitDefaultKmsV3ClientWithConfig(config *dkms_api.Config, caVerify string) (*KmsClient, error) {
 	var rErr error
 	if GetDefaultKmsClient() != nil {
 		return GetDefaultKmsClient(), rErr
+	}
+	if rErr = checkKmsV3InitParam(config, caVerify); rErr != nil {
+		return nil, rErr
 	}
 	initKmsClientOnce.Do(func() {
 		client, err := NewKmsV3ClientWithConfig(config)
@@ -75,6 +94,22 @@ func InitDefaultKmsV3ClientWithConfig(config *dkms_api.Config, caVerify string) 
 		}
 	})
 	return GetDefaultKmsClient(), rErr
+}
+
+func checkKmsV3InitParam(config *dkms_api.Config, caVerify string) error {
+	if len(*config.Endpoint) == 0 {
+		return EmptyEndpointKmsV3ClientInitError
+	}
+	if len(*config.Password) == 0 {
+		return EmptyPasswordKmsV3ClientInitError
+	}
+	if len(*config.ClientKeyContent) == 0 {
+		return EmptyClientKeyContentKmsV3ClientInitError
+	}
+	if len(caVerify) == 0 {
+		return EmptyCaVerifyKmsV3ClientInitError
+	}
+	return nil
 }
 
 func GetDefaultKmsClient() *KmsClient {

@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/alibabacloud-go/tea v1.1.17
-	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1704
+	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1800
 	github.com/aliyun/alibabacloud-dkms-gcs-go-sdk v0.2.2
 	github.com/aliyun/alibabacloud-dkms-transfer-go-sdk v0.1.7
 	github.com/buger/jsonparser v1.1.1
@@ -41,9 +41,9 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.10.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/sys v0.9.0 // indirect
+	golang.org/x/text v0.10.0 // indirect
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect

@@ -52,3 +52,14 @@ var (
 	EmptyPlainDataKeyError     = fmt.Errorf("empty plain data key error")
 	EmptyContentError          = fmt.Errorf("encrypt empty content error")
 )
+
+var (
+	EmptyRegionKmsV1ClientInitError = fmt.Errorf("init kmsV1 client failed with empty region")
+	EmptyAkKmsV1ClientInitError     = fmt.Errorf("init kmsV1 client failed with empty ak")
+	EmptySkKmsV1ClientInitError     = fmt.Errorf("init kmsV1 client failed with empty sk")
+
+	EmptyEndpointKmsV3ClientInitError         = fmt.Errorf("init kmsV3 client failed with empty endpoint")
+	EmptyPasswordKmsV3ClientInitError         = fmt.Errorf("init kmsV3 client failed with empty password")
+	EmptyClientKeyContentKmsV3ClientInitError = fmt.Errorf("init kmsV3 client failed with empty client key content")
+	EmptyCaVerifyKmsV3ClientInitError         = fmt.Errorf("init kmsV3 client failed with empty ca verify")
+)
