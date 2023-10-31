@@ -46,3 +46,9 @@ var (
 var (
 	PluginNotFoundError = fmt.Errorf("cannot find encryption plugin by dataId prefix")
 )
+
+var (
+	EmptyEncryptedDataKeyError = fmt.Errorf("empty encrypted data key error")
+	EmptyPlainDataKeyError     = fmt.Errorf("empty plain data key error")
+	EmptyContentError          = fmt.Errorf("encrypt empty content error")
+)
