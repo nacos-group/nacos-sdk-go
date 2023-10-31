@@ -323,7 +323,7 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 	if onRequestFail && r.sendHealthCheck() {
 		var serverInfo interface{} = nil
 		if currentConnection := r.getCurrentConnection(); currentConnection != nil {
-			serverInfo = r.getCurrentConnection().getServerInfo()
+			serverInfo = currentConnection.getServerInfo()
 		}
 		logger.Infof("%s server check success, currentServer is %+v", r.name, serverInfo)
 		atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
@@ -399,7 +399,7 @@ func (r *RpcClient) notifyConnectionEvent(event ConnectionEvent) {
 	}
 	var connectionId string
 	if currentConnection := r.getCurrentConnection(); currentConnection != nil {
-		connectionId = r.getCurrentConnection().getConnectionId()
+		connectionId = currentConnection.getConnectionId()
 	}
 	logger.Infof("%s notify %s event to listeners , connectionId=%s", r.name, event.toString(), connectionId)
 	for _, v := range listeners {
