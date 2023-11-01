@@ -19,6 +19,7 @@ package config_client
 import (
 	"context"
 	"encoding/json"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_error"
 	"net/http"
 	"strconv"
 	"time"
@@ -128,26 +129,24 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 			response.ContentType = "text"
 		}
 		return response, nil
-	}
-
-	if response.GetErrorCode() == 300 {
+	} else if response.GetErrorCode() == rpc_response.CONFIG_NOT_FOUND {
 		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, "")
 		//todo LocalConfigInfoProcessor.saveEncryptDataKeySnapshot
-		return response, nil
-	}
-
-	if response.GetErrorCode() == 400 {
+		logger.Errorf(
+			"[config_rpc_client] [sub-server-error] data can not found , dataId=" + dataId + ",group=" + group + ",tenant=" + tenant)
+		return nil, nacos_error.NewNacosError(strconv.Itoa(nacos_error.NOT_FOUND), "[config_rpc_client] [sub-server-error] data can not found , dataId="+dataId+
+			",group="+group+",tenant="+tenant, nil)
+	} else if response.GetErrorCode() == rpc_response.CONFIG_QUERY_CONFLICT {
 		logger.Errorf(
 			"[config_rpc_client] [sub-server-error] get server config being modified concurrently, dataId=%s, group=%s, "+
 				"tenant=%s", dataId, group, tenant)
-		return nil, errors.New("data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant)
-	}
-
-	if response.GetErrorCode() > 0 {
+		return nil, nacos_error.NewNacosError(strconv.Itoa(nacos_error.CONFLICT), "data being modified, dataId="+dataId+",group="+group+",tenant="+tenant, nil)
+	} else {
 		logger.Errorf("[config_rpc_client] [sub-server-error]  dataId=%s, group=%s, tenant=%s, code=%+v", dataId, group,
 			tenant, response)
+		return nil, nacos_error.NewNacosError(strconv.Itoa(response.GetErrorCode()),
+			"http error, code="+strconv.Itoa(response.GetErrorCode())+",msg="+response.GetMessage()+",dataId="+dataId+",group="+group+",tenant="+tenant, nil)
 	}
-	return response, nil
 }
 
 func appName(client *ConfigClient) string {
