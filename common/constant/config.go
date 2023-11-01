@@ -53,6 +53,9 @@ type ClientConfig struct {
 	LogRollingConfig     *ClientLogRollingConfig  // log rolling config
 	TLSCfg               TLSConfig                // tls Config
 	AsyncUpdateService   bool                     // open async update service by query
+	EndpointContextPath  string                   // the address server  endpoint contextPath
+	EndpointQueryParams  string                   // the address server  endpoint query params
+	ClusterName          string                   // the address server  clusterName
 }
 
 type ClientLogSamplingConfig struct {
