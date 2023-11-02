@@ -18,7 +18,6 @@ package cache
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"strconv"
 
@@ -42,14 +41,14 @@ func WriteServicesToFile(service *model.Service, cacheKey, cacheDir string) {
 	}
 	bytes, _ := json.Marshal(service)
 	domFileName := GetFileName(cacheKey, cacheDir)
-	err = ioutil.WriteFile(domFileName, bytes, 0666)
+	err = os.WriteFile(domFileName, bytes, 0666)
 	if err != nil {
 		logger.Errorf("failed to write name cache:%s ,value:%s ,err:%v", domFileName, string(bytes), err)
 	}
 }
 
 func ReadServicesFromFile(cacheDir string) map[string]model.Service {
-	files, err := ioutil.ReadDir(cacheDir)
+	files, err := os.ReadDir(cacheDir)
 	if err != nil {
 		logger.Errorf("read cacheDir:%s failed!err:%+v", cacheDir, err)
 		return nil
@@ -57,7 +56,7 @@ func ReadServicesFromFile(cacheDir string) map[string]model.Service {
 	serviceMap := map[string]model.Service{}
 	for _, f := range files {
 		fileName := GetFileName(f.Name(), cacheDir)
-		b, err := ioutil.ReadFile(fileName)
+		b, err := os.ReadFile(fileName)
 		if err != nil {
 			logger.Errorf("failed to read name cache file:%s,err:%v ", fileName, err)
 			continue
@@ -87,7 +86,7 @@ func WriteConfigToFile(cacheKey string, cacheDir string, content string) {
 		}
 		return
 	}
-	err := ioutil.WriteFile(fileName, []byte(content), 0666)
+	err := os.WriteFile(fileName, []byte(content), 0666)
 	if err != nil {
 		logger.Errorf("failed to write config  cache:%s ,value:%s ,err:%v", fileName, content, err)
 	}
@@ -96,7 +95,7 @@ func WriteConfigToFile(cacheKey string, cacheDir string, content string) {
 
 func ReadConfigFromFile(cacheKey string, cacheDir string) (string, error) {
 	fileName := GetFileName(cacheKey, cacheDir)
-	b, err := ioutil.ReadFile(fileName)
+	b, err := os.ReadFile(fileName)
 	if err != nil {
 		logger.Errorf("get config from cache, cacheKey:%s, cacheDir:%s, error:%v ", cacheKey, cacheDir, err)
 		return "", errors.Errorf("failed to read config cache file:%s, cacheDir:%s, err:%v ", fileName, cacheDir, err)
@@ -111,7 +110,7 @@ func GetFailover(key, dir string) string {
 		return ""
 	}
 	logger.Warnf("reading failover content from path:%s", filePath)
-	fileContent, err := ioutil.ReadFile(filePath)
+	fileContent, err := os.ReadFile(filePath)
 	if err != nil {
 		logger.Errorf("fail to read failover content from %s", filePath)
 		return ""

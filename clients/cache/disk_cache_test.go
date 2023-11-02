@@ -2,7 +2,6 @@ package cache
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -34,5 +33,5 @@ func TestGetFailover(t *testing.T) {
 
 // write file content
 func writeFileContent(filepath, content string) error {
-	return ioutil.WriteFile(filepath, []byte(content), 0666)
+	return os.WriteFile(filepath, []byte(content), 0666)
 }

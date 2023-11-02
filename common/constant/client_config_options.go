@@ -81,6 +81,27 @@ func WithEndpoint(endpoint string) ClientOption {
 	}
 }
 
+// WithEndpointContextPath ...
+func WithEndpointContextPath(endpointContextPath string) ClientOption {
+	return func(config *ClientConfig) {
+		config.EndpointContextPath = endpointContextPath
+	}
+}
+
+// WithEndpointQueryParams ...
+func WithEndpointQueryParams(endpointQueryPrams string) ClientOption {
+	return func(config *ClientConfig) {
+		config.EndpointQueryParams = endpointQueryPrams
+	}
+}
+
+// WithClusterName ...
+func WithClusterName(clusterName string) ClientOption {
+	return func(config *ClientConfig) {
+		config.ClusterName = clusterName
+	}
+}
+
 // WithRegionId ...
 func WithRegionId(regionId string) ClientOption {
 	return func(config *ClientConfig) {

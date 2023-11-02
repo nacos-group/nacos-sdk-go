@@ -26,11 +26,6 @@ import (
 )
 
 func main() {
-	//create ServerConfig
-	sc := []constant.ServerConfig{
-		*constant.NewServerConfig("127.0.0.1", 8848, constant.WithContextPath("/nacos")),
-	}
-
 	//create ClientConfig
 	cc := *constant.NewClientConfig(
 		constant.WithNamespaceId(""),
@@ -39,13 +34,17 @@ func main() {
 		constant.WithLogDir("/tmp/nacos/log"),
 		constant.WithCacheDir("/tmp/nacos/cache"),
 		constant.WithLogLevel("debug"),
+		constant.WithAppName("yiyantest"),
+		constant.WithEndpoint("jmenv.tbsite.net:8080"),
+		constant.WithClusterName("serverlist"),
+		constant.WithEndpointQueryParams("nofix=1"),
+		constant.WithEndpointContextPath("nacos"),
 	)
 
 	// create config client
 	client, err := clients.NewConfigClient(
 		vo.NacosClientParam{
-			ClientConfig:  &cc,
-			ServerConfigs: sc,
+			ClientConfig: &cc,
 		},
 	)
 
@@ -94,13 +93,19 @@ func main() {
 	})
 
 	time.Sleep(1 * time.Second)
-
+	var content2 = "helo 130"
 	_, err = client.PublishConfig(vo.ConfigParam{
 		DataId:  "test-data",
 		Group:   "test-group",
-		Content: "test-listen",
+		Content: content2,
 	})
+	if err == nil {
+		fmt.Println("publish config success:" + "test-group" + ", dataId:" + "test-data" + ", content:" + content2)
 
+	} else {
+		fmt.Println("publish config fail :" + "test-group" + ", dataId:" + "test-data" + ", content:" + content2)
+
+	}
 	time.Sleep(1 * time.Second)
 
 	_, err = client.PublishConfig(vo.ConfigParam{
@@ -116,20 +121,25 @@ func main() {
 		DataId: "test-data",
 		Group:  "test-group",
 	})
+	fmt.Println("delete config success:" + "test-group" + ", dataId:" + "test-data")
+
 	time.Sleep(1 * time.Second)
 
-	//cancel config change
-	err = client.CancelListenConfig(vo.ConfigParam{
-		DataId: "test-data",
-		Group:  "test-group",
-	})
-
+	/*	//cancel config change
+		err = client.CancelListenConfig(vo.ConfigParam{
+			DataId: "test-data",
+			Group:  "test-group",
+		})
+	*/
 	searchPage, _ := client.SearchConfig(vo.SearchConfigParam{
 		Search:   "blur",
-		DataId:   "",
+		DataId:   "test-data",
 		Group:    "",
 		PageNo:   1,
 		PageSize: 10,
 	})
 	fmt.Printf("Search config:%+v \n", searchPage)
+
+	time.Sleep(1000 * time.Second)
+
 }

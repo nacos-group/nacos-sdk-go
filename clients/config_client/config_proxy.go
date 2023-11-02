@@ -193,22 +193,23 @@ func (c *ConfigChangeNotifyRequestHandler) Name() string {
 
 func (c *ConfigChangeNotifyRequestHandler) RequestReply(request rpc_request.IRequest, rpcClient *rpc.RpcClient) rpc_response.IResponse {
 	configChangeNotifyRequest, ok := request.(*rpc_request.ConfigChangeNotifyRequest)
-	if ok {
-		logger.Infof("%s [server-push] config changed. dataId=%s, group=%s,tenant=%s", rpcClient.Name(),
-			configChangeNotifyRequest.DataId, configChangeNotifyRequest.Group, configChangeNotifyRequest.Tenant)
-
-		cacheKey := util.GetConfigCacheKey(configChangeNotifyRequest.DataId, configChangeNotifyRequest.Group,
-			configChangeNotifyRequest.Tenant)
-		data, ok := c.client.cacheMap.Get(cacheKey)
-		if !ok {
-			return nil
-		}
-		cData := data.(*cacheData)
-		cData.isSyncWithServer = false
-		c.client.asyncNotifyListenConfig()
-		return &rpc_response.NotifySubscriberResponse{
-			Response: &rpc_response.Response{ResultCode: constant.RESPONSE_CODE_SUCCESS},
-		}
+	if !ok {
+		return nil
 	}
-	return nil
+	logger.Infof("%s [server-push] config changed. dataId=%s, group=%s,tenant=%s", rpcClient.Name(),
+		configChangeNotifyRequest.DataId, configChangeNotifyRequest.Group, configChangeNotifyRequest.Tenant)
+
+	cacheKey := util.GetConfigCacheKey(configChangeNotifyRequest.DataId, configChangeNotifyRequest.Group,
+		configChangeNotifyRequest.Tenant)
+	data, ok := c.client.cacheMap.Get(cacheKey)
+	if !ok {
+		return nil
+	}
+	cData := data.(cacheData)
+	cData.isSyncWithServer = false
+	c.client.cacheMap.Set(cacheKey, cData)
+	c.client.asyncNotifyListenConfig()
+	return &rpc_response.NotifySubscriberResponse{
+		Response: &rpc_response.Response{ResultCode: constant.RESPONSE_CODE_SUCCESS},
+	}
 }

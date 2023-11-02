@@ -20,7 +20,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 )
@@ -48,7 +48,7 @@ func NewTLS(c constant.TLSConfig) (tc *tls.Config, err error) {
 }
 
 func rootCert(caFile string) (*x509.CertPool, error) {
-	b, err := ioutil.ReadFile(caFile)
+	b, err := os.ReadFile(caFile)
 	if err != nil {
 		return nil, err
 	}

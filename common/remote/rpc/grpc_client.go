@@ -50,8 +50,8 @@ func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_se
 			name:             clientName,
 			labels:           make(map[string]string, 8),
 			rpcClientStatus:  INITIALIZED,
-			eventChan:        make(chan ConnectionEvent),
-			reconnectionChan: make(chan ReconnectContext),
+			eventChan:        make(chan ConnectionEvent, 1),
+			reconnectionChan: make(chan ReconnectContext, 1),
 			nacosServer:      nacosServer,
 			mux:              new(sync.Mutex),
 		},
@@ -161,7 +161,7 @@ func (c *GrpcClient) sendConnectionSetupRequest(grpcConn *GrpcConnection) error 
 	csr.ClientAbilities = c.clientAbilities
 	err := grpcConn.biStreamSend(convertRequest(csr))
 	if err != nil {
-		logger.Warnf("Send ConnectionSetupRequest error:%+v", err)
+		logger.Warnf("send connectionSetupRequest error:%v", err)
 	}
 	time.Sleep(100 * time.Millisecond)
 	return err
@@ -188,16 +188,16 @@ func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiReque
 					abandon := grpcConn.getAbandon()
 					if c.IsRunning() && !abandon {
 						if err == io.EOF {
-							logger.Infof("%s Request stream onCompleted, switch server", grpcConn.getConnectionId())
+							logger.Infof("connectionId %s request stream onCompleted, switch server", grpcConn.getConnectionId())
 						} else {
-							logger.Errorf("%s Request stream error, switch server, error=%+v", grpcConn.getConnectionId(), err)
+							logger.Errorf("connectionId %s request stream error, switch server, error=%v", grpcConn.getConnectionId(), err)
 						}
 						if atomic.CompareAndSwapInt32((*int32)(&c.rpcClientStatus), int32(RUNNING), int32(UNHEALTHY)) {
 							c.switchServerAsync(ServerInfo{}, false)
 							return
 						}
 					} else {
-						logger.Infof("%s received error event, isRunning:%v, isAbandon=%v, error=%+v", grpcConn.getConnectionId(), running, abandon, err)
+						logger.Infof("connectionId %s received error event, isRunning:%v, isAbandon=%v, error=%v", grpcConn.getConnectionId(), running, abandon, err)
 						return
 					}
 				} else {

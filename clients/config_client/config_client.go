@@ -24,15 +24,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
-
-	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
-
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_error"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
@@ -40,6 +37,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -84,6 +82,7 @@ type cacheDataListener struct {
 
 func (cacheData *cacheData) executeListener() {
 	cacheData.cacheDataListener.lastMd5 = cacheData.md5
+	cacheData.configClient.cacheMap.Set(util.GetConfigCacheKey(cacheData.dataId, cacheData.group, cacheData.tenant), *cacheData)
 
 	decryptedContent, err := cacheData.configClient.decrypt(cacheData.dataId, cacheData.content)
 	if err != nil {
@@ -247,6 +246,7 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	request.AdditionMap["appName"] = param.AppName
 	request.AdditionMap["betaIps"] = param.BetaIps
 	request.AdditionMap["type"] = param.Type
+	request.AdditionMap["src_user"] = param.SrcUser
 	request.AdditionMap["encryptedDataKey"] = param.EncryptedDataKey
 	rpcClient := client.configProxy.getRpcClient(client)
 	response, err := client.configProxy.requestProxy(rpcClient, request, constant.DEFAULT_TIMEOUT_MILLS)
@@ -304,9 +304,9 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	}
 
 	key := util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
-	var cData *cacheData
+	var cData cacheData
 	if v, ok := client.cacheMap.Get(key); ok {
-		cData = v.(*cacheData)
+		cData = v.(cacheData)
 		cData.isInitializing = true
 	} else {
 		var (
@@ -322,7 +322,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 			lastMd5:  md5Str,
 		}
 
-		cData = &cacheData{
+		cData = cacheData{
 			isInitializing:    true,
 			dataId:            param.DataId,
 			group:             param.Group,
@@ -394,71 +394,62 @@ func (client *ConfigClient) startInternal() {
 }
 
 func (client *ConfigClient) executeConfigListen() {
-	listenCachesMap := make(map[int][]*cacheData, 16)
-	needAllSync := time.Since(client.lastAllSyncTime) >= constant.ALL_SYNC_INTERNAL
-	for _, v := range client.cacheMap.Items() {
-		cache, ok := v.(*cacheData)
+	var (
+		needAllSync    = time.Since(client.lastAllSyncTime) >= constant.ALL_SYNC_INTERNAL
+		hasChangedKeys = false
+	)
+
+	listenTaskMap := client.buildListenTask(needAllSync)
+	if len(listenTaskMap) == 0 {
+		return
+	}
+
+	for taskId, caches := range listenTaskMap {
+		request := buildConfigBatchListenRequest(caches)
+		rpcClient := client.configProxy.createRpcClient(client.ctx, fmt.Sprintf("%d", taskId), client)
+		iResponse, err := client.configProxy.requestProxy(rpcClient, request, 3000)
+		if err != nil {
+			logger.Warnf("ConfigBatchListenRequest failure, err:%v", err)
+			continue
+		}
+		if iResponse == nil {
+			logger.Warnf("ConfigBatchListenRequest failure, response is nil")
+			continue
+		}
+		if !iResponse.IsSuccess() {
+			logger.Warnf("ConfigBatchListenRequest failure, error code:%d", iResponse.GetErrorCode())
+			continue
+		}
+		response, ok := iResponse.(*rpc_response.ConfigChangeBatchListenResponse)
 		if !ok {
 			continue
 		}
 
-		if cache.isSyncWithServer {
-			if cache.md5 != cache.cacheDataListener.lastMd5 {
-				cache.executeListener()
-			}
-			if !needAllSync {
-				continue
+		if len(response.ChangedConfigs) > 0 {
+			hasChangedKeys = true
+		}
+		changeKeys := make(map[string]struct{}, len(response.ChangedConfigs))
+		for _, v := range response.ChangedConfigs {
+			changeKey := util.GetConfigCacheKey(v.DataId, v.Group, v.Tenant)
+			changeKeys[changeKey] = struct{}{}
+			if value, ok := client.cacheMap.Get(changeKey); ok {
+				cData := value.(cacheData)
+				client.refreshContentAndCheck(cData, !cData.isInitializing)
 			}
 		}
 
-		cacheDatas := listenCachesMap[cache.taskId]
-		cacheDatas = append(cacheDatas, cache)
-		listenCachesMap[cache.taskId] = cacheDatas
-	}
-	hasChangedKeys := false
-	if len(listenCachesMap) > 0 {
-		for taskId, listenCaches := range listenCachesMap {
-			request := buildConfigBatchListenRequest(listenCaches)
-			rpcClient := client.configProxy.createRpcClient(client.ctx, fmt.Sprintf("%d", taskId), client)
-			iResponse, err := client.configProxy.requestProxy(rpcClient, request, 3000)
-			if err != nil {
-				logger.Warnf("ConfigBatchListenRequest failure,err:%+v", err)
+		for _, v := range client.cacheMap.Items() {
+			data := v.(cacheData)
+			changeKey := util.GetConfigCacheKey(data.dataId, data.group, data.tenant)
+			if _, ok := changeKeys[changeKey]; !ok {
+				data.isSyncWithServer = true
+				client.cacheMap.Set(changeKey, data)
 				continue
 			}
-			if iResponse == nil {
-				logger.Warnf("ConfigBatchListenRequest failure, response is nil")
-				continue
-			}
-			if !iResponse.IsSuccess() {
-				logger.Warnf("ConfigBatchListenRequest failure, error code:%+v", iResponse.GetErrorCode())
-				continue
-			}
-			changeKeys := make(map[string]struct{})
-			if response, ok := iResponse.(*rpc_response.ConfigChangeBatchListenResponse); ok {
-				if len(response.ChangedConfigs) > 0 {
-					hasChangedKeys = true
-					for _, v := range response.ChangedConfigs {
-						changeKey := util.GetConfigCacheKey(v.DataId, v.Group, v.Tenant)
-						changeKeys[changeKey] = struct{}{}
-						if cache, ok := client.cacheMap.Get(changeKey); !ok {
-							continue
-						} else {
-							cacheData := cache.(*cacheData)
-							client.refreshContentAndCheck(cacheData, !cacheData.isInitializing)
-						}
-					}
-				}
-
-				for _, v := range listenCaches {
-					changeKey := util.GetConfigCacheKey(v.dataId, v.group, v.tenant)
-					if _, ok := changeKeys[changeKey]; !ok {
-						v.isSyncWithServer = true
-						continue
-					}
-					v.isInitializing = true
-				}
-			}
+			data.isInitializing = true
+			client.cacheMap.Set(changeKey, data)
 		}
+
 	}
 	if needAllSync {
 		client.lastAllSyncTime = time.Now()
@@ -470,7 +461,7 @@ func (client *ConfigClient) executeConfigListen() {
 	monitor.GetListenConfigCountMonitor().Set(float64(client.cacheMap.Count()))
 }
 
-func buildConfigBatchListenRequest(caches []*cacheData) *rpc_request.ConfigBatchListenRequest {
+func buildConfigBatchListenRequest(caches []cacheData) *rpc_request.ConfigBatchListenRequest {
 	request := rpc_request.NewConfigBatchListenRequest(len(caches))
 	for _, cache := range caches {
 		request.ConfigListenContexts = append(request.ConfigListenContexts,
@@ -479,7 +470,7 @@ func buildConfigBatchListenRequest(caches []*cacheData) *rpc_request.ConfigBatch
 	return request
 }
 
-func (client *ConfigClient) refreshContentAndCheck(cacheData *cacheData, notify bool) {
+func (client *ConfigClient) refreshContentAndCheck(cacheData cacheData, notify bool) {
 	configQueryResponse, err := client.configProxy.queryConfig(cacheData.dataId, cacheData.group, cacheData.tenant,
 		constant.DEFAULT_TIMEOUT_MILLS, notify, client)
 	if err != nil {
@@ -496,10 +487,31 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData *cacheData, notify 
 	}
 	cacheData.md5 = util.Md5(cacheData.content)
 	if cacheData.md5 != cacheData.cacheDataListener.lastMd5 {
-		client.cacheMap.Set(util.GetConfigCacheKey(cacheData.dataId, cacheData.group, cacheData.tenant), cacheData)
-
-		cacheData.executeListener()
+		cacheDataPtr := &cacheData
+		cacheDataPtr.executeListener()
 	}
+}
+
+func (client *ConfigClient) buildListenTask(needAllSync bool) map[int][]cacheData {
+	listenTaskMap := make(map[int][]cacheData, 8)
+
+	for _, v := range client.cacheMap.Items() {
+		data, ok := v.(cacheData)
+		if !ok {
+			continue
+		}
+
+		if data.isSyncWithServer {
+			if data.md5 != data.cacheDataListener.lastMd5 {
+				data.executeListener()
+			}
+			if !needAllSync {
+				continue
+			}
+		}
+		listenTaskMap[data.taskId] = append(listenTaskMap[data.taskId], data)
+	}
+	return listenTaskMap
 }
 
 func (client *ConfigClient) asyncNotifyListenConfig() {
