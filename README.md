@@ -267,18 +267,17 @@ services, err := namingClient.GetService(vo.GetServiceParam{
 * Listen service change event：Subscribe
 
 ```go
-// Subscribe key = serviceName+groupName+cluster
-// Note: We call add multiple SubscribeCallback with the same key.
-callback := func(services []model.Instance, err error) {
-    log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
-}
 
-err := namingClient.Subscribe(vo.SubscribeParam{
-    ServiceName: "demo.go",
-    GroupName:   "group-a", // default value is DEFAULT_GROUP
-    Clusters:    []string{"cluster-a"}, // default value is DEFAULT
-    SubscribeCallback: callback,
-})
+// Subscribe key = serviceName+groupName+cluster
+	// Note: We call add multiple SubscribeCallback with the same key.
+	err := namingClient.Subscribe(vo.SubscribeParam{
+		ServiceName: "demo.go",
+		GroupName:   "group-a", // default value is DEFAULT_GROUP
+		Clusters:    []string{"cluster-a"}, // default value is DEFAULT
+		SubscribeCallback: func (services []model.Instance, err error) {
+			log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
+		},
+	})
 
 ```
 
@@ -286,16 +285,14 @@ err := namingClient.Subscribe(vo.SubscribeParam{
 
 ```go
 
-callback := func(services []model.Instance, err error) {
-    log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
-}
-
 err := namingClient.Unsubscribe(vo.SubscribeParam{
-    ServiceName: "demo.go",
-    GroupName:   "group-a", // default value is DEFAULT_GROUP
-    Clusters:    []string{"cluster-a"}, // default value is DEFAULT
-    SubscribeCallback: callback,
-})
+		ServiceName: "demo.go",
+		GroupName:   "group-a", // default value is DEFAULT_GROUP
+		Clusters:    []string{"cluster-a"}, // default value is DEFAULT
+		SubscribeCallback: func (services []model.Instance, err error) {
+			log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
+		},
+	})
 
 ```
 

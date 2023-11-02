@@ -258,16 +258,13 @@ instance, err := namingClient.SelectOneHealthyInstance(vo.SelectOneHealthInstanc
 
 // Subscribe key=serviceName+groupName+cluster
 // 注意:我们可以在相同的key添加多个SubscribeCallback.
-
-callback := func(services []model.Instance, err error) {
-    log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
-}
-
 err := namingClient.Subscribe(vo.SubscribeParam{
     ServiceName: "demo.go",
     GroupName:   "group-a",             // 默认值DEFAULT_GROUP
     Clusters:    []string{"cluster-a"}, // 默认值DEFAULT
-    SubscribeCallback: callback,
+    SubscribeCallback: func(services []model.Instance, err error) {
+        log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
+    },
 })
 
 ```
@@ -276,15 +273,13 @@ err := namingClient.Subscribe(vo.SubscribeParam{
 
 ```go
 
-callback := func(services []model.Instance, err error) {
-    log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
-}
-
 err := namingClient.Unsubscribe(vo.SubscribeParam{
     ServiceName: "demo.go",
     GroupName:   "group-a",             // 默认值DEFAULT_GROUP
     Clusters:    []string{"cluster-a"}, // 默认值DEFAULT
-    SubscribeCallback: callback,
+    SubscribeCallback: func(services []model.Instance, err error) {
+        log.Printf("\n\n callback return services:%s \n\n", utils.ToJsonString(services))
+    },
 })
 
 ```
