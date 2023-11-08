@@ -17,7 +17,6 @@
 package tls
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -93,16 +92,16 @@ q9K53Jum9GDmkbUODa77sWR1zQsdrqSKywcjP/6FYXU9RMDqKUpm
 )
 
 func Test_NewTLS(t *testing.T) {
-	dir, err := ioutil.TempDir("", "tls-test")
+	dir, err := os.MkdirTemp("", "tls-test")
 	if err != nil {
 		t.Errorf(err.Error())
 	}
 	defer os.RemoveAll(dir)
 
 	caPath, crtPath, keyPath := filepath.Join(dir, "ca.crt"), filepath.Join(dir, "client.crt"), filepath.Join(dir, "client.key")
-	ioutil.WriteFile(caPath, testCaCrt, 0666)
-	ioutil.WriteFile(crtPath, testClientCrt, 0666)
-	ioutil.WriteFile(keyPath, testClientKey, 0666)
+	os.WriteFile(caPath, testCaCrt, 0666)
+	os.WriteFile(crtPath, testClientCrt, 0666)
+	os.WriteFile(keyPath, testClientKey, 0666)
 
 	t.Run("TestNoAuth", func(t *testing.T) {
 		cfg, err := NewTLS(constant.SkipVerifyConfig)
