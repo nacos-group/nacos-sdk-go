@@ -342,6 +342,11 @@ func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) (err error) {
 	return err
 }
 
+// ServerHealthy ...
+func (sc *NamingClient) ServerHealthy() bool {
+	return sc.serviceProxy.ServerHealthy()
+}
+
 // CloseClient ...
 func (sc *NamingClient) CloseClient() {
 	sc.serviceProxy.CloseClient()
