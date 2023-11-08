@@ -24,10 +24,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
+	"github.com/alibabacloud-go/tea/tea"
+	dkms_api "github.com/aliyun/alibabacloud-dkms-gcs-go-sdk/openapi"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	nacos_inner_encryption "github.com/nacos-group/nacos-sdk-go/v2/common/encryption"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/filter"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_error"
@@ -49,7 +52,7 @@ type ConfigClient struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	nacos_client.INacosClient
-	kmsClient       *kms.Client
+	kmsClient       *nacos_inner_encryption.KmsClient
 	localConfigs    []vo.ConfigParam
 	mutex           sync.Mutex
 	configProxy     IConfigProxy
@@ -66,6 +69,7 @@ type cacheData struct {
 	group             string
 	content           string
 	contentType       string
+	encryptedDataKey  string
 	tenant            string
 	cacheDataListener *cacheDataListener
 	md5               string
@@ -84,12 +88,18 @@ func (cacheData *cacheData) executeListener() {
 	cacheData.cacheDataListener.lastMd5 = cacheData.md5
 	cacheData.configClient.cacheMap.Set(util.GetConfigCacheKey(cacheData.dataId, cacheData.group, cacheData.tenant), *cacheData)
 
-	decryptedContent, err := cacheData.configClient.decrypt(cacheData.dataId, cacheData.content)
-	if err != nil {
-		logger.Errorf("decrypt content fail ,dataId=%s,group=%s,tenant=%s,err:%+v ", cacheData.dataId,
+	param := &vo.ConfigParam{
+		DataId:           cacheData.dataId,
+		Content:          cacheData.content,
+		EncryptedDataKey: cacheData.encryptedDataKey,
+		UsageType:        vo.ResponseType,
+	}
+	if err := filter.GetDefaultConfigFilterChainManager().DoFilters(param); err != nil {
+		logger.Errorf("do filters failed ,dataId=%s,group=%s,tenant=%s,err:%+v ", cacheData.dataId,
 			cacheData.group, cacheData.tenant, err)
 		return
 	}
+	decryptedContent := param.Content
 	go cacheData.cacheDataListener.listener(cacheData.tenant, cacheData.group, cacheData.dataId, decryptedContent)
 }
 
@@ -121,7 +131,15 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	}
 
 	if clientConfig.OpenKMS {
-		kmsClient, err := kms.NewClientWithAccessKey(clientConfig.RegionId, clientConfig.AccessKey, clientConfig.SecretKey)
+		var kmsClient *nacos_inner_encryption.KmsClient
+		switch clientConfig.KMSVersion {
+		case constant.KMSv1, constant.DEFAULT_KMS_VERSION:
+			kmsClient, err = initKmsV1Client(clientConfig)
+		case constant.KMSv3:
+			kmsClient, err = initKmsV3Client(clientConfig)
+		default:
+			err = fmt.Errorf("init kms client failed. unknown kms version:%s\n", clientConfig.KMSVersion)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -144,48 +162,57 @@ func initLogger(clientConfig constant.ClientConfig) error {
 	return logger.InitLogger(logger.BuildLoggerConfig(clientConfig))
 }
 
+func initKmsV1Client(clientConfig constant.ClientConfig) (*nacos_inner_encryption.KmsClient, error) {
+	return nacos_inner_encryption.InitDefaultKmsV1ClientWithAccessKey(clientConfig.RegionId, clientConfig.AccessKey, clientConfig.SecretKey)
+}
+
+func initKmsV3Client(clientConfig constant.ClientConfig) (*nacos_inner_encryption.KmsClient, error) {
+	return nacos_inner_encryption.InitDefaultKmsV3ClientWithConfig(&dkms_api.Config{
+		Protocol:         tea.String("https"),
+		Endpoint:         tea.String(clientConfig.KMSv3Config.Endpoint),
+		ClientKeyContent: tea.String(clientConfig.KMSv3Config.ClientKeyContent),
+		Password:         tea.String(clientConfig.KMSv3Config.Password),
+	}, clientConfig.KMSv3Config.CaContent)
+}
+
 func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err error) {
-	content, err = client.getConfigInner(param)
+	content, err = client.getConfigInner(&param)
 	if err != nil {
 		return "", err
 	}
-	return client.decrypt(param.DataId, content)
+	param.UsageType = vo.ResponseType
+	if err = filter.GetDefaultConfigFilterChainManager().DoFilters(&param); err != nil {
+		return "", err
+	}
+	content = param.Content
+	return content, nil
 }
 
 func (client *ConfigClient) decrypt(dataId, content string) (string, error) {
+	var plainContent string
+	var err error
 	if client.kmsClient != nil && strings.HasPrefix(dataId, "cipher-") {
-		request := kms.CreateDecryptRequest()
-		request.Method = "POST"
-		request.Scheme = "https"
-		request.AcceptFormat = "json"
-		request.CiphertextBlob = content
-		response, err := client.kmsClient.Decrypt(request)
+		plainContent, err = client.kmsClient.Decrypt(content)
 		if err != nil {
 			return "", fmt.Errorf("kms decrypt failed: %v", err)
 		}
-		content = response.Plaintext
 	}
-	return content, nil
+	return plainContent, nil
 }
 
-func (client *ConfigClient) encrypt(dataId, content string) (string, error) {
+func (client *ConfigClient) encrypt(dataId, content, kmsKeyId string) (string, error) {
+	var cipherContent string
+	var err error
 	if client.kmsClient != nil && strings.HasPrefix(dataId, "cipher-") {
-		request := kms.CreateEncryptRequest()
-		request.Method = "POST"
-		request.Scheme = "https"
-		request.AcceptFormat = "json"
-		request.KeyId = "alias/acs/mse" // use default key
-		request.Plaintext = content
-		response, err := client.kmsClient.Encrypt(request)
+		cipherContent, err = client.kmsClient.Encrypt(content, kmsKeyId)
 		if err != nil {
 			return "", fmt.Errorf("kms encrypt failed: %v", err)
 		}
-		content = response.CiphertextBlob
 	}
-	return content, nil
+	return cipherContent, nil
 }
 
-func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string, err error) {
+func (client *ConfigClient) getConfigInner(param *vo.ConfigParam) (content string, err error) {
 	if len(param.DataId) <= 0 {
 		err = errors.New("[client.GetConfig] param.dataId can not be empty")
 		return "", err
@@ -220,6 +247,8 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content string
 		logger.Warnf("read config from cache success, dataId=%s, group=%s, namespaceId=%s", param.DataId, param.Group, clientConfig.NamespaceId)
 		return cacheContent, nil
 	}
+	param.EncryptedDataKey = response.EncryptedDataKey
+	param.Content = response.Content
 	return response.Content, nil
 }
 
@@ -236,8 +265,10 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	if len(param.Group) <= 0 {
 		param.Group = constant.DEFAULT_GROUP
 	}
-	if param.Content, err = client.encrypt(param.DataId, param.Content); err != nil {
-		return
+
+	param.UsageType = vo.RequestType
+	if err = filter.GetDefaultConfigFilterChainManager().DoFilters(&param); err != nil {
+		return false, err
 	}
 
 	clientConfig, _ := client.GetClientConfig()
@@ -480,6 +511,7 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData cacheData, notify b
 	}
 	cacheData.content = configQueryResponse.Content
 	cacheData.contentType = configQueryResponse.ContentType
+	cacheData.encryptedDataKey = configQueryResponse.EncryptedDataKey
 	if notify {
 		logger.Infof("[config_rpc_client] [data-received] dataId=%s, group=%s, tenant=%s, md5=%s, content=%s, type=%s",
 			cacheData.dataId, cacheData.group, cacheData.tenant, cacheData.md5,

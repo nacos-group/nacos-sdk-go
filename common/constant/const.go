@@ -18,6 +18,14 @@ package constant
 
 import "time"
 
+type KMSVersion string
+
+const (
+	KMSv1               KMSVersion = "KMSv1"
+	KMSv3               KMSVersion = "KMSv3"
+	DEFAULT_KMS_VERSION KMSVersion = "" //to fit original version
+	UNKNOWN_KMS_VERSION KMSVersion = "UNKNOWN_KMS_VERSION"
+)
 const (
 	KEY_USERNAME                = "username"
 	KEY_PASSWORD                = "password"
@@ -99,4 +107,5 @@ const (
 	GRPC                        = "grpc"
 	FAILOVER_FILE_SUFFIX        = "_failover"
 	RpcPortOffset               = 1000
+	MSE_KMSv1_DEFAULT_KEY_ID    = "alias/acs/mse"
 )

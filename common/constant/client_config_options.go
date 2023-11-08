@@ -130,6 +130,19 @@ func WithOpenKMS(openKMS bool) ClientOption {
 	}
 }
 
+// WithOpenKMS ...
+func WithKMSVersion(kmsVersion KMSVersion) ClientOption {
+	return func(config *ClientConfig) {
+		config.KMSVersion = kmsVersion
+	}
+}
+
+func WithKMSv3Config(kmsv3Config *KMSv3Config) ClientOption {
+	return func(config *ClientConfig) {
+		config.KMSv3Config = kmsv3Config
+	}
+}
+
 // WithCacheDir ...
 func WithCacheDir(cacheDir string) ClientOption {
 	return func(config *ClientConfig) {
