@@ -88,6 +88,8 @@ func InitDefaultKmsV3ClientWithConfig(config *dkms_api.Config, caVerify string) 
 			if len(strings.TrimSpace(caVerify)) != 0 {
 				logger.Infof("set kms client Ca with content: %s\n", caVerify[:len(caVerify)/maskUnit32Width])
 				client.SetVerify(caVerify)
+			} else {
+				client.SetHTTPSInsecure(true)
 			}
 			client.SetKmsVersion(constant.KMSv3)
 			kmsClient = client
