@@ -247,7 +247,7 @@ func (client *ConfigClient) getConfigInner(param *vo.ConfigParam) (content strin
 		logger.Warnf("read config from cache success, dataId=%s, group=%s, namespaceId=%s", param.DataId, param.Group, clientConfig.NamespaceId)
 		return cacheContent, nil
 	}
-	if response != nil && !response.IsSuccess() {
+	if response != nil && response.Response != nil && !response.IsSuccess() {
 		return response.Content, errors.New(response.GetMessage())
 	}
 	param.EncryptedDataKey = response.EncryptedDataKey
@@ -518,7 +518,7 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData cacheData, notify b
 			cacheData.group, cacheData.tenant)
 		return
 	}
-	if configQueryResponse != nil && !configQueryResponse.IsSuccess() {
+	if configQueryResponse != nil && configQueryResponse.Response != nil && !configQueryResponse.IsSuccess() {
 		logger.Errorf("refresh cached config from server error:%v, dataId=%s, group=%s", configQueryResponse.GetMessage(),
 			cacheData.dataId, cacheData.group)
 		return
