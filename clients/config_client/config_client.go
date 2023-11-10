@@ -247,6 +247,9 @@ func (client *ConfigClient) getConfigInner(param *vo.ConfigParam) (content strin
 		logger.Warnf("read config from cache success, dataId=%s, group=%s, namespaceId=%s", param.DataId, param.Group, clientConfig.NamespaceId)
 		return cacheContent, nil
 	}
+	if response != nil && !response.IsSuccess() {
+		return response.Content, errors.New(response.GetMessage())
+	}
 	param.EncryptedDataKey = response.EncryptedDataKey
 	param.Content = response.Content
 	return response.Content, nil
@@ -281,8 +284,11 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	request.AdditionMap["encryptedDataKey"] = param.EncryptedDataKey
 	rpcClient := client.configProxy.getRpcClient(client)
 	response, err := client.configProxy.requestProxy(rpcClient, request, constant.DEFAULT_TIMEOUT_MILLS)
+	if err != nil {
+		return false, err
+	}
 	if response != nil {
-		return response.IsSuccess(), err
+		return client.buildResponse(response)
 	}
 	return false, err
 }
@@ -301,8 +307,11 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, er
 	request := rpc_request.NewConfigRemoveRequest(param.Group, param.DataId, clientConfig.NamespaceId)
 	rpcClient := client.configProxy.getRpcClient(client)
 	response, err := client.configProxy.requestProxy(rpcClient, request, constant.DEFAULT_TIMEOUT_MILLS)
+	if err != nil {
+		return false, err
+	}
 	if response != nil {
-		return response.IsSuccess(), err
+		return client.buildResponse(response)
 	}
 	return false, err
 }
@@ -509,6 +518,11 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData cacheData, notify b
 			cacheData.group, cacheData.tenant)
 		return
 	}
+	if configQueryResponse != nil && !configQueryResponse.IsSuccess() {
+		logger.Errorf("refresh cached config from server error:%v, dataId=%s, group=%s", configQueryResponse.GetMessage(),
+			cacheData.dataId, cacheData.group)
+		return
+	}
 	cacheData.content = configQueryResponse.Content
 	cacheData.contentType = configQueryResponse.ContentType
 	cacheData.encryptedDataKey = configQueryResponse.EncryptedDataKey
@@ -550,4 +564,11 @@ func (client *ConfigClient) asyncNotifyListenConfig() {
 	go func() {
 		client.listenExecute <- struct{}{}
 	}()
+}
+
+func (client *ConfigClient) buildResponse(response rpc_response.IResponse) (bool, error) {
+	if response.IsSuccess() {
+		return response.IsSuccess(), nil
+	}
+	return false, errors.New(response.GetMessage())
 }
