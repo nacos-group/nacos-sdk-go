@@ -265,6 +265,7 @@ func (sc *NamingClient) selectInstances(service model.Service, healthy bool) ([]
 	}
 	hosts := service.Hosts
 	var result []model.Instance
+	logger.Infof("select instances with options: [healthy:<%s>], with service:<%s>", healthy, util.GetGroupName(service.Name, service.GroupName))
 	for _, host := range hosts {
 		if host.Healthy == healthy && host.Enable && host.Weight > 0 {
 			result = append(result, host)
