@@ -37,7 +37,9 @@ type ClientConfig struct {
 	RegionId             string                   // the regionId for kms
 	AccessKey            string                   // the AccessKey for kms
 	SecretKey            string                   // the SecretKey for kms
-	OpenKMS              bool                     // it's to open kms,default is false. https://help.aliyun.com/product/28933.html
+	OpenKMS              bool                     // it's to open kms, default is false. https://help.aliyun.com/product/28933.html
+	KMSVersion           KMSVersion               // kms client version. https://help.aliyun.com/document_detail/380927.html
+	KMSv3Config          *KMSv3Config             //KMSv3 configuration. https://help.aliyun.com/document_detail/601596.html
 	CacheDir             string                   // the directory for persist nacos service info,default value is current path
 	DisableUseSnapShot   bool                     // It's a switch, default is false, means that when get remote config fail, use local cache file instead
 	UpdateThreadNum      int                      // the number of goroutine for update nacos service info,default value is 20
@@ -53,6 +55,9 @@ type ClientConfig struct {
 	LogRollingConfig     *ClientLogRollingConfig  // log rolling config
 	TLSCfg               TLSConfig                // tls Config
 	AsyncUpdateService   bool                     // open async update service by query
+	EndpointContextPath  string                   // the address server  endpoint contextPath
+	EndpointQueryParams  string                   // the address server  endpoint query params
+	ClusterName          string                   // the address server  clusterName
 }
 
 type ClientLogSamplingConfig struct {
@@ -94,4 +99,11 @@ type TLSConfig struct {
 	CertFile           string // server use when verifying client certificates
 	KeyFile            string // server use when verifying client certificates
 	ServerNameOverride string // serverNameOverride is for testing only
+}
+
+type KMSv3Config struct {
+	ClientKeyContent string
+	Password         string
+	Endpoint         string
+	CaContent        string
 }

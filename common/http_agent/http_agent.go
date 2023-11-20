@@ -17,7 +17,7 @@
 package http_agent
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
@@ -68,7 +68,7 @@ func (agent *HttpAgent) RequestOnlyResult(method string, path string, header htt
 		logger.Errorf("request method[%s],request path[%s],header:[%s],params:[%s],status code error:%d", method, path, util.ToJsonString(header), util.ToJsonString(params), response.StatusCode)
 		return ""
 	}
-	bytes, errRead := ioutil.ReadAll(response.Body)
+	bytes, errRead := io.ReadAll(response.Body)
 	defer response.Body.Close()
 	if errRead != nil {
 		logger.Errorf("request method[%s],request path[%s],header:[%s],params:[%s],read error:%+v", method, path, util.ToJsonString(header), util.ToJsonString(params), errRead)

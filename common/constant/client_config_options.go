@@ -81,6 +81,27 @@ func WithEndpoint(endpoint string) ClientOption {
 	}
 }
 
+// WithEndpointContextPath ...
+func WithEndpointContextPath(endpointContextPath string) ClientOption {
+	return func(config *ClientConfig) {
+		config.EndpointContextPath = endpointContextPath
+	}
+}
+
+// WithEndpointQueryParams ...
+func WithEndpointQueryParams(endpointQueryPrams string) ClientOption {
+	return func(config *ClientConfig) {
+		config.EndpointQueryParams = endpointQueryPrams
+	}
+}
+
+// WithClusterName ...
+func WithClusterName(clusterName string) ClientOption {
+	return func(config *ClientConfig) {
+		config.ClusterName = clusterName
+	}
+}
+
 // WithRegionId ...
 func WithRegionId(regionId string) ClientOption {
 	return func(config *ClientConfig) {
@@ -106,6 +127,19 @@ func WithSecretKey(secretKey string) ClientOption {
 func WithOpenKMS(openKMS bool) ClientOption {
 	return func(config *ClientConfig) {
 		config.OpenKMS = openKMS
+	}
+}
+
+// WithOpenKMS ...
+func WithKMSVersion(kmsVersion KMSVersion) ClientOption {
+	return func(config *ClientConfig) {
+		config.KMSVersion = kmsVersion
+	}
+}
+
+func WithKMSv3Config(kmsv3Config *KMSv3Config) ClientOption {
+	return func(config *ClientConfig) {
+		config.KMSv3Config = kmsv3Config
 	}
 }
 

@@ -18,6 +18,14 @@ package constant
 
 import "time"
 
+type KMSVersion string
+
+const (
+	KMSv1               KMSVersion = "KMSv1"
+	KMSv3               KMSVersion = "KMSv3"
+	DEFAULT_KMS_VERSION KMSVersion = "" //to fit original version
+	UNKNOWN_KMS_VERSION KMSVersion = "UNKNOWN_KMS_VERSION"
+)
 const (
 	KEY_USERNAME                = "username"
 	KEY_PASSWORD                = "password"
@@ -68,7 +76,7 @@ const (
 	KEY_BEAT                    = "beat"
 	KEY_DOM                     = "dom"
 	DEFAULT_CONTEXT_PATH        = "/nacos"
-	CLIENT_VERSION              = "Nacos-Go-Client:v2.2.2"
+	CLIENT_VERSION              = "Nacos-Go-Client:v2.2.4"
 	REQUEST_DOMAIN_RETRY_TIME   = 3
 	SERVICE_INFO_SPLITER        = "@@"
 	CONFIG_INFO_SPLITER         = "@@"
@@ -99,4 +107,5 @@ const (
 	GRPC                        = "grpc"
 	FAILOVER_FILE_SUFFIX        = "_failover"
 	RpcPortOffset               = 1000
+	MSE_KMSv1_DEFAULT_KEY_ID    = "alias/acs/mse"
 )
