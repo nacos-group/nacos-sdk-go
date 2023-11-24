@@ -58,12 +58,13 @@ type NacosServer struct {
 	contextPath           string
 	endpointContextPath   string
 	endpointQueryParams   string
+	endpointQueryHeader   map[string][]string
 	clusterName           string
 	currentIndex          int32
 	ServerSrcChangeSignal chan struct{}
 }
 
-func NewNacosServer(ctx context.Context, serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string) (*NacosServer, error) {
+func NewNacosServer(ctx context.Context, serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string, endpointQueryHeader map[string][]string) (*NacosServer, error) {
 	severLen := len(serverList)
 	if severLen == 0 && endpoint == "" {
 		return &NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
@@ -80,6 +81,7 @@ func NewNacosServer(ctx context.Context, serverList []constant.ServerConfig, cli
 		vipSrvRefInterMills:   10000,
 		endpointContextPath:   clientCfg.EndpointContextPath,
 		endpointQueryParams:   clientCfg.EndpointQueryParams,
+		endpointQueryHeader:   endpointQueryHeader,
 		clusterName:           clientCfg.ClusterName,
 		contextPath:           clientCfg.ContextPath,
 		ServerSrcChangeSignal: make(chan struct{}, 1),
@@ -285,7 +287,7 @@ func (server *NacosServer) initRefreshSrvIfNeed(ctx context.Context) {
 	}
 	logger.Infof("nacos address server url: <%s>", urlString)
 
-	server.refreshServerSrvIfNeed(urlString)
+	server.refreshServerSrvIfNeed(urlString, server.endpointQueryHeader)
 	go func() {
 		for {
 			select {
@@ -293,21 +295,21 @@ func (server *NacosServer) initRefreshSrvIfNeed(ctx context.Context) {
 				return
 			default:
 				time.Sleep(time.Duration(10) * time.Second)
-				server.refreshServerSrvIfNeed(urlString)
+				server.refreshServerSrvIfNeed(urlString, server.endpointQueryHeader)
 			}
 		}
 	}()
 
 }
 
-func (server *NacosServer) refreshServerSrvIfNeed(urlString string) {
+func (server *NacosServer) refreshServerSrvIfNeed(urlString string, header map[string][]string) {
 	if util.CurrentMillis()-server.lastSrvRefTime < server.vipSrvRefInterMills && len(server.serverList) > 0 {
 		return
 	}
 
 	var list []string
 
-	result := server.httpAgent.RequestOnlyResult(http.MethodGet, urlString, nil, server.timeoutMs, nil)
+	result := server.httpAgent.RequestOnlyResult(http.MethodGet, urlString, header, server.timeoutMs, nil)
 	list = strings.Split(result, "\n")
 
 	var servers []constant.ServerConfig

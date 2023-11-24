@@ -40,7 +40,10 @@ type NamingProxyDelegate struct {
 func NewNamingProxyDelegate(ctx context.Context, clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig,
 	httpAgent http_agent.IHttpAgent, serviceInfoHolder *naming_cache.ServiceInfoHolder) (naming_proxy.INamingProxy, error) {
 
-	nacosServer, err := nacos_server.NewNacosServer(ctx, serverCfgs, clientCfg, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint)
+	namingHeader := map[string][]string{
+		"Request-Module": {"Naming"},
+	}
+	nacosServer, err := nacos_server.NewNacosServer(ctx, serverCfgs, clientCfg, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint, namingHeader)
 	if err != nil {
 		return nil, err
 	}
