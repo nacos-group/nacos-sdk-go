@@ -39,7 +39,14 @@ func init() {
 }
 
 func MkdirIfNecessary(createDir string) (err error) {
-	s := strings.Split(createDir, path)
+	var dirPath string
+	// replace path separator
+	if osType == WINDOWS {
+		dirPath = strings.ReplaceAll(createDir, "/", "\\")
+	} else {
+		dirPath = strings.ReplaceAll(createDir, "\\", "/")
+	}
+	s := strings.Split(dirPath, path)
 	startIndex := 0
 	dir := ""
 	if s[0] == "" {
