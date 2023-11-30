@@ -55,7 +55,8 @@ func buildNacosServer(clientConfig constant.ClientConfig) (*NacosServer, error) 
 		clientConfig,
 		&http_agent.HttpAgent{},
 		1000,
-		"")
+		"",
+		nil)
 }
 
 func TestNacosServer_InjectSignForNamingHttp_NoAk(t *testing.T) {

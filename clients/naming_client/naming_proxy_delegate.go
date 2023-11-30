@@ -18,6 +18,7 @@ package naming_client
 
 import (
 	"context"
+	"github.com/nacos-group/nacos-sdk-go/v2/inner/uuid"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_grpc"
@@ -40,7 +41,17 @@ type NamingProxyDelegate struct {
 func NewNamingProxyDelegate(ctx context.Context, clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig,
 	httpAgent http_agent.IHttpAgent, serviceInfoHolder *naming_cache.ServiceInfoHolder) (naming_proxy.INamingProxy, error) {
 
-	nacosServer, err := nacos_server.NewNacosServer(ctx, serverCfgs, clientCfg, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint)
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
+	namingHeader := map[string][]string{
+		"Client-Version": {constant.CLIENT_VERSION},
+		"User-Agent":     {constant.CLIENT_VERSION},
+		"RequestId":      {uid.String()},
+		"Request-Module": {"Naming"},
+	}
+	nacosServer, err := nacos_server.NewNacosServer(ctx, serverCfgs, clientCfg, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint, namingHeader)
 	if err != nil {
 		return nil, err
 	}
