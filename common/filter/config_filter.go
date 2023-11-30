@@ -56,7 +56,7 @@ func GetDefaultConfigFilterChainManager() IConfigFilterChain {
 	if defaultConfigFilterChainManagerInstance == nil {
 		initConfigFilterChainManagerOnce.Do(func() {
 			defaultConfigFilterChainManagerInstance = newDefaultConfigFilterChainManager()
-			logger.Debugf("successfully create DefaultConfigFilterChainManager")
+			logger.Debug("successfully create DefaultConfigFilterChainManager")
 		})
 	}
 	return defaultConfigFilterChainManagerInstance
