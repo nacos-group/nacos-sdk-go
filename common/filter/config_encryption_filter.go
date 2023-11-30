@@ -42,7 +42,7 @@ func GetDefaultConfigEncryptionFilter() IConfigFilter {
 	if defaultConfigEncryptionFilter == nil {
 		initDefaultConfigEncryptionFilterOnce.Do(func() {
 			defaultConfigEncryptionFilter = &DefaultConfigEncryptionFilter{}
-			logger.Infof("successfully create ConfigFilter[%s]", defaultConfigEncryptionFilter.GetFilterName())
+			logger.Debugf("successfully create ConfigFilter[%s]", defaultConfigEncryptionFilter.GetFilterName())
 		})
 	}
 	return defaultConfigEncryptionFilter

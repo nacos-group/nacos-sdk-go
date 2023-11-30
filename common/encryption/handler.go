@@ -63,7 +63,7 @@ func initDefaultHandler() {
 		defaultHandler = &DefaultHandler{
 			encryptionPlugins: make(map[string]Plugin, 2),
 		}
-		logger.Info("successfully create encryption defaultHandler")
+		logger.Debug("successfully create encryption defaultHandler")
 	})
 }
 
@@ -132,7 +132,7 @@ func (d *DefaultHandler) RegisterPlugin(plugin Plugin) error {
 	if _, v := d.encryptionPlugins[plugin.AlgorithmName()]; v {
 		logger.Warnf("encryption algorithm [%s] has already registered to defaultHandler, will be update", plugin.AlgorithmName())
 	} else {
-		logger.Infof("register encryption algorithm [%s] to defaultHandler", plugin.AlgorithmName())
+		logger.Debugf("register encryption algorithm [%s] to defaultHandler", plugin.AlgorithmName())
 	}
 	d.encryptionPlugins[plugin.AlgorithmName()] = plugin
 	return nil
