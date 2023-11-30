@@ -26,17 +26,17 @@ func init() {
 	if err := GetDefaultHandler().RegisterPlugin(&KmsAes128Plugin{}); err != nil {
 		logger.Errorf("failed to register encryption plugin[%s] to defaultHandler", KmsAes128AlgorithmName)
 	} else {
-		logger.Infof("successfully register encryption plugin[%s] to defaultHandler", KmsAes128AlgorithmName)
+		logger.Debugf("successfully register encryption plugin[%s] to defaultHandler", KmsAes128AlgorithmName)
 	}
 	if err := GetDefaultHandler().RegisterPlugin(&KmsAes256Plugin{}); err != nil {
 		logger.Errorf("failed to register encryption plugin[%s] to defaultHandler", KmsAes256AlgorithmName)
 	} else {
-		logger.Infof("successfully register encryption plugin[%s] to defaultHandler", KmsAes256AlgorithmName)
+		logger.Debugf("successfully register encryption plugin[%s] to defaultHandler", KmsAes256AlgorithmName)
 	}
 	if err := GetDefaultHandler().RegisterPlugin(&KmsBasePlugin{}); err != nil {
 		logger.Errorf("failed to register encryption plugin[%s] to defaultHandler", KmsAlgorithmName)
 	} else {
-		logger.Infof("successfully register encryption plugin[%s] to defaultHandler", KmsAlgorithmName)
+		logger.Debugf("successfully register encryption plugin[%s] to defaultHandler", KmsAlgorithmName)
 
 	}
 }
