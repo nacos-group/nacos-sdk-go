@@ -22,7 +22,7 @@ import (
 	"strings"
 )
 
-func init() {
+func RegisterConfigEncryptionKmsPlugins() {
 	if err := GetDefaultHandler().RegisterPlugin(&KmsAes128Plugin{}); err != nil {
 		logger.Errorf("failed to register encryption plugin[%s] to defaultHandler", KmsAes128AlgorithmName)
 	} else {

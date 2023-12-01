@@ -131,6 +131,8 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	}
 
 	if clientConfig.OpenKMS {
+		filter.RegisterDefaultConfigEncryptionFilter()
+		nacos_inner_encryption.RegisterConfigEncryptionKmsPlugins()
 		var kmsClient *nacos_inner_encryption.KmsClient
 		switch clientConfig.KMSVersion {
 		case constant.KMSv1, constant.DEFAULT_KMS_VERSION:
