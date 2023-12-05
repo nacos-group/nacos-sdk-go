@@ -228,6 +228,7 @@ func (client *ConfigClient) getConfigInner(param *vo.ConfigParam) (content strin
 	content = cache.GetFailover(cacheKey, client.configCacheDir)
 	if len(content) > 0 {
 		logger.Warnf("%s %s %s is using failover content!", clientConfig.NamespaceId, param.Group, param.DataId)
+		param.Content = content
 		return content, nil
 	}
 	response, err := client.configProxy.queryConfig(param.DataId, param.Group, clientConfig.NamespaceId,
@@ -247,6 +248,7 @@ func (client *ConfigClient) getConfigInner(param *vo.ConfigParam) (content strin
 		}
 
 		logger.Warnf("read config from cache success, dataId=%s, group=%s, namespaceId=%s", param.DataId, param.Group, clientConfig.NamespaceId)
+		param.Content = cacheContent
 		return cacheContent, nil
 	}
 	if response != nil && response.Response != nil && !response.IsSuccess() {

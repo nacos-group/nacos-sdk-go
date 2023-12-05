@@ -19,6 +19,7 @@ package config_client
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
@@ -56,6 +57,7 @@ func createConfigClientTest() *ConfigClient {
 	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
 	client, _ := NewConfigClient(&nc)
 	client.configProxy = &MockConfigProxy{}
+
 	return client
 }
 
@@ -98,6 +100,42 @@ func Test_GetConfig(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, "hello world", content)
+}
+
+func Test_GetConfigWithCache(t *testing.T) {
+	client := createConfigClientTest()
+	success, err := client.PublishConfig(vo.ConfigParam{
+		DataId:  localConfigTest.DataId,
+		Group:   localConfigTest.Group,
+		Content: "hello world"})
+
+	assert.Nil(t, err)
+	assert.True(t, success)
+
+	dir, err := os.MkdirTemp(os.TempDir(), "nacos")
+	assert.Nil(t, err)
+
+	err = os.Mkdir(dir+"/config", 0700)
+	assert.Nil(t, err)
+
+	client.configCacheDir = dir
+	cacheKey := util.GetConfigCacheKey(localConfigTest.DataId, "group", "")
+	f, err := os.Create(dir + "/" + cacheKey)
+	assert.Nil(t, err)
+	_, err = f.WriteString("hello world")
+	assert.Nil(t, err)
+	_ = f.Close()
+	defer func() {
+		err := os.RemoveAll(dir)
+		assert.Nil(t, err)
+	}()
+	for i := 0; i < 10; i++ {
+		content, err := client.GetConfig(vo.ConfigParam{
+			DataId: localConfigTest.DataId,
+			Group:  "group"})
+		assert.Nil(t, err)
+		assert.Equal(t, "hello world", content)
+	}
 }
 
 func Test_SearchConfig(t *testing.T) {
