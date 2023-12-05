@@ -41,7 +41,7 @@ type IConfigFilter interface {
 	GetFilterName() string
 }
 
-func init() {
+func RegisterDefaultConfigEncryptionFilter() {
 	err := RegisterConfigFilter(GetDefaultConfigFilterChainManager(), GetDefaultConfigEncryptionFilter())
 	if err != nil {
 		logger.Errorf("failed to register configFilter[%s] to DefaultConfigFilterChainManager",
