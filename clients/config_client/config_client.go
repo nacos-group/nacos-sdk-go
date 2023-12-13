@@ -260,7 +260,7 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content, encry
 	}
 	encryptedDataKey = response.EncryptedDataKey
 	content = response.Content
-	return content, encryptedDataKey, nil
+	return response.Content, response.EncryptedDataKey, nil
 }
 
 func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool, err error) {
