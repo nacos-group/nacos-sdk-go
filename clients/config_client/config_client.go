@@ -258,8 +258,8 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content, encry
 	if response != nil && response.Response != nil && !response.IsSuccess() {
 		return response.Content, response.EncryptedDataKey, errors.New(response.GetMessage())
 	}
-	param.EncryptedDataKey = response.EncryptedDataKey
-	param.Content = response.Content
+	encryptedDataKey = response.EncryptedDataKey
+	content = response.Content
 	return content, encryptedDataKey, nil
 }
 
