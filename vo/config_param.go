@@ -34,6 +34,15 @@ type ConfigParam struct {
 	OnChange         func(namespace, group, dataId, data string)
 }
 
+func (this *ConfigParam) DeepCopy() *ConfigParam {
+	if this == nil {
+		return nil
+	}
+	result := new(ConfigParam)
+	*result = *this
+	return result
+}
+
 type UsageType string
 
 const (

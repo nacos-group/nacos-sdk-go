@@ -178,15 +178,18 @@ func initKmsV3Client(clientConfig constant.ClientConfig) (*nacos_inner_encryptio
 }
 
 func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err error) {
-	content, err = client.getConfigInner(&param)
+	content, encryptedDataKey, err := client.getConfigInner(param)
 	if err != nil {
 		return "", err
 	}
-	param.UsageType = vo.ResponseType
-	if err = filter.GetDefaultConfigFilterChainManager().DoFilters(&param); err != nil {
+	deepCopyParam := param.DeepCopy()
+	deepCopyParam.EncryptedDataKey = encryptedDataKey
+	deepCopyParam.Content = content
+	deepCopyParam.UsageType = vo.ResponseType
+	if err = filter.GetDefaultConfigFilterChainManager().DoFilters(deepCopyParam); err != nil {
 		return "", err
 	}
-	content = param.Content
+	content = deepCopyParam.Content
 	return content, nil
 }
 
@@ -214,10 +217,10 @@ func (client *ConfigClient) encrypt(dataId, content, kmsKeyId string) (string, e
 	return cipherContent, nil
 }
 
-func (client *ConfigClient) getConfigInner(param *vo.ConfigParam) (content string, err error) {
+func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content, encryptedDataKey string, err error) {
 	if len(param.DataId) <= 0 {
 		err = errors.New("[client.GetConfig] param.dataId can not be empty")
-		return "", err
+		return "", "", err
 	}
 	if len(param.Group) <= 0 {
 		param.Group = constant.DEFAULT_GROUP
@@ -228,7 +231,8 @@ func (client *ConfigClient) getConfigInner(param *vo.ConfigParam) (content strin
 	content = cache.GetFailover(cacheKey, client.configCacheDir)
 	if len(content) > 0 {
 		logger.Warnf("%s %s %s is using failover content!", clientConfig.NamespaceId, param.Group, param.DataId)
-		return content, nil
+		//todo: get fial over encryptedDataKey
+		return content, "", nil
 	}
 	response, err := client.configProxy.queryConfig(param.DataId, param.Group, clientConfig.NamespaceId,
 		clientConfig.TimeoutMs, false, client)
@@ -237,24 +241,26 @@ func (client *ConfigClient) getConfigInner(param *vo.ConfigParam) (content strin
 			param.DataId, param.Group, clientConfig.NamespaceId)
 
 		if clientConfig.DisableUseSnapShot {
-			return "", errors.Errorf("get config from remote nacos server fail, and is not allowed to read local file, err:%v", err)
+			return "", "", errors.Errorf("get config from remote nacos server fail, and is not allowed to read local file, err:%v", err)
 		}
 
 		cacheContent, cacheErr := cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
+		//todo get encryptedDataKey from file
 		if cacheErr != nil {
-			return "", errors.Errorf("read config from both server and cache fail, err=%v，dataId=%s, group=%s, namespaceId=%s",
+			return "", "", errors.Errorf("read config from both server and cache fail, err=%v，dataId=%s, group=%s, namespaceId=%s",
 				cacheErr, param.DataId, param.Group, clientConfig.NamespaceId)
 		}
 
 		logger.Warnf("read config from cache success, dataId=%s, group=%s, namespaceId=%s", param.DataId, param.Group, clientConfig.NamespaceId)
-		return cacheContent, nil
+		//todo return encrypted data key
+		return cacheContent, encryptedDataKey, nil
 	}
 	if response != nil && response.Response != nil && !response.IsSuccess() {
-		return response.Content, errors.New(response.GetMessage())
+		return response.Content, response.EncryptedDataKey, errors.New(response.GetMessage())
 	}
 	param.EncryptedDataKey = response.EncryptedDataKey
 	param.Content = response.Content
-	return response.Content, nil
+	return content, encryptedDataKey, nil
 }
 
 func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool, err error) {
