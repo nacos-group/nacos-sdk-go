@@ -35,5 +35,6 @@ func TestConfigParamDeepCopy(t *testing.T) {
 
 	assert.Equal(t, param.DataId, paramDeepCopied.DataId)
 	assert.Equal(t, param.Content, paramDeepCopied.Content)
+	assert.NotEqual(t, &param.OnChange, &paramDeepCopied.OnChange)
 	assert.NotEqual(t, &param, &paramDeepCopied)
 }
