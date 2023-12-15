@@ -57,6 +57,9 @@ func (r *Response) GetBody() string {
 }
 
 func (r *Response) IsSuccess() bool {
+	if !r.Success {
+		r.Success = int(ResponseSuccessCode) == r.GetResultCode()
+	}
 	return r.Success
 }
 
