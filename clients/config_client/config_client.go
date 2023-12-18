@@ -20,12 +20,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/alibabacloud-go/tea/tea"
-	dkms_api "github.com/aliyun/alibabacloud-dkms-gcs-go-sdk/openapi"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
@@ -52,15 +49,15 @@ type ConfigClient struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	nacos_client.INacosClient
-	kmsClient       *nacos_inner_encryption.KmsClient
-	localConfigs    []vo.ConfigParam
-	mutex           sync.Mutex
-	configProxy     IConfigProxy
-	configCacheDir  string
-	lastAllSyncTime time.Time
-	cacheMap        cache.ConcurrentMap
-	uid             string
-	listenExecute   chan struct{}
+	configFilterChainManager filter.IConfigFilterChain
+	localConfigs             []vo.ConfigParam
+	mutex                    sync.Mutex
+	configProxy              IConfigProxy
+	configCacheDir           string
+	lastAllSyncTime          time.Time
+	cacheMap                 cache.ConcurrentMap
+	uid                      string
+	listenExecute            chan struct{}
 }
 
 type cacheData struct {
@@ -94,7 +91,7 @@ func (cacheData *cacheData) executeListener() {
 		EncryptedDataKey: cacheData.encryptedDataKey,
 		UsageType:        vo.ResponseType,
 	}
-	if err := filter.GetDefaultConfigFilterChainManager().DoFilters(param); err != nil {
+	if err := cacheData.configClient.configFilterChainManager.DoFilters(param); err != nil {
 		logger.Errorf("do filters failed ,dataId=%s,group=%s,tenant=%s,err:%+v ", cacheData.dataId,
 			cacheData.group, cacheData.tenant, err)
 		return
@@ -130,22 +127,16 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 		return nil, err
 	}
 
+	config.configFilterChainManager = filter.NewConfigFilterChainManager()
+
 	if clientConfig.OpenKMS {
-		filter.RegisterDefaultConfigEncryptionFilter()
-		nacos_inner_encryption.RegisterConfigEncryptionKmsPlugins()
-		var kmsClient *nacos_inner_encryption.KmsClient
-		switch clientConfig.KMSVersion {
-		case constant.KMSv1, constant.DEFAULT_KMS_VERSION:
-			kmsClient, err = initKmsV1Client(clientConfig)
-		case constant.KMSv3:
-			kmsClient, err = initKmsV3Client(clientConfig)
-		default:
-			err = fmt.Errorf("init kms client failed. unknown kms version:%s\n", clientConfig.KMSVersion)
-		}
+		kmsEncryptionHandler := nacos_inner_encryption.NewKmsHandler()
+		nacos_inner_encryption.RegisterConfigEncryptionKmsPlugins(kmsEncryptionHandler, clientConfig)
+		encryptionFilter := filter.NewDefaultConfigEncryptionFilter(kmsEncryptionHandler)
+		err := filter.RegisterConfigFilterToChain(config.configFilterChainManager, encryptionFilter)
 		if err != nil {
-			return nil, err
+			logger.Error(err)
 		}
-		config.kmsClient = kmsClient
 	}
 
 	uid, err := uuid.NewV4()
@@ -164,19 +155,6 @@ func initLogger(clientConfig constant.ClientConfig) error {
 	return logger.InitLogger(logger.BuildLoggerConfig(clientConfig))
 }
 
-func initKmsV1Client(clientConfig constant.ClientConfig) (*nacos_inner_encryption.KmsClient, error) {
-	return nacos_inner_encryption.InitDefaultKmsV1ClientWithAccessKey(clientConfig.RegionId, clientConfig.AccessKey, clientConfig.SecretKey)
-}
-
-func initKmsV3Client(clientConfig constant.ClientConfig) (*nacos_inner_encryption.KmsClient, error) {
-	return nacos_inner_encryption.InitDefaultKmsV3ClientWithConfig(&dkms_api.Config{
-		Protocol:         tea.String("https"),
-		Endpoint:         tea.String(clientConfig.KMSv3Config.Endpoint),
-		ClientKeyContent: tea.String(clientConfig.KMSv3Config.ClientKeyContent),
-		Password:         tea.String(clientConfig.KMSv3Config.Password),
-	}, clientConfig.KMSv3Config.CaContent)
-}
-
 func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err error) {
 	content, encryptedDataKey, err := client.getConfigInner(param)
 	if err != nil {
@@ -186,35 +164,11 @@ func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err
 	deepCopyParam.EncryptedDataKey = encryptedDataKey
 	deepCopyParam.Content = content
 	deepCopyParam.UsageType = vo.ResponseType
-	if err = filter.GetDefaultConfigFilterChainManager().DoFilters(deepCopyParam); err != nil {
+	if err = client.configFilterChainManager.DoFilters(deepCopyParam); err != nil {
 		return "", err
 	}
 	content = deepCopyParam.Content
 	return content, nil
-}
-
-func (client *ConfigClient) decrypt(dataId, content string) (string, error) {
-	var plainContent string
-	var err error
-	if client.kmsClient != nil && strings.HasPrefix(dataId, "cipher-") {
-		plainContent, err = client.kmsClient.Decrypt(content)
-		if err != nil {
-			return "", fmt.Errorf("kms decrypt failed: %v", err)
-		}
-	}
-	return plainContent, nil
-}
-
-func (client *ConfigClient) encrypt(dataId, content, kmsKeyId string) (string, error) {
-	var cipherContent string
-	var err error
-	if client.kmsClient != nil && strings.HasPrefix(dataId, "cipher-") {
-		cipherContent, err = client.kmsClient.Encrypt(content, kmsKeyId)
-		if err != nil {
-			return "", fmt.Errorf("kms encrypt failed: %v", err)
-		}
-	}
-	return cipherContent, nil
 }
 
 func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content, encryptedDataKey string, err error) {
@@ -278,7 +232,7 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	}
 
 	param.UsageType = vo.RequestType
-	if err = filter.GetDefaultConfigFilterChainManager().DoFilters(&param); err != nil {
+	if err = client.configFilterChainManager.DoFilters(&param); err != nil {
 		return false, err
 	}
 

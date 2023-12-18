@@ -26,12 +26,6 @@ import (
 	"github.com/pkg/errors"
 	"net/http"
 	"strings"
-	"sync"
-)
-
-var (
-	initKmsClientOnce = &sync.Once{}
-	kmsClient         *KmsClient
 )
 
 type KmsClient struct {
@@ -39,24 +33,18 @@ type KmsClient struct {
 	kmsVersion constant.KMSVersion
 }
 
-func InitDefaultKmsV1ClientWithAccessKey(regionId, ak, sk string) (*KmsClient, error) {
+func NewKmsV1ClientWithAccessKey(regionId, ak, sk string) (*KmsClient, error) {
 	var rErr error
-	if GetDefaultKmsClient() != nil {
-		return GetDefaultKmsClient(), rErr
-	}
 	if rErr = checkKmsV1InitParam(regionId, ak, sk); rErr != nil {
 		return nil, rErr
 	}
-	initKmsClientOnce.Do(func() {
-		client, err := NewKmsV1ClientWithAccessKey(regionId, ak, sk)
-		if err != nil {
-			rErr = errors.Wrap(err, "init kms v1 client with ak/sk failed")
-		} else {
-			client.SetKmsVersion(constant.KMSv1)
-			kmsClient = client
-		}
-	})
-	return GetDefaultKmsClient(), rErr
+	kmsClient, err := newKmsV1ClientWithAccessKey(regionId, ak, sk)
+	if err != nil {
+		rErr = errors.Wrap(err, "init kms v1 client with ak/sk failed")
+	} else {
+		kmsClient.setKmsVersion(constant.KMSv1)
+	}
+	return kmsClient, rErr
 }
 
 func checkKmsV1InitParam(regionId, ak, sk string) error {
@@ -72,30 +60,24 @@ func checkKmsV1InitParam(regionId, ak, sk string) error {
 	return nil
 }
 
-func InitDefaultKmsV3ClientWithConfig(config *dkms_api.Config, caVerify string) (*KmsClient, error) {
+func NewKmsV3ClientWithConfig(config *dkms_api.Config, caVerify string) (*KmsClient, error) {
 	var rErr error
-	if GetDefaultKmsClient() != nil {
-		return GetDefaultKmsClient(), rErr
-	}
 	if rErr = checkKmsV3InitParam(config, caVerify); rErr != nil {
 		return nil, rErr
 	}
-	initKmsClientOnce.Do(func() {
-		client, err := NewKmsV3ClientWithConfig(config)
-		if err != nil {
-			rErr = errors.Wrap(err, "init kms v3 client with config failed")
+	kmsClient, err := newKmsV3ClientWithConfig(config)
+	if err != nil {
+		rErr = errors.Wrap(err, "init kms v3 client with config failed")
+	} else {
+		if len(strings.TrimSpace(caVerify)) != 0 {
+			logger.Debugf("set kms client Ca with content: %s\n", caVerify[:len(caVerify)/maskUnit32Width])
+			kmsClient.SetVerify(caVerify)
 		} else {
-			if len(strings.TrimSpace(caVerify)) != 0 {
-				logger.Debugf("set kms client Ca with content: %s\n", caVerify[:len(caVerify)/maskUnit32Width])
-				client.SetVerify(caVerify)
-			} else {
-				client.SetHTTPSInsecure(true)
-			}
-			client.SetKmsVersion(constant.KMSv3)
-			kmsClient = client
+			kmsClient.SetHTTPSInsecure(true)
 		}
-	})
-	return GetDefaultKmsClient(), rErr
+		kmsClient.setKmsVersion(constant.KMSv3)
+	}
+	return kmsClient, rErr
 }
 
 func checkKmsV3InitParam(config *dkms_api.Config, caVerify string) error {
@@ -114,17 +96,13 @@ func checkKmsV3InitParam(config *dkms_api.Config, caVerify string) error {
 	return nil
 }
 
-func GetDefaultKmsClient() *KmsClient {
-	return kmsClient
-}
-
-func NewKmsV1ClientWithAccessKey(regionId, ak, sk string) (*KmsClient, error) {
+func newKmsV1ClientWithAccessKey(regionId, ak, sk string) (*KmsClient, error) {
 	logger.Debugf("init kms client with region:[%s], ak:[%s]xxx, sk:[%s]xxx\n",
 		regionId, ak[:len(ak)/maskUnit8Width], sk[:len(sk)/maskUnit8Width])
 	return newKmsClient(regionId, ak, sk, nil)
 }
 
-func NewKmsV3ClientWithConfig(config *dkms_api.Config) (*KmsClient, error) {
+func newKmsV3ClientWithConfig(config *dkms_api.Config) (*KmsClient, error) {
 	logger.Debugf("init kms client with endpoint:[%s], clientKeyContent:[%s], password:[%s]\n",
 		config.Endpoint, (*config.ClientKeyContent)[:len(*config.ClientKeyContent)/maskUnit8Width],
 		(*config.Password)[:len(*config.Password)/maskUnit8Width])
@@ -145,7 +123,7 @@ func (kmsClient *KmsClient) GetKmsVersion() constant.KMSVersion {
 	return kmsClient.kmsVersion
 }
 
-func (kmsClient *KmsClient) SetKmsVersion(kmsVersion constant.KMSVersion) {
+func (kmsClient *KmsClient) setKmsVersion(kmsVersion constant.KMSVersion) {
 	logger.Debug("successfully set kms client version to " + kmsVersion)
 	kmsClient.kmsVersion = kmsVersion
 }
