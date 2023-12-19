@@ -13,7 +13,7 @@ func InnerResponseJsonUnmarshal(responseBody []byte, responseFunc func() IRespon
 		tempFiledMap := make(map[string]interface{})
 		err = json.Unmarshal(responseBody, &tempFiledMap)
 		if err != nil {
-			return nil, err
+			return response, nil
 		}
 		if _, ok := tempFiledMap[ResponseSuccessField]; !ok {
 			response.SetSuccess(response.GetResultCode() == int(ResponseSuccessCode))
