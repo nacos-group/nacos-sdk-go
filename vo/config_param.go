@@ -19,18 +19,36 @@ package vo
 type Listener func(namespace, group, dataId, data string)
 
 type ConfigParam struct {
-	DataId           string `param:"dataId"`  //required
-	Group            string `param:"group"`   //required
-	Content          string `param:"content"` //required
-	Tag              string `param:"tag"`
-	AppName          string `param:"appName"`
-	BetaIps          string `param:"betaIps"`
-	CasMd5           string `param:"casMd5"`
-	Type             string `param:"type"`
-	SrcUser          string `param:"srcUser"`
-	EncryptedDataKey string `param:"encryptedDataKey"`
+	DataId           string    `param:"dataId"`  //required
+	Group            string    `param:"group"`   //required
+	Content          string    `param:"content"` //required
+	Tag              string    `param:"tag"`
+	AppName          string    `param:"appName"`
+	BetaIps          string    `param:"betaIps"`
+	CasMd5           string    `param:"casMd5"`
+	Type             string    `param:"type"`
+	SrcUser          string    `param:"srcUser"`
+	EncryptedDataKey string    `param:"encryptedDataKey"`
+	KmsKeyId         string    `param:"kmsKeyId"`
+	UsageType        UsageType `param:"usageType"`
 	OnChange         func(namespace, group, dataId, data string)
 }
+
+func (this *ConfigParam) DeepCopy() *ConfigParam {
+	if this == nil {
+		return nil
+	}
+	result := new(ConfigParam)
+	*result = *this
+	return result
+}
+
+type UsageType string
+
+const (
+	RequestType  UsageType = "RequestType"
+	ResponseType UsageType = "ResponseType"
+)
 
 type SearchConfigParam struct {
 	Search   string `param:"search"`

@@ -67,7 +67,7 @@ func (m *MockConfigProxy) queryConfig(dataId, group, tenant string, timeout uint
 	if IsLimited(cacheKey) {
 		return nil, errors.New("request is limited")
 	}
-	return &rpc_response.ConfigQueryResponse{Content: "hello world"}, nil
+	return &rpc_response.ConfigQueryResponse{Content: "hello world", Response: &rpc_response.Response{Success: true}}, nil
 }
 func (m *MockConfigProxy) searchConfigProxy(param vo.SearchConfigParam, tenant, accessKey, secretKey string) (*model.ConfigPage, error) {
 	return &model.ConfigPage{TotalCount: 1}, nil
@@ -94,7 +94,7 @@ func Test_GetConfig(t *testing.T) {
 
 	content, err := client.GetConfig(vo.ConfigParam{
 		DataId: localConfigTest.DataId,
-		Group:  "group"})
+		Group:  localConfigTest.Group})
 
 	assert.Nil(t, err)
 	assert.Equal(t, "hello world", content)

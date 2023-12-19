@@ -19,8 +19,6 @@ package naming_cache
 import (
 	"sync"
 
-	"github.com/pkg/errors"
-
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
@@ -79,10 +77,6 @@ func (ed *SubscribeCallback) ServiceChanged(cacheKey string, service *model.Serv
 	funcs, ok := ed.callbackFuncMap.Get(cacheKey)
 	if ok {
 		for _, funcItem := range funcs.([]*func(services []model.Instance, err error)) {
-			if len(service.Hosts) == 0 {
-				(*funcItem)(service.Hosts, errors.New("[client.Subscribe] subscribe failed,hosts is empty"))
-				continue
-			}
 			if *funcItem == nil {
 				continue
 			}
