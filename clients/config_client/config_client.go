@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -185,8 +186,8 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content, encry
 	content = cache.GetFailover(cacheKey, client.configCacheDir)
 	if len(content) > 0 {
 		logger.Warnf("%s %s %s is using failover content!", clientConfig.NamespaceId, param.Group, param.DataId)
-		//todo: get fial over encryptedDataKey
-		return content, "", nil
+		encryptedDataKey = cache.GetFailoverEncryptedDataKey(cacheKey, client.configCacheDir)
+		return content, encryptedDataKey, nil
 	}
 	response, err := client.configProxy.queryConfig(param.DataId, param.Group, clientConfig.NamespaceId,
 		clientConfig.TimeoutMs, false, client)
@@ -199,14 +200,21 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content, encry
 		}
 
 		cacheContent, cacheErr := cache.ReadConfigFromFile(cacheKey, client.configCacheDir)
-		//todo get encryptedDataKey from file
 		if cacheErr != nil {
 			return "", "", errors.Errorf("read config from both server and cache fail, err=%v，dataId=%s, group=%s, namespaceId=%s",
 				cacheErr, param.DataId, param.Group, clientConfig.NamespaceId)
 		}
 
+		if !strings.HasPrefix(param.DataId, nacos_inner_encryption.CipherPrefix) {
+			return cacheContent, "", nil
+		}
+		encryptedDataKey, cacheErr = cache.ReadEncryptedDataKeyFromFile(cacheKey, client.configCacheDir)
+		if cacheErr != nil {
+			return "", "", errors.Errorf("read encryptedDataKey from server and cache fail, err=%v，dataId=%s, group=%s, namespaceId=%s",
+				cacheErr, param.DataId, param.Group, clientConfig.NamespaceId)
+		}
+
 		logger.Warnf("read config from cache success, dataId=%s, group=%s, namespaceId=%s", param.DataId, param.Group, clientConfig.NamespaceId)
-		//todo return encrypted data key
 		return cacheContent, encryptedDataKey, nil
 	}
 	if response != nil && response.Response != nil && !response.IsSuccess() {
@@ -214,7 +222,7 @@ func (client *ConfigClient) getConfigInner(param vo.ConfigParam) (content, encry
 	}
 	encryptedDataKey = response.EncryptedDataKey
 	content = response.Content
-	return response.Content, response.EncryptedDataKey, nil
+	return content, encryptedDataKey, nil
 }
 
 func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool, err error) {
@@ -312,10 +320,14 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 		cData.isInitializing = true
 	} else {
 		var (
-			content string
-			md5Str  string
+			content  string
+			md5Str   string
+			innerErr error
 		)
-		content, _ = cache.ReadConfigFromFile(key, client.configCacheDir)
+		if content, innerErr = cache.ReadConfigFromFile(key, client.configCacheDir); innerErr != nil {
+			logger.Warn(innerErr)
+		}
+		encryptedDataKey, _ := cache.ReadEncryptedDataKeyFromFile(key, client.configCacheDir)
 		if len(content) > 0 {
 			md5Str = util.Md5(content)
 		}
@@ -332,6 +344,7 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 			content:           content,
 			md5:               md5Str,
 			cacheDataListener: listener,
+			encryptedDataKey:  encryptedDataKey,
 			taskId:            client.cacheMap.Count() / perTaskConfigSize,
 			configClient:      client,
 		}
