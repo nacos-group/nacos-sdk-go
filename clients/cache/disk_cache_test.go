@@ -30,7 +30,7 @@ func TestWriteAndGetConfigToFile(t *testing.T) {
 		assert.Nil(t, err)
 
 		configFromFile, err := ReadConfigFromFile(cacheKey, dir)
-		assert.Nil(t, err)
+		assert.NotNil(t, err)
 		assert.Equal(t, configFromFile, "")
 
 		err = WriteConfigToFile(cacheKey, dir, configContent)
@@ -90,7 +90,7 @@ func TestWriteAndGetConfigToFile(t *testing.T) {
 		assert.Equal(t, fromFile, configContent)
 	})
 	t.Run("read doesn't existed config file", func(t *testing.T) {
-		dataId := "config_encryptedDataKey" + dataIdSuffix
+		dataId := "config_encryptedDataKey" + dataIdSuffix + strconv.Itoa(rand.Intn(1000))
 		cacheKey := util.GetConfigCacheKey(dataId, group, ns)
 
 		_, err := ReadConfigFromFile(cacheKey, dir)

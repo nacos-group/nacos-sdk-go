@@ -160,7 +160,7 @@ func ReadEncryptedDataKeyFromFile(cacheKey string, cacheDir string) (string, err
 }
 
 func ReadConfigFromFile(cacheKey string, cacheDir string) (string, error) {
-	return readConfigFromFile(GetConfigEncryptedDataKeyFileName(cacheKey, cacheDir), ConfigEncryptedDataKey)
+	return readConfigFromFile(GetFileName(cacheKey, cacheDir), ConfigEncryptedDataKey)
 }
 
 func readConfigFromFile(fileName string, fileType ConfigCachedFileType) (string, error) {
