@@ -22,19 +22,21 @@ import (
 )
 
 func TestConfigParamDeepCopy(t *testing.T) {
-	param := &ConfigParam{
-		DataId:    "dataId",
-		Group:     "",
-		Content:   "common content",
-		UsageType: RequestType,
-		OnChange: func(namespace, group, dataId, data string) {
-			//do nothing
-		},
-	}
-	paramDeepCopied := param.DeepCopy()
+	t.Run("test configParam deep copy", func(t *testing.T) {
+		param := &ConfigParam{
+			DataId:    "dataId",
+			Group:     "",
+			Content:   "common content",
+			UsageType: RequestType,
+			OnChange: func(namespace, group, dataId, data string) {
+				//do nothing
+			},
+		}
+		paramDeepCopied := param.DeepCopy()
 
-	assert.Equal(t, param.DataId, paramDeepCopied.DataId)
-	assert.Equal(t, param.Content, paramDeepCopied.Content)
-	assert.NotEqual(t, &param.OnChange, &paramDeepCopied.OnChange)
-	assert.NotEqual(t, &param, &paramDeepCopied)
+		assert.Equal(t, param.DataId, paramDeepCopied.DataId)
+		assert.Equal(t, param.Content, paramDeepCopied.Content)
+		assert.NotEqual(t, &param.OnChange, &paramDeepCopied.OnChange)
+		assert.NotEqual(t, &param, &paramDeepCopied)
+	})
 }
