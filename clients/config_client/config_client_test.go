@@ -64,7 +64,7 @@ func createConfigClientTest() *ConfigClient {
 	return client
 }
 
-func createConfigClient() *ConfigClient {
+func createConfigClientForKmsTest() *ConfigClient {
 	nc := nacos_client.NacosClient{}
 	_ = nc.SetServerConfig([]constant.ServerConfig{*serverConfigWithOptions})
 	_ = nc.SetClientConfig(*clientConfigWithOptions)
@@ -143,28 +143,29 @@ func Test_SearchConfig(t *testing.T) {
 	assert.NotEmpty(t, configPage)
 }
 
-func TestPublishAndGetConfigByUsingLocalCache(t *testing.T) {
-	param := vo.ConfigParam{
-		DataId:  "cipher-kms-aes-256-usingCache",
-		Group:   "DEFAULT",
-		Content: "content加密&&",
-	}
-	t.Run("PublishAndGetConfigByUsingLocalCache", func(t *testing.T) {
-		client := createConfigClient()
-		_, err := client.PublishConfig(param)
-		assert.Nil(t, err)
-
-		configQueryContent, err := client.GetConfig(param)
-		assert.Nil(t, err)
-		assert.Equal(t, param.Content, configQueryContent)
-
-		resetConfigClientProxy(client, &MockConfigProxyForUsingLocalDiskCache{})
-		configQueryContentByUsingCache, err := client.GetConfig(param)
-		assert.Nil(t, err)
-		assert.Equal(t, param.Content, configQueryContentByUsingCache)
-
-	})
-}
+// only using by ak sk
+//func TestPublishAndGetConfigByUsingLocalCache(t *testing.T) {
+//	param := vo.ConfigParam{
+//		DataId:  "cipher-kms-aes-256-usingCache",
+//		Group:   "DEFAULT",
+//		Content: "content加密&&",
+//	}
+//	t.Run("PublishAndGetConfigByUsingLocalCache", func(t *testing.T) {
+//		client := createConfigClientForKmsTest()
+//		_, err := client.PublishConfig(param)
+//		assert.Nil(t, err)
+//
+//		configQueryContent, err := client.GetConfig(param)
+//		assert.Nil(t, err)
+//		assert.Equal(t, param.Content, configQueryContent)
+//
+//		resetConfigClientProxy(client, &MockConfigProxyForUsingLocalDiskCache{})
+//		configQueryContentByUsingCache, err := client.GetConfig(param)
+//		assert.Nil(t, err)
+//		assert.Equal(t, param.Content, configQueryContentByUsingCache)
+//
+//	})
+//}
 
 // PublishConfig
 func Test_PublishConfigWithoutDataId(t *testing.T) {
