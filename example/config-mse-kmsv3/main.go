@@ -31,7 +31,7 @@ import (
 )
 
 var localServerConfigWithOptions = constant.NewServerConfig(
-	"mse-a8c6bf80-p.nacos-ans.mse.aliyuncs.com",
+	"mse-cdf17f60-p.nacos-ans.mse.aliyuncs.com",
 	8848,
 )
 
