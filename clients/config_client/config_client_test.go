@@ -19,9 +19,8 @@ package config_client
 import (
 	"context"
 	"errors"
-	"testing"
-
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
+	"testing"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
@@ -35,7 +34,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var serverConfigWithOptions = constant.NewServerConfig("mse-73c5bff0-p.nacos-ans.mse.aliyuncs.com", 8848)
+var serverConfigWithOptions = constant.NewServerConfig("mse-xxx.mse.aliyuncs.com", 8848)
 
 var clientConfigWithOptions = constant.NewClientConfig(
 	constant.WithTimeoutMs(10*1000),
@@ -64,7 +63,7 @@ func createConfigClientTest() *ConfigClient {
 	return client
 }
 
-func createConfigClientForKmsTest() *ConfigClient {
+func createConfigClientCommon() *ConfigClient {
 	nc := nacos_client.NacosClient{}
 	_ = nc.SetServerConfig([]constant.ServerConfig{*serverConfigWithOptions})
 	_ = nc.SetClientConfig(*clientConfigWithOptions)
@@ -73,8 +72,14 @@ func createConfigClientForKmsTest() *ConfigClient {
 	return client
 }
 
-func resetConfigClientProxy(client *ConfigClient, proxy IConfigProxy) {
-	client.configProxy = proxy
+func createConfigClientForKms() *ConfigClient {
+	nc := nacos_client.NacosClient{}
+	_ = nc.SetServerConfig([]constant.ServerConfig{*serverConfigWithOptions})
+	_ = nc.SetClientConfig(*clientConfigWithOptions)
+	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
+	client, _ := NewConfigClient(&nc)
+	client.configProxy = &MockConfigProxyForUsingLocalDiskCache{}
+	return client
 }
 
 type MockConfigProxyForUsingLocalDiskCache struct {
@@ -143,29 +148,55 @@ func Test_SearchConfig(t *testing.T) {
 	assert.NotEmpty(t, configPage)
 }
 
-// only using by ak sk
-//func TestPublishAndGetConfigByUsingLocalCache(t *testing.T) {
-//	param := vo.ConfigParam{
-//		DataId:  "cipher-kms-aes-256-usingCache",
-//		Group:   "DEFAULT",
-//		Content: "content加密&&",
-//	}
-//	t.Run("PublishAndGetConfigByUsingLocalCache", func(t *testing.T) {
-//		client := createConfigClientForKmsTest()
-//		_, err := client.PublishConfig(param)
-//		assert.Nil(t, err)
-//
-//		configQueryContent, err := client.GetConfig(param)
-//		assert.Nil(t, err)
-//		assert.Equal(t, param.Content, configQueryContent)
-//
-//		resetConfigClientProxy(client, &MockConfigProxyForUsingLocalDiskCache{})
-//		configQueryContentByUsingCache, err := client.GetConfig(param)
-//		assert.Nil(t, err)
-//		assert.Equal(t, param.Content, configQueryContentByUsingCache)
-//
-//	})
-//}
+// only using by ak sk for cipher config of aliyun kms
+/*
+func TestPublishAndGetConfigByUsingLocalCache(t *testing.T) {
+	param := vo.ConfigParam{
+		DataId:  "cipher-kms-aes-256-usingCache" + strconv.Itoa(rand.Int()),
+		Group:   "DEFAULT",
+		Content: "content加密&&" + strconv.Itoa(rand.Int()),
+	}
+	t.Run("PublishAndGetConfigByUsingLocalCache", func(t *testing.T) {
+		commonClient := createConfigClientCommon()
+		_, err := commonClient.PublishConfig(param)
+		assert.Nil(t, err)
+
+		time.Sleep(2 * time.Second)
+		configQueryContent, err := commonClient.GetConfig(param)
+		assert.Nil(t, err)
+		assert.Equal(t, param.Content, configQueryContent)
+
+		usingKmsCacheClient := createConfigClientForKms()
+		configQueryContentByUsingCache, err := usingKmsCacheClient.GetConfig(param)
+		assert.Nil(t, err)
+		assert.Equal(t, param.Content, configQueryContentByUsingCache)
+
+		newCipherContent := param.Content + "new"
+		param.Content = newCipherContent
+		err = commonClient.ListenConfig(vo.ConfigParam{
+			DataId: param.DataId,
+			Group:  param.Group,
+			OnChange: func(namespace, group, dataId, data string) {
+				t.Log("origin data: " + newCipherContent + "; new data: " + data)
+				assert.Equal(t, newCipherContent, data)
+			},
+		})
+		assert.Nil(t, err)
+
+		result, err := commonClient.PublishConfig(param)
+		assert.Nil(t, err)
+		assert.True(t, result)
+
+		time.Sleep(2 * time.Second)
+		newContentCommon, err := commonClient.GetConfig(param)
+		assert.Nil(t, err)
+		assert.Equal(t, param.Content, newContentCommon)
+		newContentKms, err := usingKmsCacheClient.GetConfig(param)
+		assert.Nil(t, err)
+		assert.Equal(t, param.Content, newContentKms)
+	})
+}
+*/
 
 // PublishConfig
 func Test_PublishConfigWithoutDataId(t *testing.T) {
