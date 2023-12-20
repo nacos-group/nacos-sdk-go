@@ -35,12 +35,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var serverConfigWithOptions = constant.NewServerConfig("127.0.0.1", 80, constant.WithContextPath("/nacos"))
+var serverConfigWithOptions = constant.NewServerConfig("mse-73c5bff0-p.nacos-ans.mse.aliyuncs.com", 8848)
 
 var clientConfigWithOptions = constant.NewClientConfig(
 	constant.WithTimeoutMs(10*1000),
 	constant.WithBeatInterval(2*1000),
 	constant.WithNotLoadCacheAtStart(true),
+	constant.WithAccessKey("LTAxxx"),
+	constant.WithSecretKey("EdPxxx"),
+	constant.WithOpenKMS(true),
+	constant.WithKMSVersion(constant.KMSv1),
+	constant.WithRegionId("cn-hangzhou"),
 )
 
 var localConfigTest = vo.ConfigParam{
@@ -57,6 +62,27 @@ func createConfigClientTest() *ConfigClient {
 	client, _ := NewConfigClient(&nc)
 	client.configProxy = &MockConfigProxy{}
 	return client
+}
+
+func createConfigClient() *ConfigClient {
+	nc := nacos_client.NacosClient{}
+	_ = nc.SetServerConfig([]constant.ServerConfig{*serverConfigWithOptions})
+	_ = nc.SetClientConfig(*clientConfigWithOptions)
+	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
+	client, _ := NewConfigClient(&nc)
+	return client
+}
+
+func resetConfigClientProxy(client *ConfigClient, proxy IConfigProxy) {
+	client.configProxy = proxy
+}
+
+type MockConfigProxyForUsingLocalDiskCache struct {
+	MockConfigProxy
+}
+
+func (m *MockConfigProxyForUsingLocalDiskCache) queryConfig(dataId, group, tenant string, timeout uint64, notify bool, client *ConfigClient) (*rpc_response.ConfigQueryResponse, error) {
+	return nil, errors.New("mock err for using localCache")
 }
 
 type MockConfigProxy struct {
@@ -115,6 +141,29 @@ func Test_SearchConfig(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, configPage)
+}
+
+func TestPublishAndGetConfigByUsingLocalCache(t *testing.T) {
+	param := vo.ConfigParam{
+		DataId:  "cipher-kms-aes-256-usingCache",
+		Group:   "DEFAULT",
+		Content: "content加密&&",
+	}
+	t.Run("PublishAndGetConfigByUsingLocalCache", func(t *testing.T) {
+		client := createConfigClient()
+		_, err := client.PublishConfig(param)
+		assert.Nil(t, err)
+
+		configQueryContent, err := client.GetConfig(param)
+		assert.Nil(t, err)
+		assert.Equal(t, param.Content, configQueryContent)
+
+		resetConfigClientProxy(client, &MockConfigProxyForUsingLocalDiskCache{})
+		configQueryContentByUsingCache, err := client.GetConfig(param)
+		assert.Nil(t, err)
+		assert.Equal(t, param.Content, configQueryContentByUsingCache)
+
+	})
 }
 
 // PublishConfig
