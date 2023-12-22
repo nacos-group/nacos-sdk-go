@@ -19,9 +19,8 @@ package config_client
 import (
 	"context"
 	"errors"
-	"testing"
-
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
+	"testing"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
@@ -35,12 +34,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var serverConfigWithOptions = constant.NewServerConfig("127.0.0.1", 80, constant.WithContextPath("/nacos"))
+var serverConfigWithOptions = constant.NewServerConfig("mse-xxx.mse.aliyuncs.com", 8848)
 
 var clientConfigWithOptions = constant.NewClientConfig(
 	constant.WithTimeoutMs(10*1000),
 	constant.WithBeatInterval(2*1000),
 	constant.WithNotLoadCacheAtStart(true),
+	constant.WithAccessKey("LTAxxx"),
+	constant.WithSecretKey("EdPxxx"),
+	constant.WithOpenKMS(true),
+	constant.WithKMSVersion(constant.KMSv1),
+	constant.WithRegionId("cn-hangzhou"),
 )
 
 var localConfigTest = vo.ConfigParam{
@@ -57,6 +61,33 @@ func createConfigClientTest() *ConfigClient {
 	client, _ := NewConfigClient(&nc)
 	client.configProxy = &MockConfigProxy{}
 	return client
+}
+
+func createConfigClientCommon() *ConfigClient {
+	nc := nacos_client.NacosClient{}
+	_ = nc.SetServerConfig([]constant.ServerConfig{*serverConfigWithOptions})
+	_ = nc.SetClientConfig(*clientConfigWithOptions)
+	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
+	client, _ := NewConfigClient(&nc)
+	return client
+}
+
+func createConfigClientForKms() *ConfigClient {
+	nc := nacos_client.NacosClient{}
+	_ = nc.SetServerConfig([]constant.ServerConfig{*serverConfigWithOptions})
+	_ = nc.SetClientConfig(*clientConfigWithOptions)
+	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
+	client, _ := NewConfigClient(&nc)
+	client.configProxy = &MockConfigProxyForUsingLocalDiskCache{}
+	return client
+}
+
+type MockConfigProxyForUsingLocalDiskCache struct {
+	MockConfigProxy
+}
+
+func (m *MockConfigProxyForUsingLocalDiskCache) queryConfig(dataId, group, tenant string, timeout uint64, notify bool, client *ConfigClient) (*rpc_response.ConfigQueryResponse, error) {
+	return nil, errors.New("mock err for using localCache")
 }
 
 type MockConfigProxy struct {
@@ -116,6 +147,56 @@ func Test_SearchConfig(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotEmpty(t, configPage)
 }
+
+// only using by ak sk for cipher config of aliyun kms
+/*
+func TestPublishAndGetConfigByUsingLocalCache(t *testing.T) {
+	param := vo.ConfigParam{
+		DataId:  "cipher-kms-aes-256-usingCache" + strconv.Itoa(rand.Int()),
+		Group:   "DEFAULT",
+		Content: "content加密&&" + strconv.Itoa(rand.Int()),
+	}
+	t.Run("PublishAndGetConfigByUsingLocalCache", func(t *testing.T) {
+		commonClient := createConfigClientCommon()
+		_, err := commonClient.PublishConfig(param)
+		assert.Nil(t, err)
+
+		time.Sleep(2 * time.Second)
+		configQueryContent, err := commonClient.GetConfig(param)
+		assert.Nil(t, err)
+		assert.Equal(t, param.Content, configQueryContent)
+
+		usingKmsCacheClient := createConfigClientForKms()
+		configQueryContentByUsingCache, err := usingKmsCacheClient.GetConfig(param)
+		assert.Nil(t, err)
+		assert.Equal(t, param.Content, configQueryContentByUsingCache)
+
+		newCipherContent := param.Content + "new"
+		param.Content = newCipherContent
+		err = commonClient.ListenConfig(vo.ConfigParam{
+			DataId: param.DataId,
+			Group:  param.Group,
+			OnChange: func(namespace, group, dataId, data string) {
+				t.Log("origin data: " + newCipherContent + "; new data: " + data)
+				assert.Equal(t, newCipherContent, data)
+			},
+		})
+		assert.Nil(t, err)
+
+		result, err := commonClient.PublishConfig(param)
+		assert.Nil(t, err)
+		assert.True(t, result)
+
+		time.Sleep(2 * time.Second)
+		newContentCommon, err := commonClient.GetConfig(param)
+		assert.Nil(t, err)
+		assert.Equal(t, param.Content, newContentCommon)
+		newContentKms, err := usingKmsCacheClient.GetConfig(param)
+		assert.Nil(t, err)
+		assert.Equal(t, param.Content, newContentKms)
+	})
+}
+*/
 
 // PublishConfig
 func Test_PublishConfigWithoutDataId(t *testing.T) {

@@ -21,7 +21,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/filter"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
@@ -32,7 +31,7 @@ import (
 )
 
 var localServerConfigWithOptions = constant.NewServerConfig(
-	"mse-d12e6112-p.nacos-ans.mse.aliyuncs.com",
+	"mse-cdf17f60-p.nacos-ans.mse.aliyuncs.com",
 	8848,
 )
 
@@ -42,7 +41,7 @@ var localClientConfigWithOptions = constant.NewClientConfig(
 	constant.WithNotLoadCacheAtStart(true),
 	constant.WithAccessKey(getFileContent(path.Join(getWDR(), "ak"))),
 	constant.WithSecretKey(getFileContent(path.Join(getWDR(), "sk"))),
-	constant.WithNamespaceId("791fd262-3735-40df-a605-e3236f8ff495"),
+	//constant.WithNamespaceId("791fd262-3735-40df-a605-e3236f8ff495"),
 	constant.WithOpenKMS(true),
 	constant.WithKMSVersion(constant.KMSv3),
 	constant.WithKMSv3Config(&constant.KMSv3Config{
@@ -56,27 +55,26 @@ var localClientConfigWithOptions = constant.NewClientConfig(
 
 var localConfigList = []vo.ConfigParam{
 	{
-		DataId:   "common-config",
-		Group:    "default",
-		Content:  "common",
-		KmsKeyId: "key-xxx", //可以识别
+		DataId:  "common-config",
+		Group:   "default",
+		Content: "common普通&&",
 	},
 	{
 		DataId:   "cipher-crypt",
 		Group:    "default",
-		Content:  "cipher",
+		Content:  "cipher加密&&",
 		KmsKeyId: "key-xxx", //可以识别
 	},
 	{
 		DataId:   "cipher-kms-aes-128-crypt",
 		Group:    "default",
-		Content:  "cipher-aes-128",
+		Content:  "cipher-aes-128加密&&",
 		KmsKeyId: "key-xxx", //可以识别
 	},
 	{
 		DataId:   "cipher-kms-aes-256-crypt",
 		Group:    "default",
-		Content:  "cipher-aes-256",
+		Content:  "cipher-aes-256加密&&",
 		KmsKeyId: "key-xxx", //可以识别
 	},
 }
@@ -141,24 +139,6 @@ func usingKMSv3ClientAndStoredByNacos() {
 		//wait for config change callback to execute
 		//time.Sleep(2 * time.Second)
 	}
-}
-
-func onlyUsingFilters() error {
-	createConfigClient()
-	for _, param := range localConfigList {
-		param.UsageType = vo.RequestType
-		fmt.Println("param = ", param)
-		if err := filter.GetDefaultConfigFilterChainManager().DoFilters(&param); err != nil {
-			return err
-		}
-		fmt.Println("after encrypt param = ", param)
-		param.UsageType = vo.ResponseType
-		if err := filter.GetDefaultConfigFilterChainManager().DoFilters(&param); err != nil {
-			return err
-		}
-		fmt.Println("after decrypt param = ", param)
-	}
-	return nil
 }
 
 func createConfigClient() *config_client.ConfigClient {

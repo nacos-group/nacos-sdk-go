@@ -39,7 +39,6 @@ var localClientConfigWithOptions = constant.NewClientConfig(
 	//constant.WithSecretKey(getFileContent(path.Join(getWDR(), "sk"))),
 	constant.WithAccessKey("LTAxxxgQL"),
 	constant.WithSecretKey("iG4xxxV6C"),
-	constant.WithNamespaceId("791fd262-3735-40df-a605-e3236f8ff495"),
 	constant.WithOpenKMS(true),
 	constant.WithKMSVersion(constant.KMSv1),
 	constant.WithRegionId("cn-beijing"),

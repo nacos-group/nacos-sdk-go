@@ -17,13 +17,10 @@
 package filter
 
 import (
-	"fmt"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	nacos_inner_encryption "github.com/nacos-group/nacos-sdk-go/v2/common/encryption"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"github.com/pkg/errors"
 	"strings"
-	"sync"
 )
 
 const (
@@ -31,29 +28,22 @@ const (
 )
 
 var (
-	initDefaultConfigEncryptionFilterOnce = &sync.Once{}
-	defaultConfigEncryptionFilter         IConfigFilter
+	noNeedEncryptionError = errors.New("dataId doesn't need to encrypt/decrypt.")
 )
 
 type DefaultConfigEncryptionFilter struct {
+	handler nacos_inner_encryption.Handler
 }
 
-func GetDefaultConfigEncryptionFilter() IConfigFilter {
-	if defaultConfigEncryptionFilter == nil {
-		initDefaultConfigEncryptionFilterOnce.Do(func() {
-			defaultConfigEncryptionFilter = &DefaultConfigEncryptionFilter{}
-			logger.Debugf("successfully create ConfigFilter[%s]", defaultConfigEncryptionFilter.GetFilterName())
-		})
-	}
-	return defaultConfigEncryptionFilter
+func NewDefaultConfigEncryptionFilter(handler nacos_inner_encryption.Handler) IConfigFilter {
+	return &DefaultConfigEncryptionFilter{handler}
 }
 
 func (d *DefaultConfigEncryptionFilter) DoFilter(param *vo.ConfigParam) error {
-	if !strings.HasPrefix(param.DataId, nacos_inner_encryption.CipherPrefix) {
-		return nil
-	}
-	if nacos_inner_encryption.GetDefaultKmsClient() == nil {
-		return fmt.Errorf("kms client hasn't inited, can't publish config dataId start with: %s", nacos_inner_encryption.CipherPrefix)
+	if err := d.paramCheck(*param); err != nil {
+		if errors.Is(err, noNeedEncryptionError) {
+			return nil
+		}
 	}
 	if param.UsageType == vo.RequestType {
 		encryptionParam := &nacos_inner_encryption.HandlerParam{
@@ -61,10 +51,7 @@ func (d *DefaultConfigEncryptionFilter) DoFilter(param *vo.ConfigParam) error {
 			Content: param.Content,
 			KeyId:   param.KmsKeyId,
 		}
-		if len(encryptionParam.KeyId) == 0 && nacos_inner_encryption.GetDefaultKmsClient().GetKmsVersion() == constant.KMSv1 {
-			encryptionParam.KeyId = nacos_inner_encryption.GetDefaultKMSv1KeyId()
-		}
-		if err := nacos_inner_encryption.GetDefaultHandler().EncryptionHandler(encryptionParam); err != nil {
+		if err := d.handler.EncryptionHandler(encryptionParam); err != nil {
 			return err
 		}
 		param.Content = encryptionParam.Content
@@ -76,7 +63,7 @@ func (d *DefaultConfigEncryptionFilter) DoFilter(param *vo.ConfigParam) error {
 			Content:          param.Content,
 			EncryptedDataKey: param.EncryptedDataKey,
 		}
-		if err := nacos_inner_encryption.GetDefaultHandler().DecryptionHandler(decryptionParam); err != nil {
+		if err := d.handler.DecryptionHandler(decryptionParam); err != nil {
 			return err
 		}
 		param.Content = decryptionParam.Content
@@ -90,4 +77,11 @@ func (d *DefaultConfigEncryptionFilter) GetOrder() int {
 
 func (d *DefaultConfigEncryptionFilter) GetFilterName() string {
 	return defaultConfigEncryptionFilterName
+}
+func (d *DefaultConfigEncryptionFilter) paramCheck(param vo.ConfigParam) error {
+	if !strings.HasPrefix(param.DataId, nacos_inner_encryption.CipherPrefix) ||
+		len(strings.TrimSpace(param.Content)) == 0 {
+		return noNeedEncryptionError
+	}
+	return nil
 }

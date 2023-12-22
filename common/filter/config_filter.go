@@ -18,14 +18,7 @@ package filter
 
 import (
 	"fmt"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
-	"sync"
-)
-
-var (
-	initConfigFilterChainManagerOnce        = &sync.Once{}
-	defaultConfigFilterChainManagerInstance IConfigFilterChain
 )
 
 type IConfigFilterChain interface {
@@ -41,28 +34,15 @@ type IConfigFilter interface {
 	GetFilterName() string
 }
 
-func RegisterDefaultConfigEncryptionFilter() {
-	err := RegisterConfigFilter(GetDefaultConfigFilterChainManager(), GetDefaultConfigEncryptionFilter())
-	if err != nil {
-		logger.Errorf("failed to register configFilter[%s] to DefaultConfigFilterChainManager",
-			GetDefaultConfigEncryptionFilter().GetFilterName())
-		return
-	} else {
-		logger.Debugf("successfully register ConfigFilter[%s] to DefaultConfigFilterChainManager", GetDefaultConfigEncryptionFilter().GetFilterName())
-	}
+func RegisterConfigFilterToChain(chain IConfigFilterChain, filter IConfigFilter) error {
+	return chain.AddFilter(filter)
 }
 
-func GetDefaultConfigFilterChainManager() IConfigFilterChain {
-	if defaultConfigFilterChainManagerInstance == nil {
-		initConfigFilterChainManagerOnce.Do(func() {
-			defaultConfigFilterChainManagerInstance = newDefaultConfigFilterChainManager()
-			logger.Debug("successfully create DefaultConfigFilterChainManager")
-		})
-	}
-	return defaultConfigFilterChainManagerInstance
+func NewConfigFilterChainManager() IConfigFilterChain {
+	return newConfigFilterChainManager()
 }
 
-func newDefaultConfigFilterChainManager() *DefaultConfigFilterChainManager {
+func newConfigFilterChainManager() *DefaultConfigFilterChainManager {
 	return &DefaultConfigFilterChainManager{
 		configFilterPriorityQueue: make([]IConfigFilter, 0, 2),
 	}
@@ -99,10 +79,6 @@ func (m *DefaultConfigFilterChainManager) DoFilterByName(param *vo.ConfigParam, 
 		}
 	}
 	return fmt.Errorf("cannot find the filter[%s]", name)
-}
-
-func RegisterConfigFilter(chain IConfigFilterChain, filter IConfigFilter) error {
-	return chain.AddFilter(filter)
 }
 
 type configFilterPriorityQueue []IConfigFilter

@@ -18,14 +18,12 @@ package encryption
 
 import (
 	"fmt"
+	"github.com/alibabacloud-go/tea/tea"
+	dkms_api "github.com/aliyun/alibabacloud-dkms-gcs-go-sdk/openapi"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/pkg/errors"
 	"strings"
-	"sync"
-)
-
-var (
-	initDefaultHandlerOnce = &sync.Once{}
-	defaultHandler         *DefaultHandler
 )
 
 type HandlerParam struct {
@@ -49,33 +47,52 @@ type Handler interface {
 	EncryptionHandler(*HandlerParam) error
 	DecryptionHandler(*HandlerParam) error
 	RegisterPlugin(Plugin) error
+	GetHandlerName() string
 }
 
-func GetDefaultHandler() Handler {
-	if defaultHandler == nil {
-		initDefaultHandler()
+func NewKmsHandler() Handler {
+	return newKmsHandler()
+}
+
+func newKmsHandler() *KmsHandler {
+	kmsHandler := &KmsHandler{
+		encryptionPlugins: make(map[string]Plugin, 2),
 	}
-	return defaultHandler
+	logger.Debug("successfully create encryption KmsHandler")
+	return kmsHandler
 }
 
-func initDefaultHandler() {
-	initDefaultHandlerOnce.Do(func() {
-		defaultHandler = &DefaultHandler{
-			encryptionPlugins: make(map[string]Plugin, 2),
-		}
-		logger.Debug("successfully create encryption defaultHandler")
-	})
+func RegisterConfigEncryptionKmsPlugins(encryptionHandler Handler, clientConfig constant.ClientConfig) {
+	innerKmsClient, err := innerNewKmsClient(clientConfig)
+	if err == nil && innerKmsClient == nil {
+		err = errors.New("create kms client failed.")
+	}
+	if err != nil {
+		logger.Error(err)
+	}
+	if err := encryptionHandler.RegisterPlugin(&KmsAes128Plugin{kmsPlugin{kmsClient: innerKmsClient}}); err != nil {
+		logger.Errorf("failed to register encryption plugin[%s] to %s", KmsAes128AlgorithmName, encryptionHandler.GetHandlerName())
+	} else {
+		logger.Debugf("successfully register encryption plugin[%s] to %s", KmsAes128AlgorithmName, encryptionHandler.GetHandlerName())
+	}
+	if err := encryptionHandler.RegisterPlugin(&KmsAes256Plugin{kmsPlugin{kmsClient: innerKmsClient}}); err != nil {
+		logger.Errorf("failed to register encryption plugin[%s] to %s", KmsAes256AlgorithmName, encryptionHandler.GetHandlerName())
+	} else {
+		logger.Debugf("successfully register encryption plugin[%s] to %s", KmsAes256AlgorithmName, encryptionHandler.GetHandlerName())
+	}
+	if err := encryptionHandler.RegisterPlugin(&KmsBasePlugin{kmsPlugin{kmsClient: innerKmsClient}}); err != nil {
+		logger.Errorf("failed to register encryption plugin[%s] to %s", KmsAlgorithmName, encryptionHandler.GetHandlerName())
+	} else {
+		logger.Debugf("successfully register encryption plugin[%s] to %s", KmsAlgorithmName, encryptionHandler.GetHandlerName())
+	}
 }
 
-type DefaultHandler struct {
+type KmsHandler struct {
 	encryptionPlugins map[string]Plugin
 }
 
-func (d *DefaultHandler) EncryptionHandler(param *HandlerParam) error {
+func (d *KmsHandler) EncryptionHandler(param *HandlerParam) error {
 	if err := d.encryptionParamCheck(*param); err != nil {
-		if err == DataIdParamCheckError || err == ContentParamCheckError {
-			return nil
-		}
 		return err
 	}
 	plugin, err := d.getPluginByDataIdPrefix(param.DataId)
@@ -90,11 +107,8 @@ func (d *DefaultHandler) EncryptionHandler(param *HandlerParam) error {
 	return plugin.Encrypt(param)
 }
 
-func (d *DefaultHandler) DecryptionHandler(param *HandlerParam) error {
+func (d *KmsHandler) DecryptionHandler(param *HandlerParam) error {
 	if err := d.decryptionParamCheck(*param); err != nil {
-		if err == DataIdParamCheckError || err == ContentParamCheckError {
-			return nil
-		}
 		return err
 	}
 	plugin, err := d.getPluginByDataIdPrefix(param.DataId)
@@ -109,7 +123,7 @@ func (d *DefaultHandler) DecryptionHandler(param *HandlerParam) error {
 	return plugin.Decrypt(param)
 }
 
-func (d *DefaultHandler) getPluginByDataIdPrefix(dataId string) (Plugin, error) {
+func (d *KmsHandler) getPluginByDataIdPrefix(dataId string) (Plugin, error) {
 	var (
 		matchedCount  int
 		matchedPlugin Plugin
@@ -128,7 +142,7 @@ func (d *DefaultHandler) getPluginByDataIdPrefix(dataId string) (Plugin, error) 
 	return matchedPlugin, nil
 }
 
-func (d *DefaultHandler) RegisterPlugin(plugin Plugin) error {
+func (d *KmsHandler) RegisterPlugin(plugin Plugin) error {
 	if _, v := d.encryptionPlugins[plugin.AlgorithmName()]; v {
 		logger.Warnf("encryption algorithm [%s] has already registered to defaultHandler, will be update", plugin.AlgorithmName())
 	} else {
@@ -138,7 +152,11 @@ func (d *DefaultHandler) RegisterPlugin(plugin Plugin) error {
 	return nil
 }
 
-func (d *DefaultHandler) encryptionParamCheck(param HandlerParam) error {
+func (d *KmsHandler) GetHandlerName() string {
+	return KmsHandlerName
+}
+
+func (d *KmsHandler) encryptionParamCheck(param HandlerParam) error {
 	if err := d.dataIdParamCheck(param.DataId); err != nil {
 		return DataIdParamCheckError
 	}
@@ -148,26 +166,52 @@ func (d *DefaultHandler) encryptionParamCheck(param HandlerParam) error {
 	return nil
 }
 
-func (d *DefaultHandler) decryptionParamCheck(param HandlerParam) error {
-	if err := d.dataIdParamCheck(param.DataId); err != nil {
-		return DataIdParamCheckError
-	}
-	if err := d.contentParamCheck(param.Content); err != nil {
-		return ContentParamCheckError
+func (d *KmsHandler) decryptionParamCheck(param HandlerParam) error {
+	return d.encryptionParamCheck(param)
+}
+
+func (d *KmsHandler) keyIdParamCheck(keyId string) error {
+	if len(keyId) == 0 {
+		return fmt.Errorf("cipher dataId using kmsService need to set keyId, but keyId is nil")
 	}
 	return nil
 }
 
-func (d *DefaultHandler) dataIdParamCheck(dataId string) error {
+func (d *KmsHandler) dataIdParamCheck(dataId string) error {
 	if !strings.Contains(dataId, CipherPrefix) {
 		return fmt.Errorf("dataId prefix should start with: %s", CipherPrefix)
 	}
 	return nil
 }
 
-func (d *DefaultHandler) contentParamCheck(content string) error {
+func (d *KmsHandler) contentParamCheck(content string) error {
 	if len(content) == 0 {
 		return fmt.Errorf("content need to encrypt is nil")
 	}
 	return nil
+}
+
+func innerNewKmsClient(clientConfig constant.ClientConfig) (kmsClient *KmsClient, err error) {
+	switch clientConfig.KMSVersion {
+	case constant.KMSv1, constant.DEFAULT_KMS_VERSION:
+		kmsClient, err = newKmsV1Client(clientConfig)
+	case constant.KMSv3:
+		kmsClient, err = newKmsV3Client(clientConfig)
+	default:
+		err = fmt.Errorf("init kms client failed. unknown kms version:%s\n", clientConfig.KMSVersion)
+	}
+	return kmsClient, err
+}
+
+func newKmsV1Client(clientConfig constant.ClientConfig) (*KmsClient, error) {
+	return NewKmsV1ClientWithAccessKey(clientConfig.RegionId, clientConfig.AccessKey, clientConfig.SecretKey)
+}
+
+func newKmsV3Client(clientConfig constant.ClientConfig) (*KmsClient, error) {
+	return NewKmsV3ClientWithConfig(&dkms_api.Config{
+		Protocol:         tea.String("https"),
+		Endpoint:         tea.String(clientConfig.KMSv3Config.Endpoint),
+		ClientKeyContent: tea.String(clientConfig.KMSv3Config.ClientKeyContent),
+		Password:         tea.String(clientConfig.KMSv3Config.Password),
+	}, clientConfig.KMSv3Config.CaContent)
 }

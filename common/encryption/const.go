@@ -29,12 +29,14 @@ const (
 	kmsAes256KeySpec = "AES_256"
 
 	kmsScheme       = "https"
-	kmsAcceptFormat = "JSON"
+	kmsAcceptFormat = "XML"
 
 	kmsCipherAlgorithm = "AES/ECB/PKCS5Padding"
 
 	maskUnit8Width  = 8
 	maskUnit32Width = 32
+
+	KmsHandlerName = "KmsHandler"
 )
 
 var (

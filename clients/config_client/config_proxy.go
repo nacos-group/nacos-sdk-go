@@ -123,7 +123,7 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 	}
 	if response.IsSuccess() {
 		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, response.Content)
-		//todo LocalConfigInfoProcessor.saveEncryptDataKeySnapshot
+		cache.WriteEncryptedDataKeyToFile(cacheKey, cp.clientConfig.CacheDir, response.EncryptedDataKey)
 		if response.ContentType == "" {
 			response.ContentType = "text"
 		}
@@ -132,7 +132,7 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 
 	if response.GetErrorCode() == 300 {
 		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, "")
-		//todo LocalConfigInfoProcessor.saveEncryptDataKeySnapshot
+		cache.WriteEncryptedDataKeyToFile(cacheKey, cp.clientConfig.CacheDir, "")
 		return response, nil
 	}
 
