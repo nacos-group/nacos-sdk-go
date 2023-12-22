@@ -36,6 +36,7 @@ type IResponse interface {
 	GetBody() string
 	GetErrorCode() int
 	IsSuccess() bool
+	SetSuccess(bool)
 	GetResultCode() int
 	GetMessage() string
 }
@@ -58,6 +59,10 @@ func (r *Response) GetBody() string {
 
 func (r *Response) IsSuccess() bool {
 	return r.Success
+}
+
+func (r *Response) SetSuccess(successResult bool) {
+	r.Success = successResult
 }
 
 func (r *Response) GetErrorCode() int {
