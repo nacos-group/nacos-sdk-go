@@ -336,7 +336,8 @@ func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) (err error) {
 	clusters := strings.Join(param.Clusters, ",")
 	serviceFullName := util.GetGroupName(param.ServiceName, param.GroupName)
 	sc.serviceInfoHolder.DeregisterCallback(serviceFullName, clusters, &param.SubscribeCallback)
-	if sc.serviceInfoHolder.IsSubscribed(serviceFullName, clusters) {
+	// If none subscribe callback, then call unsubscribe
+	if !sc.serviceInfoHolder.IsSubscribed(serviceFullName, clusters) {
 		err = sc.serviceProxy.Unsubscribe(param.ServiceName, param.GroupName, clusters)
 	}
 

@@ -73,11 +73,13 @@ type GetAllServiceInfoParam struct {
 }
 
 type SubscribeParam struct {
-	ServiceName       string                                     `param:"serviceName"` //required
-	Clusters          []string                                   `param:"clusters"`    //optional
-	GroupName         string                                     `param:"groupName"`   //optional,default:DEFAULT_GROUP
-	SubscribeCallback func(services []model.Instance, err error) //required
+	ServiceName       string                `param:"serviceName"` //required
+	Clusters          []string              `param:"clusters"`    //optional
+	GroupName         string                `param:"groupName"`   //optional,default:DEFAULT_GROUP
+	SubscribeCallback SubscribeCallbackFunc //required
 }
+
+type SubscribeCallbackFunc func(services []model.Instance, err error)
 
 type SelectAllInstancesParam struct {
 	Clusters    []string `param:"clusters"`    //optional
