@@ -38,6 +38,8 @@ type NamingProxyDelegate struct {
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
+var _ naming_proxy.INamingProxy = new(NamingProxyDelegate)
+
 func NewNamingProxyDelegate(ctx context.Context, clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig,
 	httpAgent http_agent.IHttpAgent, serviceInfoHolder *naming_cache.ServiceInfoHolder) (naming_proxy.INamingProxy, error) {
 
@@ -82,15 +84,15 @@ func (proxy *NamingProxyDelegate) getExecuteClientProxy(instance model.Instance)
 	return namingProxy
 }
 
-func (proxy *NamingProxyDelegate) RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
+func (proxy *NamingProxyDelegate) RegisterInstance(serviceName string, groupName string, instance model.Instance) error {
 	return proxy.getExecuteClientProxy(instance).RegisterInstance(serviceName, groupName, instance)
 }
 
-func (proxy *NamingProxyDelegate) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) (bool, error) {
+func (proxy *NamingProxyDelegate) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) error {
 	return proxy.grpcClientProxy.BatchRegisterInstance(serviceName, groupName, instances)
 }
 
-func (proxy *NamingProxyDelegate) DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
+func (proxy *NamingProxyDelegate) DeregisterInstance(serviceName string, groupName string, instance model.Instance) error {
 	return proxy.getExecuteClientProxy(instance).DeregisterInstance(serviceName, groupName, instance)
 }
 
@@ -126,6 +128,10 @@ func (proxy *NamingProxyDelegate) Subscribe(serviceName, groupName string, clust
 func (proxy *NamingProxyDelegate) Unsubscribe(serviceName, groupName, clusters string) error {
 	proxy.serviceInfoHolder.StopUpdateIfContain(util.GetGroupName(serviceName, groupName), clusters)
 	return proxy.grpcClientProxy.Unsubscribe(serviceName, groupName, clusters)
+}
+
+func (proxy *NamingProxyDelegate) IsSubscribe(serviceName, groupName, clusters string) bool {
+	return proxy.grpcClientProxy.IsSubscribed(serviceName, groupName, clusters)
 }
 
 func (proxy *NamingProxyDelegate) CloseClient() {

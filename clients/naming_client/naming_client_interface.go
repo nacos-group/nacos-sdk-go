@@ -37,14 +37,14 @@ type INamingClient interface {
 	// ServiceName require
 	// GroupName optional,default:DEFAULT_GROUP
 	// Ephemeral optional
-	RegisterInstance(param vo.RegisterInstanceParam) (bool, error)
+	RegisterInstance(param vo.RegisterInstanceParam) error
 
 	// BatchRegisterInstance use to batch register instance
 	// ClusterName  optional,default:DEFAULT
 	// ServiceName require
 	// GroupName optional,default:DEFAULT_GROUP
 	// Instances require,batch register instance list (serviceName, groupName in instances do not need to be set)
-	BatchRegisterInstance(param vo.BatchRegisterInstanceParam) (bool, error)
+	BatchRegisterInstance(param vo.BatchRegisterInstanceParam) error
 
 	// DeregisterInstance use to deregister instance
 	// Ip required
@@ -54,7 +54,7 @@ type INamingClient interface {
 	// ServiceName  require
 	// GroupName  optional,default:DEFAULT_GROUP
 	// Ephemeral optional
-	DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error)
+	DeregisterInstance(param vo.DeregisterInstanceParam) error
 
 	// UpdateInstance use to update instance
 	// Ip  require
@@ -67,7 +67,7 @@ type INamingClient interface {
 	// ServiceName require
 	// GroupName optional,default:DEFAULT_GROUP
 	// Ephemeral optional
-	UpdateInstance(param vo.UpdateInstanceParam) (bool, error)
+	UpdateInstance(param vo.UpdateInstanceParam) error
 
 	// GetService use to get service
 	// ServiceName require

@@ -92,9 +92,9 @@ func initLogger(clientConfig constant.ClientConfig) error {
 }
 
 // RegisterInstance ...
-func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, error) {
+func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) error {
 	if param.ServiceName == "" {
-		return false, errors.New("serviceName cannot be empty!")
+		return errors.New("serviceName cannot be empty!")
 	}
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -115,20 +115,20 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 	return sc.serviceProxy.RegisterInstance(param.ServiceName, param.GroupName, instance)
 }
 
-func (sc *NamingClient) BatchRegisterInstance(param vo.BatchRegisterInstanceParam) (bool, error) {
+func (sc *NamingClient) BatchRegisterInstance(param vo.BatchRegisterInstanceParam) error {
 	if param.ServiceName == "" {
-		return false, errors.New("serviceName cannot be empty!")
+		return errors.New("serviceName cannot be empty!")
 	}
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
 	if len(param.Instances) == 0 {
-		return false, errors.New("instances cannot be empty!")
+		return errors.New("instances cannot be empty!")
 	}
 	var modelInstances []model.Instance
 	for _, param := range param.Instances {
 		if !param.Ephemeral {
-			return false, errors.Errorf("Batch registration does not allow persistent instance registration! instance:%+v", param)
+			return errors.Errorf("Batch registration does not allow persistent instance registration! instance:%+v", param)
 		}
 		modelInstances = append(modelInstances, model.Instance{
 			Ip:          param.Ip,
@@ -146,7 +146,7 @@ func (sc *NamingClient) BatchRegisterInstance(param vo.BatchRegisterInstancePara
 }
 
 // DeregisterInstance ...
-func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error) {
+func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) error {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
@@ -160,9 +160,9 @@ func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bo
 }
 
 // UpdateInstance ...
-func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, error) {
+func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) error {
 	if param.ServiceName == "" {
-		return false, errors.New("serviceName cannot be empty!")
+		return errors.New("serviceName cannot be empty!")
 	}
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
@@ -193,7 +193,7 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (service model.Serv
 	var ok bool
 	clusters := strings.Join(param.Clusters, ",")
 	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
-	if !ok {
+	if !ok || !sc.serviceProxy.IsSubscribe(param.ServiceName, param.GroupName, clusters) {
 		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
 	}
 	return service, err
@@ -229,7 +229,7 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 	)
 
 	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
-	if !ok {
+	if !ok || !sc.serviceProxy.IsSubscribe(param.ServiceName, param.GroupName, clusters) {
 		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
 	}
 	if err != nil || service.Hosts == nil || len(service.Hosts) == 0 {
@@ -250,7 +250,7 @@ func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.
 	)
 	clusters := strings.Join(param.Clusters, ",")
 	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
-	if !ok {
+	if !ok || !sc.serviceProxy.IsSubscribe(param.ServiceName, param.GroupName, clusters) {
 		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
 		if err != nil {
 			return nil, err
@@ -286,7 +286,7 @@ func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanc
 	)
 	clusters := strings.Join(param.Clusters, ",")
 	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
-	if !ok {
+	if !ok || !sc.serviceProxy.IsSubscribe(param.ServiceName, param.GroupName, clusters) {
 		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
 		if err != nil {
 			return nil, err

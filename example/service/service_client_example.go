@@ -25,35 +25,35 @@ import (
 )
 
 func registerServiceInstance(client naming_client.INamingClient, param vo.RegisterInstanceParam) {
-	success, err := client.RegisterInstance(param)
-	if !success || err != nil {
+	err := client.RegisterInstance(param)
+	if err != nil {
 		panic("RegisterServiceInstance failed!" + err.Error())
 	}
-	fmt.Printf("RegisterServiceInstance,param:%+v,result:%+v \n\n", param, success)
+	fmt.Printf("RegisterServiceInstance,param:%+v success\n\n", param)
 }
 
 func batchRegisterServiceInstance(client naming_client.INamingClient, param vo.BatchRegisterInstanceParam) {
-	success, err := client.BatchRegisterInstance(param)
-	if !success || err != nil {
+	err := client.BatchRegisterInstance(param)
+	if err != nil {
 		panic("BatchRegisterServiceInstance failed!" + err.Error())
 	}
-	fmt.Printf("BatchRegisterServiceInstance,param:%+v,result:%+v \n\n", param, success)
+	fmt.Printf("BatchRegisterServiceInstance,param:%+v success \n\n", param)
 }
 
 func deRegisterServiceInstance(client naming_client.INamingClient, param vo.DeregisterInstanceParam) {
-	success, err := client.DeregisterInstance(param)
-	if !success || err != nil {
+	err := client.DeregisterInstance(param)
+	if err != nil {
 		panic("DeRegisterServiceInstance failed!" + err.Error())
 	}
-	fmt.Printf("DeRegisterServiceInstance,param:%+v,result:%+v \n\n", param, success)
+	fmt.Printf("DeRegisterServiceInstance,param:%+v success \n\n", param)
 }
 
 func updateServiceInstance(client naming_client.INamingClient, param vo.UpdateInstanceParam) {
-	success, err := client.UpdateInstance(param)
-	if !success || err != nil {
+	err := client.UpdateInstance(param)
+	if err != nil {
 		panic("UpdateInstance failed!" + err.Error())
 	}
-	fmt.Printf("UpdateServiceInstance,param:%+v,result:%+v \n\n", param, success)
+	fmt.Printf("UpdateServiceInstance,param:%+v success \n\n", param)
 }
 
 func getService(client naming_client.INamingClient, param vo.GetServiceParam) {
