@@ -13,7 +13,6 @@ type ICache[K comparable, V any] interface {
 	Delete(key K)
 	Swap(key K, value V) (V, bool)
 	CompareAndSwap(key K, old, new V) bool
-	CompareAndSwapFunc(key K, old V, apply func() V) bool
 	CompareAndDelete(key K, old V) bool
 	Range(func(key K, value V) bool)
 	Size() int
@@ -28,12 +27,12 @@ type IComputeCache[K comparable, V any] interface {
 }
 
 // SimpleCache k,v must both be comparable
-type SimpleCache[K, V comparable] struct {
+type SimpleCache[K comparable, V any] struct {
 	locker sync.RWMutex
 	m      sync.Map
 }
 
-func NewCache[K, V comparable]() *SimpleCache[K, V] {
+func NewCache[K comparable, V any]() *SimpleCache[K, V] {
 	return &SimpleCache[K, V]{}
 }
 
@@ -109,20 +108,6 @@ func (s *SimpleCache[K, V]) CompareAndSwap(key K, old, new V) bool {
 	s.locker.RLock()
 	defer s.locker.RUnlock()
 	return s.m.CompareAndSwap(key, old, new)
-}
-
-func (s *SimpleCache[K, V]) CompareAndSwapFunc(key K, old V, apply func() V) bool {
-	load, _ := s.Load(key)
-	if old != load {
-		return false
-	}
-	s.locker.Lock()
-	defer s.locker.Unlock()
-	load, _ = s.Load(key)
-	if old != load {
-		return false
-	}
-	return s.m.CompareAndSwap(key, old, apply())
 }
 
 func (s *SimpleCache[K, V]) CompareAndDelete(key K, old V) bool {

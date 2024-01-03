@@ -212,9 +212,8 @@ func (proxy *NamingGrpcProxy) DoSubscribe(serviceName, groupName string, cluster
 	if err != nil {
 		return model.Service{}, err
 	}
-	if response.IsSuccess() {
-		proxy.redoService.SubscribeRegistered(serviceName, groupName, clusters)
-	}
+
+	proxy.redoService.SubscribeRegistered(serviceName, groupName, clusters)
 	subscribeServiceResponse := response.(*rpc_response.SubscribeServiceResponse)
 	return subscribeServiceResponse.ServiceInfo, nil
 }
@@ -229,9 +228,9 @@ func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters strin
 
 // DoUnSubscribe ...
 func (proxy *NamingGrpcProxy) DoUnSubscribe(serviceName, groupName, clusters string) error {
-	response, err := proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
+	_, err := proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
 		clusters, false))
-	if response.IsSuccess() {
+	if err == nil {
 		proxy.redoService.SubscribeDeRegistered(serviceName, groupName, clusters)
 	}
 	return err

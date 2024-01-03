@@ -281,27 +281,11 @@ func TestCompareAndOpsNotPoint(t *testing.T) {
 	at.Equal("2", value)
 	at.True(ok)
 
-	called := 0
-	at.True(cacheNotPoint.CompareAndSwapFunc("TestCompareAndOpsNotPoint1", "2", func() string {
-		called++
-		return "3"
-	}))
-	at.Equal(1, called)
-	at.False(cacheNotPoint.CompareAndSwapFunc("TestCompareAndOpsNotPoint1", "2", func() string {
-		called++
-		return "4"
-	}))
-	at.Equal(1, called)
-
-	value, ok = cacheNotPoint.Load("TestCompareAndOpsNotPoint1")
-	at.Equal("3", value)
-	at.True(ok)
-
 	at.False(cacheNotPoint.CompareAndDelete("TestCompareAndOpsNotPoint1", "4"))
 	_, ok = cacheNotPoint.Load("TestCompareAndOpsNotPoint1")
 	at.True(ok)
 
-	at.True(cacheNotPoint.CompareAndDelete("TestCompareAndOpsNotPoint1", "3"))
+	at.True(cacheNotPoint.CompareAndDelete("TestCompareAndOpsNotPoint1", "2"))
 	_, ok = cacheNotPoint.Load("TestCompareAndOpsNotPoint1")
 	at.False(ok)
 
@@ -321,28 +305,11 @@ func TestCompareAndOpsPoint(t *testing.T) {
 	at.Equal(changed1, value)
 	at.True(ok)
 
-	called := 0
-	at.True(cachePoint.CompareAndSwapFunc("TestCompareAndOpsPoint1", changed1, func() *valueDemo {
-		called++
-		return changed2
-	}))
-	at.Equal(1, called)
-	changed3 := &valueDemo{name: "changed3"}
-	at.False(cachePoint.CompareAndSwapFunc("TestCompareAndOpsPoint1", changed1, func() *valueDemo {
-		called++
-		return changed3
-	}))
-	at.Equal(1, called)
-
-	value, ok = cachePoint.Load("TestCompareAndOpsPoint1")
-	at.Equal(changed2, value)
-	at.True(ok)
-
-	at.False(cachePoint.CompareAndDelete("TestCompareAndOpsPoint1", changed3))
+	at.False(cachePoint.CompareAndDelete("TestCompareAndOpsPoint1", changed2))
 	_, ok = cachePoint.Load("TestCompareAndOpsPoint1")
 	at.True(ok)
 
-	at.True(cachePoint.CompareAndDelete("TestCompareAndOpsPoint1", changed2))
+	at.True(cachePoint.CompareAndDelete("TestCompareAndOpsPoint1", changed1))
 	_, ok = cachePoint.Load("TestCompareAndOpsPoint1")
 	at.False(ok)
 

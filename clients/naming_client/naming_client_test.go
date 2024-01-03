@@ -17,6 +17,8 @@
 package naming_client
 
 import (
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
 	"testing"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
@@ -26,6 +28,9 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"github.com/stretchr/testify/assert"
+
+	. "github.com/agiledragon/gomonkey/v2"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var clientConfigTest = *constant.NewClientConfig(
@@ -36,7 +41,14 @@ var clientConfigTest = *constant.NewClientConfig(
 
 var serverConfigTest = *constant.NewServerConfig("127.0.0.1", 80, constant.WithContextPath("/nacos"))
 
+var _ naming_proxy.INamingProxy = new(MockNamingProxy)
+
 type MockNamingProxy struct {
+	flag bool
+}
+
+func (m *MockNamingProxy) IsSubscribe(serviceName, groupName, clusters string) bool {
+	return m.flag
 }
 
 func (m *MockNamingProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) error {
@@ -90,6 +102,41 @@ func Test_RegisterServiceInstance_withoutGroupName(t *testing.T) {
 		Ephemeral:   false,
 	})
 	assert.Equal(t, nil, err)
+}
+
+func TestUnsubscribe(t *testing.T) {
+	Convey("expect not call proxy.Unsubscribe when there has any callback func in serviceInfoHolder", t, func() {
+		var mockServiceInfoHolder *naming_cache.ServiceInfoHolder
+		patches := ApplyFuncReturn(naming_cache.NewServiceInfoHolder, mockServiceInfoHolder)
+		defer patches.Reset()
+		var mockProxy *NamingProxyDelegate
+		patches.ApplyFuncReturn(NewNamingProxyDelegate, mockProxy, nil)
+		patches.ApplyFunc(initLogger, func(clientConfig constant.ClientConfig) error {
+			return nil
+		})
+		nc := &nacos_client.NacosClient{}
+		_ = nc.SetServerConfig([]constant.ServerConfig{serverConfigTest})
+		_ = nc.SetClientConfig(clientConfigTest)
+		_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
+
+		client, _ := NewNamingClient(nc)
+		patches.ApplyMethod(mockServiceInfoHolder, "DeregisterCallback", func(*naming_cache.ServiceInfoHolder, string, string, *vo.SubscribeCallbackFunc) {
+		})
+		patches.ApplyMethodSeq(mockServiceInfoHolder, "IsSubscribed", []OutputCell{
+			{Values: Params{true}},
+			{Values: Params{false}},
+		})
+		called := 0
+		patches.ApplyMethod(mockProxy, "Unsubscribe", func(*NamingProxyDelegate, string, string, string) error {
+			called++
+			return nil
+		})
+		_ = client.Unsubscribe(&vo.SubscribeParam{})
+		So(called, ShouldEqual, 0)
+		_ = client.Unsubscribe(&vo.SubscribeParam{})
+		So(called, ShouldEqual, 1)
+
+	})
 }
 
 func Test_RegisterServiceInstance_withGroupName(t *testing.T) {

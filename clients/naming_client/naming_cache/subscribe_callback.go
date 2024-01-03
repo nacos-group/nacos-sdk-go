@@ -27,12 +27,12 @@ import (
 )
 
 type SubscribeCallback struct {
-	callbackFuncMap cache.ICache[string, *[]*vo.SubscribeCallbackFunc]
+	callbackFuncMap cache.ICache[string, []*vo.SubscribeCallbackFunc]
 	mux             *sync.Mutex
 }
 
 func NewSubscribeCallback() *SubscribeCallback {
-	return &SubscribeCallback{callbackFuncMap: cache.NewCache[string, *[]*vo.SubscribeCallbackFunc](), mux: new(sync.Mutex)}
+	return &SubscribeCallback{callbackFuncMap: cache.NewCache[string, []*vo.SubscribeCallbackFunc](), mux: new(sync.Mutex)}
 }
 
 func (ed *SubscribeCallback) IsSubscribed(serviceName, clusters string) bool {
@@ -48,10 +48,10 @@ func (ed *SubscribeCallback) AddCallbackFunc(serviceName string, clusters string
 	var funcSlice []*vo.SubscribeCallbackFunc
 	old, ok := ed.callbackFuncMap.Load(key)
 	if ok {
-		funcSlice = append(funcSlice, *old...)
+		funcSlice = append(funcSlice, old...)
 	}
 	funcSlice = append(funcSlice, callbackFunc)
-	ed.callbackFuncMap.Store(key, &funcSlice)
+	ed.callbackFuncMap.Store(key, funcSlice)
 }
 
 func (ed *SubscribeCallback) RemoveCallbackFunc(serviceName string, clusters string, callbackFunc *vo.SubscribeCallbackFunc) {
@@ -62,7 +62,7 @@ func (ed *SubscribeCallback) RemoveCallbackFunc(serviceName string, clusters str
 	funcs, ok := ed.callbackFuncMap.Load(key)
 	if ok {
 		var newFuncs []*vo.SubscribeCallbackFunc
-		for _, funcItem := range *funcs {
+		for _, funcItem := range funcs {
 			if funcItem != callbackFunc {
 				newFuncs = append(newFuncs, funcItem)
 			}
@@ -71,7 +71,7 @@ func (ed *SubscribeCallback) RemoveCallbackFunc(serviceName string, clusters str
 			ed.callbackFuncMap.Delete(key)
 			return
 		}
-		ed.callbackFuncMap.Store(key, &newFuncs)
+		ed.callbackFuncMap.Store(key, newFuncs)
 	}
 
 }
@@ -79,7 +79,10 @@ func (ed *SubscribeCallback) RemoveCallbackFunc(serviceName string, clusters str
 func (ed *SubscribeCallback) ServiceChanged(cacheKey string, service *model.Service) {
 	funcs, ok := ed.callbackFuncMap.Load(cacheKey)
 	if ok {
-		for _, funcItem := range *funcs {
+		for _, funcItem := range funcs {
+			if *funcItem == nil {
+				continue
+			}
 			(*funcItem)(service.Hosts, nil)
 		}
 	}

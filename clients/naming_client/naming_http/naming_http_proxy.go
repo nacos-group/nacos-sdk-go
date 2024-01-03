@@ -214,7 +214,7 @@ func (proxy *NamingHttpProxy) Unsubscribe(serviceName, groupName, clusters strin
 }
 
 func (proxy *NamingHttpProxy) IsSubscribe(serviceName, groupName, clusters string) bool {
-	return true
+	panic("not implement in NamingHttpProxy")
 }
 
 func (proxy *NamingHttpProxy) CloseClient() {
