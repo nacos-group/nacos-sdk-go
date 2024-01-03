@@ -111,7 +111,7 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 	service.Hosts = hosts
 
 	ed := NewSubscribeCallback()
-	param1 := vo.SubscribeParam{
+	param := vo.SubscribeParam{
 		ServiceName: "Test",
 		Clusters:    []string{"default"},
 		GroupName:   "public",
@@ -119,7 +119,7 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 			log.Printf("func1:%s \n", util.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFunc(util.GetGroupName(param1.ServiceName, param1.GroupName), strings.Join(param1.Clusters, ","), &param1.SubscribeCallback)
+	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
 
 	param2 := vo.SubscribeParam{
 		ServiceName: "Test",
