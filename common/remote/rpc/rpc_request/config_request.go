@@ -51,7 +51,7 @@ func (r *ConfigRequest) GetTenant() string {
 	return r.Tenant
 }
 
-//request of listening a batch of configs.
+// request of listening a batch of configs.
 type ConfigBatchListenRequest struct {
 	*ConfigRequest
 	Listen               bool                        `json:"listen"`

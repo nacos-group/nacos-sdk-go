@@ -157,7 +157,7 @@ func getEncoder() zapcore.EncoderConfig {
 	}
 }
 
-//SetLogger sets logger for sdk
+// SetLogger sets logger for sdk
 func SetLogger(log Logger) {
 	logLock.Lock()
 	defer logLock.Unlock()
