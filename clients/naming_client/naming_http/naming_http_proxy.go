@@ -18,6 +18,7 @@ package naming_http
 
 import (
 	"context"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
 	"net/http"
 	"strconv"
 	"time"
@@ -33,6 +34,8 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
+
+var _ naming_proxy.INamingProxy = new(NamingHttpProxy)
 
 // NamingHttpProxy ...
 type NamingHttpProxy struct {
@@ -211,6 +214,10 @@ func (proxy *NamingHttpProxy) Subscribe(serviceName, groupName, clusters string)
 // Unsubscribe ...
 func (proxy *NamingHttpProxy) Unsubscribe(serviceName, groupName, clusters string) error {
 	return nil
+}
+
+func (proxy *NamingHttpProxy) IsSubscribed(serviceName, groupName, clusters string) bool {
+	panic("not implement it in NamingHttpProxy")
 }
 
 func (proxy *NamingHttpProxy) CloseClient() {
