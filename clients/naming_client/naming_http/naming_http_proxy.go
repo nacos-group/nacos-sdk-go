@@ -18,6 +18,7 @@ package naming_http
 
 import (
 	"context"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
 	"net/http"
 	"strconv"
 	"time"
@@ -33,6 +34,8 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
+
+var _ naming_proxy.INamingProxy = new(NamingHttpProxy)
 
 // NamingHttpProxy ...
 type NamingHttpProxy struct {
@@ -59,7 +62,7 @@ func NewNamingHttpProxy(ctx context.Context, clientCfg constant.ClientConfig, na
 }
 
 // RegisterInstance ...
-func (proxy *NamingHttpProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
+func (proxy *NamingHttpProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) error {
 	logger.Infof("register instance namespaceId:<%s>,serviceName:<%s> with instance:<%s>",
 		proxy.clientConfig.NamespaceId, serviceName, util.ToJsonString(instance))
 	serviceName = util.GetGroupName(serviceName, groupName)
@@ -78,7 +81,7 @@ func (proxy *NamingHttpProxy) RegisterInstance(serviceName string, groupName str
 	params["ephemeral"] = strconv.FormatBool(instance.Ephemeral)
 	_, err := proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodPost, proxy.clientConfig)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if instance.Ephemeral {
 		beatInfo := &model.BeatInfo{
@@ -93,15 +96,15 @@ func (proxy *NamingHttpProxy) RegisterInstance(serviceName string, groupName str
 		}
 		proxy.beatReactor.AddBeatInfo(util.GetGroupName(serviceName, groupName), beatInfo)
 	}
-	return true, nil
+	return nil
 }
 
-func (proxy *NamingHttpProxy) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) (bool, error) {
+func (proxy *NamingHttpProxy) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) error {
 	panic("implement me")
 }
 
 // DeregisterInstance ...
-func (proxy *NamingHttpProxy) DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
+func (proxy *NamingHttpProxy) DeregisterInstance(serviceName string, groupName string, instance model.Instance) error {
 	serviceName = util.GetGroupName(serviceName, groupName)
 	logger.Infof("deregister instance namespaceId:<%s>,serviceName:<%s> with instance:<%s:%d@%s>",
 		proxy.clientConfig.NamespaceId, serviceName, instance.Ip, instance.Port, instance.ClusterName)
@@ -115,9 +118,9 @@ func (proxy *NamingHttpProxy) DeregisterInstance(serviceName string, groupName s
 	params["ephemeral"] = strconv.FormatBool(instance.Ephemeral)
 	_, err := proxy.nacosServer.ReqApi(constant.SERVICE_PATH, params, http.MethodDelete, proxy.clientConfig)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }
 
 // GetServiceList ...

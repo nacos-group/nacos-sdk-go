@@ -22,11 +22,11 @@ import (
 
 // INamingProxy ...
 type INamingProxy interface {
-	RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error)
+	RegisterInstance(serviceName string, groupName string, instance model.Instance) error
 
-	BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) (bool, error)
+	BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) error
 
-	DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error)
+	DeregisterInstance(serviceName string, groupName string, instance model.Instance) error
 
 	GetServiceList(pageNo uint32, pageSize uint32, groupName, namespaceId string, selector *model.ExpressionSelector) (model.ServiceList, error)
 

@@ -31,6 +31,8 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
 
+var _ naming_proxy.INamingProxy = new(NamingProxyDelegate)
+
 // NamingProxyDelegate ...
 type NamingProxyDelegate struct {
 	httpClientProxy   *naming_http.NamingHttpProxy
@@ -82,15 +84,15 @@ func (proxy *NamingProxyDelegate) getExecuteClientProxy(instance model.Instance)
 	return namingProxy
 }
 
-func (proxy *NamingProxyDelegate) RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
+func (proxy *NamingProxyDelegate) RegisterInstance(serviceName string, groupName string, instance model.Instance) error {
 	return proxy.getExecuteClientProxy(instance).RegisterInstance(serviceName, groupName, instance)
 }
 
-func (proxy *NamingProxyDelegate) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) (bool, error) {
+func (proxy *NamingProxyDelegate) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) error {
 	return proxy.grpcClientProxy.BatchRegisterInstance(serviceName, groupName, instances)
 }
 
-func (proxy *NamingProxyDelegate) DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
+func (proxy *NamingProxyDelegate) DeregisterInstance(serviceName string, groupName string, instance model.Instance) error {
 	return proxy.getExecuteClientProxy(instance).DeregisterInstance(serviceName, groupName, instance)
 }
 

@@ -17,6 +17,8 @@ type MockINamingProxy struct {
 	recorder *MockINamingProxyMockRecorder
 }
 
+var _ INamingProxy = new(MockINamingProxy)
+
 // MockINamingProxyMockRecorder is the mock recorder for MockINamingProxy.
 type MockINamingProxyMockRecorder struct {
 	mock *MockINamingProxy
@@ -35,12 +37,11 @@ func (m *MockINamingProxy) EXPECT() *MockINamingProxyMockRecorder {
 }
 
 // BatchRegisterInstance mocks base method.
-func (m *MockINamingProxy) BatchRegisterInstance(serviceName, groupName string, instances []model.Instance) (bool, error) {
+func (m *MockINamingProxy) BatchRegisterInstance(serviceName, groupName string, instances []model.Instance) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BatchRegisterInstance", serviceName, groupName, instances)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // BatchRegisterInstance indicates an expected call of BatchRegisterInstance.
@@ -62,12 +63,11 @@ func (mr *MockINamingProxyMockRecorder) CloseClient() *gomock.Call {
 }
 
 // DeregisterInstance mocks base method.
-func (m *MockINamingProxy) DeregisterInstance(serviceName, groupName string, instance model.Instance) (bool, error) {
+func (m *MockINamingProxy) DeregisterInstance(serviceName, groupName string, instance model.Instance) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeregisterInstance", serviceName, groupName, instance)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // DeregisterInstance indicates an expected call of DeregisterInstance.
@@ -107,12 +107,11 @@ func (mr *MockINamingProxyMockRecorder) QueryInstancesOfService(serviceName, gro
 }
 
 // RegisterInstance mocks base method.
-func (m *MockINamingProxy) RegisterInstance(serviceName, groupName string, instance model.Instance) (bool, error) {
+func (m *MockINamingProxy) RegisterInstance(serviceName, groupName string, instance model.Instance) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterInstance", serviceName, groupName, instance)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // RegisterInstance indicates an expected call of RegisterInstance.
