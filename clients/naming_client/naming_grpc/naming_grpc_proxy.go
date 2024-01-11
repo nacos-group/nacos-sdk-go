@@ -44,7 +44,7 @@ type NamingGrpcProxy struct {
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
-var _ naming_proxy.INamingProxy = new(NamingGrpcProxy)
+var _ naming_proxy.INamingProxy = (*NamingGrpcProxy)(nil)
 
 // NewNamingGrpcProxy create naming grpc proxy
 func NewNamingGrpcProxy(ctx context.Context, clientCfg constant.ClientConfig, nacosServer *nacos_server.NacosServer,

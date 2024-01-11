@@ -35,7 +35,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 )
 
-var _ INamingClient = new(NamingClient)
+var _ INamingClient = (*NamingClient)(nil)
 
 // NamingClient ...
 type NamingClient struct {

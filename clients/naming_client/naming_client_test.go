@@ -37,7 +37,7 @@ var clientConfigTest = *constant.NewClientConfig(
 
 var (
 	serverConfigTest                           = *constant.NewServerConfig("127.0.0.1", 80, constant.WithContextPath("/nacos"))
-	_                naming_proxy.INamingProxy = new(MockNamingProxy)
+	_                naming_proxy.INamingProxy = (*MockNamingProxy)(nil)
 )
 
 type MockNamingProxy struct {
