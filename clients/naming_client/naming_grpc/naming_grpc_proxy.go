@@ -34,7 +34,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
 
-var _ naming_proxy.INamingProxy = new(NamingGrpcProxy)
+var _ naming_proxy.INamingProxy = (*NamingGrpcProxy)(nil)
 
 // NamingGrpcProxy ...
 type NamingGrpcProxy struct {

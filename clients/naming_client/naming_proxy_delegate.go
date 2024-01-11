@@ -38,7 +38,7 @@ type NamingProxyDelegate struct {
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
-var _ naming_proxy.INamingProxy = new(NamingProxyDelegate)
+var _ naming_proxy.INamingProxy = (*NamingProxyDelegate)(nil)
 
 func NewNamingProxyDelegate(ctx context.Context, clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig,
 	httpAgent http_agent.IHttpAgent, serviceInfoHolder *naming_cache.ServiceInfoHolder) (naming_proxy.INamingProxy, error) {
