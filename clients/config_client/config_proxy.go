@@ -130,13 +130,13 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 		return response, nil
 	}
 
-	if response.GetErrorCode() == 300 {
+	if response.GetErrorCode() == int(rpc_response.ConfigNotFound) {
 		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, "")
 		cache.WriteEncryptedDataKeyToFile(cacheKey, cp.clientConfig.CacheDir, "")
 		return response, nil
 	}
 
-	if response.GetErrorCode() == 400 {
+	if response.GetErrorCode() == int(rpc_response.ConfigQueryConflict) {
 		logger.Errorf(
 			"[config_rpc_client] [sub-server-error] get server config being modified concurrently, dataId=%s, group=%s, "+
 				"tenant=%s", dataId, group, tenant)

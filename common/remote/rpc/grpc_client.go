@@ -222,7 +222,7 @@ func serverCheck(client nacos_grpc_service.RequestClient) (rpc_response.IRespons
 			return nil, err
 		}
 		// check if the server is ready, if not, wait 1 second and try again
-		if response.GetErrorCode() >= 300 && response.GetErrorCode() < 400 {
+		if response.GetErrorCode() >= int(rpc_response.ConfigNotFound) && response.GetErrorCode() < int(rpc_response.ConfigQueryConflict) {
 			// if we wait 30 second, but the server is not ready,then throw this error
 			if i == 30 {
 				return nil, errors.New("the nacos server is not ready to work in 30 seconds, connect to server failed")

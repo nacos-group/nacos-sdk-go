@@ -493,14 +493,17 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData cacheData, notify b
 			cacheData.group, cacheData.tenant)
 		return
 	}
-	if configQueryResponse != nil && configQueryResponse.Response != nil && !configQueryResponse.IsSuccess() {
+	if configQueryResponse != nil && configQueryResponse.Response != nil &&
+		!configQueryResponse.IsSuccess() && configQueryResponse.GetErrorCode() != int(rpc_response.ConfigNotFound) {
 		logger.Errorf("refresh cached config from server error:%v, dataId=%s, group=%s", configQueryResponse.GetMessage(),
 			cacheData.dataId, cacheData.group)
 		return
 	}
 	cacheData.content = configQueryResponse.Content
-	cacheData.contentType = configQueryResponse.ContentType
 	cacheData.encryptedDataKey = configQueryResponse.EncryptedDataKey
+	if len(strings.TrimSpace(configQueryResponse.ContentType)) > 0 {
+		cacheData.contentType = configQueryResponse.ContentType
+	}
 	if notify {
 		logger.Infof("[config_rpc_client] [data-received] dataId=%s, group=%s, tenant=%s, md5=%s, content=%s, type=%s",
 			cacheData.dataId, cacheData.group, cacheData.tenant, cacheData.md5,
