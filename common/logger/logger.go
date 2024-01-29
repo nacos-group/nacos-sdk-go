@@ -118,6 +118,9 @@ func BuildLoggerConfig(clientConfig constant.ClientConfig) Config {
 func InitLogger(config Config) (err error) {
 	logLock.Lock()
 	defer logLock.Unlock()
+	if logger != nil {
+		return
+	}
 	logger, err = InitNacosLogger(config)
 	return
 }
@@ -157,7 +160,7 @@ func getEncoder() zapcore.EncoderConfig {
 	}
 }
 
-//SetLogger sets logger for sdk
+// SetLogger sets logger for sdk
 func SetLogger(log Logger) {
 	logLock.Lock()
 	defer logLock.Unlock()
