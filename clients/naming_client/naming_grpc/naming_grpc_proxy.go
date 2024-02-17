@@ -93,7 +93,7 @@ func (proxy *NamingGrpcProxy) requestToServer(request rpc_request.IRequest) (rpc
 	if err == nil && response != nil && !response.IsSuccess() {
 		return nil, fmt.Errorf("nacos server response type [%s] error code=%d, message=[%s]", response.GetResponseType(), response.GetErrorCode(), response.GetMessage())
 	}
-	monitor.GetConfigRequestMonitor(constant.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
+	monitor.GetNamingRequestMonitor(constant.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
 	return response, err
 }
 
