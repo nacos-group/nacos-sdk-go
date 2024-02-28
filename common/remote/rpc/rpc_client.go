@@ -425,7 +425,7 @@ func (r *RpcClient) sendHealthCheck() bool {
 		// when client request immediately after the nacos server starts, the server may not ready to serve new request
 		// the server will return code 3xx, tell the client to retry after a while
 		// this situation, just return true,because the healthCheck will start again after 5 seconds
-		if response.GetErrorCode() >= int(rpc_response.ConfigNotFound) && response.GetErrorCode() < int(rpc_response.ConfigQueryConflict) {
+		if response.GetErrorCode() >= 300 && response.GetErrorCode() < 400 {
 			return true
 		}
 		return false

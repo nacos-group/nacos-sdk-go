@@ -8,10 +8,3 @@ const (
 
 	ResponseSuccessField = "success"
 )
-
-type ResponseErrorCode int
-
-const (
-	ConfigNotFound      ResponseErrorCode = 300
-	ConfigQueryConflict ResponseErrorCode = 400
-)
