@@ -494,7 +494,7 @@ func (client *ConfigClient) refreshContentAndCheck(cacheData cacheData, notify b
 		return
 	}
 	if configQueryResponse != nil && configQueryResponse.Response != nil &&
-		!configQueryResponse.IsSuccess() && configQueryResponse.GetErrorCode() != int(rpc_response.ConfigNotFound) {
+		!configQueryResponse.IsSuccess() && configQueryResponse.GetErrorCode() != 300 {
 		logger.Errorf("refresh cached config from server error:%v, dataId=%s, group=%s", configQueryResponse.GetMessage(),
 			cacheData.dataId, cacheData.group)
 		return
