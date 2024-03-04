@@ -92,13 +92,13 @@ func NewNacosServer(ctx context.Context, serverList []constant.ServerConfig, cli
 		ns.initRefreshSrvIfNeed(ctx)
 	}
 
-	_, err := securityLogin.Login()
+	_, err := ns.securityLogin.Login()
 
 	if err != nil {
 		logger.Errorf("login in err:%v", err)
 	}
 
-	securityLogin.AutoRefresh(ctx)
+	ns.securityLogin.AutoRefresh(ctx)
 	return &ns, nil
 }
 
@@ -344,6 +344,7 @@ func (server *NacosServer) refreshServerSrvIfNeed(urlString string, header map[s
 				server.ServerSrcChangeSignal <- struct{}{}
 			}
 			server.lastSrvRefTime = util.CurrentMillis()
+			server.securityLogin.UpdateServerList(servers)
 			server.Unlock()
 		}
 

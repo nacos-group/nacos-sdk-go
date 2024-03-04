@@ -156,3 +156,27 @@ func TestNacosServer_InjectSignForNamingHttp_WithoutServiceNameAndGroup(t *testi
 	_, has := param["signature"]
 	assert.True(t, has)
 }
+
+func TestNacosServer_UpdateServerListForSecurityLogin(t *testing.T) {
+	endpoint := "console.nacos.io:80"
+	clientConfig := constant.ClientConfig{
+		Username:            "nacos",
+		Password:            "nacos",
+		NamespaceId:         "namespace_1",
+		Endpoint:            endpoint,
+		EndpointContextPath: "nacos",
+		ClusterName:         "serverlist",
+		AppendToStdout:      true,
+	}
+	server, err := NewNacosServer(context.Background(),
+		nil,
+		clientConfig,
+		&http_agent.HttpAgent{},
+		1000,
+		endpoint,
+		nil)
+	if err != nil {
+		t.FailNow()
+	}
+	assert.Equal(t, server.GetServerList(), server.securityLogin.GetServerList())
+}
