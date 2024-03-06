@@ -112,6 +112,14 @@ func (ac *AuthClient) Login() (bool, error) {
 	return false, throwable
 }
 
+func (ac *AuthClient) UpdateServerList(serverList []constant.ServerConfig) {
+	ac.serverCfgs = serverList
+}
+
+func (ac *AuthClient) GetServerList() []constant.ServerConfig {
+	return ac.serverCfgs
+}
+
 func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 	if ac.username != "" {
 		contextPath := server.ContextPath
