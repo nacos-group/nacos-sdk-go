@@ -38,5 +38,7 @@ type INamingProxy interface {
 
 	Unsubscribe(serviceName, groupName, clusters string) error
 
+	IsSubscribed(serviceName, groupName, clusters string) bool
+
 	CloseClient()
 }
