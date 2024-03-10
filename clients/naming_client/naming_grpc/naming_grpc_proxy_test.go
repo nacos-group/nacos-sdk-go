@@ -5,16 +5,16 @@ import "github.com/nacos-group/nacos-sdk-go/v2/model"
 type MockNamingGrpc struct {
 }
 
-func (m *MockNamingGrpc) RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
-	return true, nil
+func (m *MockNamingGrpc) RegisterInstance(serviceName string, groupName string, instance model.Instance) error {
+	return nil
 }
 
-func (m *MockNamingGrpc) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) (bool, error) {
-	return true, nil
+func (m *MockNamingGrpc) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) error {
+	return nil
 }
 
-func (m *MockNamingGrpc) DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
-	return true, nil
+func (m *MockNamingGrpc) DeregisterInstance(serviceName string, groupName string, instance model.Instance) error {
+	return nil
 }
 
 func (m *MockNamingGrpc) GetServiceList(pageNo uint32, pageSize uint32, groupName string, selector *model.ExpressionSelector) (model.ServiceList, error) {

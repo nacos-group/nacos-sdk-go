@@ -17,6 +17,7 @@
 package naming_client
 
 import (
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
 	"testing"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
@@ -34,21 +35,24 @@ var clientConfigTest = *constant.NewClientConfig(
 	constant.WithNotLoadCacheAtStart(true),
 )
 
-var serverConfigTest = *constant.NewServerConfig("127.0.0.1", 80, constant.WithContextPath("/nacos"))
+var (
+	serverConfigTest                           = *constant.NewServerConfig("127.0.0.1", 80, constant.WithContextPath("/nacos"))
+	_                naming_proxy.INamingProxy = (*MockNamingProxy)(nil)
+)
 
 type MockNamingProxy struct {
 }
 
-func (m *MockNamingProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
-	return true, nil
+func (m *MockNamingProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) error {
+	return nil
 }
 
-func (m *MockNamingProxy) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) (bool, error) {
-	return true, nil
+func (m *MockNamingProxy) BatchRegisterInstance(serviceName string, groupName string, instances []model.Instance) error {
+	return nil
 }
 
-func (m *MockNamingProxy) DeregisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
-	return true, nil
+func (m *MockNamingProxy) DeregisterInstance(serviceName string, groupName string, instance model.Instance) error {
+	return nil
 }
 
 func (m *MockNamingProxy) GetServiceList(pageNo uint32, pageSize uint32, groupName, namespaceId string, selector *model.ExpressionSelector) (model.ServiceList, error) {
@@ -83,18 +87,17 @@ func NewTestNamingClient() *NamingClient {
 	return client
 }
 func Test_RegisterServiceInstance_withoutGroupName(t *testing.T) {
-	success, err := NewTestNamingClient().RegisterInstance(vo.RegisterInstanceParam{
+	err := NewTestNamingClient().RegisterInstance(vo.RegisterInstanceParam{
 		ServiceName: "DEMO",
 		Ip:          "10.0.0.10",
 		Port:        80,
 		Ephemeral:   false,
 	})
 	assert.Equal(t, nil, err)
-	assert.Equal(t, true, success)
 }
 
 func Test_RegisterServiceInstance_withGroupName(t *testing.T) {
-	success, err := NewTestNamingClient().RegisterInstance(vo.RegisterInstanceParam{
+	err := NewTestNamingClient().RegisterInstance(vo.RegisterInstanceParam{
 		ServiceName: "DEMO",
 		Ip:          "10.0.0.10",
 		Port:        80,
@@ -102,11 +105,10 @@ func Test_RegisterServiceInstance_withGroupName(t *testing.T) {
 		Ephemeral:   false,
 	})
 	assert.Equal(t, nil, err)
-	assert.Equal(t, true, success)
 }
 
 func Test_RegisterServiceInstance_withCluster(t *testing.T) {
-	success, err := NewTestNamingClient().RegisterInstance(vo.RegisterInstanceParam{
+	err := NewTestNamingClient().RegisterInstance(vo.RegisterInstanceParam{
 		ServiceName: "DEMO",
 		Ip:          "10.0.0.10",
 		Port:        80,
@@ -115,21 +117,19 @@ func Test_RegisterServiceInstance_withCluster(t *testing.T) {
 		Ephemeral:   false,
 	})
 	assert.Equal(t, nil, err)
-	assert.Equal(t, true, success)
 }
 func TestNamingProxy_DeregisterService_WithoutGroupName(t *testing.T) {
-	success, err := NewTestNamingClient().DeregisterInstance(vo.DeregisterInstanceParam{
+	err := NewTestNamingClient().DeregisterInstance(vo.DeregisterInstanceParam{
 		ServiceName: "DEMO5",
 		Ip:          "10.0.0.10",
 		Port:        80,
 		Ephemeral:   true,
 	})
 	assert.Equal(t, nil, err)
-	assert.Equal(t, true, success)
 }
 
 func TestNamingProxy_DeregisterService_WithGroupName(t *testing.T) {
-	success, err := NewTestNamingClient().DeregisterInstance(vo.DeregisterInstanceParam{
+	err := NewTestNamingClient().DeregisterInstance(vo.DeregisterInstanceParam{
 		ServiceName: "DEMO6",
 		Ip:          "10.0.0.10",
 		Port:        80,
@@ -137,7 +137,6 @@ func TestNamingProxy_DeregisterService_WithGroupName(t *testing.T) {
 		Ephemeral:   true,
 	})
 	assert.Equal(t, nil, err)
-	assert.Equal(t, true, success)
 }
 
 func TestNamingClient_SelectOneHealthyInstance_SameWeight(t *testing.T) {

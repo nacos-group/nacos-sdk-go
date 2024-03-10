@@ -72,11 +72,13 @@ type GetAllServiceInfoParam struct {
 	PageSize  uint32 `param:"pageSize"`  //optional,default:10
 }
 
+type SubscribeCallbackFunc func(services []model.Instance, err error)
+
 type SubscribeParam struct {
-	ServiceName       string                                     `param:"serviceName"` //required
-	Clusters          []string                                   `param:"clusters"`    //optional
-	GroupName         string                                     `param:"groupName"`   //optional,default:DEFAULT_GROUP
-	SubscribeCallback func(services []model.Instance, err error) //required
+	ServiceName       string                `param:"serviceName"` //required
+	Clusters          []string              `param:"clusters"`    //optional
+	GroupName         string                `param:"groupName"`   //optional,default:DEFAULT_GROUP
+	SubscribeCallback SubscribeCallbackFunc //required
 }
 
 type SelectAllInstancesParam struct {
