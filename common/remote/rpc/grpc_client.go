@@ -18,8 +18,13 @@ package rpc
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"fmt"
+	"google.golang.org/grpc/credentials"
 	"io"
+	"log"
 	"os"
 	"strconv"
 	"sync"
@@ -41,9 +46,10 @@ import (
 
 type GrpcClient struct {
 	*RpcClient
+	*constant.TLSConfig
 }
 
-func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_server.NacosServer) *GrpcClient {
+func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_server.NacosServer, tlsConfig *constant.TLSConfig) *GrpcClient {
 	rpcClient := &GrpcClient{
 		&RpcClient{
 			ctx:              ctx,
@@ -54,7 +60,7 @@ func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_se
 			reconnectionChan: make(chan ReconnectContext, 1),
 			nacosServer:      nacosServer,
 			mux:              new(sync.Mutex),
-		},
+		}, tlsConfig,
 	}
 	rpcClient.RpcClient.lastActiveTimestamp.Store(time.Now())
 	rpcClient.executeClient = rpcClient
@@ -87,6 +93,41 @@ func getInitialConnWindowSize() int32 {
 	return int32(initialConnWindowSize)
 }
 
+func getTLSCredentials(tlsConfig *constant.TLSConfig, serverInfo ServerInfo) credentials.TransportCredentials {
+
+	logger.Infof("build tls config for connecting to server %s,tlsConfig = %s", serverInfo.serverIp, tlsConfig)
+
+	certPool, err := x509.SystemCertPool()
+	if err != nil {
+		log.Fatalf("load root cert pool fail : %v", err)
+	}
+	if len(tlsConfig.CaFile) != 0 {
+		cert, err := os.ReadFile(tlsConfig.CaFile)
+		if err != nil {
+			fmt.Errorf("err, %v", err)
+		}
+		if ok := certPool.AppendCertsFromPEM(cert); !ok {
+			fmt.Errorf("failed to append ca certs")
+		}
+	}
+
+	config := tls.Config{
+		InsecureSkipVerify: tlsConfig.TrustAll,
+		RootCAs:            certPool,
+		Certificates:       []tls.Certificate{},
+	}
+	if len(tlsConfig.CertFile) != 0 && len(tlsConfig.KeyFile) != 0 {
+		cert, err := tls.LoadX509KeyPair(tlsConfig.CertFile, tlsConfig.KeyFile)
+
+		if err != nil {
+			log.Fatalf("load cert fail : %v", err)
+		}
+		config.Certificates = append(config.Certificates, cert)
+	}
+	credentials := credentials.NewTLS(&config)
+	return credentials
+}
+
 func getInitialGrpcTimeout() int32 {
 	initialGrpcTimeout, err := strconv.Atoi(os.Getenv("nacos.remote.client.grpc.timeout"))
 	if err != nil {
@@ -117,6 +158,9 @@ func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientCon
 	opts = append(opts, grpc.WithInsecure())
 	opts = append(opts, grpc.WithInitialWindowSize(getInitialWindowSize()))
 	opts = append(opts, grpc.WithInitialConnWindowSize(getInitialConnWindowSize()))
+	if c.TLSConfig.Enable {
+		opts = append(opts, grpc.WithTransportCredentials(getTLSCredentials(c.TLSConfig, serverInfo)))
+	}
 	rpcPort := serverInfo.serverGrpcPort
 	if rpcPort == 0 {
 		rpcPort = serverInfo.serverPort + c.rpcPortOffset()

@@ -147,13 +147,13 @@ func getClient(clientName string) IRpcClient {
 	return clientMap[clientName]
 }
 
-func CreateClient(ctx context.Context, clientName string, connectionType ConnectionType, labels map[string]string, nacosServer *nacos_server.NacosServer) (IRpcClient, error) {
+func CreateClient(ctx context.Context, clientName string, connectionType ConnectionType, labels map[string]string, nacosServer *nacos_server.NacosServer, tlsConfig *constant.TLSConfig) (IRpcClient, error) {
 	cMux.Lock()
 	defer cMux.Unlock()
 	if _, ok := clientMap[clientName]; !ok {
 		var rpcClient IRpcClient
 		if GRPC == connectionType {
-			rpcClient = NewGrpcClient(ctx, clientName, nacosServer)
+			rpcClient = NewGrpcClient(ctx, clientName, nacosServer, tlsConfig)
 		}
 		if rpcClient == nil {
 			return nil, errors.New("unsupported connection type")

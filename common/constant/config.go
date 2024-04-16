@@ -95,6 +95,7 @@ type ClientLogRollingConfig struct {
 
 type TLSConfig struct {
 	Enable             bool   // enable tls
+	TrustAll           bool   // trust all server
 	CaFile             string // clients use when verifying server certificates
 	CertFile           string // server use when verifying client certificates
 	KeyFile            string // server use when verifying client certificates
