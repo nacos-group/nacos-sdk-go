@@ -34,7 +34,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var serverConfigWithOptions = constant.NewServerConfig("mse-xxx-p.nacos-ans.mse.aliyuncs.com", 8848)
+var serverConfigWithOptions = constant.NewServerConfig("mse-1885b9612-p.nacos-ans.mse.aliyuncs.com", 8848)
 
 var clientConfigWithOptions = constant.NewClientConfig(
 	constant.WithTimeoutMs(10*1000),
@@ -52,11 +52,11 @@ var clientTLsConfigWithOptions = constant.NewClientConfig(
 	constant.WithBeatInterval(2*1000),
 	constant.WithNotLoadCacheAtStart(true),
 
-	constant.WithTLS(constant.TLSConfig{
+	/*constant.WithTLS(constant.TLSConfig{
 		Enable:   true,
 		TrustAll: false,
-		CaFile:   "mse-nacos-ca.cer",
-	}),
+		CaFile:   "/Users/shiyiyue/Downloads/mse-nacos-ca.cer",
+	}),*/
 )
 
 var localConfigTest = vo.ConfigParam{

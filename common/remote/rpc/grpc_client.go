@@ -158,8 +158,9 @@ func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientCon
 	opts = append(opts, grpc.WithInsecure())
 	opts = append(opts, grpc.WithInitialWindowSize(getInitialWindowSize()))
 	opts = append(opts, grpc.WithInitialConnWindowSize(getInitialConnWindowSize()))
-	c.getEnvTLSConfig(*c.TLSConfig)
+	c.getEnvTLSConfig(c.TLSConfig)
 	if c.TLSConfig.Enable {
+		logger.Infof(" tls enable ,trying to connection to server %s with tls config %s", serverInfo.serverIp, c.TLSConfig)
 		opts = append(opts, grpc.WithTransportCredentials(getTLSCredentials(c.TLSConfig, serverInfo)))
 	}
 	rpcPort := serverInfo.serverGrpcPort
@@ -170,7 +171,7 @@ func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientCon
 
 }
 
-func (c *GrpcClient) getEnvTLSConfig(config constant.TLSConfig) {
+func (c *GrpcClient) getEnvTLSConfig(config *constant.TLSConfig) {
 	logger.Infof("check tls config ", config)
 
 	if config.Appointed == true {
