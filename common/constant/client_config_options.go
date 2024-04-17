@@ -222,6 +222,7 @@ func WithLogRollingConfig(rollingConfig *ClientLogRollingConfig) ClientOption {
 
 func WithTLS(tlsCfg TLSConfig) ClientOption {
 	return func(config *ClientConfig) {
+		tlsCfg.Appointed = true
 		config.TLSCfg = tlsCfg
 	}
 }
