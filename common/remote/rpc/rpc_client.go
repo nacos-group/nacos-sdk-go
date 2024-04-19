@@ -18,8 +18,11 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"math"
+	"os"
 	"reflect"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -147,7 +150,7 @@ func getClient(clientName string) IRpcClient {
 	return clientMap[clientName]
 }
 
-func CreateClient(ctx context.Context, clientName string, connectionType ConnectionType, labels map[string]string, nacosServer *nacos_server.NacosServer, tlsConfig *constant.TLSConfig) (IRpcClient, error) {
+func CreateClient(ctx context.Context, clientName string, connectionType ConnectionType, labels map[string]string, nacosServer *nacos_server.NacosServer, tlsConfig *constant.TLSConfig, appConnLabels map[string]string) (IRpcClient, error) {
 	cMux.Lock()
 	defer cMux.Unlock()
 	if _, ok := clientMap[clientName]; !ok {
@@ -158,11 +161,103 @@ func CreateClient(ctx context.Context, clientName string, connectionType Connect
 		if rpcClient == nil {
 			return nil, errors.New("unsupported connection type")
 		}
+		appConnLabelsEnv := getAppLabelsFromEnv()
+		appConnLabelsFinal := mergerAppLabels(appConnLabels, appConnLabelsEnv)
+		appConnLabelsFinal = addPrefixForEachKey(appConnLabelsFinal, "app_")
+		if appConnLabelsFinal != nil && len(appConnLabelsFinal) != 0 {
+			rpcClient.putAllLabels(appConnLabelsFinal)
+		}
+
 		rpcClient.putAllLabels(labels)
 		clientMap[clientName] = rpcClient
 		return rpcClient, nil
 	}
 	return clientMap[clientName], nil
+}
+
+func mergerAppLabels(appLabelsAppointed map[string]string, appLabelsEnv map[string]string) map[string]string {
+	preferred := strings.ToLower(os.Getenv("nacos_app_conn_labels_preferred"))
+
+	var preferFirst bool
+	if preferred != "env" {
+		preferFirst = true
+	} else {
+		preferFirst = false
+	}
+	return mergeMaps(appLabelsAppointed, appLabelsEnv, preferFirst)
+}
+
+func mergeMaps(map1, map2 map[string]string, preferFirst bool) map[string]string {
+	result := make(map[string]string)
+
+	for k, v := range map1 {
+		result[k] = v
+	}
+
+	for k, v := range map2 {
+		if preferFirst && map1[k] != "" {
+			continue
+		}
+		result[k] = v
+	}
+
+	return result
+}
+
+func getAppLabelsFromEnv() map[string]string {
+	configMap := make(map[string]string)
+
+	// nacos_config_gray_label
+	grayLabel := os.Getenv("nacos_config_gray_label")
+	if grayLabel != "" {
+		configMap["nacos_config_gray_label"] = grayLabel
+	}
+
+	// nacos_app_conn_labels
+	connLabels := os.Getenv("nacos_app_conn_labels")
+	if connLabels != "" {
+		labelsMap := parseLabels(connLabels)
+		for k, v := range labelsMap {
+			configMap[k] = v
+		}
+	}
+
+	return configMap
+}
+
+func parseLabels(rawLabels string) map[string]string {
+	if strings.TrimSpace(rawLabels) == "" {
+		return make(map[string]string, 2)
+	}
+
+	resultMap := make(map[string]string, 2)
+	labels := strings.Split(rawLabels, ",")
+	for _, label := range labels {
+		if strings.TrimSpace(label) != "" {
+			kv := strings.Split(label, "=")
+			if len(kv) == 2 {
+				resultMap[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
+			} else {
+				fmt.Println("unknown label format:", label)
+			}
+		}
+	}
+	return resultMap
+}
+
+func addPrefixForEachKey(m map[string]string, prefix string) map[string]string {
+	if m == nil || len(m) == 0 {
+		return m
+	}
+
+	newMap := make(map[string]string, len(m))
+	for k, v := range m {
+		if strings.TrimSpace(k) != "" {
+			newKey := prefix + k
+			newMap[newKey] = v
+		}
+	}
+	return newMap
 }
 
 func (r *RpcClient) Start() {
