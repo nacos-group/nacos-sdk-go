@@ -154,6 +154,7 @@ func CreateClient(ctx context.Context, clientName string, connectionType Connect
 	cMux.Lock()
 	defer cMux.Unlock()
 	if _, ok := clientMap[clientName]; !ok {
+		logger.Infof("init rpc client for name ", clientName)
 		var rpcClient IRpcClient
 		if GRPC == connectionType {
 			rpcClient = NewGrpcClient(ctx, clientName, nacosServer, tlsConfig)
@@ -161,8 +162,14 @@ func CreateClient(ctx context.Context, clientName string, connectionType Connect
 		if rpcClient == nil {
 			return nil, errors.New("unsupported connection type")
 		}
+
+		logger.Infof("get app conn labels from client config  ", appConnLabels)
 		appConnLabelsEnv := getAppLabelsFromEnv()
+		logger.Infof("get app conn labels from env  ", appConnLabelsEnv)
+
 		appConnLabelsFinal := mergerAppLabels(appConnLabels, appConnLabelsEnv)
+		logger.Infof("final app conn labels : ", appConnLabelsFinal)
+
 		appConnLabelsFinal = addPrefixForEachKey(appConnLabelsFinal, "app_")
 		if appConnLabelsFinal != nil && len(appConnLabelsFinal) != 0 {
 			rpcClient.putAllLabels(appConnLabelsFinal)
