@@ -18,8 +18,13 @@ package rpc
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"fmt"
+	"google.golang.org/grpc/credentials"
 	"io"
+	"log"
 	"os"
 	"strconv"
 	"sync"
@@ -41,9 +46,10 @@ import (
 
 type GrpcClient struct {
 	*RpcClient
+	*constant.TLSConfig
 }
 
-func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_server.NacosServer) *GrpcClient {
+func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_server.NacosServer, tlsConfig *constant.TLSConfig) *GrpcClient {
 	rpcClient := &GrpcClient{
 		&RpcClient{
 			ctx:              ctx,
@@ -54,7 +60,7 @@ func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_se
 			reconnectionChan: make(chan ReconnectContext, 1),
 			nacosServer:      nacosServer,
 			mux:              new(sync.Mutex),
-		},
+		}, tlsConfig,
 	}
 	rpcClient.RpcClient.lastActiveTimestamp.Store(time.Now())
 	rpcClient.executeClient = rpcClient
@@ -87,6 +93,41 @@ func getInitialConnWindowSize() int32 {
 	return int32(initialConnWindowSize)
 }
 
+func getTLSCredentials(tlsConfig *constant.TLSConfig, serverInfo ServerInfo) credentials.TransportCredentials {
+
+	logger.Infof("build tls config for connecting to server %s,tlsConfig = %s", serverInfo.serverIp, tlsConfig)
+
+	certPool, err := x509.SystemCertPool()
+	if err != nil {
+		log.Fatalf("load root cert pool fail : %v", err)
+	}
+	if len(tlsConfig.CaFile) != 0 {
+		cert, err := os.ReadFile(tlsConfig.CaFile)
+		if err != nil {
+			fmt.Errorf("err, %v", err)
+		}
+		if ok := certPool.AppendCertsFromPEM(cert); !ok {
+			fmt.Errorf("failed to append ca certs")
+		}
+	}
+
+	config := tls.Config{
+		InsecureSkipVerify: tlsConfig.TrustAll,
+		RootCAs:            certPool,
+		Certificates:       []tls.Certificate{},
+	}
+	if len(tlsConfig.CertFile) != 0 && len(tlsConfig.KeyFile) != 0 {
+		cert, err := tls.LoadX509KeyPair(tlsConfig.CertFile, tlsConfig.KeyFile)
+
+		if err != nil {
+			log.Fatalf("load cert fail : %v", err)
+		}
+		config.Certificates = append(config.Certificates, cert)
+	}
+	credentials := credentials.NewTLS(&config)
+	return credentials
+}
+
 func getInitialGrpcTimeout() int32 {
 	initialGrpcTimeout, err := strconv.Atoi(os.Getenv("nacos.remote.client.grpc.timeout"))
 	if err != nil {
@@ -117,11 +158,49 @@ func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientCon
 	opts = append(opts, grpc.WithInsecure())
 	opts = append(opts, grpc.WithInitialWindowSize(getInitialWindowSize()))
 	opts = append(opts, grpc.WithInitialConnWindowSize(getInitialConnWindowSize()))
+	c.getEnvTLSConfig(c.TLSConfig)
+	if c.TLSConfig.Enable {
+		logger.Infof(" tls enable ,trying to connection to server %s with tls config %s", serverInfo.serverIp, c.TLSConfig)
+		opts = append(opts, grpc.WithTransportCredentials(getTLSCredentials(c.TLSConfig, serverInfo)))
+	}
 	rpcPort := serverInfo.serverGrpcPort
 	if rpcPort == 0 {
 		rpcPort = serverInfo.serverPort + c.rpcPortOffset()
 	}
 	return grpc.Dial(serverInfo.serverIp+":"+strconv.FormatUint(rpcPort, 10), opts...)
+
+}
+
+func (c *GrpcClient) getEnvTLSConfig(config *constant.TLSConfig) {
+	logger.Infof("check tls config ", config)
+
+	if config.Appointed == true {
+		return
+	}
+	logger.Infof("try to get tls config from env")
+
+	enableTls, err := strconv.ParseBool(os.Getenv("nacos_remote_client_rpc_tls_enable"))
+	if err == nil {
+		config.Enable = enableTls
+		logger.Infof("get tls config from env ，key = enableTls value = %s", enableTls)
+	}
+
+	if enableTls != true {
+		logger.Infof(" tls config from env is not enable")
+		return
+	}
+	trustAll, err := strconv.ParseBool(os.Getenv("nacos_remote_client_rpc_tls_trustAll"))
+	if err == nil {
+		config.TrustAll = trustAll
+		logger.Infof("get tls config from env ，key = trustAll value = %s", trustAll)
+	}
+
+	config.CaFile = os.Getenv("nacos_remote_client_rpc_tls_trustCollectionChainPath")
+	logger.Infof("get tls config from env ，key = trustCollectionChainPath value = %s", config.CaFile)
+	config.CertFile = os.Getenv("nacos_remote_client_rpc_tls_certChainFile")
+	logger.Infof("get tls config from env ，key = certChainFile value = %s", config.CertFile)
+	config.KeyFile = os.Getenv("nacos_remote_client_rpc_tls_certPrivateKey")
+	logger.Infof("get tls config from env ，key = certPrivateKey value = %s", config.KeyFile)
 
 }
 

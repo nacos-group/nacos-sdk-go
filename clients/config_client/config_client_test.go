@@ -34,7 +34,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var serverConfigWithOptions = constant.NewServerConfig("mse-xxx.mse.aliyuncs.com", 8848)
+var serverConfigWithOptions = constant.NewServerConfig("mse-xxx-p.nacos-ans.mse.aliyuncs.com", 8848)
 
 var clientConfigWithOptions = constant.NewClientConfig(
 	constant.WithTimeoutMs(10*1000),
@@ -45,6 +45,18 @@ var clientConfigWithOptions = constant.NewClientConfig(
 	constant.WithOpenKMS(true),
 	constant.WithKMSVersion(constant.KMSv1),
 	constant.WithRegionId("cn-hangzhou"),
+)
+
+var clientTLsConfigWithOptions = constant.NewClientConfig(
+	constant.WithTimeoutMs(10*1000),
+	constant.WithBeatInterval(2*1000),
+	constant.WithNotLoadCacheAtStart(true),
+
+	/*constant.WithTLS(constant.TLSConfig{
+		Enable:   true,
+		TrustAll: false,
+		CaFile:   "mse-nacos-ca.cer",
+	}),*/
 )
 
 var localConfigTest = vo.ConfigParam{
@@ -60,6 +72,15 @@ func createConfigClientTest() *ConfigClient {
 	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
 	client, _ := NewConfigClient(&nc)
 	client.configProxy = &MockConfigProxy{}
+	return client
+}
+
+func createConfigClientTestTls() *ConfigClient {
+	nc := nacos_client.NacosClient{}
+	_ = nc.SetServerConfig([]constant.ServerConfig{*serverConfigWithOptions})
+	_ = nc.SetClientConfig(*clientTLsConfigWithOptions)
+	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
+	client, _ := NewConfigClient(&nc)
 	return client
 }
 
@@ -146,6 +167,24 @@ func Test_SearchConfig(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, configPage)
+}
+
+func Test_GetConfigTls(t *testing.T) {
+	client := createConfigClientTestTls()
+	_, _ = client.PublishConfig(vo.ConfigParam{
+		DataId:  localConfigTest.DataId,
+		Group:   "DEFAULT_GROUP",
+		Content: "hello world"})
+	configPage, err := client.SearchConfig(vo.SearchConfigParam{
+		Search:   "accurate",
+		DataId:   localConfigTest.DataId,
+		Group:    "DEFAULT_GROUP",
+		PageNo:   1,
+		PageSize: 10,
+	})
+	assert.Nil(t, err)
+	assert.NotEmpty(t, configPage)
+
 }
 
 // only using by ak sk for cipher config of aliyun kms
