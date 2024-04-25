@@ -39,6 +39,9 @@ type IConfigRequest interface {
 }
 
 func (r *Request) PutAllHeaders(headers map[string]string) {
+	if r.Headers == nil {
+		r.Headers = make(map[string]string)
+	}
 	for k, v := range headers {
 		r.Headers[k] = v
 	}
