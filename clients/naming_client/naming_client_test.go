@@ -34,7 +34,7 @@ var clientConfigTest = *constant.NewClientConfig(
 	constant.WithNotLoadCacheAtStart(true),
 )
 
-var serverConfigTest = *constant.NewServerConfig("127.0.0.1", 80, constant.WithContextPath("/nacos"))
+var serverConfigTest = *constant.NewServerConfig("mse-xxx-p.nacos-ans.mse.aliyuncs.com", 8848, constant.WithContextPath("/nacos"))
 
 type MockNamingProxy struct {
 }

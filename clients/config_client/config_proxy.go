@@ -166,7 +166,7 @@ func (cp *ConfigProxy) createRpcClient(ctx context.Context, taskId string, clien
 		"taskId":                taskId,
 	}
 
-	iRpcClient, _ := rpc.CreateClient(ctx, "config-"+taskId+"-"+client.uid, rpc.GRPC, labels, cp.nacosServer, &cp.clientConfig.TLSCfg)
+	iRpcClient, _ := rpc.CreateClient(ctx, "config-"+taskId+"-"+client.uid, rpc.GRPC, labels, cp.nacosServer, &cp.clientConfig.TLSCfg, cp.clientConfig.AppConnLabels)
 	rpcClient := iRpcClient.GetRpcClient()
 	if rpcClient.IsInitialized() {
 		rpcClient.RegisterServerRequestHandler(func() rpc_request.IRequest {

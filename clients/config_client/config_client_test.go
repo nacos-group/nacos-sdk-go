@@ -19,6 +19,7 @@ package config_client
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"testing"
 
@@ -45,6 +46,7 @@ var clientConfigWithOptions = constant.NewClientConfig(
 	constant.WithOpenKMS(true),
 	constant.WithKMSVersion(constant.KMSv1),
 	constant.WithRegionId("cn-hangzhou"),
+	constant.WithAppConnLabels(map[string]string{"key1": "value1", "key2": "value2", "key3": "value3"}),
 )
 
 var clientTLsConfigWithOptions = constant.NewClientConfig(
@@ -310,6 +312,8 @@ func TestListen(t *testing.T) {
 			DataId: localConfigTest.DataId,
 			Group:  localConfigTest.Group,
 			OnChange: func(namespace, group, dataId, data string) {
+				fmt.Printf("receive content : %s\n", data)
+
 			},
 		})
 		assert.Nil(t, err)
