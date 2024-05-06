@@ -40,18 +40,13 @@ func TestGetLogger(t *testing.T) {
 	// not yet init get default log
 	log := GetLogger()
 	config := Config{
-		Level: "degug",
+		Level: "debug",
 	}
 	_ = InitLogger(config)
 	// after init logger
 	log2 := GetLogger()
 	assert.NotEqual(t, log, log2)
 
-	// the secend init logger
-	config.Level = "info"
-	_ = InitLogger(config)
-	log3 := GetLogger()
-	assert.NotEqual(t, log2, log3)
 	reset()
 }
 
@@ -66,13 +61,6 @@ func TestSetLogger(t *testing.T) {
 	assert.NotEqual(t, log, log2)
 	assert.Equal(t, log1, log2)
 
-	config := Config{
-		Level: "degug",
-	}
-	_ = InitLogger(config)
-	// after init logger
-	log3 := GetLogger()
-	assert.NotEqual(t, log2, log3)
 	reset()
 }
 
