@@ -42,8 +42,8 @@ func (ed *SubscribeCallback) IsSubscribed(serviceName, clusters string) bool {
 
 func (ed *SubscribeCallback) AddCallbackFunc(serviceName string, clusters string, callbackFunc *func(services []model.Instance, err error)) {
 	key := util.GetServiceCacheKey(serviceName, clusters)
-	ed.mux.Lock()
 	defer ed.mux.Unlock()
+	ed.mux.Lock()
 	var funcSlice []*func(services []model.Instance, err error)
 	old, ok := ed.callbackFuncMap.Get(key)
 	if ok {
