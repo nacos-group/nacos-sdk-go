@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"testing"
-	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
@@ -320,7 +319,7 @@ func TestListen(t *testing.T) {
 		assert.Nil(t, err)
 	})
 	// ListenConfig no dataId
-	/*	t.Run("TestListenConfigNoDataId", func(t *testing.T) {
+	t.Run("TestListenConfigNoDataId", func(t *testing.T) {
 		listenConfigParam := vo.ConfigParam{
 			Group: localConfigTest.Group,
 			OnChange: func(namespace, group, dataId, data string) {
@@ -329,10 +328,7 @@ func TestListen(t *testing.T) {
 		client := createConfigClientTest()
 		err := client.ListenConfig(listenConfigParam)
 		assert.Error(t, err)
-	})*/
-
-	time.Sleep(200 * time.Second)
-
+	})
 }
 
 // CancelListenConfig
@@ -345,7 +341,6 @@ func TestCancelListenConfig(t *testing.T) {
 			DataId: localConfigTest.DataId,
 			Group:  localConfigTest.Group,
 			OnChange: func(namespace, group, dataId, data string) {
-
 			},
 		}
 
