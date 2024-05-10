@@ -163,15 +163,15 @@ func CreateClient(ctx context.Context, clientName string, connectionType Connect
 			return nil, errors.New("unsupported connection type")
 		}
 
-		logger.Infof("get app conn labels from client config  ", appConnLabels)
+		logger.Infof("get app conn labels from client config %s ", appConnLabels)
 		appConnLabelsEnv := getAppLabelsFromEnv()
-		logger.Infof("get app conn labels from env  ", appConnLabelsEnv)
+		logger.Infof("get app conn labels from env %s ", appConnLabelsEnv)
 
 		appConnLabelsFinal := mergerAppLabels(appConnLabels, appConnLabelsEnv)
-		logger.Infof("final app conn labels : ", appConnLabelsFinal)
+		logger.Infof("final app conn labels : %s ", appConnLabelsFinal)
 
 		appConnLabelsFinal = addPrefixForEachKey(appConnLabelsFinal, "app_")
-		if appConnLabelsFinal != nil && len(appConnLabelsFinal) != 0 {
+		if len(appConnLabelsFinal) != 0 {
 			rpcClient.putAllLabels(appConnLabelsFinal)
 		}
 
@@ -195,14 +195,15 @@ func mergerAppLabels(appLabelsAppointed map[string]string, appLabelsEnv map[stri
 }
 
 func mergeMaps(map1, map2 map[string]string, preferFirst bool) map[string]string {
-	result := make(map[string]string)
+	result := make(map[string]string, 8)
 
 	for k, v := range map1 {
 		result[k] = v
 	}
 
 	for k, v := range map2 {
-		if preferFirst && map1[k] != "" {
+		_, ok := map1[k]
+		if preferFirst && ok {
 			continue
 		}
 		result[k] = v
@@ -212,7 +213,7 @@ func mergeMaps(map1, map2 map[string]string, preferFirst bool) map[string]string
 }
 
 func getAppLabelsFromEnv() map[string]string {
-	configMap := make(map[string]string)
+	configMap := make(map[string]string, 8)
 
 	// nacos_config_gray_label
 	grayLabel := os.Getenv("nacos_config_gray_label")
@@ -253,7 +254,7 @@ func parseLabels(rawLabels string) map[string]string {
 }
 
 func addPrefixForEachKey(m map[string]string, prefix string) map[string]string {
-	if m == nil || len(m) == 0 {
+	if len(m) == 0 {
 		return m
 	}
 
