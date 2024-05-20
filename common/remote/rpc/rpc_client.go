@@ -163,12 +163,12 @@ func CreateClient(ctx context.Context, clientName string, connectionType Connect
 			return nil, errors.New("unsupported connection type")
 		}
 
-		logger.Infof("get app conn labels from client config %s ", appConnLabels)
+		logger.Infof("get app conn labels from client config %v ", appConnLabels)
 		appConnLabelsEnv := getAppLabelsFromEnv()
-		logger.Infof("get app conn labels from env %s ", appConnLabelsEnv)
+		logger.Infof("get app conn labels from env %v ", appConnLabelsEnv)
 
 		appConnLabelsFinal := mergerAppLabels(appConnLabels, appConnLabelsEnv)
-		logger.Infof("final app conn labels : %s ", appConnLabelsFinal)
+		logger.Infof("final app conn labels : %v ", appConnLabelsFinal)
 
 		appConnLabelsFinal = addPrefixForEachKey(appConnLabelsFinal, "app_")
 		if len(appConnLabelsFinal) != 0 {
