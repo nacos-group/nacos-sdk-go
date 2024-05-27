@@ -34,7 +34,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var serverConfigWithOptions = constant.NewServerConfig("mse-xxx-p.nacos-ans.mse.aliyuncs.com", 8848)
+var serverConfigWithOptions = constant.NewServerConfig("127.0.0.1", 8848)
 
 var clientConfigWithOptions = constant.NewClientConfig(
 	constant.WithTimeoutMs(10*1000),
@@ -81,6 +81,7 @@ func createConfigClientTestTls() *ConfigClient {
 	_ = nc.SetClientConfig(*clientTLsConfigWithOptions)
 	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
 	client, _ := NewConfigClient(&nc)
+	client.configProxy = &MockConfigProxy{}
 	return client
 }
 
@@ -90,6 +91,7 @@ func createConfigClientCommon() *ConfigClient {
 	_ = nc.SetClientConfig(*clientConfigWithOptions)
 	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
 	client, _ := NewConfigClient(&nc)
+	client.configProxy = &MockConfigProxy{}
 	return client
 }
 

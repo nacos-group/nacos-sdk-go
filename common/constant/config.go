@@ -58,6 +58,7 @@ type ClientConfig struct {
 	EndpointContextPath  string                   // the address server  endpoint contextPath
 	EndpointQueryParams  string                   // the address server  endpoint query params
 	ClusterName          string                   // the address server  clusterName
+	AppConnLabels        map[string]string        // app conn labels
 }
 
 type ClientLogSamplingConfig struct {

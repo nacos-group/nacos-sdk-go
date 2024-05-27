@@ -226,3 +226,9 @@ func WithTLS(tlsCfg TLSConfig) ClientOption {
 		config.TLSCfg = tlsCfg
 	}
 }
+
+func WithAppConnLabels(appConnLabels map[string]string) ClientOption {
+	return func(config *ClientConfig) {
+		config.AppConnLabels = appConnLabels
+	}
+}
