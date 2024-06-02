@@ -52,6 +52,11 @@ func (c *ConnectionEventListener) OnDisConnect() {
 }
 
 func (c *ConnectionEventListener) redoSubscribe() {
+	grpcProxy, ok := c.clientProxy.(*NamingGrpcProxy)
+	if !ok {
+		logger.Error("redo subscribe clientProxy type error")
+		return
+	}
 	for _, key := range c.subscribes.Keys() {
 		info := strings.Split(key, constant.SERVICE_INFO_SPLITER)
 		var err error
@@ -61,15 +66,9 @@ func (c *ConnectionEventListener) redoSubscribe() {
 		} else {
 			service, err = c.clientProxy.Subscribe(info[1], info[0], "")
 		}
-
 		if err != nil {
 			logger.Warnf("redo subscribe service:%s faild:%+v", info[1], err)
-			return
-		}
-
-		grpcProxy, ok := c.clientProxy.(*NamingGrpcProxy)
-		if !ok {
-			return
+			continue
 		}
 		grpcProxy.serviceInfoHolder.ProcessService(&service)
 	}
