@@ -18,6 +18,7 @@ package rpc
 
 import (
 	"context"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/any"
@@ -55,15 +56,17 @@ func (g *GrpcConnection) request(request rpc_request.IRequest, timeoutMills int6
 	defer cancel()
 	responsePayload, err := g.client.Request(ctx, p)
 	if err != nil {
+		logger.Debugf("%s grpc request nacos server failed, request=%+v, err=%v ", g.getConnectionId(), p, err)
 		return nil, err
 	}
 
 	responseFunc, ok := rpc_response.ClientResponseMapping[responsePayload.Metadata.GetType()]
-
 	if !ok {
 		return nil, errors.Errorf("request:%s,unsupported response type:%s", request.GetRequestType(),
 			responsePayload.Metadata.GetType())
 	}
+
+	logger.Debugf("%s grpc request nacos server success, request=%+v, response=%s", g.getConnectionId(), p, string(responsePayload.GetBody().Value))
 	return rpc_response.InnerResponseJsonUnmarshal(responsePayload.GetBody().Value, responseFunc)
 }
 

@@ -259,6 +259,7 @@ func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiReque
 		for {
 			select {
 			case <-streamClient.Context().Done():
+				logger.Warnf("connectionId %s stream client close", grpcConn.getConnectionId())
 				return
 			default:
 				payload, err := streamClient.Recv()
@@ -276,7 +277,7 @@ func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiReque
 							return
 						}
 					} else {
-						logger.Infof("connectionId %s received error event, isRunning:%v, isAbandon=%v, error=%v", grpcConn.getConnectionId(), running, abandon, err)
+						logger.Errorf("connectionId %s received error event, isRunning:%v, isAbandon=%v, error=%v", grpcConn.getConnectionId(), running, abandon, err)
 						return
 					}
 				} else {

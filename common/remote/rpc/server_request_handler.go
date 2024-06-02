@@ -87,10 +87,12 @@ func (*NamingPushRequestHandler) Name() string {
 	return "NamingPushRequestHandler"
 }
 
-func (c *NamingPushRequestHandler) RequestReply(request rpc_request.IRequest, _ *RpcClient) rpc_response.IResponse {
+func (c *NamingPushRequestHandler) RequestReply(request rpc_request.IRequest, client *RpcClient) rpc_response.IResponse {
 	notifySubscriberRequest, ok := request.(*rpc_request.NotifySubscriberRequest)
 	if ok {
 		c.ServiceInfoHolder.ProcessService(&notifySubscriberRequest.ServiceInfo)
+		logger.Debugf("%s naming push response success ackId->%s", client.currentConnection.getConnectionId(),
+			request.GetRequestId())
 		return &rpc_response.NotifySubscriberResponse{
 			Response: &rpc_response.Response{ResultCode: constant.RESPONSE_CODE_SUCCESS, Success: true},
 		}
