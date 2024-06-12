@@ -21,7 +21,6 @@ import (
 	"math"
 	"math/rand"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -35,8 +34,6 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 )
-
-var onceInitLogger sync.Once
 
 // NamingClient ...
 type NamingClient struct {
@@ -91,11 +88,7 @@ func NewNamingClient(nc nacos_client.INacosClient) (*NamingClient, error) {
 }
 
 func initLogger(clientConfig constant.ClientConfig) error {
-	var err error
-	onceInitLogger.Do(func() {
-		err = logger.InitLogger(logger.BuildLoggerConfig(clientConfig))
-	})
-	return err
+	return logger.InitLogger(logger.BuildLoggerConfig(clientConfig))
 }
 
 // RegisterInstance ...

@@ -46,8 +46,6 @@ const (
 	executorErrDelay  = 5 * time.Second
 )
 
-var onceInitLogger sync.Once
-
 type ConfigClient struct {
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -155,11 +153,7 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 }
 
 func initLogger(clientConfig constant.ClientConfig) error {
-	var err error
-	onceInitLogger.Do(func() {
-		err = logger.InitLogger(logger.BuildLoggerConfig(clientConfig))
-	})
-	return err
+	return logger.InitLogger(logger.BuildLoggerConfig(clientConfig))
 }
 
 func (client *ConfigClient) GetConfig(param vo.ConfigParam) (content string, err error) {
