@@ -413,6 +413,7 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 	if onRequestFail && r.sendHealthCheck() {
 		logger.Infof("%s server check success, currentServer is %+v", r.name, r.currentConnection.getServerInfo())
 		atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
+		r.notifyConnectionChange(CONNECTED)
 		return
 	}
 	var (
