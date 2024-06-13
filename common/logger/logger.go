@@ -118,9 +118,6 @@ func BuildLoggerConfig(clientConfig constant.ClientConfig) Config {
 func InitLogger(config Config) (err error) {
 	logLock.Lock()
 	defer logLock.Unlock()
-	if logger != nil {
-		return
-	}
 	logger, err = InitNacosLogger(config)
 	return
 }
