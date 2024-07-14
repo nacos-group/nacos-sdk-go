@@ -190,7 +190,7 @@ func GetFailoverEncryptedDataKey(key, dir string) string {
 func getFailOverConfig(filePath string, fileType ConfigCachedFileType) string {
 	if !file.IsExistFile(filePath) {
 		errMsg := fmt.Sprintf("read %s failed. cause file doesn't exist, file path: %s.", fileType, filePath)
-		logger.Error(errMsg)
+		logger.Warn(errMsg)
 		return ""
 	}
 	logger.Warnf("reading failover %s from path:%s", fileType, filePath)
