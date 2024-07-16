@@ -17,6 +17,7 @@
 package naming_client
 
 import (
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"testing"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
@@ -26,6 +27,9 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"github.com/stretchr/testify/assert"
+
+	. "github.com/agiledragon/gomonkey/v2"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var clientConfigTest = *constant.NewClientConfig(
@@ -37,6 +41,7 @@ var clientConfigTest = *constant.NewClientConfig(
 var serverConfigTest = *constant.NewServerConfig("127.0.0.1", 80, constant.WithContextPath("/nacos"))
 
 type MockNamingProxy struct {
+	subscribed bool
 }
 
 func (m *MockNamingProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
@@ -69,6 +74,10 @@ func (m *MockNamingProxy) Subscribe(serviceName, groupName, clusters string) (mo
 
 func (m *MockNamingProxy) Unsubscribe(serviceName, groupName, clusters string) error {
 	return nil
+}
+
+func (m *MockNamingProxy) IsSubscribed(serviceName, groupName, clusters string) bool {
+	return m.subscribed
 }
 
 func (m *MockNamingProxy) CloseClient() {}
@@ -380,6 +389,66 @@ func TestNamingClient_GetAllServicesInfo(t *testing.T) {
 
 	assert.NotNil(t, result.Doms)
 	assert.Nil(t, err)
+}
+
+func TestAutoSubscribeWhenSelect(t *testing.T) {
+	Convey("when already subscribed, it do nothing", t, func() {
+		var mockServiceInfoHolder *naming_cache.ServiceInfoHolder
+		var mockProxy *NamingProxyDelegate
+		client := &NamingClient{}
+		client.serviceProxy = mockProxy
+		client.serviceInfoHolder = mockServiceInfoHolder
+		patches := ApplyMethod(mockServiceInfoHolder, "GetServiceInfo", func(*naming_cache.ServiceInfoHolder, string, string, string) (model.Service, bool) {
+			return model.Service{}, true
+		})
+		defer patches.Reset()
+
+		patches.ApplyMethod(mockProxy, "IsSubscribed", func(*NamingProxyDelegate, string, string, string) bool {
+			return true
+		})
+		called := false
+		patches.ApplyMethod(mockProxy, "Subscribe", func(*NamingProxyDelegate, string, string, string) (model.Service, error) {
+			called = true
+			return model.Service{}, nil
+		})
+
+		_, _ = client.SelectInstances(vo.SelectInstancesParam{})
+		So(called, ShouldBeFalse)
+	})
+	Convey("it will call subscribe func when it isn't subscribed", t, func() {
+		var mockServiceInfoHolder *naming_cache.ServiceInfoHolder
+		var mockProxy *NamingProxyDelegate
+		client := &NamingClient{}
+		client.serviceProxy = mockProxy
+		client.serviceInfoHolder = mockServiceInfoHolder
+		patches := ApplyMethod(mockServiceInfoHolder, "GetServiceInfo", func(*naming_cache.ServiceInfoHolder, string, string, string) (model.Service, bool) {
+			return model.Service{}, true
+		})
+		defer patches.Reset()
+
+		patches.ApplyMethod(mockProxy, "IsSubscribed", func(*NamingProxyDelegate, string, string, string) bool {
+			return false
+		})
+		called := false
+		patches.ApplyMethod(mockProxy, "Subscribe", func(*NamingProxyDelegate, string, string, string) (model.Service, error) {
+			called = true
+			return model.Service{}, nil
+		})
+		_, _ = client.SelectInstances(vo.SelectInstancesParam{})
+		So(called, ShouldBeTrue)
+
+		called = false
+		_, _ = client.SelectAllInstances(vo.SelectAllInstancesParam{})
+		So(called, ShouldBeTrue)
+
+		called = false
+		_, _ = client.SelectOneHealthyInstance(vo.SelectOneHealthInstanceParam{})
+		So(called, ShouldBeTrue)
+
+		called = false
+		_, _ = client.GetService(vo.GetServiceParam{})
+		So(called, ShouldBeTrue)
+	})
 }
 
 func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {

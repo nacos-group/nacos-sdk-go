@@ -193,7 +193,7 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (service model.Serv
 	var ok bool
 	clusters := strings.Join(param.Clusters, ",")
 	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
-	if !ok {
+	if !ok || !sc.serviceProxy.IsSubscribed(param.ServiceName, param.GroupName, clusters) {
 		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
 	}
 	return service, err
@@ -229,7 +229,7 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 	)
 
 	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
-	if !ok {
+	if !ok || !sc.serviceProxy.IsSubscribed(param.ServiceName, param.GroupName, clusters) {
 		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
 	}
 	if err != nil || service.Hosts == nil || len(service.Hosts) == 0 {
@@ -250,7 +250,7 @@ func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.
 	)
 	clusters := strings.Join(param.Clusters, ",")
 	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
-	if !ok {
+	if !ok || !sc.serviceProxy.IsSubscribed(param.ServiceName, param.GroupName, clusters) {
 		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
 		if err != nil {
 			return nil, err
@@ -286,7 +286,7 @@ func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanc
 	)
 	clusters := strings.Join(param.Clusters, ",")
 	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
-	if !ok {
+	if !ok || !sc.serviceProxy.IsSubscribed(param.ServiceName, param.GroupName, clusters) {
 		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
 		if err != nil {
 			return nil, err
