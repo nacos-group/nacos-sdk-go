@@ -25,4 +25,7 @@ import (
 func TestMd5(t *testing.T) {
 	md5 := Md5("demo")
 	assert.Equal(t, "fe01ce2a7fbac8fafaed7c982a04e229", md5)
+
+	md5 = Md5("")
+	assert.Equal(t, "", md5)
 }
