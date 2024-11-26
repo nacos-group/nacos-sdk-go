@@ -18,6 +18,7 @@ package http_agent
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -31,7 +32,7 @@ func get(client *http.Client, path string, header http.Header, timeoutMs uint64,
 		if !strings.HasSuffix(path, "&") {
 			path = path + "&"
 		}
-		path = path + key + "=" + value + "&"
+		path = path + key + "=" + url.QueryEscape(value) + "&"
 	}
 	if strings.HasSuffix(path, "&") {
 		path = path[:len(path)-1]
