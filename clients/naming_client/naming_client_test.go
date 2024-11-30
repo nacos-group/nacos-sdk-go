@@ -17,6 +17,7 @@
 package naming_client
 
 import (
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"testing"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
@@ -26,6 +27,9 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"github.com/stretchr/testify/assert"
+
+	. "github.com/agiledragon/gomonkey/v2"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var clientConfigTest = *constant.NewClientConfig(
@@ -380,6 +384,34 @@ func TestNamingClient_GetAllServicesInfo(t *testing.T) {
 
 	assert.NotNil(t, result.Doms)
 	assert.Nil(t, err)
+}
+
+func TestUnsubscribe(t *testing.T) {
+	Convey("expect not call proxy.Unsubscribe when there has any callback func in serviceInfoHolder", t, func() {
+		var mockServiceInfoHolder *naming_cache.ServiceInfoHolder
+		var mockProxy *NamingProxyDelegate
+		client := &NamingClient{}
+		client.serviceInfoHolder = mockServiceInfoHolder
+		client.serviceProxy = mockProxy
+
+		patches := ApplyMethod(mockServiceInfoHolder, "DeregisterCallback", func(*naming_cache.ServiceInfoHolder, string, string, *func(services []model.Instance, err error)) {
+		})
+		defer patches.Reset()
+		patches.ApplyMethodSeq(mockServiceInfoHolder, "IsSubscribed", []OutputCell{
+			{Values: Params{true}},
+			{Values: Params{false}},
+		})
+		called := 0
+		patches.ApplyMethod(mockProxy, "Unsubscribe", func(*NamingProxyDelegate, string, string, string) error {
+			called++
+			return nil
+		})
+		_ = client.Unsubscribe(&vo.SubscribeParam{})
+		So(called, ShouldEqual, 0)
+		_ = client.Unsubscribe(&vo.SubscribeParam{})
+		So(called, ShouldEqual, 1)
+
+	})
 }
 
 func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
