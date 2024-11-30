@@ -38,6 +38,8 @@ type NamingProxyDelegate struct {
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
 }
 
+var _ naming_proxy.INamingProxy = (*NamingProxyDelegate)(nil)
+
 func NewNamingProxyDelegate(ctx context.Context, clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig,
 	httpAgent http_agent.IHttpAgent, serviceInfoHolder *naming_cache.ServiceInfoHolder) (naming_proxy.INamingProxy, error) {
 
@@ -126,6 +128,10 @@ func (proxy *NamingProxyDelegate) Subscribe(serviceName, groupName string, clust
 func (proxy *NamingProxyDelegate) Unsubscribe(serviceName, groupName, clusters string) error {
 	proxy.serviceInfoHolder.StopUpdateIfContain(util.GetGroupName(serviceName, groupName), clusters)
 	return proxy.grpcClientProxy.Unsubscribe(serviceName, groupName, clusters)
+}
+
+func (proxy *NamingProxyDelegate) IsSubscribed(serviceName, groupName, clusters string) bool {
+	return proxy.grpcClientProxy.IsSubscribed(serviceName, groupName, clusters)
 }
 
 func (proxy *NamingProxyDelegate) CloseClient() {

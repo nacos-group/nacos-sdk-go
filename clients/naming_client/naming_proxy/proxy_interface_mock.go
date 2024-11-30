@@ -11,6 +11,8 @@ import (
 	model "github.com/nacos-group/nacos-sdk-go/v2/model"
 )
 
+var _ INamingProxy = new(MockINamingProxy)
+
 // MockINamingProxy is a mock of INamingProxy interface.
 type MockINamingProxy struct {
 	ctrl     *gomock.Controller
@@ -156,6 +158,11 @@ func (m *MockINamingProxy) Unsubscribe(serviceName, groupName, clusters string) 
 	ret := m.ctrl.Call(m, "Unsubscribe", serviceName, groupName, clusters)
 	ret0, _ := ret[0].(error)
 	return ret0
+}
+
+func (m *MockINamingProxy) IsSubscribed(serviceName, groupName, clusters string) bool {
+	//TODO implement me
+	panic("implement me")
 }
 
 // Unsubscribe indicates an expected call of Unsubscribe.
