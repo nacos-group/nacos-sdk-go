@@ -54,7 +54,7 @@ func (c *ConnectResetRequestHandler) RequestReply(request rpc_request.IRequest, 
 				}
 				rpcClient.switchServerAsync(ServerInfo{serverIp: connectResetRequest.ServerIp, serverPort: uint64(serverPortNum)}, false)
 			} else {
-				rpcClient.switchServerAsync(ServerInfo{}, true)
+				rpcClient.switchServerAsync(ServerInfo{}, false)
 			}
 		}
 		return &rpc_response.ConnectResetResponse{Response: &rpc_response.Response{ResultCode: constant.RESPONSE_CODE_SUCCESS}}
