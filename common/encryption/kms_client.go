@@ -72,6 +72,19 @@ func checkKmsV1InitParam(regionId, ak, sk string) error {
 	return nil
 }
 
+func checkKmsRamInitParam(endpoint, ak, sk string) error {
+	if len(endpoint) == 0 {
+		return EmptyEndpointKmsRamClientInitError
+	}
+	if len(ak) == 0 {
+		return EmptyAkKmsV1ClientInitError
+	}
+	if len(sk) == 0 {
+		return EmptySkKmsV1ClientInitError
+	}
+	return nil
+}
+
 func NewKmsV3ClientWithConfig(config *dkms_api.Config, caVerify string) (*TransferKmsClient, error) {
 	var rErr error
 	if rErr = checkKmsV3InitParam(config, caVerify); rErr != nil {
@@ -191,16 +204,15 @@ type RamKmsClient struct {
 }
 
 func NewKmsRamClient(kmsConfig *constant.KMSConfig, regionId, ak, sk string) (*RamKmsClient, error) {
-	var rErr error
-	if rErr = checkKmsV1InitParam(regionId, ak, sk); rErr != nil {
-		return nil, rErr
-	}
-	config := &openapi.Config{}
-	config.AccessKeyId = tea.String(ak)
-	config.AccessKeySecret = tea.String(sk)
-	config.RegionId = tea.String(regionId)
 	if kmsConfig == nil || len(kmsConfig.Endpoint) == 0 {
-		_result, _err := kms20160120.NewClient(config)
+		if err := checkKmsV1InitParam(regionId, ak, sk); err != nil {
+			return nil, err
+		}
+		KmsV1Config := &openapi.Config{}
+		KmsV1Config.AccessKeyId = tea.String(ak)
+		KmsV1Config.AccessKeySecret = tea.String(sk)
+		KmsV1Config.RegionId = tea.String(regionId)
+		_result, _err := kms20160120.NewClient(KmsV1Config)
 		if _err != nil {
 			return nil, _err
 		}
@@ -210,6 +222,15 @@ func NewKmsRamClient(kmsConfig *constant.KMSConfig, regionId, ak, sk string) (*R
 			runtime:    &util.RuntimeOptions{},
 		}
 		return _ramClient, nil
+	}
+	if err := checkKmsRamInitParam(kmsConfig.Endpoint, ak, sk); err != nil {
+		return nil, err
+	}
+	config := &openapi.Config{}
+	config.AccessKeyId = tea.String(ak)
+	config.AccessKeySecret = tea.String(sk)
+	if len(regionId) != 0 {
+		config.RegionId = tea.String(regionId)
 	}
 	config.Endpoint = tea.String(kmsConfig.Endpoint)
 	config.Ca = tea.String(kmsConfig.CaContent)
