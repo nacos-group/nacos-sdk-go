@@ -78,8 +78,9 @@ const (
 )
 
 var (
-	cMux      = new(sync.Mutex)
-	clientMap = make(map[string]IRpcClient)
+	cMux      	 = new(sync.Mutex)
+	clientMap 	 = make(map[string]IRpcClient)
+	ReconnectionChan = make(chan struct{})
 )
 
 type IRpcClient interface {
@@ -448,6 +449,7 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 			r.currentConnection = connectionNew
 			atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
 			r.notifyConnectionChange(CONNECTED)
+			ReconnectionChan <- struct{}{}
 			return
 		}
 		if r.isShutdown() {
