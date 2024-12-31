@@ -32,6 +32,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_error"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
 	"github.com/nacos-group/nacos-sdk-go/v2/inner/uuid"
@@ -396,10 +397,12 @@ func (client *ConfigClient) startInternal() {
 		defer timer.Stop()
 		for {
 			select {
+			case <-rpc.ReconnectionChan:
+				client.executeConfigListen(true)
 			case <-client.listenExecute:
-				client.executeConfigListen()
+				client.executeConfigListen(false)
 			case <-timer.C:
-				client.executeConfigListen()
+				client.executeConfigListen(false)
 			case <-client.ctx.Done():
 				return
 			}
@@ -408,9 +411,9 @@ func (client *ConfigClient) startInternal() {
 	}()
 }
 
-func (client *ConfigClient) executeConfigListen() {
+func (client *ConfigClient) executeConfigListen(immediatelySync bool) {
 	var (
-		needAllSync    = time.Since(client.lastAllSyncTime) >= constant.ALL_SYNC_INTERNAL
+		needAllSync    = time.Since(client.lastAllSyncTime) >= constant.ALL_SYNC_INTERNAL || immediatelySync
 		hasChangedKeys = false
 	)
 
