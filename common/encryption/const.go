@@ -64,4 +64,5 @@ var (
 	EmptyPasswordKmsV3ClientInitError         = fmt.Errorf("init kmsV3 client failed with empty password")
 	EmptyClientKeyContentKmsV3ClientInitError = fmt.Errorf("init kmsV3 client failed with empty client key content")
 	EmptyCaVerifyKmsV3ClientInitError         = fmt.Errorf("init kmsV3 client failed with empty ca verify")
+	EmptyEndpointKmsRamClientInitError        = fmt.Errorf("init kmsRam client failed with empty endpoint")
 )

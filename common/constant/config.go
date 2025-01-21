@@ -27,19 +27,20 @@ type ServerConfig struct {
 }
 
 type ClientConfig struct {
-	TimeoutMs            uint64                   // timeout for requesting Nacos server, default value is 10000ms
-	ListenInterval       uint64                   // Deprecated
-	BeatInterval         int64                    // the time interval for sending beat to server,default value is 5000ms
-	NamespaceId          string                   // the namespaceId of Nacos.When namespace is public, fill in the blank string here.
-	AppName              string                   // the appName
-	AppKey               string                   // the client identity information
-	Endpoint             string                   // the endpoint for get Nacos server addresses
-	RegionId             string                   // the regionId for kms
-	AccessKey            string                   // the AccessKey for kms
-	SecretKey            string                   // the SecretKey for kms
-	OpenKMS              bool                     // it's to open kms, default is false. https://help.aliyun.com/product/28933.html
-	KMSVersion           KMSVersion               // kms client version. https://help.aliyun.com/document_detail/380927.html
-	KMSv3Config          *KMSv3Config             //KMSv3 configuration. https://help.aliyun.com/document_detail/601596.html
+	TimeoutMs            uint64       // timeout for requesting Nacos server, default value is 10000ms
+	ListenInterval       uint64       // Deprecated
+	BeatInterval         int64        // the time interval for sending beat to server,default value is 5000ms
+	NamespaceId          string       // the namespaceId of Nacos.When namespace is public, fill in the blank string here.
+	AppName              string       // the appName
+	AppKey               string       // the client identity information
+	Endpoint             string       // the endpoint for get Nacos server addresses
+	RegionId             string       // the regionId for kms
+	AccessKey            string       // the AccessKey for kms
+	SecretKey            string       // the SecretKey for kms
+	OpenKMS              bool         // it's to open kms, default is false. https://help.aliyun.com/product/28933.html
+	KMSVersion           KMSVersion   // kms client version. https://help.aliyun.com/document_detail/380927.html
+	KMSv3Config          *KMSv3Config //KMSv3 configuration. https://help.aliyun.com/document_detail/601596.html
+	KMSConfig            *KMSConfig
 	CacheDir             string                   // the directory for persist nacos service info,default value is current path
 	DisableUseSnapShot   bool                     // It's a switch, default is false, means that when get remote config fail, use local cache file instead
 	UpdateThreadNum      int                      // the number of goroutine for update nacos service info,default value is 20
@@ -109,4 +110,10 @@ type KMSv3Config struct {
 	Password         string
 	Endpoint         string
 	CaContent        string
+}
+
+type KMSConfig struct {
+	Endpoint  string
+	OpenSSL   string
+	CaContent string
 }

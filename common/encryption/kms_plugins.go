@@ -24,7 +24,7 @@ import (
 )
 
 type kmsPlugin struct {
-	kmsClient *KmsClient
+	kmsClient KmsClient
 }
 
 func (k *kmsPlugin) Encrypt(param *HandlerParam) error {

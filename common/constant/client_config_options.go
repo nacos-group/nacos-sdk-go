@@ -143,6 +143,12 @@ func WithKMSv3Config(kmsv3Config *KMSv3Config) ClientOption {
 	}
 }
 
+func WithKMSConfig(kmsConfig *KMSConfig) ClientOption {
+	return func(config *ClientConfig) {
+		config.KMSConfig = kmsConfig
+	}
+}
+
 // WithCacheDir ...
 func WithCacheDir(cacheDir string) ClientOption {
 	return func(config *ClientConfig) {
