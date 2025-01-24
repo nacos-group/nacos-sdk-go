@@ -397,9 +397,9 @@ func (client *ConfigClient) startInternal() {
 		for {
 			select {
 			case <-client.listenExecute:
-				client.executeConfigListen()
+				client.executeConfigListen(false, "")
 			case <-timer.C:
-				client.executeConfigListen()
+				client.executeConfigListen(false, "")
 			case <-client.ctx.Done():
 				return
 			}
@@ -408,9 +408,9 @@ func (client *ConfigClient) startInternal() {
 	}()
 }
 
-func (client *ConfigClient) executeConfigListen() {
+func (client *ConfigClient) executeConfigListen(immediatelySync bool, id string) {
 	var (
-		needAllSync    = time.Since(client.lastAllSyncTime) >= constant.ALL_SYNC_INTERNAL
+		needAllSync    = time.Since(client.lastAllSyncTime) >= constant.ALL_SYNC_INTERNAL || immediatelySync
 		hasChangedKeys = false
 	)
 
@@ -420,6 +420,9 @@ func (client *ConfigClient) executeConfigListen() {
 	}
 
 	for taskId, caches := range listenTaskMap {
+		if id != "" && fmt.Sprintf("%d", taskId) != id {
+			continue
+		}
 		request := buildConfigBatchListenRequest(caches)
 		rpcClient := client.configProxy.createRpcClient(client.ctx, fmt.Sprintf("%d", taskId), client)
 		iResponse, err := client.configProxy.requestProxy(rpcClient, request, 3000)
