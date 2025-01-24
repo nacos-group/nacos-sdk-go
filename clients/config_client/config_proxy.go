@@ -174,6 +174,9 @@ func (cp *ConfigProxy) createRpcClient(ctx context.Context, taskId string, clien
 			return rpc_request.NewConfigChangeNotifyRequest("", "", "")
 		}, &ConfigChangeNotifyRequestHandler{client: client})
 		rpcClient.Tenant = cp.clientConfig.NamespaceId
+		rpcClient.ReconnectCallbackListen = func() {
+			client.executeConfigListen(true, taskId)
+		}
 		rpcClient.Start()
 	}
 	return rpcClient
