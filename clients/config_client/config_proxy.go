@@ -133,6 +133,7 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 	if response.GetErrorCode() == 300 {
 		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, "")
 		cache.WriteEncryptedDataKeyToFile(cacheKey, cp.clientConfig.CacheDir, "")
+		response.SetSuccess(true)
 		return response, nil
 	}
 
