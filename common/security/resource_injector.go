@@ -3,7 +3,6 @@ package security
 import (
 	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
-	"maps"
 	"strings"
 	"time"
 )
@@ -33,7 +32,9 @@ func (n *NamingResourceInjector) doInject(resource RequestResource, ramContext R
 	}
 	secretKey := trySignatureWithV4(ramContext, param)
 	signatures := n.calculateSignature(resource, secretKey, ramContext)
-	maps.Copy(param, signatures)
+	for k, v := range signatures {
+		param[k] = v
+	}
 }
 
 func (n *NamingResourceInjector) calculateSignature(resource RequestResource, secretKey string, ramContext RamContext) map[string]string {
@@ -73,14 +74,18 @@ func (c *ConfigResourceInjector) doInject(resource RequestResource, ramContext R
 	}
 	secretKey := trySignatureWithV4(ramContext, param)
 	signatures := c.calculateSignature(resource, secretKey, ramContext)
-	maps.Copy(param, signatures)
+	for k, v := range signatures {
+		param[k] = v
+	}
 }
 
 func (c *ConfigResourceInjector) calculateSignature(resource RequestResource, secretKey string, ramContext RamContext) map[string]string {
 	var result = make(map[string]string)
 	resourceName := c.getResourceName(resource)
 	signHeaders := c.getSignHeaders(resourceName, secretKey)
-	maps.Copy(result, signHeaders)
+	for k, v := range signHeaders {
+		result[k] = v
+	}
 	return result
 }
 

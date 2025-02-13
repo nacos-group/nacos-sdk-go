@@ -19,7 +19,6 @@ package nacos_server
 import (
 	"context"
 	"io"
-	"maps"
 	"math/rand"
 	"net/http"
 	"reflect"
@@ -340,7 +339,9 @@ func (server *NacosServer) GetServerList() []constant.ServerConfig {
 
 func (server *NacosServer) InjectSecurityInfo(param map[string]string, resource security.RequestResource) {
 	securityInfo := server.securityLogin.GetSecurityInfo(resource)
-	maps.Copy(param, securityInfo)
+	for k, v := range securityInfo {
+		param[k] = v
+	}
 }
 
 func getAddress(cfg constant.ServerConfig) string {

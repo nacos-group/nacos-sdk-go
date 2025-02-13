@@ -19,7 +19,6 @@ package security
 import (
 	"context"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
-	"maps"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
@@ -160,7 +159,9 @@ func (sp *SecurityProxy) GetSecurityInfo(resource RequestResource) map[string]st
 	for _, client := range sp.Clients {
 		info := client.GetSecurityInfo(resource)
 		if info != nil {
-			maps.Copy(securityInfo, info)
+			for k, v := range info {
+				securityInfo[k] = v
+			}
 		}
 	}
 	return securityInfo
