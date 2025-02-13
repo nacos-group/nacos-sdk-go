@@ -18,10 +18,8 @@ package nacos_server
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha1"
-	"encoding/base64"
 	"io"
+	"maps"
 	"math/rand"
 	"net/http"
 	"reflect"
@@ -32,8 +30,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 
@@ -48,7 +44,7 @@ import (
 
 type NacosServer struct {
 	sync.RWMutex
-	securityLogin         security.AuthClient
+	securityLogin         security.SecurityProxy
 	serverList            []constant.ServerConfig
 	httpAgent             http_agent.IHttpAgent
 	timeoutMs             uint64
@@ -70,7 +66,7 @@ func NewNacosServer(ctx context.Context, serverList []constant.ServerConfig, cli
 		return &NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
 	}
 
-	securityLogin := security.NewAuthClient(clientCfg, serverList, httpAgent)
+	securityLogin := security.NewSecurityProxy(clientCfg, serverList, httpAgent)
 
 	ns := NacosServer{
 		serverList:            serverList,
@@ -92,12 +88,7 @@ func NewNacosServer(ctx context.Context, serverList []constant.ServerConfig, cli
 		ns.initRefreshSrvIfNeed(ctx)
 	}
 
-	_, err := ns.securityLogin.Login()
-
-	if err != nil {
-		logger.Errorf("login in err:%v", err)
-	}
-
+	ns.securityLogin.Login()
 	ns.securityLogin.AutoRefresh(ctx)
 	return &ns, nil
 }
@@ -108,8 +99,6 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 	if contextPath == "" {
 		contextPath = constant.WEB_CONTEXT
 	}
-
-	signHeaders := GetSignHeaders(params, newHeaders["secretKey"])
 
 	url := curServer + contextPath + api
 
@@ -130,10 +119,6 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 	}
 	headers["RequestId"] = []string{uid.String()}
 	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=utf-8"}
-	headers["Spas-AccessKey"] = []string{newHeaders["accessKey"]}
-	headers["Timestamp"] = []string{signHeaders["Timestamp"]}
-	headers["Spas-Signature"] = []string{signHeaders["Spas-Signature"]}
-	server.InjectSecurityInfo(params)
 
 	var response *http.Response
 	response, err = server.httpAgent.Request(method, url, headers, timeoutMS, params)
@@ -177,7 +162,7 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 	headers["Request-Module"] = []string{"Naming"}
 	headers["Content-Type"] = []string{"application/x-www-form-urlencoded;charset=utf-8"}
 
-	server.InjectSecurityInfo(params)
+	//server.InjectSecurityInfo(params)
 
 	var response *http.Response
 	response, err = server.httpAgent.Request(method, url, headers, server.timeoutMs, params)
@@ -206,7 +191,7 @@ func (server *NacosServer) ReqConfigApi(api string, params map[string]string, he
 		return "", errors.New("server list is empty")
 	}
 
-	server.InjectSecurityInfo(params)
+	server.InjectSecurityInfo(params, security.BuildConfigResource(params["tenant"], params["group"], params["dataId"]))
 
 	//only one server,retry request when error
 	var err error
@@ -240,8 +225,7 @@ func (server *NacosServer) ReqApi(api string, params map[string]string, method s
 		return "", errors.New("server list is empty")
 	}
 
-	server.InjectSecurityInfo(params)
-	server.InjectSignForNamingHttp(params, config)
+	server.InjectSecurityInfo(params, security.BuildNamingResource(params["namespaceId"], params["serviceName"], params["groupName"]))
 
 	//only one server,retry request when error
 	var err error
@@ -356,45 +340,9 @@ func (server *NacosServer) GetServerList() []constant.ServerConfig {
 	return server.serverList
 }
 
-func (server *NacosServer) InjectSecurityInfo(param map[string]string) {
-	accessToken := server.securityLogin.GetAccessToken()
-	if accessToken != "" {
-		param[constant.KEY_ACCESS_TOKEN] = accessToken
-	}
-}
-
-func (server *NacosServer) InjectSignForNamingHttp(param map[string]string, clientConfig constant.ClientConfig) {
-	if clientConfig.AccessKey == "" || clientConfig.SecretKey == "" {
-		return
-	}
-	var signData string
-	timeStamp := strconv.FormatInt(time.Now().UnixNano()/1e6, 10)
-	if serviceName, hasServiceName := param["serviceName"]; hasServiceName {
-		if groupName, hasGroup := param["groupName"]; strings.Contains(serviceName, constant.SERVICE_INFO_SPLITER) || !hasGroup || groupName == "" {
-			signData = timeStamp + constant.SERVICE_INFO_SPLITER + serviceName
-		} else {
-			signData = timeStamp + constant.SERVICE_INFO_SPLITER + util.GetGroupName(serviceName, groupName)
-		}
-	} else {
-		signData = timeStamp
-	}
-	param["signature"] = signWithhmacSHA1Encrypt(signData, clientConfig.SecretKey)
-	param["ak"] = clientConfig.AccessKey
-	param["data"] = signData
-}
-
-func (server *NacosServer) InjectSign(request rpc_request.IRequest, param map[string]string, clientConfig constant.ClientConfig) {
-	if clientConfig.AccessKey == "" || clientConfig.SecretKey == "" {
-		return
-	}
-	sts := request.GetStringToSign()
-	if sts == "" {
-		return
-	}
-	signature := signWithhmacSHA1Encrypt(sts, clientConfig.SecretKey)
-	param["data"] = sts
-	param["signature"] = signature
-	param["ak"] = clientConfig.AccessKey
+func (server *NacosServer) InjectSecurityInfo(param map[string]string, resource security.RequestResource) {
+	securityInfo := server.securityLogin.GetSecurityInfo(resource)
+	maps.Copy(param, securityInfo)
 }
 
 func getAddress(cfg constant.ServerConfig) string {
@@ -404,69 +352,6 @@ func getAddress(cfg constant.ServerConfig) string {
 	return cfg.Scheme + "://" + cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
 }
 
-func GetSignHeadersFromRequest(cr rpc_request.IConfigRequest, secretKey string) map[string]string {
-	resource := ""
-
-	if len(cr.GetTenant()) != 0 {
-		resource = cr.GetTenant() + "+" + cr.GetGroup()
-	} else {
-		resource = cr.GetGroup()
-	}
-
-	headers := map[string]string{}
-
-	timeStamp := strconv.FormatInt(util.CurrentMillis(), 10)
-	headers["Timestamp"] = timeStamp
-
-	signature := ""
-
-	if resource == "" {
-		signature = signWithhmacSHA1Encrypt(timeStamp, secretKey)
-	} else {
-		signature = signWithhmacSHA1Encrypt(resource+"+"+timeStamp, secretKey)
-	}
-
-	headers["Spas-Signature"] = signature
-
-	return headers
-}
-
-func GetSignHeaders(params map[string]string, secretKey string) map[string]string {
-	resource := ""
-
-	if len(params["tenant"]) != 0 {
-		resource = params["tenant"] + "+" + params["group"]
-	} else {
-		resource = params["group"]
-	}
-
-	headers := map[string]string{}
-
-	timeStamp := strconv.FormatInt(util.CurrentMillis(), 10)
-	headers["Timestamp"] = timeStamp
-
-	signature := ""
-
-	if resource == "" {
-		signature = signWithhmacSHA1Encrypt(timeStamp, secretKey)
-	} else {
-		signature = signWithhmacSHA1Encrypt(resource+"+"+timeStamp, secretKey)
-	}
-
-	headers["Spas-Signature"] = signature
-
-	return headers
-}
-
-func signWithhmacSHA1Encrypt(encryptText, encryptKey string) string {
-	//hmac ,use sha1
-	key := []byte(encryptKey)
-	mac := hmac.New(sha1.New, key)
-	mac.Write([]byte(encryptText))
-
-	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
-}
-
 func (server *NacosServer) GetNextServer() (constant.ServerConfig, error) {
 	serverLen := len(server.GetServerList())
 	if serverLen == 0 {
@@ -474,10 +359,4 @@ func (server *NacosServer) GetNextServer() (constant.ServerConfig, error) {
 	}
 	index := atomic.AddInt32(&server.currentIndex, 1) % int32(serverLen)
 	return server.GetServerList()[index], nil
-}
-
-func (server *NacosServer) InjectSkAk(params map[string]string, clientConfig constant.ClientConfig) {
-	if clientConfig.AccessKey != "" {
-		params["Spas-AccessKey"] = clientConfig.AccessKey
-	}
 }

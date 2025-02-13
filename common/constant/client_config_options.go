@@ -123,6 +123,12 @@ func WithSecretKey(secretKey string) ClientOption {
 	}
 }
 
+func WithRamConfig(ramConfig *RamConfig) ClientOption {
+	return func(config *ClientConfig) {
+		config.RamConfig = ramConfig
+	}
+}
+
 // WithOpenKMS ...
 func WithOpenKMS(openKMS bool) ClientOption {
 	return func(config *ClientConfig) {

@@ -19,6 +19,7 @@ package config_client
 import (
 	"context"
 	"encoding/json"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
 	"net/http"
 	"strconv"
 	"time"
@@ -56,11 +57,11 @@ func NewConfigProxy(ctx context.Context, serverConfig []constant.ServerConfig, c
 
 func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_request.IRequest, timeoutMills uint64) (rpc_response.IResponse, error) {
 	start := time.Now()
-	cp.nacosServer.InjectSecurityInfo(request.GetHeaders())
+	cp.nacosServer.InjectSecurityInfo(request.GetHeaders(), security.BuildConfigResourceByRequest(request))
 	cp.injectCommHeader(request.GetHeaders())
-	cp.nacosServer.InjectSkAk(request.GetHeaders(), cp.clientConfig)
-	signHeaders := nacos_server.GetSignHeadersFromRequest(request.(rpc_request.IConfigRequest), cp.clientConfig.SecretKey)
-	request.PutAllHeaders(signHeaders)
+	//cp.nacosServer.InjectSkAk(request.GetHeaders(), cp.clientConfig)
+	//signHeaders := nacos_server.GetSignHeadersFromRequest(request.(rpc_request.IConfigRequest), cp.clientConfig.SecretKey)
+	//request.PutAllHeaders(signHeaders)
 	response, err := rpcClient.Request(request, int64(timeoutMills))
 	monitor.GetConfigRequestMonitor(constant.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
 	return response, err
