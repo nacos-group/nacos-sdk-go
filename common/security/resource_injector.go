@@ -13,18 +13,21 @@ type ResourceInjector interface {
 }
 
 const (
+	CONFIG_AK_FILED          string = "Spas-AccessKey"
 	NAMING_AK_FILED          string = "ak"
 	SECURITY_TOKEN_HEADER    string = "Spas-SecurityToken"
 	SIGNATURE_VERSION_HEADER string = "signatureVersion"
 	SIGNATURE_VERSION_V4     string = "v4"
 	SERVICE_INFO_SPLITER     string = "@@"
+	TIMESTAMP_HEADER         string = "Timestamp"
+	SIGNATURE_HEADER         string = "Spas-Signature"
 )
 
 type NamingResourceInjector struct {
 }
 
 func (n *NamingResourceInjector) doInject(resource RequestResource, ramContext RamContext, param map[string]string) {
-	param["ak"] = ramContext.AccessKey
+	param[NAMING_AK_FILED] = ramContext.AccessKey
 	if ramContext.EphemeralAccessKeyId {
 		param[SECURITY_TOKEN_HEADER] = ramContext.SecurityToken
 	}
@@ -64,7 +67,7 @@ type ConfigResourceInjector struct {
 }
 
 func (c *ConfigResourceInjector) doInject(resource RequestResource, ramContext RamContext, param map[string]string) {
-	param["Spas-AccessKey"] = ramContext.AccessKey
+	param[CONFIG_AK_FILED] = ramContext.AccessKey
 	if ramContext.EphemeralAccessKeyId {
 		param[SECURITY_TOKEN_HEADER] = ramContext.SecurityToken
 	}
@@ -76,29 +79,39 @@ func (c *ConfigResourceInjector) doInject(resource RequestResource, ramContext R
 func (c *ConfigResourceInjector) calculateSignature(resource RequestResource, secretKey string, ramContext RamContext) map[string]string {
 	var result = make(map[string]string)
 	resourceName := c.getResourceName(resource)
-	signHeaders := getSignHeaders(resourceName, secretKey)
+	signHeaders := c.getSignHeaders(resourceName, secretKey)
 	maps.Copy(result, signHeaders)
 	return result
 }
 
 func (c *ConfigResourceInjector) getResourceName(resource RequestResource) string {
-	if resource.namespace != "" && resource.group != "" {
+	if resource.namespace != "" {
 		return resource.namespace + "+" + resource.group
-	}
-	if resource.group != "" {
+	} else {
 		return resource.group
 	}
-	if resource.namespace != "" {
-		return resource.namespace
+}
+func (c *ConfigResourceInjector) getSignHeaders(resource, secretKey string) map[string]string {
+	header := make(map[string]string)
+	timeStamp := fmt.Sprintf("%d", time.Now().UnixMilli())
+	header[TIMESTAMP_HEADER] = timeStamp
+	if secretKey != "" {
+		var signature string
+		if strings.TrimSpace(resource) == "" {
+			signature = signWithHmacSha1Encrypt(timeStamp, secretKey)
+		} else {
+			signature = signWithHmacSha1Encrypt(resource+"+"+timeStamp, secretKey)
+		}
+		header[SIGNATURE_HEADER] = signature
 	}
-	return ""
+	return header
 }
 
 func trySignatureWithV4(ramContext RamContext, param map[string]string) string {
-	if ramContext.SignatrueRegionId == "" {
+	if ramContext.SignatureRegionId == "" {
 		return ramContext.SecretKey
 	}
-	signatureV4, err := finalSigningKeyStringWithDefaultInfo(ramContext.SecretKey, ramContext.SignatrueRegionId)
+	signatureV4, err := finalSigningKeyStringWithDefaultInfo(ramContext.SecretKey, ramContext.SignatureRegionId)
 	if err != nil {
 		logger.Errorf("get v4 signatrue error: %v", err)
 		return ramContext.SecretKey

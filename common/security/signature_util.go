@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -15,25 +14,7 @@ const (
 	CONSTANT               = "aliyun_v4_request"
 	V4_SIGN_DATE_FORMATTER = "20060102"
 	SIGNATURE_V4_PRODUCE   = "mse"
-	TIMESTAMP_HEADER       = "Timestamp"
-	SIGNATURE_HEADER       = "Spas-Signature"
 )
-
-func getSignHeaders(resource, secretKey string) map[string]string {
-	header := make(map[string]string)
-	timeStamp := fmt.Sprintf("%d", time.Now().UnixMilli())
-	header[TIMESTAMP_HEADER] = timeStamp
-	if secretKey != "" {
-		var signature string
-		if strings.TrimSpace(resource) == "" {
-			signature = signWithHmacSha1Encrypt(timeStamp, secretKey)
-		} else {
-			signature = signWithHmacSha1Encrypt(resource+"+"+timeStamp, secretKey)
-		}
-		header[SIGNATURE_HEADER] = signature
-	}
-	return header
-}
 
 func signWithHmacSha1Encrypt(encryptText, encryptKey string) string {
 	key := []byte(encryptKey)

@@ -120,6 +120,15 @@ type KMSConfig struct {
 }
 
 type RamConfig struct {
-	SecurityToken     string
-	SignatureRegionId string
+	SecurityToken         string
+	SignatureRegionId     string
+	RamRoleName           string
+	RoleArn               string
+	Policy                string
+	RoleSessionName       string
+	RoleSessionExpiration int
+	OIDCProviderArn       string
+	OIDCTokenFilePath     string
+	CredentialsURI        string
+	SecretName            string
 }

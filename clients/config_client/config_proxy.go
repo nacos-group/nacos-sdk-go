@@ -59,9 +59,6 @@ func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_reques
 	start := time.Now()
 	cp.nacosServer.InjectSecurityInfo(request.GetHeaders(), security.BuildConfigResourceByRequest(request))
 	cp.injectCommHeader(request.GetHeaders())
-	//cp.nacosServer.InjectSkAk(request.GetHeaders(), cp.clientConfig)
-	//signHeaders := nacos_server.GetSignHeadersFromRequest(request.(rpc_request.IConfigRequest), cp.clientConfig.SecretKey)
-	//request.PutAllHeaders(signHeaders)
 	response, err := rpcClient.Request(request, int64(timeoutMills))
 	monitor.GetConfigRequestMonitor(constant.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
 	return response, err
