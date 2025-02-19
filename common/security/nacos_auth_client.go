@@ -3,16 +3,17 @@ package security
 import (
 	"context"
 	"encoding/json"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/pkg/errors"
 )
 
 type NacosAuthClient struct {

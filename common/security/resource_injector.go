@@ -2,9 +2,10 @@ package security
 
 import (
 	"fmt"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"strings"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 )
 
 type ResourceInjector interface {
