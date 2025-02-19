@@ -156,8 +156,9 @@ func (sp *SecurityProxy) AutoRefresh(ctx context.Context) {
 
 func NewSecurityProxy(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig, agent http_agent.IHttpAgent) SecurityProxy {
 	var securityProxy = SecurityProxy{}
-	securityProxy.Clients = make([]AuthClient, 2)
-	securityProxy.Clients = append(securityProxy.Clients, NewNacosAuthClient(clientCfg, serverCfgs, agent))
-	securityProxy.Clients = append(securityProxy.Clients, NewRamAuthClient(clientCfg))
+	securityProxy.Clients = []AuthClient{
+		NewNacosAuthClient(clientCfg, serverCfgs, agent),
+		NewRamAuthClient(clientCfg),
+	}
 	return securityProxy
 }
