@@ -18,9 +18,10 @@ package nacos_server
 
 import (
 	"context"
+	"testing"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
-	"testing"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/stretchr/testify/assert"
@@ -70,7 +71,7 @@ func TestNacosServer_InjectSignForNamingHttp_NoAk(t *testing.T) {
 		t.FailNow()
 	}
 
-	param := make(map[string]string)
+	param := make(map[string]string, 4)
 	param["serviceName"] = "s-0"
 	param["groupName"] = "g-0"
 	server.InjectSecurityInfo(param, security.BuildNamingResource(param["namespaceId"], param["groupName"], param["serviceName"]))
@@ -89,7 +90,7 @@ func TestNacosServer_InjectSignForNamingHttp_WithGroup(t *testing.T) {
 		t.FailNow()
 	}
 
-	param := make(map[string]string)
+	param := make(map[string]string, 4)
 	param["serviceName"] = "s-0"
 	param["groupName"] = "g-0"
 	server.InjectSecurityInfo(param, security.BuildNamingResource(param["namespaceId"], param["groupName"], param["serviceName"]))
@@ -109,7 +110,7 @@ func TestNacosServer_InjectSignForNamingHttp_WithoutGroup(t *testing.T) {
 		t.FailNow()
 	}
 
-	param := make(map[string]string)
+	param := make(map[string]string, 4)
 	param["serviceName"] = "s-0"
 	server.InjectSecurityInfo(param, security.BuildNamingResource(param["namespaceId"], param["groupName"], param["serviceName"]))
 	assert.Equal(t, "123", param["ak"])
@@ -129,7 +130,7 @@ func TestNacosServer_InjectSignForNamingHttp_WithoutServiceName(t *testing.T) {
 		t.FailNow()
 	}
 
-	param := make(map[string]string)
+	param := make(map[string]string, 4)
 	param["groupName"] = "g-0"
 	server.InjectSecurityInfo(param, security.BuildNamingResource(param["namespaceId"], param["groupName"], param["serviceName"]))
 	assert.Equal(t, "123", param["ak"])
@@ -149,7 +150,7 @@ func TestNacosServer_InjectSignForNamingHttp_WithoutServiceNameAndGroup(t *testi
 		t.FailNow()
 	}
 
-	param := make(map[string]string)
+	param := make(map[string]string, 4)
 	server.InjectSecurityInfo(param, security.BuildNamingResource(param["namespaceId"], param["serviceName"], param["groupName"]))
 	assert.Equal(t, "123", param["ak"])
 	assert.NotContains(t, param["data"], "@@")

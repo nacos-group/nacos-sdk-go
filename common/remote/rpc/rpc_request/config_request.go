@@ -16,7 +16,10 @@
 
 package rpc_request
 
-import "github.com/nacos-group/nacos-sdk-go/v2/model"
+import (
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
+)
 
 type ConfigRequest struct {
 	*Request
@@ -51,7 +54,7 @@ func (r *ConfigRequest) GetTenant() string {
 	return r.Tenant
 }
 
-//request of listening a batch of configs.
+// request of listening a batch of configs.
 type ConfigBatchListenRequest struct {
 	*ConfigRequest
 	Listen               bool                        `json:"listen"`
@@ -67,7 +70,7 @@ func NewConfigBatchListenRequest(cacheLen int) *ConfigBatchListenRequest {
 }
 
 func (r *ConfigBatchListenRequest) GetRequestType() string {
-	return "ConfigBatchListenRequest"
+	return constant.CONFIG_BATCH_LISTEN_REQUEST_NAME
 }
 
 type ConfigChangeNotifyRequest struct {
@@ -79,7 +82,7 @@ func NewConfigChangeNotifyRequest(group, dataId, tenant string) *ConfigChangeNot
 }
 
 func (r *ConfigChangeNotifyRequest) GetRequestType() string {
-	return "ConfigChangeNotifyRequest"
+	return constant.CONFIG_CHANGE_NOTIFY_REQUEST_NAME
 }
 
 type ConfigQueryRequest struct {
@@ -92,7 +95,7 @@ func NewConfigQueryRequest(group, dataId, tenant string) *ConfigQueryRequest {
 }
 
 func (r *ConfigQueryRequest) GetRequestType() string {
-	return "ConfigQueryRequest"
+	return constant.CONFIG_QUERY_REQUEST_NAME
 }
 
 type ConfigPublishRequest struct {
@@ -108,7 +111,7 @@ func NewConfigPublishRequest(group, dataId, tenant, content, casMd5 string) *Con
 }
 
 func (r *ConfigPublishRequest) GetRequestType() string {
-	return "ConfigPublishRequest"
+	return constant.CONFIG_PUBLISH_REQUEST_NAME
 }
 
 type ConfigRemoveRequest struct {
@@ -120,5 +123,5 @@ func NewConfigRemoveRequest(group, dataId, tenant string) *ConfigRemoveRequest {
 }
 
 func (r *ConfigRemoveRequest) GetRequestType() string {
-	return "ConfigRemoveRequest"
+	return constant.CONFIG_REMOVE_REQUEST_NAME
 }

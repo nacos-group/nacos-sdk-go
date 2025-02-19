@@ -33,93 +33,58 @@ type RequestResource struct {
 	resource    string
 }
 
+const (
+	REQUEST_TYPE_CONFIG = "config"
+	REQUEST_TYPE_NAMING = "naming"
+)
+
 func BuildConfigResourceByRequest(request rpc_request.IRequest) RequestResource {
-	if request.GetRequestType() == "ConfigQueryRequest" {
+	if request.GetRequestType() == constant.CONFIG_QUERY_REQUEST_NAME {
 		configQueryRequest := request.(*rpc_request.ConfigQueryRequest)
-		return RequestResource{
-			requestType: "config",
-			namespace:   configQueryRequest.Tenant,
-			group:       configQueryRequest.Group,
-			resource:    configQueryRequest.DataId,
-		}
+		return BuildConfigResource(configQueryRequest.Tenant, configQueryRequest.Group, configQueryRequest.DataId)
 	}
-	if request.GetRequestType() == "ConfigPublishRequest" {
+	if request.GetRequestType() == constant.CONFIG_PUBLISH_REQUEST_NAME {
 		configPublishRequest := request.(*rpc_request.ConfigPublishRequest)
-		return RequestResource{
-			requestType: "config",
-			namespace:   configPublishRequest.Tenant,
-			group:       configPublishRequest.Group,
-			resource:    configPublishRequest.DataId,
-		}
+		return BuildConfigResource(configPublishRequest.Tenant, configPublishRequest.Group, configPublishRequest.DataId)
 	}
 	if request.GetRequestType() == "ConfigRemoveRequest" {
 		configRemoveRequest := request.(*rpc_request.ConfigRemoveRequest)
-		return RequestResource{
-			requestType: "config",
-			namespace:   configRemoveRequest.Tenant,
-			group:       configRemoveRequest.Group,
-			resource:    configRemoveRequest.DataId,
-		}
+		return BuildConfigResource(configRemoveRequest.Tenant, configRemoveRequest.Group, configRemoveRequest.DataId)
 	}
 	return RequestResource{
-		requestType: "config",
+		requestType: REQUEST_TYPE_CONFIG,
 	}
 }
 
 func BuildNamingResourceByRequest(request rpc_request.IRequest) RequestResource {
-	if request.GetRequestType() == "InstanceRequest" {
+	if request.GetRequestType() == constant.INSTANCE_REQUEST_NAME {
 		instanceRequest := request.(*rpc_request.InstanceRequest)
-		return RequestResource{
-			requestType: "naming",
-			namespace:   instanceRequest.Namespace,
-			group:       instanceRequest.GroupName,
-			resource:    instanceRequest.ServiceName,
-		}
+		return BuildNamingResource(instanceRequest.Namespace, instanceRequest.GroupName, instanceRequest.ServiceName)
 	}
-	if request.GetRequestType() == "BatchInstanceRequest" {
+	if request.GetRequestType() == constant.BATCH_INSTANCE_REQUEST_NAME {
 		batchInstanceRequest := request.(*rpc_request.BatchInstanceRequest)
-		return RequestResource{
-			requestType: "naming",
-			namespace:   batchInstanceRequest.Namespace,
-			group:       batchInstanceRequest.GroupName,
-			resource:    batchInstanceRequest.ServiceName,
-		}
+		return BuildNamingResource(batchInstanceRequest.Namespace, batchInstanceRequest.GroupName, batchInstanceRequest.ServiceName)
 	}
-	if request.GetRequestType() == "ServiceListRequest" {
+	if request.GetRequestType() == constant.SERVICE_LIST_REQUEST_NAME {
 		serviceListRequest := request.(*rpc_request.ServiceListRequest)
-		return RequestResource{
-			requestType: "naming",
-			namespace:   serviceListRequest.Namespace,
-			group:       serviceListRequest.GroupName,
-			resource:    serviceListRequest.ServiceName,
-		}
+		return BuildNamingResource(serviceListRequest.Namespace, serviceListRequest.GroupName, serviceListRequest.ServiceName)
 	}
-	if request.GetRequestType() == "ServiceQueryRequest" {
+	if request.GetRequestType() == constant.SERVICE_QUERY_REQUEST_NAME {
 		serviceQueryRequest := request.(*rpc_request.ServiceQueryRequest)
-		return RequestResource{
-			requestType: "naming",
-			namespace:   serviceQueryRequest.Namespace,
-			group:       serviceQueryRequest.GroupName,
-			resource:    serviceQueryRequest.ServiceName,
-		}
+		return BuildNamingResource(serviceQueryRequest.Namespace, serviceQueryRequest.GroupName, serviceQueryRequest.ServiceName)
 	}
-	if request.GetRequestType() == "SubscribeServiceRequest" {
+	if request.GetRequestType() == constant.SUBSCRIBE_SERVICE_REQUEST_NAME {
 		subscribeServiceRequest := request.(*rpc_request.SubscribeServiceRequest)
-		return RequestResource{
-			requestType: "naming",
-			namespace:   subscribeServiceRequest.Namespace,
-			group:       subscribeServiceRequest.GroupName,
-			resource:    subscribeServiceRequest.ServiceName,
-		}
+		return BuildNamingResource(subscribeServiceRequest.Namespace, subscribeServiceRequest.GroupName, subscribeServiceRequest.ServiceName)
 	}
 	return RequestResource{
-		requestType: "naming",
+		requestType: REQUEST_TYPE_NAMING,
 	}
 }
 
 func BuildConfigResource(tenant, group, dataId string) RequestResource {
 	return RequestResource{
-		requestType: "config",
+		requestType: REQUEST_TYPE_CONFIG,
 		namespace:   tenant,
 		group:       group,
 		resource:    dataId,
@@ -128,7 +93,7 @@ func BuildConfigResource(tenant, group, dataId string) RequestResource {
 
 func BuildNamingResource(namespace, group, serviceName string) RequestResource {
 	return RequestResource{
-		requestType: "naming",
+		requestType: REQUEST_TYPE_NAMING,
 		namespace:   namespace,
 		group:       group,
 		resource:    serviceName,
@@ -155,7 +120,7 @@ func (sp *SecurityProxy) Login() {
 }
 
 func (sp *SecurityProxy) GetSecurityInfo(resource RequestResource) map[string]string {
-	var securityInfo = make(map[string]string)
+	var securityInfo = make(map[string]string, 4)
 	for _, client := range sp.Clients {
 		info := client.GetSecurityInfo(resource)
 		if info != nil {
@@ -175,8 +140,7 @@ func (sp *SecurityProxy) UpdateServerList(serverList []constant.ServerConfig) {
 
 func (sp *SecurityProxy) AutoRefresh(ctx context.Context) {
 	go func() {
-		var timer *time.Timer
-		timer = time.NewTimer(time.Second * time.Duration(5))
+		var timer = time.NewTimer(time.Second * time.Duration(5))
 		defer timer.Stop()
 		for {
 			select {
@@ -192,7 +156,7 @@ func (sp *SecurityProxy) AutoRefresh(ctx context.Context) {
 
 func NewSecurityProxy(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig, agent http_agent.IHttpAgent) SecurityProxy {
 	var securityProxy = SecurityProxy{}
-	securityProxy.Clients = make([]AuthClient, 0)
+	securityProxy.Clients = make([]AuthClient, 2)
 	securityProxy.Clients = append(securityProxy.Clients, NewNacosAuthClient(clientCfg, serverCfgs, agent))
 	securityProxy.Clients = append(securityProxy.Clients, NewRamAuthClient(clientCfg))
 	return securityProxy

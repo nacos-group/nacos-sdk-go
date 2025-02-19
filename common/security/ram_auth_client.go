@@ -45,8 +45,8 @@ func NewRamAuthClient(clientCfg constant.ClientConfig) *RamAuthClient {
 		},
 	}
 	injectors := map[string]ResourceInjector{
-		"naming": &NamingResourceInjector{},
-		"config": &ConfigResourceInjector{},
+		REQUEST_TYPE_NAMING: &NamingResourceInjector{},
+		REQUEST_TYPE_CONFIG: &ConfigResourceInjector{},
 	}
 	return &RamAuthClient{
 		clientConfig:           clientCfg,
@@ -74,7 +74,7 @@ func (rac *RamAuthClient) Login() (bool, error) {
 }
 
 func (rac *RamAuthClient) GetSecurityInfo(resource RequestResource) map[string]string {
-	var securityInfo = make(map[string]string)
+	var securityInfo = make(map[string]string, 4)
 	if rac.matchedProvider == nil {
 		return securityInfo
 	}

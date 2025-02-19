@@ -39,7 +39,7 @@ func (n *NamingResourceInjector) doInject(resource RequestResource, ramContext R
 }
 
 func (n *NamingResourceInjector) calculateSignature(resource RequestResource, secretKey string, ramContext RamContext) map[string]string {
-	var result = make(map[string]string)
+	var result = make(map[string]string, 4)
 	signData := n.getSignData(n.getGroupedServiceName(resource))
 	signature, err := Sign(signData, secretKey)
 	if err != nil {
@@ -81,7 +81,7 @@ func (c *ConfigResourceInjector) doInject(resource RequestResource, ramContext R
 }
 
 func (c *ConfigResourceInjector) calculateSignature(resource RequestResource, secretKey string, ramContext RamContext) map[string]string {
-	var result = make(map[string]string)
+	var result = make(map[string]string, 4)
 	resourceName := c.getResourceName(resource)
 	signHeaders := c.getSignHeaders(resourceName, secretKey)
 	for k, v := range signHeaders {
@@ -98,7 +98,7 @@ func (c *ConfigResourceInjector) getResourceName(resource RequestResource) strin
 	}
 }
 func (c *ConfigResourceInjector) getSignHeaders(resource, secretKey string) map[string]string {
-	header := make(map[string]string)
+	header := make(map[string]string, 4)
 	timeStamp := fmt.Sprintf("%d", time.Now().UnixMilli())
 	header[TIMESTAMP_HEADER] = timeStamp
 	if secretKey != "" {

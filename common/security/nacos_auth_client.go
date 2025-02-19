@@ -50,7 +50,7 @@ func (ac *NacosAuthClient) GetAccessToken() string {
 }
 
 func (ac *NacosAuthClient) GetSecurityInfo(resource RequestResource) map[string]string {
-	var securityInfo = make(map[string]string)
+	var securityInfo = make(map[string]string, 4)
 	v := ac.accessToken.Load()
 	if v != nil {
 		securityInfo[constant.KEY_ACCESS_TOKEN] = v.(string)
