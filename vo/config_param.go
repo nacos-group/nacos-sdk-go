@@ -23,6 +23,7 @@ type ConfigParam struct {
 	Group            string    `param:"group"`   //required
 	Content          string    `param:"content"` //required
 	Tag              string    `param:"tag"`
+	ConfigTags       string    `param:"configTags"`
 	AppName          string    `param:"appName"`
 	BetaIps          string    `param:"betaIps"`
 	CasMd5           string    `param:"casMd5"`

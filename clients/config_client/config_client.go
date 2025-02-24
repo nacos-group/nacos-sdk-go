@@ -247,6 +247,7 @@ func (client *ConfigClient) PublishConfig(param vo.ConfigParam) (published bool,
 	clientConfig, _ := client.GetClientConfig()
 	request := rpc_request.NewConfigPublishRequest(param.Group, param.DataId, clientConfig.NamespaceId, param.Content, param.CasMd5)
 	request.AdditionMap["tag"] = param.Tag
+	request.AdditionMap["config_tags"] = param.ConfigTags
 	request.AdditionMap["appName"] = param.AppName
 	request.AdditionMap["betaIps"] = param.BetaIps
 	request.AdditionMap["type"] = param.Type
