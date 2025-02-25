@@ -18,81 +18,135 @@ package security
 
 import (
 	"context"
-	"encoding/json"
-	"io"
-	"net/http"
-	"strconv"
-	"strings"
-	"sync/atomic"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 )
 
-type AuthClient struct {
-	username           string
-	password           string
-	accessToken        *atomic.Value
-	tokenTtl           int64
-	lastRefreshTime    int64
-	tokenRefreshWindow int64
-	agent              http_agent.IHttpAgent
-	clientCfg          constant.ClientConfig
-	serverCfgs         []constant.ServerConfig
+type RequestResource struct {
+	requestType string
+	namespace   string
+	group       string
+	resource    string
 }
 
-func NewAuthClient(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig, agent http_agent.IHttpAgent) AuthClient {
-	client := AuthClient{
-		username:    clientCfg.Username,
-		password:    clientCfg.Password,
-		serverCfgs:  serverCfgs,
-		clientCfg:   clientCfg,
-		agent:       agent,
-		accessToken: &atomic.Value{},
-	}
+const (
+	REQUEST_TYPE_CONFIG = "config"
+	REQUEST_TYPE_NAMING = "naming"
+)
 
-	return client
+func BuildConfigResourceByRequest(request rpc_request.IRequest) RequestResource {
+	if request.GetRequestType() == constant.CONFIG_QUERY_REQUEST_NAME {
+		configQueryRequest := request.(*rpc_request.ConfigQueryRequest)
+		return BuildConfigResource(configQueryRequest.Tenant, configQueryRequest.Group, configQueryRequest.DataId)
+	}
+	if request.GetRequestType() == constant.CONFIG_PUBLISH_REQUEST_NAME {
+		configPublishRequest := request.(*rpc_request.ConfigPublishRequest)
+		return BuildConfigResource(configPublishRequest.Tenant, configPublishRequest.Group, configPublishRequest.DataId)
+	}
+	if request.GetRequestType() == "ConfigRemoveRequest" {
+		configRemoveRequest := request.(*rpc_request.ConfigRemoveRequest)
+		return BuildConfigResource(configRemoveRequest.Tenant, configRemoveRequest.Group, configRemoveRequest.DataId)
+	}
+	return RequestResource{
+		requestType: REQUEST_TYPE_CONFIG,
+	}
 }
 
-func (ac *AuthClient) GetAccessToken() string {
-	v := ac.accessToken.Load()
-	if v == nil {
-		return ""
+func BuildNamingResourceByRequest(request rpc_request.IRequest) RequestResource {
+	if request.GetRequestType() == constant.INSTANCE_REQUEST_NAME {
+		instanceRequest := request.(*rpc_request.InstanceRequest)
+		return BuildNamingResource(instanceRequest.Namespace, instanceRequest.GroupName, instanceRequest.ServiceName)
 	}
-	return v.(string)
+	if request.GetRequestType() == constant.BATCH_INSTANCE_REQUEST_NAME {
+		batchInstanceRequest := request.(*rpc_request.BatchInstanceRequest)
+		return BuildNamingResource(batchInstanceRequest.Namespace, batchInstanceRequest.GroupName, batchInstanceRequest.ServiceName)
+	}
+	if request.GetRequestType() == constant.SERVICE_LIST_REQUEST_NAME {
+		serviceListRequest := request.(*rpc_request.ServiceListRequest)
+		return BuildNamingResource(serviceListRequest.Namespace, serviceListRequest.GroupName, serviceListRequest.ServiceName)
+	}
+	if request.GetRequestType() == constant.SERVICE_QUERY_REQUEST_NAME {
+		serviceQueryRequest := request.(*rpc_request.ServiceQueryRequest)
+		return BuildNamingResource(serviceQueryRequest.Namespace, serviceQueryRequest.GroupName, serviceQueryRequest.ServiceName)
+	}
+	if request.GetRequestType() == constant.SUBSCRIBE_SERVICE_REQUEST_NAME {
+		subscribeServiceRequest := request.(*rpc_request.SubscribeServiceRequest)
+		return BuildNamingResource(subscribeServiceRequest.Namespace, subscribeServiceRequest.GroupName, subscribeServiceRequest.ServiceName)
+	}
+	return RequestResource{
+		requestType: REQUEST_TYPE_NAMING,
+	}
 }
 
-func (ac *AuthClient) AutoRefresh(ctx context.Context) {
-
-	// If the username is not set, the automatic refresh Token is not enabled
-
-	if ac.username == "" {
-		return
+func BuildConfigResource(tenant, group, dataId string) RequestResource {
+	return RequestResource{
+		requestType: REQUEST_TYPE_CONFIG,
+		namespace:   tenant,
+		group:       group,
+		resource:    dataId,
 	}
+}
 
-	go func() {
-		var timer *time.Timer
-		if lastLoginSuccess := ac.lastRefreshTime > 0 && ac.tokenTtl > 0 && ac.tokenRefreshWindow > 0; lastLoginSuccess {
-			timer = time.NewTimer(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
-		} else {
-			timer = time.NewTimer(time.Second * time.Duration(5))
+func BuildNamingResource(namespace, group, serviceName string) RequestResource {
+	return RequestResource{
+		requestType: REQUEST_TYPE_NAMING,
+		namespace:   namespace,
+		group:       group,
+		resource:    serviceName,
+	}
+}
+
+type AuthClient interface {
+	Login() (bool, error)
+	GetSecurityInfo(resource RequestResource) map[string]string
+	UpdateServerList(serverList []constant.ServerConfig)
+}
+
+type SecurityProxy struct {
+	Clients []AuthClient
+}
+
+func (sp *SecurityProxy) Login() {
+	for _, client := range sp.Clients {
+		_, err := client.Login()
+		if err != nil {
+			logger.Errorf("login in err:%v", err)
 		}
+	}
+}
+
+func (sp *SecurityProxy) GetSecurityInfo(resource RequestResource) map[string]string {
+	var securityInfo = make(map[string]string, 4)
+	for _, client := range sp.Clients {
+		info := client.GetSecurityInfo(resource)
+		if info != nil {
+			for k, v := range info {
+				securityInfo[k] = v
+			}
+		}
+	}
+	return securityInfo
+}
+
+func (sp *SecurityProxy) UpdateServerList(serverList []constant.ServerConfig) {
+	for _, client := range sp.Clients {
+		client.UpdateServerList(serverList)
+	}
+}
+
+func (sp *SecurityProxy) AutoRefresh(ctx context.Context) {
+	go func() {
+		var timer = time.NewTimer(time.Second * time.Duration(5))
 		defer timer.Stop()
 		for {
 			select {
 			case <-timer.C:
-				_, err := ac.Login()
-				if err != nil {
-					logger.Errorf("login has error %+v", err)
-					timer.Reset(time.Second * time.Duration(5))
-				} else {
-					logger.Infof("login success, tokenTtl: %+v seconds, tokenRefreshWindow: %+v seconds", ac.tokenTtl, ac.tokenRefreshWindow)
-					timer.Reset(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
-				}
+				sp.Login()
+				timer.Reset(time.Second * time.Duration(5))
 			case <-ctx.Done():
 				return
 			}
@@ -100,83 +154,11 @@ func (ac *AuthClient) AutoRefresh(ctx context.Context) {
 	}()
 }
 
-func (ac *AuthClient) Login() (bool, error) {
-	var throwable error = nil
-	for i := 0; i < len(ac.serverCfgs); i++ {
-		result, err := ac.login(ac.serverCfgs[i])
-		throwable = err
-		if result {
-			return true, nil
-		}
+func NewSecurityProxy(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig, agent http_agent.IHttpAgent) SecurityProxy {
+	var securityProxy = SecurityProxy{}
+	securityProxy.Clients = []AuthClient{
+		NewNacosAuthClient(clientCfg, serverCfgs, agent),
+		NewRamAuthClient(clientCfg),
 	}
-	return false, throwable
-}
-
-func (ac *AuthClient) UpdateServerList(serverList []constant.ServerConfig) {
-	ac.serverCfgs = serverList
-}
-
-func (ac *AuthClient) GetServerList() []constant.ServerConfig {
-	return ac.serverCfgs
-}
-
-func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
-	if ac.username != "" {
-		contextPath := server.ContextPath
-
-		if !strings.HasPrefix(contextPath, "/") {
-			contextPath = "/" + contextPath
-		}
-
-		if strings.HasSuffix(contextPath, "/") {
-			contextPath = contextPath[0 : len(contextPath)-1]
-		}
-
-		if server.Scheme == "" {
-			server.Scheme = "http"
-		}
-
-		reqUrl := server.Scheme + "://" + server.IpAddr + ":" + strconv.FormatInt(int64(server.Port), 10) + contextPath + "/v1/auth/users/login"
-
-		header := http.Header{
-			"content-type": []string{"application/x-www-form-urlencoded"},
-		}
-		resp, err := ac.agent.Post(reqUrl, header, ac.clientCfg.TimeoutMs, map[string]string{
-			"username": ac.username,
-			"password": ac.password,
-		})
-
-		if err != nil {
-			return false, err
-		}
-
-		var bytes []byte
-		bytes, err = io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		if err != nil {
-			return false, err
-		}
-
-		if resp.StatusCode != constant.RESPONSE_CODE_SUCCESS {
-			errMsg := string(bytes)
-			return false, errors.New(errMsg)
-		}
-
-		var result map[string]interface{}
-
-		err = json.Unmarshal(bytes, &result)
-
-		if err != nil {
-			return false, err
-		}
-
-		if val, ok := result[constant.KEY_ACCESS_TOKEN]; ok {
-			ac.accessToken.Store(val)
-			ac.lastRefreshTime = time.Now().Unix()
-			ac.tokenTtl = int64(result[constant.KEY_TOKEN_TTL].(float64))
-			ac.tokenRefreshWindow = ac.tokenTtl / 10
-		}
-	}
-	return true, nil
-
+	return securityProxy
 }

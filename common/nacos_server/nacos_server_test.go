@@ -18,8 +18,10 @@ package nacos_server
 
 import (
 	"context"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
 	"testing"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/stretchr/testify/assert"
@@ -61,18 +63,18 @@ func buildNacosServer(clientConfig constant.ClientConfig) (*NacosServer, error) 
 
 func TestNacosServer_InjectSignForNamingHttp_NoAk(t *testing.T) {
 	clientConfig := constant.ClientConfig{
-		AccessKey: "123",
-		SecretKey: "321",
+		AccessKey: "",
+		SecretKey: "",
 	}
 	server, err := buildNacosServer(clientConfig)
 	if err != nil {
 		t.FailNow()
 	}
 
-	param := make(map[string]string)
+	param := make(map[string]string, 4)
 	param["serviceName"] = "s-0"
 	param["groupName"] = "g-0"
-	server.InjectSignForNamingHttp(param, constant.ClientConfig{})
+	server.InjectSecurityInfo(param, security.BuildNamingResource(param["namespaceId"], param["groupName"], param["serviceName"]))
 	assert.Empty(t, param["ak"])
 	assert.Empty(t, param["data"])
 	assert.Empty(t, param["signature"])
@@ -88,10 +90,10 @@ func TestNacosServer_InjectSignForNamingHttp_WithGroup(t *testing.T) {
 		t.FailNow()
 	}
 
-	param := make(map[string]string)
+	param := make(map[string]string, 4)
 	param["serviceName"] = "s-0"
 	param["groupName"] = "g-0"
-	server.InjectSignForNamingHttp(param, clientConfig)
+	server.InjectSecurityInfo(param, security.BuildNamingResource(param["namespaceId"], param["groupName"], param["serviceName"]))
 	assert.Equal(t, "123", param["ak"])
 	assert.Contains(t, param["data"], "@@g-0@@s-0")
 	_, has := param["signature"]
@@ -108,9 +110,9 @@ func TestNacosServer_InjectSignForNamingHttp_WithoutGroup(t *testing.T) {
 		t.FailNow()
 	}
 
-	param := make(map[string]string)
+	param := make(map[string]string, 4)
 	param["serviceName"] = "s-0"
-	server.InjectSignForNamingHttp(param, clientConfig)
+	server.InjectSecurityInfo(param, security.BuildNamingResource(param["namespaceId"], param["groupName"], param["serviceName"]))
 	assert.Equal(t, "123", param["ak"])
 	assert.NotContains(t, param["data"], "@@g-0@@s-0")
 	assert.Contains(t, param["data"], "@@s-0")
@@ -128,11 +130,11 @@ func TestNacosServer_InjectSignForNamingHttp_WithoutServiceName(t *testing.T) {
 		t.FailNow()
 	}
 
-	param := make(map[string]string)
+	param := make(map[string]string, 4)
 	param["groupName"] = "g-0"
-	server.InjectSignForNamingHttp(param, clientConfig)
+	server.InjectSecurityInfo(param, security.BuildNamingResource(param["namespaceId"], param["groupName"], param["serviceName"]))
 	assert.Equal(t, "123", param["ak"])
-	assert.NotContains(t, param["data"], "@@")
+	assert.Contains(t, param["data"], "@@")
 	assert.Regexp(t, "\\d+", param["data"])
 	_, has := param["signature"]
 	assert.True(t, has)
@@ -148,8 +150,8 @@ func TestNacosServer_InjectSignForNamingHttp_WithoutServiceNameAndGroup(t *testi
 		t.FailNow()
 	}
 
-	param := make(map[string]string)
-	server.InjectSignForNamingHttp(param, clientConfig)
+	param := make(map[string]string, 4)
+	server.InjectSecurityInfo(param, security.BuildNamingResource(param["namespaceId"], param["serviceName"], param["groupName"]))
 	assert.Equal(t, "123", param["ak"])
 	assert.NotContains(t, param["data"], "@@")
 	assert.Regexp(t, "\\d+", param["data"])
@@ -178,5 +180,8 @@ func TestNacosServer_UpdateServerListForSecurityLogin(t *testing.T) {
 	if err != nil {
 		t.FailNow()
 	}
-	assert.Equal(t, server.GetServerList(), server.securityLogin.GetServerList())
+	nacosAuthClient := server.securityLogin.Clients[0]
+	client, ok := nacosAuthClient.(*security.NacosAuthClient)
+	assert.True(t, ok)
+	assert.Equal(t, server.GetServerList(), client.GetServerList())
 }

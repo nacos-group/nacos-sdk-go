@@ -28,6 +28,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
 	"github.com/nacos-group/nacos-sdk-go/v2/inner/uuid"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
@@ -83,8 +84,7 @@ func NewNamingGrpcProxy(ctx context.Context, clientCfg constant.ClientConfig, na
 
 func (proxy *NamingGrpcProxy) requestToServer(request rpc_request.IRequest) (rpc_response.IResponse, error) {
 	start := time.Now()
-	proxy.nacosServer.InjectSign(request, request.GetHeaders(), proxy.clientConfig)
-	proxy.nacosServer.InjectSecurityInfo(request.GetHeaders())
+	proxy.nacosServer.InjectSecurityInfo(request.GetHeaders(), security.BuildNamingResourceByRequest(request))
 	response, err := proxy.rpcClient.GetRpcClient().Request(request, int64(proxy.clientConfig.TimeoutMs))
 	monitor.GetNamingRequestMonitor(constant.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
 	return response, err

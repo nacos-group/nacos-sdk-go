@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 )
 
@@ -68,7 +69,7 @@ func NewInstanceRequest(namespace, serviceName, groupName, Type string, instance
 }
 
 func (r *InstanceRequest) GetRequestType() string {
-	return "InstanceRequest"
+	return constant.INSTANCE_REQUEST_NAME
 }
 
 type BatchInstanceRequest struct {
@@ -86,7 +87,7 @@ func NewBatchInstanceRequest(namespace, serviceName, groupName, Type string, ins
 }
 
 func (r *BatchInstanceRequest) GetRequestType() string {
-	return "BatchInstanceRequest"
+	return constant.BATCH_INSTANCE_REQUEST_NAME
 }
 
 type NotifySubscriberRequest struct {
@@ -95,7 +96,7 @@ type NotifySubscriberRequest struct {
 }
 
 func (r *NotifySubscriberRequest) GetRequestType() string {
-	return "NotifySubscriberRequest"
+	return constant.NOTIFY_SUBSCRIBE_REQUEST_NAME
 }
 
 type ServiceListRequest struct {
@@ -115,7 +116,7 @@ func NewServiceListRequest(namespace, serviceName, groupName string, pageNo, pag
 }
 
 func (r *ServiceListRequest) GetRequestType() string {
-	return "ServiceListRequest"
+	return constant.SERVICE_LIST_REQUEST_NAME
 }
 
 type SubscribeServiceRequest struct {
@@ -133,7 +134,7 @@ func NewSubscribeServiceRequest(namespace, serviceName, groupName, clusters stri
 }
 
 func (r *SubscribeServiceRequest) GetRequestType() string {
-	return "SubscribeServiceRequest"
+	return constant.SUBSCRIBE_SERVICE_REQUEST_NAME
 }
 
 type ServiceQueryRequest struct {
@@ -153,5 +154,5 @@ func NewServiceQueryRequest(namespace, serviceName, groupName, cluster string, h
 }
 
 func (r *ServiceQueryRequest) GetRequestType() string {
-	return "ServiceQueryRequest"
+	return constant.SERVICE_QUERY_REQUEST_NAME
 }

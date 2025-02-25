@@ -23,22 +23,20 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
-
-	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
-
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
-
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"github.com/pkg/errors"
 )
 
 type ConfigProxy struct {
@@ -56,11 +54,8 @@ func NewConfigProxy(ctx context.Context, serverConfig []constant.ServerConfig, c
 
 func (cp *ConfigProxy) requestProxy(rpcClient *rpc.RpcClient, request rpc_request.IRequest, timeoutMills uint64) (rpc_response.IResponse, error) {
 	start := time.Now()
-	cp.nacosServer.InjectSecurityInfo(request.GetHeaders())
+	cp.nacosServer.InjectSecurityInfo(request.GetHeaders(), security.BuildConfigResourceByRequest(request))
 	cp.injectCommHeader(request.GetHeaders())
-	cp.nacosServer.InjectSkAk(request.GetHeaders(), cp.clientConfig)
-	signHeaders := nacos_server.GetSignHeadersFromRequest(request.(rpc_request.IConfigRequest), cp.clientConfig.SecretKey)
-	request.PutAllHeaders(signHeaders)
 	response, err := rpcClient.Request(request, int64(timeoutMills))
 	monitor.GetConfigRequestMonitor(constant.GRPC, request.GetRequestType(), rpc_response.GetGrpcResponseStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
 	return response, err
