@@ -112,6 +112,7 @@ type RpcClient struct {
 	mux                         *sync.Mutex
 	clientAbilities             rpc_request.ClientAbilities
 	Tenant                      string
+	ReconnectCallbackListen     func()
 }
 
 type ServerRequestHandlerMapping struct {
@@ -448,6 +449,7 @@ func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
 			r.currentConnection = connectionNew
 			atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(RUNNING))
 			r.notifyConnectionChange(CONNECTED)
+			r.ReconnectCallbackListen()
 			return
 		}
 		if r.isShutdown() {
