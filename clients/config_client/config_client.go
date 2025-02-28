@@ -19,6 +19,7 @@ package config_client
 import (
 	"context"
 	"fmt"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
 	"os"
 	"strings"
 	"sync"
@@ -101,7 +102,7 @@ func (cacheData *cacheData) executeListener() {
 	go cacheData.cacheDataListener.listener(cacheData.tenant, cacheData.group, cacheData.dataId, decryptedContent)
 }
 
-func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
+func NewConfigClientWithRamCredentialProvider(nc nacos_client.INacosClient, provider security.RamCredentialProvider) (*ConfigClient, error) {
 	config := &ConfigClient{}
 	config.ctx, config.cancel = context.WithCancel(context.Background())
 	config.INacosClient = nc
@@ -124,7 +125,7 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	clientConfig.CacheDir = clientConfig.CacheDir + string(os.PathSeparator) + "config"
 	config.configCacheDir = clientConfig.CacheDir
 
-	if config.configProxy, err = NewConfigProxy(config.ctx, serverConfig, clientConfig, httpAgent); err != nil {
+	if config.configProxy, err = NewConfigProxyWithRamCredentialProvider(config.ctx, serverConfig, clientConfig, httpAgent, provider); err != nil {
 		return nil, err
 	}
 
@@ -150,6 +151,10 @@ func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
 	config.listenExecute = make(chan struct{})
 	config.startInternal()
 	return config, err
+}
+
+func NewConfigClient(nc nacos_client.INacosClient) (*ConfigClient, error) {
+	return NewConfigClientWithRamCredentialProvider(nc, nil)
 }
 
 func initLogger(clientConfig constant.ClientConfig) error {

@@ -16,9 +16,13 @@
 
 package vo
 
-import "github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+import (
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
+)
 
 type NacosClientParam struct {
-	ClientConfig  *constant.ClientConfig  // optional
-	ServerConfigs []constant.ServerConfig // optional
+	ClientConfig          *constant.ClientConfig         // optional
+	ServerConfigs         []constant.ServerConfig        // optional
+	RamCredentialProvider security.RamCredentialProvider // optinal
 }
