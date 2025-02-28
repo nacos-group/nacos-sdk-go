@@ -36,8 +36,8 @@ func GetNacosProperties(property string, envKey string) string {
 }
 
 type RamCredentialProvider interface {
-	matchProvider() bool
-	init() error
+	MatchProvider() bool
+	Init() error
 	GetCredentialsForNacosClient() RamContext
 }
 
@@ -48,13 +48,13 @@ type AccessKeyCredentialProvider struct {
 	signatureRegionId string
 }
 
-func (provider *AccessKeyCredentialProvider) matchProvider() bool {
+func (provider *AccessKeyCredentialProvider) MatchProvider() bool {
 	accessKey := GetNacosProperties(provider.clientConfig.AccessKey, ACCESS_KEY_ID_KEY)
 	secretKey := GetNacosProperties(provider.clientConfig.SecretKey, ACCESS_KEY_SECRET_KEY)
 	return accessKey != "" && secretKey != ""
 }
 
-func (provider *AccessKeyCredentialProvider) init() error {
+func (provider *AccessKeyCredentialProvider) Init() error {
 	provider.accessKey = GetNacosProperties(provider.clientConfig.AccessKey, ACCESS_KEY_ID_KEY)
 	provider.secretKey = GetNacosProperties(provider.clientConfig.SecretKey, ACCESS_KEY_SECRET_KEY)
 	if provider.clientConfig.RamConfig != nil {
@@ -81,7 +81,7 @@ type AutoRotateCredentialProvider struct {
 	signatureRegionId        string
 }
 
-func (provider *AutoRotateCredentialProvider) matchProvider() bool {
+func (provider *AutoRotateCredentialProvider) MatchProvider() bool {
 	if provider.clientConfig.RamConfig == nil {
 		return false
 	}
@@ -89,7 +89,7 @@ func (provider *AutoRotateCredentialProvider) matchProvider() bool {
 	return secretName != ""
 }
 
-func (provider *AutoRotateCredentialProvider) init() error {
+func (provider *AutoRotateCredentialProvider) Init() error {
 	secretName := GetNacosProperties(provider.clientConfig.RamConfig.SecretName, SECRET_NAME_KEY)
 	client, err := sdk.NewClient()
 	if err != nil {
@@ -133,7 +133,7 @@ type StsTokenCredentialProvider struct {
 	signatureRegionId string
 }
 
-func (provider *StsTokenCredentialProvider) matchProvider() bool {
+func (provider *StsTokenCredentialProvider) MatchProvider() bool {
 	accessKey := GetNacosProperties(provider.clientConfig.AccessKey, ACCESS_KEY_ID_KEY)
 	secretKey := GetNacosProperties(provider.clientConfig.SecretKey, ACCESS_KEY_SECRET_KEY)
 	if provider.clientConfig.RamConfig == nil {
@@ -143,7 +143,7 @@ func (provider *StsTokenCredentialProvider) matchProvider() bool {
 	return accessKey != "" && secretKey != "" && stsToken != ""
 }
 
-func (provider *StsTokenCredentialProvider) init() error {
+func (provider *StsTokenCredentialProvider) Init() error {
 	provider.accessKey = GetNacosProperties(provider.clientConfig.AccessKey, ACCESS_KEY_ID_KEY)
 	provider.secretKey = GetNacosProperties(provider.clientConfig.SecretKey, ACCESS_KEY_SECRET_KEY)
 	provider.securityToken = GetNacosProperties(provider.clientConfig.RamConfig.SecurityToken, SECURITY_TOKEN_KEY)
@@ -168,7 +168,7 @@ type EcsRamRoleCredentialProvider struct {
 	signatureRegionId string
 }
 
-func (provider *EcsRamRoleCredentialProvider) matchProvider() bool {
+func (provider *EcsRamRoleCredentialProvider) MatchProvider() bool {
 	if provider.clientConfig.RamConfig == nil {
 		return false
 	}
@@ -176,7 +176,7 @@ func (provider *EcsRamRoleCredentialProvider) matchProvider() bool {
 	return ramRoleName != ""
 }
 
-func (provider *EcsRamRoleCredentialProvider) init() error {
+func (provider *EcsRamRoleCredentialProvider) Init() error {
 	ramRoleName := GetNacosProperties(provider.clientConfig.RamConfig.RamRoleName, RAM_ROLE_NAME_KEY)
 	credentialsConfig := new(credentials.Config).SetType("ecs_ram_role").SetRoleName(ramRoleName)
 	credentialClient, err := credentials.NewCredential(credentialsConfig)
@@ -212,7 +212,7 @@ type RamRoleArnCredentialProvider struct {
 	signatureRegionId string
 }
 
-func (provider *RamRoleArnCredentialProvider) matchProvider() bool {
+func (provider *RamRoleArnCredentialProvider) MatchProvider() bool {
 	if provider.clientConfig.RamConfig == nil {
 		return false
 	}
@@ -224,7 +224,7 @@ func (provider *RamRoleArnCredentialProvider) matchProvider() bool {
 	return accessKey == "" && secretKey == "" && roleArn != "" && roleSessionName != "" && oidcProviderArn == ""
 }
 
-func (provider *RamRoleArnCredentialProvider) init() error {
+func (provider *RamRoleArnCredentialProvider) Init() error {
 	accessKey := GetNacosProperties(provider.clientConfig.AccessKey, ACCESS_KEY_ID_KEY)
 	secretKey := GetNacosProperties(provider.clientConfig.SecretKey, ACCESS_KEY_SECRET_KEY)
 	roleArn := GetNacosProperties(provider.clientConfig.RamConfig.RoleArn, ROLE_ARN_KEY)
@@ -276,7 +276,7 @@ type OIDCRoleArnCredentialProvider struct {
 	signatureRegionId string
 }
 
-func (provider *OIDCRoleArnCredentialProvider) matchProvider() bool {
+func (provider *OIDCRoleArnCredentialProvider) MatchProvider() bool {
 	if provider.clientConfig.RamConfig == nil {
 		return false
 	}
@@ -287,7 +287,7 @@ func (provider *OIDCRoleArnCredentialProvider) matchProvider() bool {
 	return roleArn != "" && roleSessionName != "" && oidcProviderArn != "" && oidcTokenFile != ""
 }
 
-func (provider *OIDCRoleArnCredentialProvider) init() error {
+func (provider *OIDCRoleArnCredentialProvider) Init() error {
 	ramRoleArn := GetNacosProperties(provider.clientConfig.RamConfig.RoleArn, ROLE_ARN_KEY)
 	roleSessionName := GetNacosProperties(provider.clientConfig.RamConfig.RoleSessionName, ROLE_SESSION_NAME_KEY)
 	oidcProviderArn := GetNacosProperties(provider.clientConfig.RamConfig.OIDCProviderArn, OIDC_PROVIDER_ARN_KEY)
@@ -339,7 +339,7 @@ type CredentialsURICredentialProvider struct {
 	signatureRegionId string
 }
 
-func (provider *CredentialsURICredentialProvider) matchProvider() bool {
+func (provider *CredentialsURICredentialProvider) MatchProvider() bool {
 	if provider.clientConfig.RamConfig == nil {
 		return false
 	}
@@ -347,7 +347,7 @@ func (provider *CredentialsURICredentialProvider) matchProvider() bool {
 	return credentialsURI != ""
 }
 
-func (provider *CredentialsURICredentialProvider) init() error {
+func (provider *CredentialsURICredentialProvider) Init() error {
 	credentialsURI := GetNacosProperties(provider.clientConfig.RamConfig.CredentialsURI, CREDENTIALS_URI_KEY)
 	credentialsConfig := new(credentials.Config).SetType("credentials_uri").SetURLCredential(credentialsURI)
 	credentialClient, err := credentials.NewCredential(credentialsConfig)

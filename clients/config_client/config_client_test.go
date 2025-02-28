@@ -19,6 +19,7 @@ package config_client
 import (
 	"context"
 	"errors"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"testing"
 
@@ -355,4 +356,56 @@ func TestCancelListenConfig(t *testing.T) {
 		err = client.CancelListenConfig(listenConfigParam)
 		assert.Nil(t, err)
 	})
+}
+
+type MockAccessKeyCredentialProvider struct {
+	accessKey         string
+	secretKey         string
+	signatureRegionId string
+}
+
+func (provider *MockAccessKeyCredentialProvider) MatchProvider() bool {
+	return true
+}
+
+func (provider *MockAccessKeyCredentialProvider) Init() error {
+	return nil
+}
+
+func (provider *MockAccessKeyCredentialProvider) GetCredentialsForNacosClient() security.RamContext {
+	ramContext := security.RamContext{
+		AccessKey:         provider.accessKey,
+		SecretKey:         provider.secretKey,
+		SignatureRegionId: "",
+	}
+	return ramContext
+}
+
+func Test_ConfigClientWithProvider(t *testing.T) {
+	nc := nacos_client.NacosClient{}
+	_ = nc.SetServerConfig([]constant.ServerConfig{*serverConfigWithOptions})
+	clientConfigWithOptions.AccessKey = ""
+	clientConfigWithOptions.SecretKey = ""
+	_ = nc.SetClientConfig(*clientConfigWithOptions)
+	_ = nc.SetHttpAgent(&http_agent.HttpAgent{})
+	provider := &MockAccessKeyCredentialProvider{
+		accessKey: "LTAxxx",
+		secretKey: "EdPxxx",
+	}
+	client, _ := NewConfigClientWithRamCredentialProvider(&nc, provider)
+	client.configProxy = &MockConfigProxy{}
+	success, err := client.PublishConfig(vo.ConfigParam{
+		DataId:  localConfigTest.DataId,
+		Group:   localConfigTest.Group,
+		Content: "hello world"})
+
+	assert.Nil(t, err)
+	assert.True(t, success)
+
+	content, err := client.GetConfig(vo.ConfigParam{
+		DataId: localConfigTest.DataId,
+		Group:  localConfigTest.Group})
+
+	assert.Nil(t, err)
+	assert.Equal(t, "hello world", content)
 }

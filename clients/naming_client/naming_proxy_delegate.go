@@ -18,6 +18,7 @@ package naming_client
 
 import (
 	"context"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
 	"github.com/nacos-group/nacos-sdk-go/v2/inner/uuid"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
@@ -40,6 +41,11 @@ type NamingProxyDelegate struct {
 
 func NewNamingProxyDelegate(ctx context.Context, clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig,
 	httpAgent http_agent.IHttpAgent, serviceInfoHolder *naming_cache.ServiceInfoHolder) (naming_proxy.INamingProxy, error) {
+	return NewNamingProxyDelegateWithRamCredentialProvider(ctx, clientCfg, serverCfgs, httpAgent, serviceInfoHolder, nil)
+}
+
+func NewNamingProxyDelegateWithRamCredentialProvider(ctx context.Context, clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig,
+	httpAgent http_agent.IHttpAgent, serviceInfoHolder *naming_cache.ServiceInfoHolder, provider security.RamCredentialProvider) (naming_proxy.INamingProxy, error) {
 
 	uid, err := uuid.NewV4()
 	if err != nil {
@@ -51,7 +57,7 @@ func NewNamingProxyDelegate(ctx context.Context, clientCfg constant.ClientConfig
 		"RequestId":      {uid.String()},
 		"Request-Module": {"Naming"},
 	}
-	nacosServer, err := nacos_server.NewNacosServer(ctx, serverCfgs, clientCfg, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint, namingHeader)
+	nacosServer, err := nacos_server.NewNacosServerWithRamCredentialProvider(ctx, serverCfgs, clientCfg, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint, namingHeader, provider)
 	if err != nil {
 		return nil, err
 	}

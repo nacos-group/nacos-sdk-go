@@ -55,9 +55,18 @@ func NewRamAuthClient(clientCfg constant.ClientConfig) *RamAuthClient {
 	}
 }
 
+func NewRamAuthClientWithProvider(clientCfg constant.ClientConfig, ramCredentialProvider RamCredentialProvider) *RamAuthClient {
+	ramAuthClient := NewRamAuthClient(clientCfg)
+	if ramCredentialProvider != nil {
+		ramAuthClient.ramCredentialProviders = append(ramAuthClient.ramCredentialProviders, ramCredentialProvider)
+	}
+
+	return ramAuthClient
+}
+
 func (rac *RamAuthClient) Login() (bool, error) {
 	for _, provider := range rac.ramCredentialProviders {
-		if provider.matchProvider() {
+		if provider.MatchProvider() {
 			rac.matchedProvider = provider
 			break
 		}
@@ -66,7 +75,7 @@ func (rac *RamAuthClient) Login() (bool, error) {
 	if rac.matchedProvider == nil {
 		return false, errors.Errorf("no matched provider")
 	}
-	err := rac.matchedProvider.init()
+	err := rac.matchedProvider.Init()
 	if err != nil {
 		return false, err
 	}

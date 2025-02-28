@@ -18,6 +18,7 @@ package naming_client
 
 import (
 	"context"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
 	"math"
 	"math/rand"
 	"strings"
@@ -46,6 +47,11 @@ type NamingClient struct {
 
 // NewNamingClient ...
 func NewNamingClient(nc nacos_client.INacosClient) (*NamingClient, error) {
+	return NewNamingClientWithRamCredentialProvider(nc, nil)
+}
+
+// NewNamingClientWithRamCredentialProvider ...
+func NewNamingClientWithRamCredentialProvider(nc nacos_client.INacosClient, provider security.RamCredentialProvider) (*NamingClient, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	rand.Seed(time.Now().UnixNano())
 	naming := &NamingClient{INacosClient: nc, ctx: ctx, cancel: cancel}
@@ -75,7 +81,7 @@ func NewNamingClient(nc nacos_client.INacosClient) (*NamingClient, error) {
 	naming.serviceInfoHolder = naming_cache.NewServiceInfoHolder(clientConfig.NamespaceId, clientConfig.CacheDir,
 		clientConfig.UpdateCacheWhenEmpty, clientConfig.NotLoadCacheAtStart)
 
-	naming.serviceProxy, err = NewNamingProxyDelegate(ctx, clientConfig, serverConfig, httpAgent, naming.serviceInfoHolder)
+	naming.serviceProxy, err = NewNamingProxyDelegateWithRamCredentialProvider(ctx, clientConfig, serverConfig, httpAgent, naming.serviceInfoHolder, provider)
 
 	if clientConfig.AsyncUpdateService {
 		go NewServiceInfoUpdater(ctx, naming.serviceInfoHolder, clientConfig.UpdateThreadNum, naming.serviceProxy).asyncUpdateService()
