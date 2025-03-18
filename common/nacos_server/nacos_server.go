@@ -60,12 +60,16 @@ type NacosServer struct {
 }
 
 func NewNacosServer(ctx context.Context, serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string, endpointQueryHeader map[string][]string) (*NacosServer, error) {
+	return NewNacosServerWithRamCredentialProvider(ctx, serverList, clientCfg, httpAgent, timeoutMs, endpoint, endpointQueryHeader, nil)
+}
+
+func NewNacosServerWithRamCredentialProvider(ctx context.Context, serverList []constant.ServerConfig, clientCfg constant.ClientConfig, httpAgent http_agent.IHttpAgent, timeoutMs uint64, endpoint string, endpointQueryHeader map[string][]string, provider security.RamCredentialProvider) (*NacosServer, error) {
 	severLen := len(serverList)
 	if severLen == 0 && endpoint == "" {
 		return &NacosServer{}, errors.New("both serverlist  and  endpoint are empty")
 	}
 
-	securityLogin := security.NewSecurityProxy(clientCfg, serverList, httpAgent)
+	securityLogin := security.NewSecurityProxyWithRamCredentialProvider(clientCfg, serverList, httpAgent, provider)
 
 	ns := NacosServer{
 		serverList:            serverList,

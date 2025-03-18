@@ -45,7 +45,7 @@ func NewConfigClient(param vo.NacosClientParam) (iClient config_client.IConfigCl
 	if err != nil {
 		return
 	}
-	config, err := config_client.NewConfigClient(nacosClient)
+	config, err := config_client.NewConfigClientWithRamCredentialProvider(nacosClient, param.RamCredentialProvider)
 	if err != nil {
 		return
 	}
@@ -58,7 +58,7 @@ func NewNamingClient(param vo.NacosClientParam) (iClient naming_client.INamingCl
 	if err != nil {
 		return
 	}
-	naming, err := naming_client.NewNamingClient(nacosClient)
+	naming, err := naming_client.NewNamingClientWithRamCredentialProvider(nacosClient, param.RamCredentialProvider)
 	if err != nil {
 		return
 	}

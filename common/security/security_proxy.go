@@ -162,3 +162,12 @@ func NewSecurityProxy(clientCfg constant.ClientConfig, serverCfgs []constant.Ser
 	}
 	return securityProxy
 }
+
+func NewSecurityProxyWithRamCredentialProvider(clientCfg constant.ClientConfig, serverCfgs []constant.ServerConfig, agent http_agent.IHttpAgent, provider RamCredentialProvider) SecurityProxy {
+	var securityProxy = SecurityProxy{}
+	securityProxy.Clients = []AuthClient{
+		NewNacosAuthClient(clientCfg, serverCfgs, agent),
+		NewRamAuthClientWithProvider(clientCfg, provider),
+	}
+	return securityProxy
+}
