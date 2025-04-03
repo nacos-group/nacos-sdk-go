@@ -115,7 +115,7 @@ const (
 	SERVICE_LIST_REQUEST_NAME         = "ServiceListRequest"
 	SERVICE_QUERY_REQUEST_NAME        = "ServiceQueryRequest"
 	SUBSCRIBE_SERVICE_REQUEST_NAME    = "SubscribeServiceRequest"
-	NOTIFY_SUBSCRIBE_REQUEST_NAME     = "NotifySubscribeRequest"
+	NOTIFY_SUBSCRIBE_REQUEST_NAME     = "NotifySubscriberRequest"
 	CONFIG_BATCH_LISTEN_REQUEST_NAME  = "ConfigBatchListenRequest"
 	CONFIG_CHANGE_NOTIFY_REQUEST_NAME = "ConfigChangeNotifyRequest"
 )
