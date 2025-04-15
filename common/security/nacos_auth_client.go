@@ -113,8 +113,12 @@ func (ac *NacosAuthClient) GetServerList() []constant.ServerConfig {
 }
 
 func (ac *NacosAuthClient) login(server constant.ServerConfig) (bool, error) {
-	if lastLoginSuccess := ac.lastRefreshTime > 0 && ac.tokenTtl > 0 && ac.tokenRefreshWindow > 0; lastLoginSuccess {
-		return true, nil
+	if ac.lastRefreshTime > 0 && ac.tokenTtl > 0 {
+		// We refresh 2 windows before expiration to ensure continuous availability
+		tokenRefreshTime := ac.lastRefreshTime + ac.tokenTtl - 2*ac.tokenRefreshWindow
+		if time.Now().Unix() < tokenRefreshTime {
+			return true, nil
+		}
 	}
 	if ac.username == "" {
 		ac.lastRefreshTime = time.Now().Unix()
