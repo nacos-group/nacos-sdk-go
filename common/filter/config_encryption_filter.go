@@ -17,10 +17,11 @@
 package filter
 
 import (
-	nacos_inner_encryption "github.com/nacos-group/nacos-sdk-go/v2/common/encryption"
-	"github.com/nacos-group/nacos-sdk-go/v2/vo"
-	"github.com/pkg/errors"
 	"strings"
+
+	nacos_inner_encryption "github.com/dbsyk/nacos-sdk-go/v2/common/encryption"
+	"github.com/dbsyk/nacos-sdk-go/v2/vo"
+	"github.com/pkg/errors"
 )
 
 const (

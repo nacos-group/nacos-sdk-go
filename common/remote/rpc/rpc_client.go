@@ -29,12 +29,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
-	"github.com/nacos-group/nacos-sdk-go/v2/util"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/constant"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/logger"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/nacos_server"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
+	"github.com/dbsyk/nacos-sdk-go/v2/util"
 )
 
 type ConnectionType uint32

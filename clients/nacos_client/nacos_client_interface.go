@@ -17,8 +17,8 @@
 package nacos_client
 
 import (
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/constant"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/http_agent"
 )
 
 //go:generate mockgen -destination mock_nacos_client_interface.go -package nacos_client -source=./nacos_client_interface.go

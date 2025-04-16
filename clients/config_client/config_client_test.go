@@ -19,19 +19,20 @@ package config_client
 import (
 	"context"
 	"errors"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
-	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"testing"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
-	"github.com/nacos-group/nacos-sdk-go/v2/model"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/security"
+	"github.com/dbsyk/nacos-sdk-go/v2/util"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/remote/rpc"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
+	"github.com/dbsyk/nacos-sdk-go/v2/model"
+
+	"github.com/dbsyk/nacos-sdk-go/v2/clients/nacos_client"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/constant"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/http_agent"
+	"github.com/dbsyk/nacos-sdk-go/v2/vo"
 	"github.com/stretchr/testify/assert"
 )
 

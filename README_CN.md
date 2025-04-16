@@ -16,7 +16,7 @@ Nacos-sdk-go是Nacos的Go语言客户端，它实现了服务发现和动态配�
 ## 安装
 使用`go get`安装SDK：
 ```sh
-$ go get -u github.com/nacos-group/nacos-sdk-go/v2
+$ go get -u github.com/dbsyk/nacos-sdk-go/v2
 ```
 ## 快速使用
 * ClientConfig

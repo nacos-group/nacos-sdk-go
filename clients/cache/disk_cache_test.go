@@ -2,15 +2,16 @@ package cache
 
 import (
 	"fmt"
-	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"math/rand"
 	"os"
 	"strconv"
 	"testing"
 
+	"github.com/dbsyk/nacos-sdk-go/v2/util"
+
 	"github.com/stretchr/testify/assert"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/file"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/file"
 )
 
 var (

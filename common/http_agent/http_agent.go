@@ -20,11 +20,11 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/tls"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/constant"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/tls"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/v2/util"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/logger"
+	"github.com/dbsyk/nacos-sdk-go/v2/util"
 	"github.com/pkg/errors"
 )
 

@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/nacos-group/nacos-sdk-go/v2/model"
+	model "github.com/dbsyk/nacos-sdk-go/v2/model"
 )
 
 // MockINamingProxy is a mock of INamingProxy interface.

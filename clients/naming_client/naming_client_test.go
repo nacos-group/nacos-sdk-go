@@ -19,12 +19,12 @@ package naming_client
 import (
 	"testing"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/http_agent"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/model"
-	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"github.com/dbsyk/nacos-sdk-go/v2/clients/nacos_client"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/constant"
+	"github.com/dbsyk/nacos-sdk-go/v2/model"
+	"github.com/dbsyk/nacos-sdk-go/v2/vo"
 	"github.com/stretchr/testify/assert"
 )
 

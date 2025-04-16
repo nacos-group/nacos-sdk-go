@@ -19,7 +19,7 @@ Supported Nacos version over 2.x
 Use `go get` to install SDK：
 
 ```sh
-$ go get -u github.com/nacos-group/nacos-sdk-go/v2
+$ go get -u github.com/dbsyk/nacos-sdk-go/v2
 ```
 
 ## Quick Examples

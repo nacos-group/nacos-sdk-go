@@ -1,7 +1,7 @@
 package security
 
 import (
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/constant"
 	"github.com/pkg/errors"
 )
 

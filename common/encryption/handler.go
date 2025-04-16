@@ -18,12 +18,13 @@ package encryption
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/alibabacloud-go/tea/tea"
 	dkms_api "github.com/aliyun/alibabacloud-dkms-gcs-go-sdk/openapi"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/constant"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/logger"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 type HandlerParam struct {

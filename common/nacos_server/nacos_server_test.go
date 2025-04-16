@@ -20,10 +20,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/http_agent"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/security"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/constant"
 	"github.com/stretchr/testify/assert"
 )
 

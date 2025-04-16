@@ -7,7 +7,7 @@ import (
 
 	"github.com/aliyun/aliyun-secretsmanager-client-go/sdk"
 	"github.com/aliyun/credentials-go/credentials"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/constant"
 )
 
 const (

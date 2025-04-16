@@ -24,7 +24,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	vo "github.com/nacos-group/nacos-sdk-go/v2/vo"
+	vo "github.com/dbsyk/nacos-sdk-go/v2/vo"
 )
 
 // MockIConfigClient is a mock of IConfigClient interface

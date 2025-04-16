@@ -1,0 +1,92 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/go
+{
+	"name": "Go",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/go:1-1.21-bullseye",
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {
+		"ghcr.io/devcontainers-extra/features/protoc:1": {}
+	},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": {
+		"vcs": "sudo git config --system --add safe.directory ${containerWorkspaceFolder}",
+		// "deps": "make init"
+	},
+
+	"waitFor": "postCreateCommand",
+
+
+	// Configure tool-specific properties.
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"[go]": {
+					"editor.formatOnSave": true,
+					"editor.formatOnPaste": true
+				},
+				"protoc": {
+					"path": "/home/vscode/.asdf/shims/protoc",
+					"options": [
+						"--proto_path=protos/v3",
+						"--proto_path=protos/v2",
+						"--proto_path=${env.GOPATH}/src",
+						"--proto_path=${workspaceRoot}/third_party"
+					]
+				},
+				"go.lintTool": "golangci-lint",
+				"go.lintFlags": [
+					"--fast"
+				],
+				"go.formatTool": "goimports",
+				"launch": {
+					"version": "0.2.0",
+					"configurations": [
+						{
+							"name": "Launch Package",
+							"type": "go",
+							"request": "launch",
+							"mode": "auto",
+							"program": "${workspaceFolder}/cmd/${workspaceFolderBasename}/",
+							"args": ["-conf", "${workspaceFolder}/configs/config.yaml"]
+						}
+					]
+				}
+			},
+			"extensions": [
+				"eamodio.gitlens",
+				"aleksandra.go-group-imports",
+				"msyrus.go-doc",
+				"ms-vscode.makefile-tools",
+				"zxh404.vscode-proto3",
+				"42Crunch.vscode-openapi",
+				"Gruntfuggly.todo-tree",
+				"redhat.vscode-yaml"
+			]
+		}
+	},
+
+	"containerEnv": {
+		"GOPROXY": "https://goproxy.cn,direct",
+		"GOPRIVATE": "codeup.aliyun.com/smwl/x7/go",
+		"TZ": "Asia/Shanghai"
+	},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+	
+	"mounts": [
+		"source=${localEnv:HOME}${localEnv:USERPROFILE}/.netrc,target=/home/vscode/.netrc,type=bind,consistency=cached",
+		"source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
+	],
+
+	"otherPortsAttributes": {
+		"onAutoForward": "silent",
+		"requireLocalPort": true
+	}
+}

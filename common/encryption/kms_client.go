@@ -18,6 +18,9 @@ package encryption
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
 	kms20160120 "github.com/alibabacloud-go/kms-20160120/v3/client"
 	util "github.com/alibabacloud-go/tea-utils/v2/service"
@@ -25,11 +28,9 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 	dkms_api "github.com/aliyun/alibabacloud-dkms-gcs-go-sdk/openapi"
 	dkms_transfer "github.com/aliyun/alibabacloud-dkms-transfer-go-sdk/sdk"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/constant"
+	"github.com/dbsyk/nacos-sdk-go/v2/common/logger"
 	"github.com/pkg/errors"
-	"net/http"
-	"strings"
 )
 
 type KmsClient interface {
