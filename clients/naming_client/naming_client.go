@@ -44,7 +44,7 @@ type NamingClient struct {
 	cancel            context.CancelFunc
 	serviceProxy      naming_proxy.INamingProxy
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
-	isClose           bool
+	isClosed          bool
 	mutex             sync.Mutex
 }
 
@@ -362,10 +362,10 @@ func (sc *NamingClient) CloseClient() {
 	sc.mutex.Lock()
 	defer sc.mutex.Unlock()
 
-	if sc.isClose {
+	if sc.isClosed {
 		return
 	}
 	sc.serviceProxy.CloseClient()
 	sc.cancel()
-	sc.isClose = true
+	sc.isClosed = true
 }

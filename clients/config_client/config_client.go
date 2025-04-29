@@ -60,7 +60,7 @@ type ConfigClient struct {
 	cacheMap                 cache.ConcurrentMap
 	uid                      string
 	listenExecute            chan struct{}
-	isClose                  bool
+	isClosed                 bool
 }
 
 type cacheData struct {
@@ -368,12 +368,12 @@ func (client *ConfigClient) CloseClient() {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
 
-	if client.isClose {
+	if client.isClosed {
 		return
 	}
 	client.configProxy.getRpcClient(client).Shutdown()
 	client.cancel()
-	client.isClose = true
+	client.isClosed = true
 }
 
 func (client *ConfigClient) searchConfigInner(param vo.SearchConfigParam) (*model.ConfigPage, error) {
