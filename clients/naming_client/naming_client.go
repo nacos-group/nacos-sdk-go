@@ -22,6 +22,7 @@ import (
 	"math"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -43,6 +44,8 @@ type NamingClient struct {
 	cancel            context.CancelFunc
 	serviceProxy      naming_proxy.INamingProxy
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
+	isClose           bool
+	mutex             sync.Mutex
 }
 
 // NewNamingClient ...
@@ -356,6 +359,13 @@ func (sc *NamingClient) ServerHealthy() bool {
 
 // CloseClient ...
 func (sc *NamingClient) CloseClient() {
+	sc.mutex.Lock()
+	defer sc.mutex.Unlock()
+
+	if sc.isClose {
+		return
+	}
 	sc.serviceProxy.CloseClient()
 	sc.cancel()
+	sc.isClose = true
 }
