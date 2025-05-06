@@ -47,7 +47,11 @@ func (ed *SubscribeCallback) AddCallbackFunc(serviceName string, clusters string
 	var funcSlice []*func(services []model.Instance, err error)
 	old, ok := ed.callbackFuncMap.Get(key)
 	if ok {
-		funcSlice = append(funcSlice, old.([]*func(services []model.Instance, err error))...)
+		for _, funcItem := range old.([]*func(services []model.Instance, err error)) {
+			if funcItem != callbackFunc {
+				funcSlice = append(funcSlice, funcItem)
+			}
+		}
 	}
 	funcSlice = append(funcSlice, callbackFunc)
 	ed.callbackFuncMap.Set(key, funcSlice)
@@ -73,6 +77,9 @@ func (ed *SubscribeCallback) ServiceChanged(cacheKey string, service *model.Serv
 	funcs, ok := ed.callbackFuncMap.Get(cacheKey)
 	if ok {
 		for _, funcItem := range funcs.([]*func(services []model.Instance, err error)) {
+			if *funcItem == nil {
+				continue
+			}
 			(*funcItem)(service.Hosts, nil)
 		}
 	}
