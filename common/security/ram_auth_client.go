@@ -2,7 +2,6 @@ package security
 
 import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/pkg/errors"
 )
 
 type RamContext struct {
@@ -71,9 +70,8 @@ func (rac *RamAuthClient) Login() (bool, error) {
 			break
 		}
 	}
-
 	if rac.matchedProvider == nil {
-		return false, errors.Errorf("no matched provider")
+		return false, nil
 	}
 	err := rac.matchedProvider.Init()
 	if err != nil {
