@@ -1,7 +1,6 @@
 package security
 
 import (
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/pkg/errors"
 )
 
@@ -58,40 +56,6 @@ func (ac *NacosAuthClient) GetSecurityInfo(resource RequestResource) map[string]
 	return securityInfo
 }
 
-func (ac *NacosAuthClient) AutoRefresh(ctx context.Context) {
-
-	// If the username is not set, the automatic refresh Token is not enabled
-
-	if ac.username == "" {
-		return
-	}
-
-	go func() {
-		var timer *time.Timer
-		if lastLoginSuccess := ac.lastRefreshTime > 0 && ac.tokenTtl > 0 && ac.tokenRefreshWindow > 0; lastLoginSuccess {
-			timer = time.NewTimer(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
-		} else {
-			timer = time.NewTimer(time.Second * time.Duration(5))
-		}
-		defer timer.Stop()
-		for {
-			select {
-			case <-timer.C:
-				_, err := ac.Login()
-				if err != nil {
-					logger.Errorf("login has error %+v", err)
-					timer.Reset(time.Second * time.Duration(5))
-				} else {
-					logger.Infof("login success, tokenTtl: %+v seconds, tokenRefreshWindow: %+v seconds", ac.tokenTtl, ac.tokenRefreshWindow)
-					timer.Reset(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
-				}
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-}
-
 func (ac *NacosAuthClient) Login() (bool, error) {
 	var throwable error = nil
 	for i := 0; i < len(ac.serverCfgs); i++ {
@@ -113,7 +77,7 @@ func (ac *NacosAuthClient) GetServerList() []constant.ServerConfig {
 }
 
 func (ac *NacosAuthClient) login(server constant.ServerConfig) (bool, error) {
-	if lastLoginSuccess := ac.lastRefreshTime > 0 && ac.tokenTtl > 0 && ac.tokenRefreshWindow > 0; lastLoginSuccess {
+	if time.Now().Unix()-ac.lastRefreshTime < ac.tokenTtl-ac.tokenRefreshWindow {
 		return true, nil
 	}
 	if ac.username == "" {
