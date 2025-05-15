@@ -86,14 +86,31 @@ func (cp *ConfigProxy) searchConfigProxy(param vo.SearchConfigParam, tenant, acc
 		params["dataId"] = ""
 	}
 	var headers = map[string]string{}
-	headers["accessKey"] = accessKey
-	headers["secretKey"] = secretKey
-	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_PATH, params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
+	serverStateV3 := "/v3/admin/core/state"
+	version := "v2"
+	_, serverStateErr := cp.nacosServer.ReqConfigApi(serverStateV3, params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
+	if serverStateErr == nil {
+		version = "v3"
+	}
+	var result string
+	var err error
+	if version == "v2" {
+		result, err = cp.nacosServer.ReqConfigApi(constant.CONFIG_PATH, params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
+	} else {
+		params["configDetail"] = ""
+		result, err = cp.nacosServer.ReqConfigApi("/v3/admin/cs/config/list", params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
+	}
 	if err != nil {
 		return nil, err
 	}
 	var configPage model.ConfigPage
-	err = json.Unmarshal([]byte(result), &configPage)
+	if version == "v2" {
+		err = json.Unmarshal([]byte(result), &configPage)
+	} else {
+		var configPageResult model.ConfigPageResult
+		err = json.Unmarshal([]byte(result), &configPageResult)
+		configPage = configPageResult.Data
+	}
 	if err != nil {
 		return nil, err
 	}
