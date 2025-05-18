@@ -86,22 +86,17 @@ func (cp *ConfigProxy) searchConfigProxy(param vo.SearchConfigParam, tenant, acc
 		params["dataId"] = ""
 	}
 	var headers = map[string]string{}
-	serverStateV3 := "/v3/admin/core/state"
-	version := "v2"
-	_, serverStateErr := cp.nacosServer.ReqConfigApi(serverStateV3, params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
-	if serverStateErr == nil {
-		version = "v3"
-	}
-	var result string
-	var err error
-	if version == "v2" {
-		result, err = cp.nacosServer.ReqConfigApi(constant.CONFIG_PATH, params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
-	} else {
-		params["configDetail"] = ""
-		result, err = cp.nacosServer.ReqConfigApi("/v3/admin/cs/config/list", params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
-	}
+	var version = "v2"
+	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_PATH, params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
 	if err != nil {
-		return nil, err
+		if len(tenant) > 0 {
+			params["namespaceId"] = params["tenant"]
+		}
+		result, err = cp.nacosServer.ReqConfigApi("/v3/admin/cs/config/list", params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
+		if err != nil {
+			return nil, err
+		}
+		version = "v3"
 	}
 	var configPage model.ConfigPage
 	if version == "v2" {
