@@ -92,6 +92,7 @@ func (cp *ConfigProxy) searchConfigProxy(param vo.SearchConfigParam, tenant, acc
 		if len(tenant) > 0 {
 			params["namespaceId"] = params["tenant"]
 		}
+		params["groupName"] = params["group"]
 		result, err = cp.nacosServer.ReqConfigApi("/v3/admin/cs/config/list", params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
 		if err != nil {
 			return nil, err
