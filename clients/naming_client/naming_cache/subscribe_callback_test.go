@@ -173,3 +173,44 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 	cacheKey := util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName), service.Clusters)
 	ed.ServiceChanged(cacheKey, &service)
 }
+
+func TestSubscribeCallback_RemoveCallbackFunc(t *testing.T) {
+	ed := NewSubscribeCallback()
+	serviceName := "Test"
+	clusters := "default"
+	groupName := "public"
+
+	callback1 := func(services []model.Instance, err error) {
+		log.Printf("callback1:%s \n", util.ToJsonString(services))
+	}
+
+	callback2 := func(services []model.Instance, err error) {
+		log.Printf("callback2:%s \n", util.ToJsonString(services))
+	}
+
+	// Add both callbacks
+	ed.AddCallbackFunc(util.GetGroupName(serviceName, groupName), clusters, &callback1)
+	ed.AddCallbackFunc(util.GetGroupName(serviceName, groupName), clusters, &callback2)
+
+	assert.True(t, ed.IsSubscribed(util.GetGroupName(serviceName, groupName), clusters))
+	// Remove the first callback
+	ed.RemoveCallbackFunc(util.GetGroupName(serviceName, groupName), clusters, &callback1)
+
+	// Check if only the second callback remains
+	cacheKey := util.GetServiceCacheKey(util.GetGroupName(serviceName, groupName), clusters)
+	funcs, ok := ed.callbackFuncMap.Get(cacheKey)
+	if !ok || len(funcs.([]*func(services []model.Instance, err error))) != 1 {
+		t.Errorf("Expected 1 callback function, got %d", len(funcs.([]*func(services []model.Instance, err error))))
+	}
+
+	assert.True(t, ed.IsSubscribed(util.GetGroupName(serviceName, groupName), clusters))
+	// Remove the second callback
+	ed.RemoveCallbackFunc(util.GetGroupName(serviceName, groupName), clusters, &callback2)
+
+	// Check if no callbacks remain
+	funcs, ok = ed.callbackFuncMap.Get(cacheKey)
+	if ok && len(funcs.([]*func(services []model.Instance, err error))) != 0 {
+		t.Errorf("Expected 0 callback functions, got %d", len(funcs.([]*func(services []model.Instance, err error))))
+	}
+	assert.False(t, ed.IsSubscribed(util.GetGroupName(serviceName, groupName), clusters))
+}

@@ -37,6 +37,8 @@ var clientConfigTest = *constant.NewClientConfig(
 var serverConfigTest = *constant.NewServerConfig("127.0.0.1", 80, constant.WithContextPath("/nacos"))
 
 type MockNamingProxy struct {
+	unsubscribeCalled bool
+	unsubscribeParams []string // 记录调用参数
 }
 
 func (m *MockNamingProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
@@ -68,6 +70,8 @@ func (m *MockNamingProxy) Subscribe(serviceName, groupName, clusters string) (mo
 }
 
 func (m *MockNamingProxy) Unsubscribe(serviceName, groupName, clusters string) error {
+	m.unsubscribeCalled = true
+	m.unsubscribeParams = []string{serviceName, groupName, clusters}
 	return nil
 }
 
@@ -450,5 +454,110 @@ func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = client.selectOneHealthyInstances(services)
 	}
+
+}
+
+func TestNamingClient_Unsubscribe_WithCallback_ShouldNotCallServiceProxyUnsubscribe(t *testing.T) {
+	// 创建一个带有回调函数的订阅参数
+	callback := func(services []model.Instance, err error) {
+		// 空回调函数
+	}
+	param := &vo.SubscribeParam{
+		ServiceName:       "test-service",
+		GroupName:         "test-group",
+		Clusters:          []string{"test-cluster"},
+		SubscribeCallback: callback,
+	}
+
+	// 创建测试客户端
+	client := NewTestNamingClient()
+	mockProxy := client.serviceProxy.(*MockNamingProxy)
+
+	// 执行 Unsubscribe
+	err := client.Unsubscribe(param)
+
+	// 验证没有错误
+	assert.Nil(t, err)
+	assert.True(t, mockProxy.unsubscribeCalled)
+}
+
+func TestNamingClient_Unsubscribe_WithoutCallback_ShouldCallServiceProxyUnsubscribe(t *testing.T) {
+	// 创建一个没有回调函数的订阅参数
+	param := &vo.SubscribeParam{
+		ServiceName: "test-service",
+		GroupName:   "test-group",
+		Clusters:    []string{"test-cluster"},
+		// SubscribeCallback 为 nil
+	}
+
+	// 创建测试客户端
+	client := NewTestNamingClient()
+	// 获取原始的 MockNamingProxy 来检查调用状态
+	mockProxy := client.serviceProxy.(*MockNamingProxy)
+
+	// 执行 Unsubscribe
+	err := client.Unsubscribe(param)
+
+	// 验证没有错误
+	assert.Nil(t, err)
+	assert.True(t, mockProxy.unsubscribeCalled)
+}
+
+// TestNamingClient_Unsubscribe_Integration_Test 集成测试，使用真实的 ServiceInfoHolder 来测试修复后的逻辑
+func TestNamingClient_Unsubscribe_Integration_Test(t *testing.T) {
+	// 创建测试客户端
+	client := NewTestNamingClient()
+
+	// 获取原始的 MockNamingProxy 来检查调用状态
+	mockProxy := client.serviceProxy.(*MockNamingProxy)
+
+	// 创建回调函数
+	callback1 := func(services []model.Instance, err error) {
+		// 回调函数1
+	}
+
+	callback2 := func(services []model.Instance, err error) {
+		// 回调函数2
+	}
+
+	// 测试场景1：先注册两个回调函数，然后取消订阅第一个
+	// 这种情况下，取消订阅第一个回调函数后，还有其他回调函数，所以不应该调用 serviceProxy.Unsubscribe
+
+	// 注册第一个回调函数
+	param1 := &vo.SubscribeParam{
+		ServiceName:       "test-service",
+		GroupName:         "test-group",
+		Clusters:          []string{"test-cluster"},
+		SubscribeCallback: callback1,
+	}
+
+	// 注册第二个回调函数
+	param2 := &vo.SubscribeParam{
+		ServiceName:       "test-service",
+		GroupName:         "test-group",
+		Clusters:          []string{"test-cluster"},
+		SubscribeCallback: callback2,
+	}
+
+	// 先注册两个回调函数
+	err := client.Subscribe(param1)
+	assert.Nil(t, err)
+
+	err = client.Subscribe(param2)
+	assert.Nil(t, err)
+
+	// 重置 MockNamingProxy 的调用状态
+	mockProxy.unsubscribeCalled = false
+	mockProxy.unsubscribeParams = nil
+
+	// 取消订阅第一个回调函数
+	err = client.Unsubscribe(param1)
+	assert.Nil(t, err)
+	assert.False(t, mockProxy.unsubscribeCalled)
+
+	// 取消订阅第二个回调函数
+	err = client.Unsubscribe(param2)
+	assert.Nil(t, err)
+	assert.True(t, mockProxy.unsubscribeCalled)
 
 }

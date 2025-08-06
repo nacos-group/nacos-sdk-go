@@ -18,12 +18,13 @@ package naming_client
 
 import (
 	"context"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
 	"math"
 	"math/rand"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
 
 	"github.com/pkg/errors"
 
@@ -345,7 +346,7 @@ func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) (err error) {
 	clusters := strings.Join(param.Clusters, ",")
 	serviceFullName := util.GetGroupName(param.ServiceName, param.GroupName)
 	sc.serviceInfoHolder.DeregisterCallback(serviceFullName, clusters, &param.SubscribeCallback)
-	if sc.serviceInfoHolder.IsSubscribed(serviceFullName, clusters) {
+	if !sc.serviceInfoHolder.IsSubscribed(serviceFullName, clusters) {
 		err = sc.serviceProxy.Unsubscribe(param.ServiceName, param.GroupName, clusters)
 	}
 

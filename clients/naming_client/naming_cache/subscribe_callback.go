@@ -36,8 +36,11 @@ func NewSubscribeCallback() *SubscribeCallback {
 
 func (ed *SubscribeCallback) IsSubscribed(serviceName, clusters string) bool {
 	key := util.GetServiceCacheKey(serviceName, clusters)
-	_, ok := ed.callbackFuncMap.Get(key)
-	return ok
+	funcs, ok := ed.callbackFuncMap.Get(key)
+	if ok {
+		return len(funcs.([]*func(services []model.Instance, err error))) > 0
+	}
+	return false
 }
 
 func (ed *SubscribeCallback) AddCallbackFunc(serviceName string, clusters string, callbackFunc *func(services []model.Instance, err error)) {
