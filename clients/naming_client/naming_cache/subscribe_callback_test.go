@@ -58,13 +58,15 @@ func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
 			fmt.Println(util.ToJsonString(ed.callbackFuncMap))
 		},
 	}
-	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	clusterSelector := NewClusterSelector(param.Clusters)
+	callbackWrapper := NewSubscribeCallbackFuncWrapper(clusterSelector, &param.SubscribeCallback)
+	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), callbackWrapper)
 	key := util.GetServiceCacheKey(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
 	for k, v := range ed.callbackFuncMap.Items() {
 		assert.Equal(t, key, k, "key should be equal!")
-		funcs := v.([]*func(services []model.Instance, err error))
+		funcs := v.([]*SubscribeCallbackFuncWrapper)
 		assert.Equal(t, len(funcs), 1)
-		assert.Equal(t, funcs[0], &param.SubscribeCallback, "callback function must be equal!")
+		assert.Equal(t, funcs[0].CallbackFunc, &param.SubscribeCallback, "callback function must be equal!")
 
 	}
 }
@@ -98,7 +100,9 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 			fmt.Printf("func1:%s \n", util.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	clusterSelector := NewClusterSelector(param.Clusters)
+	callbackWrapper := NewSubscribeCallbackFuncWrapper(clusterSelector, &param.SubscribeCallback)
+	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), callbackWrapper)
 	assert.Equal(t, len(ed.callbackFuncMap.Items()), 1, "callback funcs map length should be 1")
 
 	param2 := vo.SubscribeParam{
@@ -109,21 +113,23 @@ func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
 			fmt.Printf("func2:%s \n", util.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	clusterSelector2 := NewClusterSelector(param2.Clusters)
+	callbackWrapper2 := NewSubscribeCallbackFuncWrapper(clusterSelector2, &param2.SubscribeCallback)
+	ed.AddCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), callbackWrapper2)
 	assert.Equal(t, len(ed.callbackFuncMap.Items()), 1, "callback funcs map length should be 2")
 
 	for k, v := range ed.callbackFuncMap.Items() {
-		log.Printf("key:%s,%d", k, len(v.([]*func(services []model.Instance, err error))))
+		log.Printf("key:%s,%d", k, len(v.([]*SubscribeCallbackFuncWrapper)))
 	}
 
-	ed.RemoveCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	ed.RemoveCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), callbackWrapper2)
 
 	key := util.GetServiceCacheKey(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","))
 	for k, v := range ed.callbackFuncMap.Items() {
 		assert.Equal(t, key, k, "key should be equal!")
-		funcs := v.([]*func(services []model.Instance, err error))
+		funcs := v.([]*SubscribeCallbackFuncWrapper)
 		assert.Equal(t, len(funcs), 1)
-		assert.Equal(t, funcs[0], &param.SubscribeCallback, "callback function must be equal!")
+		assert.Equal(t, funcs[0].CallbackFunc, &param.SubscribeCallback, "callback function must be equal!")
 
 	}
 }
@@ -158,7 +164,9 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 			log.Printf("func1:%s \n", util.ToJsonString(services))
 		},
 	}
-	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), &param.SubscribeCallback)
+	clusterSelector := NewClusterSelector(param.Clusters)
+	callbackWrapper := NewSubscribeCallbackFuncWrapper(clusterSelector, &param.SubscribeCallback)
+	ed.AddCallbackFunc(util.GetGroupName(param.ServiceName, param.GroupName), strings.Join(param.Clusters, ","), callbackWrapper)
 
 	param2 := vo.SubscribeParam{
 		ServiceName: "Test",
@@ -169,7 +177,9 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 
 		},
 	}
-	ed.AddCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
+	clusterSelector2 := NewClusterSelector(param2.Clusters)
+	callbackWrapper2 := NewSubscribeCallbackFuncWrapper(clusterSelector2, &param2.SubscribeCallback)
+	ed.AddCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), callbackWrapper2)
 	cacheKey := util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName), service.Clusters)
 	ed.ServiceChanged(cacheKey, &service)
 }
@@ -183,33 +193,37 @@ func TestSubscribeCallback_RemoveCallbackFunc(t *testing.T) {
 	callback1 := func(services []model.Instance, err error) {
 		log.Printf("callback1:%s \n", util.ToJsonString(services))
 	}
+	clusterSelector1 := NewClusterSelector([]string{clusters})
+	callbackWrapper1 := NewSubscribeCallbackFuncWrapper(clusterSelector1, &callback1)
 
 	callback2 := func(services []model.Instance, err error) {
 		log.Printf("callback2:%s \n", util.ToJsonString(services))
 	}
+	clusterSelector2 := NewClusterSelector([]string{clusters})
+	callbackWrapper2 := NewSubscribeCallbackFuncWrapper(clusterSelector2, &callback2)
 
 	// Add both callbacks
-	ed.AddCallbackFunc(util.GetGroupName(serviceName, groupName), clusters, &callback1)
-	ed.AddCallbackFunc(util.GetGroupName(serviceName, groupName), clusters, &callback2)
+	ed.AddCallbackFunc(util.GetGroupName(serviceName, groupName), clusters, callbackWrapper1)
+	ed.AddCallbackFunc(util.GetGroupName(serviceName, groupName), clusters, callbackWrapper2)
 
 	assert.True(t, ed.IsSubscribed(util.GetGroupName(serviceName, groupName), clusters))
 	// Remove the first callback
-	ed.RemoveCallbackFunc(util.GetGroupName(serviceName, groupName), clusters, &callback1)
+	ed.RemoveCallbackFunc(util.GetGroupName(serviceName, groupName), clusters, callbackWrapper1)
 
 	// Check if only the second callback remains
 	cacheKey := util.GetServiceCacheKey(util.GetGroupName(serviceName, groupName), clusters)
 	funcs, ok := ed.callbackFuncMap.Get(cacheKey)
-	if !ok || len(funcs.([]*func(services []model.Instance, err error))) != 1 {
-		t.Errorf("Expected 1 callback function, got %d", len(funcs.([]*func(services []model.Instance, err error))))
+	if !ok || len(funcs.([]*SubscribeCallbackFuncWrapper)) != 1 {
+		t.Errorf("Expected 1 callback function, got %d", len(funcs.([]*SubscribeCallbackFuncWrapper)))
 	}
 
 	assert.True(t, ed.IsSubscribed(util.GetGroupName(serviceName, groupName), clusters))
 	// Remove the second callback
-	ed.RemoveCallbackFunc(util.GetGroupName(serviceName, groupName), clusters, &callback2)
+	ed.RemoveCallbackFunc(util.GetGroupName(serviceName, groupName), clusters, callbackWrapper2)
 
 	// Check if no callbacks remain
 	funcs, ok = ed.callbackFuncMap.Get(cacheKey)
-	if ok && len(funcs.([]*func(services []model.Instance, err error))) != 0 {
+	if ok && len(funcs.([]*SubscribeCallbackFuncWrapper)) != 0 {
 		t.Errorf("Expected 0 callback functions, got %d", len(funcs.([]*func(services []model.Instance, err error))))
 	}
 	assert.False(t, ed.IsSubscribed(util.GetGroupName(serviceName, groupName), clusters))

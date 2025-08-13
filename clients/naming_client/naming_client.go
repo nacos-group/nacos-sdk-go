@@ -201,11 +201,14 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (service model.Serv
 		param.GroupName = constant.DEFAULT_GROUP
 	}
 	var ok bool
+	clusterSelector := naming_cache.NewClusterSelector(param.Clusters)
 	clusters := strings.Join(param.Clusters, ",")
-	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
+	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, "")
 	if !ok {
-		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
+		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, "")
 	}
+	service.Clusters = clusters
+	service.Hosts = clusterSelector.SelectInstance(&service)
 	return service, err
 }
 
@@ -231,21 +234,24 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	clusters := strings.Join(param.Clusters, ",")
 	var (
 		service model.Service
 		ok      bool
 		err     error
 	)
-
-	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
+	clusterSelector := naming_cache.NewClusterSelector(param.Clusters)
+	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, "")
 	if !ok {
-		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
+		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, "")
 	}
-	if err != nil || service.Hosts == nil || len(service.Hosts) == 0 {
+	if err != nil {
 		return []model.Instance{}, err
 	}
-	return service.Hosts, err
+	instances := clusterSelector.SelectInstance(&service)
+	if instances == nil || len(instances) == 0 {
+		return []model.Instance{}, err
+	}
+	return instances, err
 }
 
 // SelectInstances Get all instance by DataId, Group and Health
@@ -258,14 +264,15 @@ func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.
 		ok      bool
 		err     error
 	)
-	clusters := strings.Join(param.Clusters, ",")
-	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
+	clusterSelector := naming_cache.NewClusterSelector(param.Clusters)
+	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, "")
 	if !ok {
-		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
+		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, "")
 		if err != nil {
 			return nil, err
 		}
 	}
+	service.Hosts = clusterSelector.SelectInstance(&service)
 	return sc.selectInstances(service, param.HealthyOnly)
 }
 
@@ -294,15 +301,15 @@ func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanc
 		ok      bool
 		err     error
 	)
-	clusters := strings.Join(param.Clusters, ",")
-	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, clusters)
+	clusterSelector := naming_cache.NewClusterSelector(param.Clusters)
+	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, "")
 	if !ok {
-		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
+		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, "")
 		if err != nil {
 			return nil, err
 		}
 	}
-
+	service.Hosts = clusterSelector.SelectInstance(&service)
 	return sc.selectOneHealthyInstances(service)
 }
 
@@ -335,19 +342,21 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	clusters := strings.Join(param.Clusters, ",")
-	sc.serviceInfoHolder.RegisterCallback(util.GetGroupName(param.ServiceName, param.GroupName), clusters, &param.SubscribeCallback)
-	_, err := sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, clusters)
+	clusterSelector := naming_cache.NewClusterSelector(param.Clusters)
+	callbackWrapper := naming_cache.NewSubscribeCallbackFuncWrapper(clusterSelector, &param.SubscribeCallback)
+	sc.serviceInfoHolder.RegisterCallback(util.GetGroupName(param.ServiceName, param.GroupName), "", callbackWrapper)
+	_, err := sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, "")
 	return err
 }
 
 // Unsubscribe ...
 func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) (err error) {
-	clusters := strings.Join(param.Clusters, ",")
+	clusterSelector := naming_cache.NewClusterSelector(param.Clusters)
+	callbackWrapper := naming_cache.NewSubscribeCallbackFuncWrapper(clusterSelector, &param.SubscribeCallback)
 	serviceFullName := util.GetGroupName(param.ServiceName, param.GroupName)
-	sc.serviceInfoHolder.DeregisterCallback(serviceFullName, clusters, &param.SubscribeCallback)
-	if !sc.serviceInfoHolder.IsSubscribed(serviceFullName, clusters) {
-		err = sc.serviceProxy.Unsubscribe(param.ServiceName, param.GroupName, clusters)
+	sc.serviceInfoHolder.DeregisterCallback(serviceFullName, "", callbackWrapper)
+	if !sc.serviceInfoHolder.IsSubscribed(serviceFullName, "") {
+		err = sc.serviceProxy.Unsubscribe(param.ServiceName, param.GroupName, "")
 	}
 
 	return err

@@ -115,12 +115,12 @@ func (s *ServiceInfoHolder) GetServiceInfo(serviceName, groupName, clusters stri
 	return model.Service{}, ok
 }
 
-func (s *ServiceInfoHolder) RegisterCallback(serviceName string, clusters string, callbackFunc *func(services []model.Instance, err error)) {
-	s.subCallback.AddCallbackFunc(serviceName, clusters, callbackFunc)
+func (s *ServiceInfoHolder) RegisterCallback(serviceName string, clusters string, callbackWrapper *SubscribeCallbackFuncWrapper) {
+	s.subCallback.AddCallbackFunc(serviceName, clusters, callbackWrapper)
 }
 
-func (s *ServiceInfoHolder) DeregisterCallback(serviceName string, clusters string, callbackFunc *func(services []model.Instance, err error)) {
-	s.subCallback.RemoveCallbackFunc(serviceName, clusters, callbackFunc)
+func (s *ServiceInfoHolder) DeregisterCallback(serviceName string, clusters string, callbackWrapper *SubscribeCallbackFuncWrapper) {
+	s.subCallback.RemoveCallbackFunc(serviceName, clusters, callbackWrapper)
 }
 
 func (s *ServiceInfoHolder) StopUpdateIfContain(serviceName, clusters string) {

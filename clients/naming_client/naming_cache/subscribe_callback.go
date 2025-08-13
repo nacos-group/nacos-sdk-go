@@ -38,32 +38,32 @@ func (ed *SubscribeCallback) IsSubscribed(serviceName, clusters string) bool {
 	key := util.GetServiceCacheKey(serviceName, clusters)
 	funcs, ok := ed.callbackFuncMap.Get(key)
 	if ok {
-		return len(funcs.([]*func(services []model.Instance, err error))) > 0
+		return len(funcs.([]*SubscribeCallbackFuncWrapper)) > 0
 	}
 	return false
 }
 
-func (ed *SubscribeCallback) AddCallbackFunc(serviceName string, clusters string, callbackFunc *func(services []model.Instance, err error)) {
+func (ed *SubscribeCallback) AddCallbackFunc(serviceName string, clusters string, callbackWrapper *SubscribeCallbackFuncWrapper) {
 	key := util.GetServiceCacheKey(serviceName, clusters)
 	ed.mux.Lock()
 	defer ed.mux.Unlock()
-	var funcSlice []*func(services []model.Instance, err error)
+	var funcSlice []*SubscribeCallbackFuncWrapper
 	old, ok := ed.callbackFuncMap.Get(key)
 	if ok {
-		funcSlice = append(funcSlice, old.([]*func(services []model.Instance, err error))...)
+		funcSlice = append(funcSlice, old.([]*SubscribeCallbackFuncWrapper)...)
 	}
-	funcSlice = append(funcSlice, callbackFunc)
+	funcSlice = append(funcSlice, callbackWrapper)
 	ed.callbackFuncMap.Set(key, funcSlice)
 }
 
-func (ed *SubscribeCallback) RemoveCallbackFunc(serviceName string, clusters string, callbackFunc *func(services []model.Instance, err error)) {
+func (ed *SubscribeCallback) RemoveCallbackFunc(serviceName string, clusters string, callbackWrapper *SubscribeCallbackFuncWrapper) {
 	logger.Info("removing " + serviceName + " with " + clusters + " to listener map")
 	key := util.GetServiceCacheKey(serviceName, clusters)
 	funcs, ok := ed.callbackFuncMap.Get(key)
 	if ok && funcs != nil {
-		var newFuncs []*func(services []model.Instance, err error)
-		for _, funcItem := range funcs.([]*func(services []model.Instance, err error)) {
-			if funcItem != callbackFunc {
+		var newFuncs []*SubscribeCallbackFuncWrapper
+		for _, funcItem := range funcs.([]*SubscribeCallbackFuncWrapper) {
+			if funcItem.CallbackFunc != callbackWrapper.CallbackFunc || !funcItem.Selector.Equals(callbackWrapper.Selector) {
 				newFuncs = append(newFuncs, funcItem)
 			}
 		}
@@ -75,8 +75,8 @@ func (ed *SubscribeCallback) RemoveCallbackFunc(serviceName string, clusters str
 func (ed *SubscribeCallback) ServiceChanged(cacheKey string, service *model.Service) {
 	funcs, ok := ed.callbackFuncMap.Get(cacheKey)
 	if ok {
-		for _, funcItem := range funcs.([]*func(services []model.Instance, err error)) {
-			(*funcItem)(service.Hosts, nil)
+		for _, funcItem := range funcs.([]*SubscribeCallbackFuncWrapper) {
+			funcItem.notifyListener(service)
 		}
 	}
 }
