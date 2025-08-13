@@ -1,11 +1,11 @@
 package naming_cache
 
 import (
-	"slices"
 	"sort"
 	"strings"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
+	"github.com/nacos-group/nacos-sdk-go/v2/util"
 )
 
 type Selector interface {
@@ -69,7 +69,7 @@ func (cs *ClusterSelector) SelectInstance(service *model.Service) []model.Instan
 		return service.Hosts
 	}
 	for _, instance := range service.Hosts {
-		if slices.Contains(cs.Clusters, instance.ClusterName) {
+		if util.Contains(cs.Clusters, instance.ClusterName) {
 			instances = append(instances, instance)
 		}
 	}
