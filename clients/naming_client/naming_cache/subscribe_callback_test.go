@@ -30,25 +30,6 @@ import (
 )
 
 func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
-	service := model.Service{
-		Clusters:    strings.Join([]string{"default"}, ","),
-		CacheMillis: 10000,
-		Checksum:    "abcd",
-		LastRefTime: uint64(time.Now().Unix()),
-	}
-	var hosts []model.Instance
-	host := model.Instance{
-		Enable:      true,
-		InstanceId:  "123",
-		Port:        8080,
-		Ip:          "127.0.0.1",
-		Weight:      10,
-		ServiceName: "public@@Test",
-		ClusterName: strings.Join([]string{"default"}, ","),
-	}
-	hosts = append(hosts, host)
-	service.Hosts = hosts
-
 	ed := NewSubscribeCallback()
 	param := vo.SubscribeParam{
 		ServiceName: "Test",
@@ -70,25 +51,6 @@ func TestEventDispatcher_AddCallbackFuncs(t *testing.T) {
 }
 
 func TestEventDispatcher_RemoveCallbackFuncs(t *testing.T) {
-	service := model.Service{
-		Clusters:    strings.Join([]string{"default"}, ","),
-		CacheMillis: 10000,
-		Checksum:    "abcd",
-		LastRefTime: uint64(time.Now().Unix()),
-	}
-	var hosts []model.Instance
-	host := model.Instance{
-		Enable:      true,
-		InstanceId:  "123",
-		Port:        8080,
-		Ip:          "127.0.0.1",
-		Weight:      10,
-		ServiceName: "public@@Test",
-		ClusterName: strings.Join([]string{"default"}, ","),
-	}
-	hosts = append(hosts, host)
-	service.Hosts = hosts
-
 	ed := NewSubscribeCallback()
 	param := vo.SubscribeParam{
 		ServiceName: "Test",
@@ -170,7 +132,7 @@ func TestSubscribeCallback_ServiceChanged(t *testing.T) {
 		},
 	}
 	ed.AddCallbackFunc(util.GetGroupName(param2.ServiceName, param2.GroupName), strings.Join(param2.Clusters, ","), &param2.SubscribeCallback)
-	cacheKey := util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName), service.Clusters)
+	cacheKey := util.GetServiceCacheKey(service.Name, service.Clusters)
 	ed.ServiceChanged(cacheKey, &service)
 }
 

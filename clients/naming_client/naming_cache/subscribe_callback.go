@@ -59,6 +59,8 @@ func (ed *SubscribeCallback) AddCallbackFunc(serviceName string, clusters string
 func (ed *SubscribeCallback) RemoveCallbackFunc(serviceName string, clusters string, callbackFunc *func(services []model.Instance, err error)) {
 	logger.Info("removing " + serviceName + " with " + clusters + " to listener map")
 	key := util.GetServiceCacheKey(serviceName, clusters)
+	defer ed.mux.Unlock()
+	ed.mux.Lock()
 	funcs, ok := ed.callbackFuncMap.Get(key)
 	if ok && funcs != nil {
 		var newFuncs []*func(services []model.Instance, err error)
