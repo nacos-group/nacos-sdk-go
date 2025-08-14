@@ -21,20 +21,20 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
 )
 
-//go:generate mockgen -destination mock_nacos_client_interface.go -package nacos_client -source=./nacos_client_interface.go
+//go:generate mockgen -destination ../../mock/mock_nacos_client_interface.go -package mock -source=./nacos_client_interface.go
 
 type INacosClient interface {
 
-	//SetClientConfig is use to set nacos client config
+	// SetClientConfig is use to set nacos client config
 	SetClientConfig(constant.ClientConfig) error
-	//SetServerConfig is use to set nacos server config
+	// SetServerConfig is use to set nacos server config
 	SetServerConfig([]constant.ServerConfig) error
-	//GetClientConfig use to get client config
+	// GetClientConfig use to get client config
 	GetClientConfig() (constant.ClientConfig, error)
-	//GetServerConfig use to get server config
+	// GetServerConfig use to get server config
 	GetServerConfig() ([]constant.ServerConfig, error)
-	//SetHttpAgent use to set http agent
+	// SetHttpAgent use to set http agent
 	SetHttpAgent(http_agent.IHttpAgent) error
-	//GetHttpAgent use to get http agent
+	// GetHttpAgent use to get http agent
 	GetHttpAgent() (http_agent.IHttpAgent, error)
 }
