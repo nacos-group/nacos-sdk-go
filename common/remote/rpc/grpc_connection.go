@@ -18,15 +18,16 @@ package rpc
 
 import (
 	"context"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/any"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+
 	nacos_grpc_service "github.com/nacos-group/nacos-sdk-go/v2/api/grpc"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
 	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	"google.golang.org/grpc"
 )
@@ -86,7 +87,7 @@ func convertRequest(r rpc_request.IRequest) *nacos_grpc_service.Payload {
 	}
 	return &nacos_grpc_service.Payload{
 		Metadata: &Metadata,
-		Body:     &any.Any{Value: []byte(r.GetBody(r))},
+		Body:     &anypb.Any{Value: []byte(r.GetBody(r))},
 	}
 }
 
@@ -97,6 +98,6 @@ func convertResponse(r rpc_response.IResponse) *nacos_grpc_service.Payload {
 	}
 	return &nacos_grpc_service.Payload{
 		Metadata: &Metadata,
-		Body:     &any.Any{Value: []byte(r.GetBody())},
+		Body:     &anypb.Any{Value: []byte(r.GetBody())},
 	}
 }
