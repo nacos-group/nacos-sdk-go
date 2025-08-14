@@ -296,7 +296,7 @@ func (m ConcurrentMap) Keys() []string {
 	return keys
 }
 
-//Reviles ConcurrentMap "private" variables to json marshal.
+// Reviles ConcurrentMap "private" variables to json marshal.
 func (m ConcurrentMap) MarshalJSON() ([]byte, error) {
 	// Create a temporary map, which will hold all item spread across shards.
 	tmp := make(map[string]interface{})

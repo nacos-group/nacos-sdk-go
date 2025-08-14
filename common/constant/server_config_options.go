@@ -34,35 +34,35 @@ func NewServerConfig(ipAddr string, port uint64, opts ...ServerOption) *ServerCo
 // ServerOption ...
 type ServerOption func(*ServerConfig)
 
-//WithScheme set Scheme for server
+// WithScheme set Scheme for server
 func WithScheme(scheme string) ServerOption {
 	return func(config *ServerConfig) {
 		config.Scheme = scheme
 	}
 }
 
-//WithContextPath set contextPath for server
+// WithContextPath set contextPath for server
 func WithContextPath(contextPath string) ServerOption {
 	return func(config *ServerConfig) {
 		config.ContextPath = contextPath
 	}
 }
 
-//WithIpAddr set ip address for server
+// WithIpAddr set ip address for server
 func WithIpAddr(ipAddr string) ServerOption {
 	return func(config *ServerConfig) {
 		config.IpAddr = ipAddr
 	}
 }
 
-//WithPort set port for server
+// WithPort set port for server
 func WithPort(port uint64) ServerOption {
 	return func(config *ServerConfig) {
 		config.Port = port
 	}
 }
 
-//WithGrpcPort set grpc port for server
+// WithGrpcPort set grpc port for server
 func WithGrpcPort(port uint64) ServerOption {
 	return func(config *ServerConfig) {
 		config.GrpcPort = port
