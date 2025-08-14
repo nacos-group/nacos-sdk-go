@@ -2,8 +2,6 @@ module github.com/nacos-group/nacos-sdk-go/v2
 
 go 1.21
 
-toolchain go1.23.1
-
 require (
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.0.10
 	github.com/alibabacloud-go/kms-20160120/v3 v3.2.3
@@ -28,7 +26,7 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
-require github.com/golang/protobuf v1.5.2 // indirect
+require github.com/golang/protobuf v1.5.4 // indirect
 
 require (
 	github.com/alibabacloud-go/alibabacloud-gateway-pop v0.0.6 // indirect
