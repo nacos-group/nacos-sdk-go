@@ -110,6 +110,12 @@ func BuildLoggerConfig(clientConfig constant.ClientConfig) Config {
 		loggerConfig.LogRollingConfig.MaxBackups = logRollingConfig.MaxBackups
 		loggerConfig.LogRollingConfig.LocalTime = logRollingConfig.LocalTime
 		loggerConfig.LogRollingConfig.Compress = logRollingConfig.Compress
+	} else {
+		loggerConfig.LogRollingConfig.MaxSize = 100
+		loggerConfig.LogRollingConfig.MaxAge = 30
+		loggerConfig.LogRollingConfig.MaxBackups = 5
+		loggerConfig.LogRollingConfig.LocalTime = true
+		loggerConfig.LogRollingConfig.Compress = false
 	}
 	return loggerConfig
 }
