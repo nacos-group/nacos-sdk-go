@@ -19,15 +19,17 @@ package util
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
 )
 
 func CurrentMillis() int64 {
@@ -163,4 +165,66 @@ func ValidateIPAddress(input string) error {
 	}
 
 	return fmt.Errorf("not a valid IPv4 or IPv6 address")
+}
+
+// ValidateDomain validates domain name format and returns error message
+func ValidateDomain(domain string) error {
+	domain = strings.TrimSpace(domain)
+	if domain == "" {
+		return fmt.Errorf("domain is empty")
+	}
+
+	// Basic length check
+	if len(domain) > 253 {
+		return fmt.Errorf("domain length exceeds 253 characters")
+	}
+
+	// Check for consecutive dots
+	if strings.Contains(domain, "..") {
+		return fmt.Errorf("domain contains consecutive dots")
+	}
+
+	// Split labels and validate each part
+	labels := strings.Split(domain, ".")
+	for i, label := range labels {
+		// Label length check
+		if len(label) == 0 {
+			return fmt.Errorf("domain label cannot be empty")
+		}
+		if len(label) > 63 {
+			return fmt.Errorf("domain label '%s' exceeds 63 characters", label)
+		}
+
+		// Label cannot start or end with hyphen
+		if label[0] == '-' {
+			return fmt.Errorf("domain label '%s' starts with hyphen", label)
+		}
+		if label[len(label)-1] == '-' {
+			return fmt.Errorf("domain label '%s' ends with hyphen", label)
+		}
+
+		// Top-level domain cannot be all digits
+		if i == len(labels)-1 && isAllDigits(label) {
+			return fmt.Errorf("top-level domain '%s' cannot be all digits", label)
+		}
+
+		// Label character validation
+		for _, r := range label {
+			if !(unicode.IsLetter(r) || unicode.IsDigit(r) || r == '-') {
+				return fmt.Errorf("domain label '%s' contains invalid character '%c'", label, r)
+			}
+		}
+	}
+
+	return nil
+}
+
+// isAllDigits checks if string contains only digits
+func isAllDigits(s string) bool {
+	for _, r := range s {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+	return true
 }
