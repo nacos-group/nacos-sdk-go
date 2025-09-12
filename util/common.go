@@ -168,10 +168,32 @@ func ValidateIPAddress(input string) error {
 }
 
 // ValidateDomain validates domain name format and returns error message
-func ValidateDomain(domain string) error {
-	domain = strings.TrimSpace(domain)
-	if domain == "" {
-		return fmt.Errorf("domain is empty")
+// support full URLs with http:// or https://
+func ValidateDomain(input string) error {
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return fmt.Errorf("input is empty")
+	}
+
+	// Check if it's a full URL with protocol
+	var domain string
+	if strings.HasPrefix(input, "http://") {
+		domain = strings.TrimPrefix(input, "http://")
+	} else if strings.HasPrefix(input, "https://") {
+		domain = strings.TrimPrefix(input, "https://")
+	} else {
+		// Assume it's just a domain
+		domain = input
+	}
+
+	// Remove path, query parameters, and fragment if present
+	if idx := strings.Index(domain, "/"); idx != -1 {
+		domain = domain[:idx]
+	}
+
+	// Remove port if present
+	if idx := strings.Index(domain, ":"); idx != -1 {
+		domain = domain[:idx]
 	}
 
 	// Basic length check
