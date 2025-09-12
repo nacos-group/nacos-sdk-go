@@ -109,6 +109,12 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
+	if util.ValidateIPAddress(param.Ip) != nil && util.ValidateDomain(param.Ip) != nil {
+		return false, errors.New("ip is invalid")
+	}
+	if param.Port <= 0 || param.Port > math.MaxUint16 {
+		return false, errors.New("port is invalid")
+	}
 	if param.Metadata == nil {
 		param.Metadata = make(map[string]string)
 	}
