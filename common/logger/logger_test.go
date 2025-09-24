@@ -17,6 +17,7 @@
 package logger
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 
@@ -121,4 +122,9 @@ func (m mockLogger) Errorf(fmt string, args ...interface{}) {
 
 func (m mockLogger) Debugf(fmt string, args ...interface{}) {
 	panic("implement me")
+}
+
+func (m mockLogger) Close() error {
+	fmt.Printf("close mock logger")
+	return nil
 }
