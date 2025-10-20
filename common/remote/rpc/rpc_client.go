@@ -154,7 +154,7 @@ func CreateClient(ctx context.Context, clientName string, connectionType Connect
 	cMux.Lock()
 	defer cMux.Unlock()
 	if _, ok := clientMap[clientName]; !ok {
-		logger.Infof("init rpc client for name ", clientName)
+		logger.Infof("init rpc client for name %s", clientName)
 		var rpcClient IRpcClient
 		if GRPC == connectionType {
 			rpcClient = NewGrpcClient(ctx, clientName, nacosServer, tlsConfig)
