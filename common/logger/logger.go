@@ -188,9 +188,16 @@ func SetLogger(log Logger) {
 }
 
 func GetLogger() Logger {
-	if logger == nil {
-		InitDefaultLogger()
+	logLock.RLock()
+	if logger != nil {
+		defer logLock.RUnlock()
+		return logger
 	}
+	logLock.RUnlock()
+
+	// 如果 logger 为 nil，需要初始化
+	InitDefaultLogger()
+
 	logLock.RLock()
 	defer logLock.RUnlock()
 	return logger
