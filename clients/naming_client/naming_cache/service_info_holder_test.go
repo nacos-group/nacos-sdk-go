@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -135,6 +136,7 @@ func TestHostReactor_isServiceInstanceChangedWithUnOrdered(t *testing.T) {
 			},
 		},
 	}
+	logger.Info("serviceA:%s and serviceB:%s are comparing", serviceA.Hosts, serviceB.Hosts)
 	changed := isServiceInstanceChanged(serviceA, serviceB)
 	assert.True(t, changed)
 }
