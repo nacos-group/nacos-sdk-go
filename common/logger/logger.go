@@ -188,11 +188,11 @@ func SetLogger(log Logger) {
 }
 
 func GetLogger() Logger {
-	logLock.RLock()
-	defer logLock.RUnlock()
 	if logger == nil {
 		InitDefaultLogger()
 	}
+	logLock.RLock()
+	defer logLock.RUnlock()
 	return logger
 }
 
