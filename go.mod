@@ -1,5 +1,6 @@
 module github.com/nacos-group/nacos-sdk-go/v2
 
+// v2.2.9 is deprecated due to a critical bug. Use v2.3.0 or later
 go 1.21
 
 require (

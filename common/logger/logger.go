@@ -53,7 +53,7 @@ type SamplingConfig struct {
 }
 
 type NacosLogger struct {
-	Logger
+	*zap.SugaredLogger
 }
 
 // Logger is the interface for Logger types
@@ -67,6 +67,16 @@ type Logger interface {
 	Warnf(fmt string, args ...interface{})
 	Errorf(fmt string, args ...interface{})
 	Debugf(fmt string, args ...interface{})
+
+	Close() error
+}
+
+// Close 实现资源释放
+func (n *NacosLogger) Close() error {
+	if n.SugaredLogger != nil {
+		return n.SugaredLogger.Sync()
+	}
+	return nil
 }
 
 func BuildLoggerConfig(clientConfig constant.ClientConfig) Config {
@@ -91,6 +101,12 @@ func BuildLoggerConfig(clientConfig constant.ClientConfig) Config {
 		loggerConfig.LogRollingConfig.MaxBackups = logRollingConfig.MaxBackups
 		loggerConfig.LogRollingConfig.LocalTime = logRollingConfig.LocalTime
 		loggerConfig.LogRollingConfig.Compress = logRollingConfig.Compress
+	} else {
+		loggerConfig.LogRollingConfig.MaxSize = 100
+		loggerConfig.LogRollingConfig.MaxAge = 30
+		loggerConfig.LogRollingConfig.MaxBackups = 5
+		loggerConfig.LogRollingConfig.LocalTime = true
+		loggerConfig.LogRollingConfig.Compress = false
 	}
 	return loggerConfig
 }
@@ -99,6 +115,9 @@ func BuildLoggerConfig(clientConfig constant.ClientConfig) Config {
 func InitLogger(config Config) (err error) {
 	logLock.Lock()
 	defer logLock.Unlock()
+	if logger != nil {
+		return
+	}
 	logger, err = InitNacosLogger(config)
 	return
 }
@@ -142,6 +161,11 @@ func getEncoder() zapcore.EncoderConfig {
 func SetLogger(log Logger) {
 	logLock.Lock()
 	defer logLock.Unlock()
+	if logger != nil {
+		if closer, ok := logger.(interface{ Close() error }); ok {
+			_ = closer.Close()
+		}
+	}
 	logger = log
 }
 
