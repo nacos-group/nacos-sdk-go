@@ -46,7 +46,7 @@ func TestGetLogger(t *testing.T) {
 	_ = InitLogger(config)
 	// after init logger
 	log2 := GetLogger()
-	assert.NotEqual(t, log, log2)
+	assert.Equal(t, log, log2)
 
 	reset()
 }
