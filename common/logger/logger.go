@@ -69,25 +69,6 @@ type Logger interface {
 	Debugf(fmt string, args ...interface{})
 }
 
-func init() {
-	zapLoggerConfig := zap.NewDevelopmentConfig()
-	zapLoggerEncoderConfig := zapcore.EncoderConfig{
-		TimeKey:        "time",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		MessageKey:     "message",
-		StacktraceKey:  "stacktrace",
-		EncodeLevel:    zapcore.CapitalColorLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
-	}
-	zapLoggerConfig.EncoderConfig = zapLoggerEncoderConfig
-	zapLogger, _ := zapLoggerConfig.Build(zap.AddCaller(), zap.AddCallerSkip(1))
-	SetLogger(&NacosLogger{zapLogger.Sugar()})
-}
-
 func BuildLoggerConfig(clientConfig constant.ClientConfig) Config {
 	loggerConfig := Config{
 		Level:          clientConfig.LogLevel,
