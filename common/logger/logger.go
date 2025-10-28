@@ -79,7 +79,7 @@ func (n *NacosLogger) Close() error {
 	return nil
 }
 
-func init() {
+func InitDefaultLogger() {
 	zapLoggerConfig := zap.NewDevelopmentConfig()
 	zapLoggerEncoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "time",
@@ -97,7 +97,6 @@ func init() {
 	zapLogger, _ := zapLoggerConfig.Build(zap.AddCaller(), zap.AddCallerSkip(1))
 	SetLogger(&NacosLogger{zapLogger.Sugar()})
 }
-
 func BuildLoggerConfig(clientConfig constant.ClientConfig) Config {
 	loggerConfig := Config{
 		Level:          clientConfig.LogLevel,
@@ -189,6 +188,16 @@ func SetLogger(log Logger) {
 }
 
 func GetLogger() Logger {
+	logLock.RLock()
+	if logger != nil {
+		defer logLock.RUnlock()
+		return logger
+	}
+	logLock.RUnlock()
+
+	// 如果 logger 为 nil，需要初始化
+	InitDefaultLogger()
+
 	logLock.RLock()
 	defer logLock.RUnlock()
 	return logger
