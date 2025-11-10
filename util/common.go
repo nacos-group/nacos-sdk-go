@@ -18,15 +18,16 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
-
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/v2/model"
 )
 
 func CurrentMillis() int64 {
@@ -147,4 +148,19 @@ func Contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+// ValidateIPAddress validates if the input is a valid IPv4 or IPv6 address
+// Returns nil if valid, otherwise returns an error message
+func ValidateIPAddress(input string) error {
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return fmt.Errorf("input is empty")
+	}
+
+	if ip := net.ParseIP(input); ip != nil {
+		return nil // Valid IP address
+	}
+
+	return fmt.Errorf("not a valid IPv4 or IPv6 address")
 }
