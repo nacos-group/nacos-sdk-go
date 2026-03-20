@@ -22,9 +22,9 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"google.golang.org/grpc/credentials"
 	"io"
 	"log"
+	"net"
 	"os"
 	"strconv"
 	"sync"
@@ -41,6 +41,8 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -104,10 +106,10 @@ func getTLSCredentials(tlsConfig *constant.TLSConfig, serverInfo ServerInfo) cre
 	if len(tlsConfig.CaFile) != 0 {
 		cert, err := os.ReadFile(tlsConfig.CaFile)
 		if err != nil {
-			fmt.Errorf("err, %v", err)
+			_ = fmt.Errorf("err, %v", err)
 		}
 		if ok := certPool.AppendCertsFromPEM(cert); !ok {
-			fmt.Errorf("failed to append ca certs")
+			_ = fmt.Errorf("failed to append ca certs")
 		}
 	}
 
@@ -124,8 +126,8 @@ func getTLSCredentials(tlsConfig *constant.TLSConfig, serverInfo ServerInfo) cre
 		}
 		config.Certificates = append(config.Certificates, cert)
 	}
-	credentials := credentials.NewTLS(&config)
-	return credentials
+	transportCredentials := credentials.NewTLS(&config)
+	return transportCredentials
 }
 
 func getInitialGrpcTimeout() int32 {
@@ -155,19 +157,26 @@ func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientCon
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(getMaxCallRecvMsgSize())))
 	opts = append(opts, grpc.WithKeepaliveParams(getKeepAliveTimeMillis()))
-	opts = append(opts, grpc.WithInsecure())
 	opts = append(opts, grpc.WithInitialWindowSize(getInitialWindowSize()))
 	opts = append(opts, grpc.WithInitialConnWindowSize(getInitialConnWindowSize()))
 	c.getEnvTLSConfig(c.TLSConfig)
 	if c.TLSConfig.Enable {
 		logger.Infof(" tls enable ,trying to connection to server %s with tls config %s", serverInfo.serverIp, c.TLSConfig)
 		opts = append(opts, grpc.WithTransportCredentials(getTLSCredentials(c.TLSConfig, serverInfo)))
+	} else {
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 	rpcPort := serverInfo.serverGrpcPort
 	if rpcPort == 0 {
 		rpcPort = serverInfo.serverPort + c.rpcPortOffset()
 	}
-	return grpc.Dial(serverInfo.serverIp+":"+strconv.FormatUint(rpcPort, 10), opts...)
+	address := serverInfo.serverIp + ":" + strconv.FormatUint(rpcPort, 10)
+	// If serverIp is a domain name (not an IP), use the dns:/// scheme so gRPC
+	// resolves it via the DNS resolver instead of passthrough.
+	if net.ParseIP(serverInfo.serverIp) == nil {
+		address = "dns:///" + address
+	}
+	return grpc.NewClient(address, opts...)
 
 }
 
