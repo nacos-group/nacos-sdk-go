@@ -36,11 +36,22 @@ type ServiceInfoHolder struct {
 	updateCacheWhenEmpty bool
 	cacheDir             string
 	notLoadCacheAtStart  bool
+	disableLocalCache    bool
 	subCallback          *SubscribeCallback
 	UpdateTimeMap        sync.Map
 }
 
-func NewServiceInfoHolder(namespace, cacheDir string, updateCacheWhenEmpty, notLoadCacheAtStart bool) *ServiceInfoHolder {
+// ServiceInfoHolderOption configures optional behavior of ServiceInfoHolder.
+type ServiceInfoHolderOption func(*ServiceInfoHolder)
+
+// WithDisableLocalCache skips writing service snapshots to disk when set to true.
+func WithDisableLocalCache(disable bool) ServiceInfoHolderOption {
+	return func(s *ServiceInfoHolder) {
+		s.disableLocalCache = disable
+	}
+}
+
+func NewServiceInfoHolder(namespace, cacheDir string, updateCacheWhenEmpty, notLoadCacheAtStart bool, opts ...ServiceInfoHolderOption) *ServiceInfoHolder {
 	cacheDir = cacheDir + string(os.PathSeparator) + "naming" + string(os.PathSeparator) + namespace
 	serviceInfoHolder := &ServiceInfoHolder{
 		updateCacheWhenEmpty: updateCacheWhenEmpty,
@@ -49,6 +60,9 @@ func NewServiceInfoHolder(namespace, cacheDir string, updateCacheWhenEmpty, notL
 		subCallback:          NewSubscribeCallback(),
 		UpdateTimeMap:        sync.Map{},
 		ServiceInfoMap:       sync.Map{},
+	}
+	for _, opt := range opts {
+		opt(serviceInfoHolder)
 	}
 
 	if !notLoadCacheAtStart {
@@ -94,7 +108,9 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 	s.ServiceInfoMap.Store(cacheKey, *service)
 	if !ok || checkInstanceChanged(oldDomain, *service) {
 		logger.Infof("service key:%s was updated to:%s", cacheKey, util.ToJsonString(service))
-		cache.WriteServicesToFile(service, cacheKey, s.cacheDir)
+		if !s.disableLocalCache {
+			cache.WriteServicesToFile(service, cacheKey, s.cacheDir)
+		}
 		s.subCallback.ServiceChanged(cacheKey, service)
 	}
 	var count int

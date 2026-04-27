@@ -169,6 +169,13 @@ func WithDisableUseSnapShot(disableUseSnapShot bool) ClientOption {
 	}
 }
 
+// WithDisableLocalCache disables writing local cache files (config snapshots and service snapshots) when set to true.
+func WithDisableLocalCache(disableLocalCache bool) ClientOption {
+	return func(config *ClientConfig) {
+		config.DisableLocalCache = disableLocalCache
+	}
+}
+
 // WithUpdateThreadNum ...
 func WithUpdateThreadNum(updateThreadNum int) ClientOption {
 	return func(config *ClientConfig) {
