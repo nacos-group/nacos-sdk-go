@@ -83,7 +83,8 @@ func NewNamingClientWithRamCredentialProvider(nc nacos_client.INacosClient, prov
 	}
 
 	naming.serviceInfoHolder = naming_cache.NewServiceInfoHolder(clientConfig.NamespaceId, clientConfig.CacheDir,
-		clientConfig.UpdateCacheWhenEmpty, clientConfig.NotLoadCacheAtStart)
+		clientConfig.UpdateCacheWhenEmpty, clientConfig.NotLoadCacheAtStart,
+		naming_cache.WithDisableLocalCache(clientConfig.DisableLocalCache))
 
 	naming.serviceProxy, err = NewNamingProxyDelegateWithRamCredentialProvider(ctx, clientConfig, serverConfig, httpAgent, naming.serviceInfoHolder, provider)
 

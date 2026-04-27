@@ -134,8 +134,10 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 		return nil, errors.New("ConfigQueryRequest returns type error")
 	}
 	if response.IsSuccess() {
-		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, response.Content)
-		cache.WriteEncryptedDataKeyToFile(cacheKey, cp.clientConfig.CacheDir, response.EncryptedDataKey)
+		if !cp.clientConfig.DisableLocalCache {
+			cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, response.Content)
+			cache.WriteEncryptedDataKeyToFile(cacheKey, cp.clientConfig.CacheDir, response.EncryptedDataKey)
+		}
 		if response.ContentType == "" {
 			response.ContentType = "text"
 		}
@@ -143,8 +145,10 @@ func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64,
 	}
 
 	if response.GetErrorCode() == 300 {
-		cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, "")
-		cache.WriteEncryptedDataKeyToFile(cacheKey, cp.clientConfig.CacheDir, "")
+		if !cp.clientConfig.DisableLocalCache {
+			cache.WriteConfigToFile(cacheKey, cp.clientConfig.CacheDir, "")
+			cache.WriteEncryptedDataKeyToFile(cacheKey, cp.clientConfig.CacheDir, "")
+		}
 		response.SetSuccess(true)
 		return response, nil
 	}

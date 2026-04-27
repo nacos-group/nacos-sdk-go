@@ -44,6 +44,7 @@ type ClientConfig struct {
 	KMSConfig            *KMSConfig
 	CacheDir             string                   // the directory for persist nacos service info,default value is current path
 	DisableUseSnapShot   bool                     // It's a switch, default is false, means that when get remote config fail, use local cache file instead
+	DisableLocalCache    bool                     // It's a switch, default is false. When set to true, nacos sdk will not write any local cache files (config snapshots and service snapshots).
 	UpdateThreadNum      int                      // the number of goroutine for update nacos service info,default value is 20
 	NotLoadCacheAtStart  bool                     // not to load persistent nacos service info in CacheDir at start time
 	UpdateCacheWhenEmpty bool                     // update cache when get empty service instance from server
