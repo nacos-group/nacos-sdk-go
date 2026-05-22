@@ -21,11 +21,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
-	"github.com/nacos-group/nacos-sdk-go/v2/model"
-	"github.com/nacos-group/nacos-sdk-go/v2/util"
+	"github.com/nacos-group/nacos-sdk-go/v3/clients/cache"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/remote/rpc/rpc_request"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/remote/rpc/rpc_response"
+	"github.com/nacos-group/nacos-sdk-go/v3/model"
+	"github.com/nacos-group/nacos-sdk-go/v3/util"
 	"github.com/stretchr/testify/assert"
 )
 

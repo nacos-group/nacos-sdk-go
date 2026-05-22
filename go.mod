@@ -1,28 +1,28 @@
-module github.com/nacos-group/nacos-sdk-go/v2
+module github.com/nacos-group/nacos-sdk-go/v3
 
-// v2.2.9 is deprecated due to a critical bug. Use v2.3.0 or later
-go 1.21
+go 1.22.0
+
+toolchain go1.24.2
 
 require (
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.0.10
 	github.com/alibabacloud-go/kms-20160120/v3 v3.2.3
 	github.com/alibabacloud-go/tea v1.2.2
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7
-	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1800
 	github.com/aliyun/alibabacloud-dkms-gcs-go-sdk v0.5.1
-	github.com/aliyun/alibabacloud-dkms-transfer-go-sdk v0.1.8
 	github.com/aliyun/aliyun-secretsmanager-client-go v1.1.5
 	github.com/aliyun/credentials-go v1.4.3
 	github.com/buger/jsonparser v1.1.1
 	github.com/golang/mock v1.6.0
+	github.com/nacos-group/nacos-sdk-proto/go v1.0.0-beta.8
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.2
 	github.com/stretchr/testify v1.8.1
 	go.uber.org/zap v1.21.0
 	golang.org/x/sync v0.10.0
 	golang.org/x/time v0.1.0
-	google.golang.org/grpc v1.67.3
-	google.golang.org/protobuf v1.36.5
+	google.golang.org/grpc v1.71.2
+	google.golang.org/protobuf v1.36.4
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
@@ -42,6 +42,8 @@ require (
 	github.com/alibabacloud-go/openapi-util v0.1.0 // indirect
 	github.com/alibabacloud-go/tea-utils v1.4.4 // indirect
 	github.com/alibabacloud-go/tea-xml v1.1.3 // indirect
+	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1800 // indirect
+	github.com/aliyun/alibabacloud-dkms-transfer-go-sdk v0.1.8 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clbanning/mxj/v2 v2.5.5 // indirect
@@ -62,11 +64,11 @@ require (
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/crypto v0.32.0 // indirect
+	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

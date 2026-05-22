@@ -17,8 +17,8 @@
 package naming_client
 
 import (
-	"github.com/nacos-group/nacos-sdk-go/v2/model"
-	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"github.com/nacos-group/nacos-sdk-go/v3/model"
+	"github.com/nacos-group/nacos-sdk-go/v3/vo"
 )
 
 //go:generate mockgen -destination ../../mock/mock_service_client_interface.go -package mock -source=./service_client_interface.go

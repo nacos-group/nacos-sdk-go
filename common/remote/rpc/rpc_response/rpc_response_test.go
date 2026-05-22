@@ -1,8 +1,9 @@
 package rpc_response
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRpcResponseIsSuccess(t *testing.T) {

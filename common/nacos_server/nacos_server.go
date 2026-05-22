@@ -30,15 +30,15 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/monitor"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/monitor"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_error"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
-	"github.com/nacos-group/nacos-sdk-go/v2/inner/uuid"
-	"github.com/nacos-group/nacos-sdk-go/v2/util"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/nacos_error"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/security"
+	"github.com/nacos-group/nacos-sdk-go/v3/inner/uuid"
+	"github.com/nacos-group/nacos-sdk-go/v3/util"
 )
 
 type NacosServer struct {

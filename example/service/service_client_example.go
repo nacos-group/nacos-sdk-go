@@ -19,9 +19,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
+	"github.com/nacos-group/nacos-sdk-go/v3/clients/naming_client"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"github.com/nacos-group/nacos-sdk-go/v3/vo"
 )
 
 func registerServiceInstance(client naming_client.INamingClient, param vo.RegisterInstanceParam) {

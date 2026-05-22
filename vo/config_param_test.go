@@ -17,8 +17,9 @@
 package vo
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConfigParamDeepCopy(t *testing.T) {

@@ -20,10 +20,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/remote/rpc/rpc_request"
 )
 
 type RequestResource struct {

@@ -22,12 +22,13 @@
 package auto
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	anypb "google.golang.org/protobuf/types/known/anypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	anypb "google.golang.org/protobuf/types/known/anypb"
 )
 
 const (
@@ -170,7 +171,7 @@ const file_api_proto_nacos_grpc_service_proto_rawDesc = "" +
 	"\arequest\x12\b.Payload\x1a\b.Payload\"\x002>\n" +
 	"\x0fBiRequestStream\x12+\n" +
 	"\x0frequestBiStream\x12\b.Payload\x1a\b.Payload\"\x00(\x010\x01B^\n" +
-	"\x1fcom.alibaba.nacos.api.grpc.autoP\x01Z9github.com/nacos-group/nacos-sdk-go/v2/api/grpc/auto;autob\x06proto3"
+	"\x1fcom.alibaba.nacos.api.grpc.autoP\x01Z9github.com/nacos-group/nacos-sdk-go/v3/api/grpc/auto;autob\x06proto3"
 
 var (
 	file_api_proto_nacos_grpc_service_proto_rawDescOnce sync.Once

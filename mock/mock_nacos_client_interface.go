@@ -23,8 +23,8 @@ package mock
 import (
 	reflect "reflect"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/http_agent"
 
 	gomock "github.com/golang/mock/gomock"
 )

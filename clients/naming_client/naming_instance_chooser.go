@@ -20,7 +20,7 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/model"
+	"github.com/nacos-group/nacos-sdk-go/v3/model"
 )
 
 type Chooser struct {
