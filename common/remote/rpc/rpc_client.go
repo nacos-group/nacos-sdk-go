@@ -381,7 +381,9 @@ func (r *RpcClient) registerServerRequestHandlers() {
 func (r *RpcClient) Shutdown() {
 	atomic.StoreInt32((*int32)(&r.rpcClientStatus), (int32)(SHUTDOWN))
 	r.closeConnection()
+	cMux.Lock()
 	delete(clientMap, r.name)
+	cMux.Unlock()
 }
 
 func (r *RpcClient) RegisterServerRequestHandler(request func() rpc_request.IRequest, handler IServerRequestHandler) {
