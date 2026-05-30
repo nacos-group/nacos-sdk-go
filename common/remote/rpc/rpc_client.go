@@ -407,7 +407,13 @@ func (r *RpcClient) RegisterConnectionListener(listener IConnectionEventListener
 }
 
 func (r *RpcClient) switchServerAsync(recommendServerInfo ServerInfo, onRequestFail bool) {
-	r.reconnectionChan <- ReconnectContext{serverInfo: recommendServerInfo, onRequestFail: onRequestFail}
+	select {
+	case r.reconnectionChan <- ReconnectContext{serverInfo: recommendServerInfo, onRequestFail: onRequestFail}:
+		// Reconnection request sent successfully
+	default:
+		// Channel is full, skip this request as reconnection is already in progress
+		logger.Warnf("reconnection already in progress, skip this request")
+	}
 }
 
 func (r *RpcClient) reconnect(serverInfo ServerInfo, onRequestFail bool) {
