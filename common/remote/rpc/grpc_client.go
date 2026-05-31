@@ -23,10 +23,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -95,22 +95,24 @@ func getInitialConnWindowSize() int32 {
 	return int32(initialConnWindowSize)
 }
 
-func getTLSCredentials(tlsConfig *constant.TLSConfig, serverInfo ServerInfo) credentials.TransportCredentials {
-
-	logger.Infof("build tls config for connecting to server %s,tlsConfig = %s", serverInfo.serverIp, tlsConfig)
+func getTLSCredentials(tlsConfig *constant.TLSConfig, serverInfo ServerInfo) (credentials.TransportCredentials, error) {
+	logger.Infof("build tls config for connecting to server %s, tlsConfig = %+v", serverInfo.serverIp, tlsConfig)
 
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
-		log.Fatalf("load root cert pool fail : %v", err)
+		logger.Warnf("failed to load system cert pool: %v, using empty pool", err)
+		certPool = x509.NewCertPool()
 	}
+
 	if len(tlsConfig.CaFile) != 0 {
-		cert, err := os.ReadFile(tlsConfig.CaFile)
+		caCert, err := os.ReadFile(tlsConfig.CaFile)
 		if err != nil {
-			_ = fmt.Errorf("err, %v", err)
+			return nil, fmt.Errorf("failed to read CA file %q: %w", tlsConfig.CaFile, err)
 		}
-		if ok := certPool.AppendCertsFromPEM(cert); !ok {
-			_ = fmt.Errorf("failed to append ca certs")
+		if ok := certPool.AppendCertsFromPEM(caCert); !ok {
+			return nil, fmt.Errorf("failed to parse CA certificates from %q", tlsConfig.CaFile)
 		}
+		logger.Infof("loaded custom CA certificates from %s", tlsConfig.CaFile)
 	}
 
 	config := tls.Config{
@@ -118,16 +120,22 @@ func getTLSCredentials(tlsConfig *constant.TLSConfig, serverInfo ServerInfo) cre
 		RootCAs:            certPool,
 		Certificates:       []tls.Certificate{},
 	}
+
+	if len(tlsConfig.ServerNameOverride) > 0 {
+		config.ServerName = tlsConfig.ServerNameOverride
+		logger.Infof("using server name override: %s", tlsConfig.ServerNameOverride)
+	}
+
 	if len(tlsConfig.CertFile) != 0 && len(tlsConfig.KeyFile) != 0 {
 		cert, err := tls.LoadX509KeyPair(tlsConfig.CertFile, tlsConfig.KeyFile)
-
 		if err != nil {
-			log.Fatalf("load cert fail : %v", err)
+			return nil, fmt.Errorf("failed to load client certificate (cert=%q, key=%q): %w", tlsConfig.CertFile, tlsConfig.KeyFile, err)
 		}
 		config.Certificates = append(config.Certificates, cert)
+		logger.Infof("loaded client certificate from %s", tlsConfig.CertFile)
 	}
-	transportCredentials := credentials.NewTLS(&config)
-	return transportCredentials
+
+	return credentials.NewTLS(&config), nil
 }
 
 func getInitialGrpcTimeout() int32 {
@@ -153,6 +161,41 @@ func getKeepAliveTimeMillis() keepalive.ClientParameters {
 	}
 }
 
+// resolveGrpcAddress normalizes serverIp into a proper gRPC target address.
+// It handles:
+//   - Stripping http:// or https:// scheme prefixes
+//   - Detecting IP vs domain name (including bracketed IPv6)
+//   - Applying dns:/// for domains, passthrough:/// for IPs
+//   - Adding brackets around bare IPv6 addresses for correct host:port formatting
+func resolveGrpcAddress(serverIp string, port uint64) string {
+	host := serverIp
+	host = strings.TrimPrefix(host, "http://")
+	host = strings.TrimPrefix(host, "https://")
+
+	// Determine if host is an IP address.
+	// net.ParseIP does not accept bracketed IPv6 like "[::1]",
+	// so we strip brackets before checking.
+	ip := net.ParseIP(host)
+	if ip == nil {
+		bare := strings.TrimPrefix(strings.TrimSuffix(host, "]"), "[")
+		if parsed := net.ParseIP(bare); parsed != nil {
+			ip = parsed
+			// Normalize to bracketed form for correct host:port formatting
+			host = "[" + bare + "]"
+		}
+	} else if strings.ContainsRune(host, ':') {
+		// Bare IPv6 or IPv4-mapped IPv6 (e.g. "::1", "::ffff:127.0.0.1")
+		// must add brackets for unambiguous host:port formatting
+		host = "[" + host + "]"
+	}
+
+	address := host + ":" + strconv.FormatUint(port, 10)
+	if ip != nil {
+		return "passthrough:///" + address
+	}
+	return "dns:///" + address
+}
+
 func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientConn, error) {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(getMaxCallRecvMsgSize())))
@@ -162,7 +205,11 @@ func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientCon
 	c.getEnvTLSConfig(c.TLSConfig)
 	if c.TLSConfig.Enable {
 		logger.Infof(" tls enable ,trying to connection to server %s with tls config %s", serverInfo.serverIp, c.TLSConfig)
-		opts = append(opts, grpc.WithTransportCredentials(getTLSCredentials(c.TLSConfig, serverInfo)))
+		creds, err := getTLSCredentials(c.TLSConfig, serverInfo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build TLS credentials: %w", err)
+		}
+		opts = append(opts, grpc.WithTransportCredentials(creds))
 	} else {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
@@ -170,14 +217,7 @@ func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientCon
 	if rpcPort == 0 {
 		rpcPort = serverInfo.serverPort + c.rpcPortOffset()
 	}
-	address := serverInfo.serverIp + ":" + strconv.FormatUint(rpcPort, 10)
-	// If serverIp is a domain name (not an IP), use the dns:/// scheme so gRPC
-	// resolves it via the DNS resolver instead of passthrough.
-	if net.ParseIP(serverInfo.serverIp) == nil {
-		address = "dns:///" + address
-	}
-	return grpc.NewClient(address, opts...)
-
+	return grpc.NewClient(resolveGrpcAddress(serverInfo.serverIp, rpcPort), opts...)
 }
 
 func (c *GrpcClient) getEnvTLSConfig(config *constant.TLSConfig) {
