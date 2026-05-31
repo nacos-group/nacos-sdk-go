@@ -28,9 +28,6 @@ const (
 	kmsAes128KeySpec = "AES_128"
 	kmsAes256KeySpec = "AES_256"
 
-	kmsScheme       = "https"
-	kmsAcceptFormat = "XML"
-
 	kmsCipherAlgorithm = "AES/ECB/PKCS5Padding"
 
 	maskUnit8Width  = 8

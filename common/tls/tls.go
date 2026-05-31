@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/constant"
 )
 
 // NewTLS returns a config structure is used to configure a TLS client

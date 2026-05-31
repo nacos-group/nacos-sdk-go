@@ -18,18 +18,19 @@ package naming_client
 
 import (
 	"context"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
-	"github.com/nacos-group/nacos-sdk-go/v2/inner/uuid"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_grpc"
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_http"
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
-	"github.com/nacos-group/nacos-sdk-go/v2/model"
-	"github.com/nacos-group/nacos-sdk-go/v2/util"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/security"
+	"github.com/nacos-group/nacos-sdk-go/v3/inner/uuid"
+
+	"github.com/nacos-group/nacos-sdk-go/v3/clients/naming_client/naming_cache"
+	"github.com/nacos-group/nacos-sdk-go/v3/clients/naming_client/naming_grpc"
+	"github.com/nacos-group/nacos-sdk-go/v3/clients/naming_client/naming_http"
+	"github.com/nacos-group/nacos-sdk-go/v3/clients/naming_client/naming_proxy"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/nacos_server"
+	"github.com/nacos-group/nacos-sdk-go/v3/model"
+	"github.com/nacos-group/nacos-sdk-go/v3/util"
 )
 
 // NamingProxyDelegate ...

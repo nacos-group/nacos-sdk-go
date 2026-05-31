@@ -19,8 +19,8 @@ package rpc_response
 import (
 	"strconv"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/v2/util"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v3/util"
 )
 
 var ClientResponseMapping map[string]func() IResponse

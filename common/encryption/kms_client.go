@@ -17,19 +17,20 @@
 package encryption
 
 import (
+	"encoding/base64"
 	"fmt"
+	"strings"
+
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
 	kms20160120 "github.com/alibabacloud-go/kms-20160120/v3/client"
 	util "github.com/alibabacloud-go/tea-utils/v2/service"
 	"github.com/alibabacloud-go/tea/tea"
-	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 	dkms_api "github.com/aliyun/alibabacloud-dkms-gcs-go-sdk/openapi"
-	dkms_transfer "github.com/aliyun/alibabacloud-dkms-transfer-go-sdk/sdk"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	dkms_api_util "github.com/aliyun/alibabacloud-dkms-gcs-go-sdk/openapi-util"
+	dkms_sdk "github.com/aliyun/alibabacloud-dkms-gcs-go-sdk/sdk"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/logger"
 	"github.com/pkg/errors"
-	"net/http"
-	"strings"
 )
 
 type KmsClient interface {
@@ -40,23 +41,11 @@ type KmsClient interface {
 	setKmsVersion(constant.KMSVersion)
 }
 
-type TransferKmsClient struct {
-	*dkms_transfer.KmsTransferClient
+type DedicatedKmsClient struct {
+	client     *dkms_sdk.Client
+	verify     string
+	ignoreSSL  bool
 	kmsVersion constant.KMSVersion
-}
-
-func NewKmsV1ClientWithAccessKey(regionId, ak, sk string) (*TransferKmsClient, error) {
-	var rErr error
-	if rErr = checkKmsV1InitParam(regionId, ak, sk); rErr != nil {
-		return nil, rErr
-	}
-	kmsClient, err := newKmsV1ClientWithAccessKey(regionId, ak, sk)
-	if err != nil {
-		rErr = errors.Wrap(err, "init kms v1 client with ak/sk failed")
-	} else {
-		kmsClient.setKmsVersion(constant.KMSv1)
-	}
-	return kmsClient, rErr
 }
 
 func checkKmsV1InitParam(regionId, ak, sk string) error {
@@ -85,34 +74,42 @@ func checkKmsRamInitParam(endpoint, ak, sk string) error {
 	return nil
 }
 
-func NewKmsV3ClientWithConfig(config *dkms_api.Config, caVerify string) (*TransferKmsClient, error) {
+func NewKmsV3ClientWithConfig(config *dkms_api.Config, caVerify string) (*DedicatedKmsClient, error) {
 	var rErr error
 	if rErr = checkKmsV3InitParam(config, caVerify); rErr != nil {
 		return nil, rErr
 	}
-	kmsClient, err := newKmsV3ClientWithConfig(config)
+	logger.Debugf("init kms client with endpoint:[%s], clientKeyContent:[%s], password:[%s]\n",
+		tea.StringValue(config.Endpoint),
+		(*config.ClientKeyContent)[:len(*config.ClientKeyContent)/maskUnit8Width],
+		(*config.Password)[:len(*config.Password)/maskUnit8Width])
+	client, err := dkms_sdk.NewClient(config)
 	if err != nil {
 		rErr = errors.Wrap(err, "init kms v3 client with config failed")
-	} else {
-		if len(strings.TrimSpace(caVerify)) != 0 {
-			logger.Debugf("set kms client Ca with content: %s\n", caVerify[:len(caVerify)/maskUnit32Width])
-			kmsClient.SetVerify(caVerify)
-		} else {
-			kmsClient.SetHTTPSInsecure(true)
-		}
-		kmsClient.setKmsVersion(constant.KMSv3)
+		return nil, rErr
 	}
-	return kmsClient, rErr
+	kmsClient := &DedicatedKmsClient{
+		client:     client,
+		kmsVersion: constant.KMSv3,
+	}
+	if len(strings.TrimSpace(caVerify)) != 0 {
+		logger.Debugf("set kms client Ca with content: %s\n", caVerify[:len(caVerify)/maskUnit32Width])
+		kmsClient.verify = caVerify
+	} else {
+		kmsClient.ignoreSSL = true
+	}
+	logger.Debug("successfully set kms client version to " + constant.KMSv3)
+	return kmsClient, nil
 }
 
 func checkKmsV3InitParam(config *dkms_api.Config, caVerify string) error {
-	if len(*config.Endpoint) == 0 {
+	if len(tea.StringValue(config.Endpoint)) == 0 {
 		return EmptyEndpointKmsV3ClientInitError
 	}
-	if len(*config.Password) == 0 {
+	if len(tea.StringValue(config.Password)) == 0 {
 		return EmptyPasswordKmsV3ClientInitError
 	}
-	if len(*config.ClientKeyContent) == 0 {
+	if len(tea.StringValue(config.ClientKeyContent)) == 0 {
 		return EmptyClientKeyContentKmsV3ClientInitError
 	}
 	if len(caVerify) == 0 {
@@ -121,76 +118,65 @@ func checkKmsV3InitParam(config *dkms_api.Config, caVerify string) error {
 	return nil
 }
 
-func newKmsV1ClientWithAccessKey(regionId, ak, sk string) (*TransferKmsClient, error) {
-	logger.Debugf("init kms client with region:[%s], ak:[%s]xxx, sk:[%s]xxx\n",
-		regionId, ak[:len(ak)/maskUnit8Width], sk[:len(sk)/maskUnit8Width])
-	return newKmsClient(regionId, ak, sk, nil)
-}
-
-func newKmsV3ClientWithConfig(config *dkms_api.Config) (*TransferKmsClient, error) {
-	logger.Debugf("init kms client with endpoint:[%s], clientKeyContent:[%s], password:[%s]\n",
-		config.Endpoint, (*config.ClientKeyContent)[:len(*config.ClientKeyContent)/maskUnit8Width],
-		(*config.Password)[:len(*config.Password)/maskUnit8Width])
-	return newKmsClient("", "", "", config)
-}
-
-func newKmsClient(regionId, ak, sk string, config *dkms_api.Config) (*TransferKmsClient, error) {
-	client, err := dkms_transfer.NewClientWithAccessKey(regionId, ak, sk, config)
-	if err != nil {
-		return nil, err
+func (kmsClient *DedicatedKmsClient) newRuntimeOptions() *dkms_api_util.RuntimeOptions {
+	return &dkms_api_util.RuntimeOptions{
+		Verify:    tea.String(kmsClient.verify),
+		IgnoreSSL: tea.Bool(kmsClient.ignoreSSL),
 	}
-	return &TransferKmsClient{
-		KmsTransferClient: client,
-	}, nil
 }
 
-func (kmsClient *TransferKmsClient) GetKmsVersion() constant.KMSVersion {
+func (kmsClient *DedicatedKmsClient) GetKmsVersion() constant.KMSVersion {
 	return kmsClient.kmsVersion
 }
 
-func (kmsClient *TransferKmsClient) setKmsVersion(kmsVersion constant.KMSVersion) {
+func (kmsClient *DedicatedKmsClient) setKmsVersion(kmsVersion constant.KMSVersion) {
 	logger.Debug("successfully set kms client version to " + kmsVersion)
 	kmsClient.kmsVersion = kmsVersion
 }
 
-func (kmsClient *TransferKmsClient) GenerateDataKey(keyId, keySpec string) (string, string, error) {
-	generateDataKeyRequest := kms.CreateGenerateDataKeyRequest()
-	generateDataKeyRequest.Scheme = kmsScheme
-	generateDataKeyRequest.AcceptFormat = kmsAcceptFormat
-	generateDataKeyRequest.KeyId = keyId
-	generateDataKeyRequest.KeySpec = keySpec
-	generateDataKeyResponse, err := kmsClient.KmsTransferClient.GenerateDataKey(generateDataKeyRequest)
-	if err != nil {
-		return "", "", err
+func (kmsClient *DedicatedKmsClient) GenerateDataKey(keyId, keySpec string) (string, string, error) {
+	numberOfBytes := int32(32)
+	if keySpec == kmsAes128KeySpec {
+		numberOfBytes = 16
 	}
-	return generateDataKeyResponse.Plaintext, generateDataKeyResponse.CiphertextBlob, nil
+	request := &dkms_sdk.GenerateDataKeyRequest{
+		KeyId:         tea.String(keyId),
+		NumberOfBytes: tea.Int32(numberOfBytes),
+	}
+	response, err := kmsClient.client.GenerateDataKeyWithOptions(request, kmsClient.newRuntimeOptions())
+	if err != nil {
+		return "", "", fmt.Errorf("kms generate data key failed: %v", err)
+	}
+	plaintext := base64.StdEncoding.EncodeToString(response.Plaintext)
+	ciphertextBlob := base64.StdEncoding.EncodeToString(response.CiphertextBlob)
+	return plaintext, ciphertextBlob, nil
 }
 
-func (kmsClient *TransferKmsClient) Decrypt(cipherContent string) (string, error) {
-	request := kms.CreateDecryptRequest()
-	request.Method = http.MethodPost
-	request.Scheme = kmsScheme
-	request.AcceptFormat = kmsAcceptFormat
-	request.CiphertextBlob = cipherContent
-	response, err := kmsClient.KmsTransferClient.Decrypt(request)
+func (kmsClient *DedicatedKmsClient) Decrypt(cipherContent string) (string, error) {
+	cipherBytes, err := base64.StdEncoding.DecodeString(cipherContent)
+	if err != nil {
+		return "", fmt.Errorf("kms decrypt base64 decode failed: %v", err)
+	}
+	request := &dkms_sdk.DecryptRequest{
+		CiphertextBlob: cipherBytes,
+	}
+	response, err := kmsClient.client.DecryptWithOptions(request, kmsClient.newRuntimeOptions())
 	if err != nil {
 		return "", fmt.Errorf("kms decrypt failed: %v", err)
 	}
-	return response.Plaintext, nil
+	return string(response.Plaintext), nil
 }
 
-func (kmsClient *TransferKmsClient) Encrypt(content, keyId string) (string, error) {
-	request := kms.CreateEncryptRequest()
-	request.Method = http.MethodPost
-	request.Scheme = kmsScheme
-	request.AcceptFormat = kmsAcceptFormat
-	request.Plaintext = content
-	request.KeyId = keyId
-	response, err := kmsClient.KmsTransferClient.Encrypt(request)
+func (kmsClient *DedicatedKmsClient) Encrypt(content, keyId string) (string, error) {
+	request := &dkms_sdk.EncryptRequest{
+		KeyId:     tea.String(keyId),
+		Plaintext: []byte(content),
+	}
+	response, err := kmsClient.client.EncryptWithOptions(request, kmsClient.newRuntimeOptions())
 	if err != nil {
 		return "", fmt.Errorf("kms encrypt failed: %v", err)
 	}
-	return response.CiphertextBlob, nil
+	return base64.StdEncoding.EncodeToString(response.CiphertextBlob), nil
 }
 
 func GetDefaultKMSv1KeyId() string {

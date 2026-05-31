@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [master, v3.x-dev]
+  pull_request:
+    branches: [master, v3.x-dev]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+      - name: Check formatting
+        run: |
+          diff -u <(echo -n) <(gofmt -d -s .)
+      - name: Check imports
+        run: |
+          go install golang.org/x/tools/cmd/goimports@latest
+          diff -u <(echo -n) <(goimports -d .)
+
+  unit-test:
+    name: Unit Tests (Go ${{ matrix.go-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ["1.22", "1.23", "1.24"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Run unit tests
+        run: go test -v -race -count=1 ./... -short -coverprofile=coverage.txt -covermode=atomic
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: matrix.go-version == '1.24'
+        with:
+          files: coverage.txt
+
+  integration-grpc:
+    name: Integration Tests (gRPC + Nacos 3.x)
+    runs-on: ubuntu-latest
+    needs: [lint, unit-test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+      - name: Start Nacos 3.x
+        run: |
+          docker run -d --name nacos3 \
+            -e MODE=standalone \
+            -e NACOS_AUTH_ENABLE=true \
+            -e NACOS_AUTH_TOKEN=SecretKey012345678901234567890123456789012345678901234567890123456789 \
+            -e NACOS_AUTH_IDENTITY_KEY=serverIdentity \
+            -e NACOS_AUTH_IDENTITY_VALUE=security \
+            -p 8080:8080 -p 8848:8848 -p 9848:9848 \
+            nacos/nacos-server:v3.2.0
+      - name: Wait for Nacos 3.x to be ready
+        run: |
+          echo "Waiting for Nacos 3.x..."
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:8848/nacos/ > /dev/null 2>&1; then
+              echo "Nacos 3.x is ready after $((i*3))s"
+              break
+            fi
+            if [ $i -eq 90 ]; then
+              echo "Nacos 3.x failed to start"
+              docker logs nacos3
+              exit 1
+            fi
+            sleep 3
+          done
+      - name: Run integration tests
+        run: go test -v -race -count=1 -tags=integration ./... -run TestIntegration -timeout 120s
+      - name: Show Nacos logs on failure
+        if: failure()
+        run: docker logs nacos3
+
+  integration-nacos2:
+    name: Integration Tests (gRPC + Nacos 2.x)
+    runs-on: ubuntu-latest
+    needs: [lint, unit-test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+      - name: Start Nacos 2.x
+        run: |
+          docker run -d --name nacos2 \
+            -e MODE=standalone \
+            -e NACOS_AUTH_ENABLE=true \
+            -e NACOS_AUTH_TOKEN=SecretKey012345678901234567890123456789012345678901234567890123456789 \
+            -e NACOS_AUTH_IDENTITY_KEY=serverIdentity \
+            -e NACOS_AUTH_IDENTITY_VALUE=security \
+            -p 8848:8848 -p 9848:9848 \
+            nacos/nacos-server:v2.5.2
+      - name: Wait for Nacos 2.x to be ready
+        run: |
+          echo "Waiting for Nacos 2.x..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8848/nacos/ > /dev/null 2>&1; then
+              echo "Nacos 2.x is ready after $((i*3))s"
+              break
+            fi
+            if [ $i -eq 60 ]; then
+              echo "Nacos 2.x failed to start"
+              docker logs nacos2
+              exit 1
+            fi
+            sleep 3
+          done
+      - name: Run integration tests
+        run: go test -v -race -count=1 -tags=integration ./... -run TestIntegration -timeout 120s
+      - name: Show Nacos logs on failure
+        if: failure()
+        run: docker logs nacos2

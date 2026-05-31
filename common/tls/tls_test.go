@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/constant"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -94,7 +94,7 @@ q9K53Jum9GDmkbUODa77sWR1zQsdrqSKywcjP/6FYXU9RMDqKUpm
 func Test_NewTLS(t *testing.T) {
 	dir, err := os.MkdirTemp("", "tls-test")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 	defer os.RemoveAll(dir)
 

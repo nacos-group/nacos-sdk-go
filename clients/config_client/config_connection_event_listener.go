@@ -19,7 +19,7 @@ package config_client
 import (
 	"strconv"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/logger"
 )
 
 type ConfigConnectionEventListener struct {

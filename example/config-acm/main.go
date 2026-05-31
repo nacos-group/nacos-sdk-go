@@ -18,12 +18,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
-	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"time"
+
+	"github.com/nacos-group/nacos-sdk-go/v3/clients/config_client"
+	"github.com/nacos-group/nacos-sdk-go/v3/clients/nacos_client"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/http_agent"
+	"github.com/nacos-group/nacos-sdk-go/v3/vo"
 )
 
 var localServerConfigWithOptions = constant.NewServerConfig(

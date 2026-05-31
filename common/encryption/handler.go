@@ -18,12 +18,13 @@ package encryption
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/alibabacloud-go/tea/tea"
 	dkms_api "github.com/aliyun/alibabacloud-dkms-gcs-go-sdk/openapi"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/logger"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 type HandlerParam struct {
@@ -204,10 +205,6 @@ func innerNewKmsClient(clientConfig constant.ClientConfig) (kmsClient KmsClient,
 		err = fmt.Errorf("init kms client failed. unknown kms version:%s\n", clientConfig.KMSVersion)
 	}
 	return kmsClient, err
-}
-
-func newKmsV1Client(clientConfig constant.ClientConfig) (KmsClient, error) {
-	return NewKmsV1ClientWithAccessKey(clientConfig.RegionId, clientConfig.AccessKey, clientConfig.SecretKey)
 }
 
 func newKmsV3Client(clientConfig constant.ClientConfig) (KmsClient, error) {

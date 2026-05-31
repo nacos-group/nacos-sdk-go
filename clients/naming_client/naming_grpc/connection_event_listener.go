@@ -19,13 +19,13 @@ package naming_grpc
 import (
 	"strings"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
+	"github.com/nacos-group/nacos-sdk-go/v3/clients/naming_client/naming_proxy"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/cache"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/v2/model"
-	"github.com/nacos-group/nacos-sdk-go/v2/util"
+	"github.com/nacos-group/nacos-sdk-go/v3/clients/cache"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v3/model"
+	"github.com/nacos-group/nacos-sdk-go/v3/util"
 )
 
 type ConnectionEventListener struct {

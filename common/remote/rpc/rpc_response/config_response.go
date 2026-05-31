@@ -16,7 +16,7 @@
 
 package rpc_response
 
-import "github.com/nacos-group/nacos-sdk-go/v2/model"
+import "github.com/nacos-group/nacos-sdk-go/v3/model"
 
 type ConfigChangeBatchListenResponse struct {
 	*Response
