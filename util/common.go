@@ -67,8 +67,22 @@ func GetConfigCacheKey(dataId string, group string, tenant string) string {
 }
 
 var localIP = ""
+var customClientIP = ""
+
+// SetCustomClientIP sets a custom client IP to be used in gRPC communication.
+// This will override the auto-detected local IP.
+// Useful for containerized environments where the auto-detected IP might be incorrect.
+func SetCustomClientIP(ip string) {
+	customClientIP = ip
+	if len(customClientIP) > 0 {
+		logger.Infof("Custom Client IP set to: %s", customClientIP)
+	}
+}
 
 func LocalIP() string {
+	if customClientIP != "" {
+		return customClientIP
+	}
 	if localIP == "" {
 		netInterfaces, err := net.Interfaces()
 		if err != nil {

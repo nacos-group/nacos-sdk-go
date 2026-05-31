@@ -244,3 +244,11 @@ func WithAppConnLabels(appConnLabels map[string]string) ClientOption {
 		config.AppConnLabels = appConnLabels
 	}
 }
+
+// WithClientIP sets custom client IP for gRPC communication.
+// This is useful in containerized environments where the auto-detected IP might be incorrect.
+func WithClientIP(clientIP string) ClientOption {
+	return func(config *ClientConfig) {
+		config.ClientIP = clientIP
+	}
+}

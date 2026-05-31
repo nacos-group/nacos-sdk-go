@@ -61,6 +61,7 @@ type ClientConfig struct {
 	EndpointQueryParams  string                   // the address server  endpoint query params
 	ClusterName          string                   // the address server  clusterName
 	AppConnLabels        map[string]string        // app conn labels
+	ClientIP             string                   // the custom client ip, if not set, will use local ip auto detected
 }
 
 type ClientLogSamplingConfig struct {
