@@ -21,7 +21,10 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
@@ -66,51 +69,90 @@ func GetConfigCacheKey(dataId string, group string, tenant string) string {
 	return dataId + constant.CONFIG_INFO_SPLITER + group + constant.CONFIG_INFO_SPLITER + tenant
 }
 
-var localIP = ""
-var customClientIP = ""
+// Environment variable key for overriding the client IP.
+// This takes highest priority, useful for containerized environments (e.g., K8s Pod spec).
+const EnvNacosClientLocalIP = "NACOS_CLIENT_LOCAL_IP"
 
-// SetCustomClientIP sets a custom client IP to be used in gRPC communication.
-// This will override the auto-detected local IP.
-// Useful for containerized environments where the auto-detected IP might be incorrect.
-func SetCustomClientIP(ip string) {
-	customClientIP = ip
-	if len(customClientIP) > 0 {
-		logger.Infof("Custom Client IP set to: %s", customClientIP)
-	}
+var (
+	resolvedIP   string
+	ipOnce       sync.Once
+	configuredIP atomic.Value // string; set via SetClientIPFromConfig before first LocalIP() call
+)
+
+// SetClientIPFromConfig stores the IP from ClientConfig.ClientIP.
+// Typically called by the client factory during initialization before any LocalIP() invocation.
+// This value has second priority after the NACOS_CLIENT_LOCAL_IP environment variable.
+// Uses atomic.Value so concurrent calls and concurrent LocalIP() reads are race-free.
+func SetClientIPFromConfig(ip string) {
+	configuredIP.Store(ip)
 }
 
-func LocalIP() string {
-	if customClientIP != "" {
-		return customClientIP
+func getConfiguredIP() string {
+	v := configuredIP.Load()
+	if v == nil {
+		return ""
 	}
-	if localIP == "" {
-		netInterfaces, err := net.Interfaces()
-		if err != nil {
-			logger.Errorf("get Interfaces failed,err:%+v", err)
-			return ""
-		}
+	s, _ := v.(string)
+	return s
+}
 
-		for i := 0; i < len(netInterfaces); i++ {
-			if ((netInterfaces[i].Flags & net.FlagUp) != 0) && ((netInterfaces[i].Flags & net.FlagLoopback) == 0) {
-				addrs, err := netInterfaces[i].Addrs()
-				if err != nil {
-					logger.Errorf("get InterfaceAddress failed,err:%+v", err)
-					return ""
-				}
-				for _, address := range addrs {
-					if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
-						localIP = ipnet.IP.String()
-						break
-					}
+// LocalIP returns the client IP address. Resolution happens exactly once with the following priority:
+//  1. NACOS_CLIENT_LOCAL_IP environment variable (highest, zero code change needed)
+//  2. ClientConfig.ClientIP set via WithClientIP option
+//  3. Auto-detected from network interfaces (first non-loopback IPv4)
+func LocalIP() string {
+	ipOnce.Do(func() {
+		// Priority 1: environment variable
+		if envIP := os.Getenv(EnvNacosClientLocalIP); envIP != "" {
+			resolvedIP = envIP
+			logger.Infof("Using client IP from environment variable %s: %s", EnvNacosClientLocalIP, resolvedIP)
+			return
+		}
+		// Priority 2: ClientConfig.ClientIP
+		if cfg := getConfiguredIP(); cfg != "" {
+			resolvedIP = cfg
+			logger.Infof("Using client IP from ClientConfig: %s", resolvedIP)
+			return
+		}
+		// Priority 3: auto-detect from network interfaces
+		resolvedIP = detectLocalIP()
+		if resolvedIP != "" {
+			logger.Infof("Local IP:%s", resolvedIP)
+		}
+	})
+	return resolvedIP
+}
+
+// detectLocalIP scans network interfaces and returns the first non-loopback IPv4 address.
+func detectLocalIP() string {
+	netInterfaces, err := net.Interfaces()
+	if err != nil {
+		logger.Errorf("get Interfaces failed,err:%+v", err)
+		return ""
+	}
+
+	for i := 0; i < len(netInterfaces); i++ {
+		if ((netInterfaces[i].Flags & net.FlagUp) != 0) && ((netInterfaces[i].Flags & net.FlagLoopback) == 0) {
+			addrs, err := netInterfaces[i].Addrs()
+			if err != nil {
+				logger.Errorf("get InterfaceAddress failed,err:%+v", err)
+				return ""
+			}
+			for _, address := range addrs {
+				if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
+					return ipnet.IP.String()
 				}
 			}
 		}
-
-		if len(localIP) > 0 {
-			logger.Infof("Local IP:%s", localIP)
-		}
 	}
-	return localIP
+	return ""
+}
+
+// ResetLocalIPForTesting resets the IP resolution state. FOR TESTING ONLY.
+func ResetLocalIPForTesting() {
+	resolvedIP = ""
+	configuredIP = atomic.Value{}
+	ipOnce = sync.Once{}
 }
 
 func GetDurationWithDefault(metadata map[string]string, key string, defaultDuration time.Duration) time.Duration {

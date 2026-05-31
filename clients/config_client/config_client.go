@@ -111,10 +111,6 @@ func NewConfigClientWithRamCredentialProvider(nc nacos_client.INacosClient, prov
 	if err != nil {
 		return nil, err
 	}
-	// Set custom client IP if configured
-	if clientConfig.ClientIP != "" {
-		util.SetCustomClientIP(clientConfig.ClientIP)
-	}
 	serverConfig, err := nc.GetServerConfig()
 	if err != nil {
 		return nil, err
