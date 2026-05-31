@@ -27,6 +27,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -153,6 +154,41 @@ func getKeepAliveTimeMillis() keepalive.ClientParameters {
 	}
 }
 
+// resolveGrpcAddress normalizes serverIp into a proper gRPC target address.
+// It handles:
+//   - Stripping http:// or https:// scheme prefixes
+//   - Detecting IP vs domain name (including bracketed IPv6)
+//   - Applying dns:/// for domains, passthrough:/// for IPs
+//   - Adding brackets around bare IPv6 addresses for correct host:port formatting
+func resolveGrpcAddress(serverIp string, port uint64) string {
+	host := serverIp
+	host = strings.TrimPrefix(host, "http://")
+	host = strings.TrimPrefix(host, "https://")
+
+	// Determine if host is an IP address.
+	// net.ParseIP does not accept bracketed IPv6 like "[::1]",
+	// so we strip brackets before checking.
+	ip := net.ParseIP(host)
+	if ip == nil {
+		bare := strings.TrimPrefix(strings.TrimSuffix(host, "]"), "[")
+		if parsed := net.ParseIP(bare); parsed != nil {
+			ip = parsed
+			// Normalize to bracketed form for correct host:port formatting
+			host = "[" + bare + "]"
+		}
+	} else if strings.ContainsRune(host, ':') {
+		// Bare IPv6 or IPv4-mapped IPv6 (e.g. "::1", "::ffff:127.0.0.1")
+		// must add brackets for unambiguous host:port formatting
+		host = "[" + host + "]"
+	}
+
+	address := host + ":" + strconv.FormatUint(port, 10)
+	if ip != nil {
+		return "passthrough:///" + address
+	}
+	return "dns:///" + address
+}
+
 func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientConn, error) {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(getMaxCallRecvMsgSize())))
@@ -170,14 +206,7 @@ func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientCon
 	if rpcPort == 0 {
 		rpcPort = serverInfo.serverPort + c.rpcPortOffset()
 	}
-	address := serverInfo.serverIp + ":" + strconv.FormatUint(rpcPort, 10)
-	// If serverIp is a domain name (not an IP), use the dns:/// scheme so gRPC
-	// resolves it via the DNS resolver instead of passthrough.
-	if net.ParseIP(serverInfo.serverIp) == nil {
-		address = "dns:///" + address
-	}
-	return grpc.NewClient(address, opts...)
-
+	return grpc.NewClient(resolveGrpcAddress(serverInfo.serverIp, rpcPort), opts...)
 }
 
 func (c *GrpcClient) getEnvTLSConfig(config *constant.TLSConfig) {
