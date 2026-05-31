@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"strconv"
@@ -96,22 +95,24 @@ func getInitialConnWindowSize() int32 {
 	return int32(initialConnWindowSize)
 }
 
-func getTLSCredentials(tlsConfig *constant.TLSConfig, serverInfo ServerInfo) credentials.TransportCredentials {
-
-	logger.Infof("build tls config for connecting to server %s,tlsConfig = %s", serverInfo.serverIp, tlsConfig)
+func getTLSCredentials(tlsConfig *constant.TLSConfig, serverInfo ServerInfo) (credentials.TransportCredentials, error) {
+	logger.Infof("build tls config for connecting to server %s, tlsConfig = %+v", serverInfo.serverIp, tlsConfig)
 
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
-		log.Fatalf("load root cert pool fail : %v", err)
+		logger.Warnf("failed to load system cert pool: %v, using empty pool", err)
+		certPool = x509.NewCertPool()
 	}
+
 	if len(tlsConfig.CaFile) != 0 {
-		cert, err := os.ReadFile(tlsConfig.CaFile)
+		caCert, err := os.ReadFile(tlsConfig.CaFile)
 		if err != nil {
-			_ = fmt.Errorf("err, %v", err)
+			return nil, fmt.Errorf("failed to read CA file %q: %w", tlsConfig.CaFile, err)
 		}
-		if ok := certPool.AppendCertsFromPEM(cert); !ok {
-			_ = fmt.Errorf("failed to append ca certs")
+		if ok := certPool.AppendCertsFromPEM(caCert); !ok {
+			return nil, fmt.Errorf("failed to parse CA certificates from %q", tlsConfig.CaFile)
 		}
+		logger.Infof("loaded custom CA certificates from %s", tlsConfig.CaFile)
 	}
 
 	config := tls.Config{
@@ -119,16 +120,22 @@ func getTLSCredentials(tlsConfig *constant.TLSConfig, serverInfo ServerInfo) cre
 		RootCAs:            certPool,
 		Certificates:       []tls.Certificate{},
 	}
+
+	if len(tlsConfig.ServerNameOverride) > 0 {
+		config.ServerName = tlsConfig.ServerNameOverride
+		logger.Infof("using server name override: %s", tlsConfig.ServerNameOverride)
+	}
+
 	if len(tlsConfig.CertFile) != 0 && len(tlsConfig.KeyFile) != 0 {
 		cert, err := tls.LoadX509KeyPair(tlsConfig.CertFile, tlsConfig.KeyFile)
-
 		if err != nil {
-			log.Fatalf("load cert fail : %v", err)
+			return nil, fmt.Errorf("failed to load client certificate (cert=%q, key=%q): %w", tlsConfig.CertFile, tlsConfig.KeyFile, err)
 		}
 		config.Certificates = append(config.Certificates, cert)
+		logger.Infof("loaded client certificate from %s", tlsConfig.CertFile)
 	}
-	transportCredentials := credentials.NewTLS(&config)
-	return transportCredentials
+
+	return credentials.NewTLS(&config), nil
 }
 
 func getInitialGrpcTimeout() int32 {
@@ -198,7 +205,11 @@ func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientCon
 	c.getEnvTLSConfig(c.TLSConfig)
 	if c.TLSConfig.Enable {
 		logger.Infof(" tls enable ,trying to connection to server %s with tls config %s", serverInfo.serverIp, c.TLSConfig)
-		opts = append(opts, grpc.WithTransportCredentials(getTLSCredentials(c.TLSConfig, serverInfo)))
+		creds, err := getTLSCredentials(c.TLSConfig, serverInfo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build TLS credentials: %w", err)
+		}
+		opts = append(opts, grpc.WithTransportCredentials(creds))
 	} else {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
