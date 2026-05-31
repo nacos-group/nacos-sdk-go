@@ -157,6 +157,9 @@ func (sc *NamingClient) BatchRegisterInstance(param vo.BatchRegisterInstancePara
 
 // DeregisterInstance ...
 func (sc *NamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error) {
+	if param.ServiceName == "" {
+		return false, errors.New("serviceName cannot be empty!")
+	}
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
@@ -197,6 +200,9 @@ func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, erro
 
 // GetService Get service info by Group and DataId, clusters was optional
 func (sc *NamingClient) GetService(param vo.GetServiceParam) (service model.Service, err error) {
+	if param.ServiceName == "" {
+		return model.Service{}, errors.New("serviceName cannot be empty!")
+	}
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
@@ -231,6 +237,9 @@ func (sc *NamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (mod
 
 // SelectAllInstances Get all instance by DataId 和 Group
 func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error) {
+	if param.ServiceName == "" {
+		return nil, errors.New("serviceName cannot be empty!")
+	}
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
@@ -256,6 +265,9 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 
 // SelectInstances Get all instance by DataId, Group and Health
 func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.Instance, error) {
+	if param.ServiceName == "" {
+		return nil, errors.New("serviceName cannot be empty!")
+	}
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
@@ -293,6 +305,9 @@ func (sc *NamingClient) selectInstances(service model.Service, healthy bool) ([]
 
 // SelectOneHealthyInstance Get one healthy instance by DataId and Group
 func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanceParam) (*model.Instance, error) {
+	if param.ServiceName == "" {
+		return nil, errors.New("serviceName cannot be empty!")
+	}
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
@@ -339,6 +354,9 @@ func (sc *NamingClient) selectOneHealthyInstances(service model.Service) (*model
 
 // Subscribe ...
 func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
+	if param.ServiceName == "" {
+		return errors.New("serviceName cannot be empty!")
+	}
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
@@ -351,6 +369,9 @@ func (sc *NamingClient) Subscribe(param *vo.SubscribeParam) error {
 
 // Unsubscribe ...
 func (sc *NamingClient) Unsubscribe(param *vo.SubscribeParam) (err error) {
+	if param.ServiceName == "" {
+		return errors.New("serviceName cannot be empty!")
+	}
 	clusterSelector := naming_cache.NewClusterSelector(param.Clusters)
 	callbackWrapper := naming_cache.NewSubscribeCallbackFuncWrapper(clusterSelector, &param.SubscribeCallback)
 	serviceFullName := util.GetGroupName(param.ServiceName, param.GroupName)
