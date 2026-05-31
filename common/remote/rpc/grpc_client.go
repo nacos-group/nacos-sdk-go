@@ -31,6 +31,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"google.golang.org/grpc/credentials"
+
 	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
@@ -221,7 +223,7 @@ func (c *GrpcClient) createNewConnection(serverInfo ServerInfo) (*grpc.ClientCon
 }
 
 func (c *GrpcClient) getEnvTLSConfig(config *constant.TLSConfig) {
-	logger.Infof("check tls config ", config)
+	logger.Infof("check tls config: %v", config)
 
 	if config.Appointed == true {
 		return
