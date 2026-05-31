@@ -84,7 +84,7 @@ func TestLocalIP_PriorityResolution(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset state for each subtest (since LocalIP uses sync.Once)
-			ResetLocalIPForTesting()
+			resetLocalIPForTesting()
 
 			// Setup environment
 			if tt.setup.envIP != "" {
@@ -107,14 +107,14 @@ func TestLocalIP_PriorityResolution(t *testing.T) {
 		})
 	}
 
-	ResetLocalIPForTesting()
+	resetLocalIPForTesting()
 }
 
 // TestLocalIP_OnceSemantics verifies that LocalIP() resolves exactly once
 // even if env/config change later.
 func TestLocalIP_OnceSemantics(t *testing.T) {
-	ResetLocalIPForTesting()
-	defer ResetLocalIPForTesting()
+	resetLocalIPForTesting()
+	defer resetLocalIPForTesting()
 
 	t.Setenv(EnvNacosClientLocalIP, "10.0.0.1")
 	first := LocalIP()
@@ -130,8 +130,8 @@ func TestLocalIP_OnceSemantics(t *testing.T) {
 
 // TestSetClientIPFromConfig_BeforeFirstResolution verifies the typical client_factory flow.
 func TestSetClientIPFromConfig_BeforeFirstResolution(t *testing.T) {
-	ResetLocalIPForTesting()
-	defer ResetLocalIPForTesting()
+	resetLocalIPForTesting()
+	defer resetLocalIPForTesting()
 
 	_ = os.Unsetenv(EnvNacosClientLocalIP)
 	SetClientIPFromConfig("172.16.0.5")
@@ -142,8 +142,8 @@ func TestSetClientIPFromConfig_BeforeFirstResolution(t *testing.T) {
 
 // TestSetClientIPFromConfig_EmptyValueIgnored verifies passing empty string is a no-op.
 func TestSetClientIPFromConfig_EmptyValueIgnored(t *testing.T) {
-	ResetLocalIPForTesting()
-	defer ResetLocalIPForTesting()
+	resetLocalIPForTesting()
+	defer resetLocalIPForTesting()
 
 	_ = os.Unsetenv(EnvNacosClientLocalIP)
 	SetClientIPFromConfig("")
@@ -159,8 +159,8 @@ func TestSetClientIPFromConfig_EmptyValueIgnored(t *testing.T) {
 // TestLocalIP_ConcurrentAccess stresses the sync.Once guarantee under heavy concurrent load.
 // Without sync.Once, this would race on resolvedIP read/write.
 func TestLocalIP_ConcurrentAccess(t *testing.T) {
-	ResetLocalIPForTesting()
-	defer ResetLocalIPForTesting()
+	resetLocalIPForTesting()
+	defer resetLocalIPForTesting()
 
 	t.Setenv(EnvNacosClientLocalIP, "192.168.100.100")
 
@@ -196,8 +196,8 @@ func TestLocalIP_ConcurrentAccess(t *testing.T) {
 // Note: in production, SetClientIPFromConfig is called once during init, before any reads.
 // But we still want this to be race-detector clean.
 func TestLocalIP_ConcurrentSetAndRead(t *testing.T) {
-	ResetLocalIPForTesting()
-	defer ResetLocalIPForTesting()
+	resetLocalIPForTesting()
+	defer resetLocalIPForTesting()
 
 	_ = os.Unsetenv(EnvNacosClientLocalIP)
 
@@ -233,8 +233,8 @@ func TestEnvNacosClientLocalIP_ConstantValue(t *testing.T) {
 
 // TestLocalIP_AutoDetectFallback verifies fallback works when neither env nor config is set.
 func TestLocalIP_AutoDetectFallback(t *testing.T) {
-	ResetLocalIPForTesting()
-	defer ResetLocalIPForTesting()
+	resetLocalIPForTesting()
+	defer resetLocalIPForTesting()
 
 	_ = os.Unsetenv(EnvNacosClientLocalIP)
 	// Explicitly do not call SetClientIPFromConfig
@@ -277,7 +277,7 @@ func TestLocalIP_PriorityOrder_Table(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ResetLocalIPForTesting()
+			resetLocalIPForTesting()
 			if tt.envIP != "" {
 				t.Setenv(EnvNacosClientLocalIP, tt.envIP)
 			} else {
@@ -290,5 +290,5 @@ func TestLocalIP_PriorityOrder_Table(t *testing.T) {
 		})
 	}
 
-	ResetLocalIPForTesting()
+	resetLocalIPForTesting()
 }

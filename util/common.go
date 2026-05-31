@@ -148,8 +148,10 @@ func detectLocalIP() string {
 	return ""
 }
 
-// ResetLocalIPForTesting resets the IP resolution state. FOR TESTING ONLY.
-func ResetLocalIPForTesting() {
+// resetLocalIPForTesting resets the IP resolution state. FOR TESTING ONLY.
+// Lowercase intentionally: this helper must NOT be part of the public API,
+// otherwise external callers could wipe an already-resolved IP at runtime.
+func resetLocalIPForTesting() {
 	resolvedIP = ""
 	configuredIP = atomic.Value{}
 	ipOnce = sync.Once{}
