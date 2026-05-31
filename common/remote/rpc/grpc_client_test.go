@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/constant"
 )
 
 func TestResolveGrpcAddress(t *testing.T) {
