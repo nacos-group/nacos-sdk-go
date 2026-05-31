@@ -457,6 +457,74 @@ func BenchmarkNamingClient_SelectOneHealthyInstances(b *testing.B) {
 
 }
 
+func TestNamingClient_Subscribe_EmptyServiceName(t *testing.T) {
+	callback := func(services []model.Instance, err error) {}
+	err := NewTestNamingClient().Subscribe(&vo.SubscribeParam{
+		ServiceName:       "",
+		GroupName:         "DEFAULT_GROUP",
+		SubscribeCallback: callback,
+	})
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "serviceName cannot be empty")
+}
+
+func TestNamingClient_Unsubscribe_EmptyServiceName(t *testing.T) {
+	callback := func(services []model.Instance, err error) {}
+	err := NewTestNamingClient().Unsubscribe(&vo.SubscribeParam{
+		ServiceName:       "",
+		GroupName:         "DEFAULT_GROUP",
+		SubscribeCallback: callback,
+	})
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "serviceName cannot be empty")
+}
+
+func TestNamingClient_DeregisterInstance_EmptyServiceName(t *testing.T) {
+	_, err := NewTestNamingClient().DeregisterInstance(vo.DeregisterInstanceParam{
+		ServiceName: "",
+		Ip:          "10.0.0.10",
+		Port:        80,
+	})
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "serviceName cannot be empty")
+}
+
+func TestNamingClient_GetService_EmptyServiceName(t *testing.T) {
+	_, err := NewTestNamingClient().GetService(vo.GetServiceParam{
+		ServiceName: "",
+		GroupName:   "DEFAULT_GROUP",
+	})
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "serviceName cannot be empty")
+}
+
+func TestNamingClient_SelectAllInstances_EmptyServiceName(t *testing.T) {
+	_, err := NewTestNamingClient().SelectAllInstances(vo.SelectAllInstancesParam{
+		ServiceName: "",
+		GroupName:   "DEFAULT_GROUP",
+	})
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "serviceName cannot be empty")
+}
+
+func TestNamingClient_SelectInstances_EmptyServiceName(t *testing.T) {
+	_, err := NewTestNamingClient().SelectInstances(vo.SelectInstancesParam{
+		ServiceName: "",
+		GroupName:   "DEFAULT_GROUP",
+	})
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "serviceName cannot be empty")
+}
+
+func TestNamingClient_SelectOneHealthyInstance_EmptyServiceName(t *testing.T) {
+	_, err := NewTestNamingClient().SelectOneHealthyInstance(vo.SelectOneHealthInstanceParam{
+		ServiceName: "",
+		GroupName:   "DEFAULT_GROUP",
+	})
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "serviceName cannot be empty")
+}
+
 func TestNamingClient_Unsubscribe_WithCallback_ShouldNotCallServiceProxyUnsubscribe(t *testing.T) {
 	// 创建一个带有回调函数的订阅参数
 	callback := func(services []model.Instance, err error) {
