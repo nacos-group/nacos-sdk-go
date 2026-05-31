@@ -31,8 +31,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"google.golang.org/grpc/credentials"
-
 	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/v3/common/remote/rpc/rpc_request"
