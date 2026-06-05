@@ -18,10 +18,16 @@ package nacos_server
 
 import (
 	"context"
+	"bytes"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
+	"github.com/nacos-group/nacos-sdk-go/v2/mock"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/stretchr/testify/assert"
@@ -184,4 +190,88 @@ func TestNacosServer_UpdateServerListForSecurityLogin(t *testing.T) {
 	client, ok := nacosAuthClient.(*security.NacosAuthClient)
 	assert.True(t, ok)
 	assert.Equal(t, server.GetServerList(), client.GetServerList())
+}
+
+func TestEndpointMode_LoginAndInjectToken(t *testing.T) {
+	endpoint := "endpoint.example.com:8080"
+	clientConfig := constant.ClientConfig{
+		Username:            "nacos",
+		Password:            "nacos",
+		NamespaceId:         "public",
+		Endpoint:            endpoint,
+		EndpointContextPath: "nacos",
+		ClusterName:         "serverlist",
+		TimeoutMs:           3000,
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockAgent := mock.NewMockIHttpAgent(ctrl)
+
+	// 1) Endpoint discovery returns a server list
+	mockAgent.
+		EXPECT().
+		RequestOnlyResult(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(method, path string, header http.Header, timeoutMs uint64, params map[string]string) string {
+			if method != http.MethodGet {
+				t.Fatalf("expected GET for endpoint discovery, got %s", method)
+			}
+			if !strings.Contains(path, endpoint) {
+				t.Fatalf("unexpected endpoint discovery URL: %s", path)
+			}
+			// Return one server
+			return "127.0.0.1:8848"
+		})
+
+	// 2) Login against discovered server
+	mockAgent.
+		EXPECT().
+		Post(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(path string, header http.Header, timeoutMs uint64, params map[string]string) (*http.Response, error) {
+			if !strings.Contains(path, "127.0.0.1:8848") || !strings.Contains(path, "/v1/auth/users/login") {
+				t.Fatalf("unexpected login URL: %s", path)
+			}
+			if params["username"] != "nacos" || params["password"] != "nacos" {
+				t.Fatalf("unexpected login params: %+v", params)
+			}
+			resp := &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewBufferString(`{"accessToken":"token-abc","tokenTtl":1000}`)),
+			}
+			return resp, nil
+		})
+
+	// 3) Subsequent API call should include accessToken injected in params
+	mockAgent.
+		EXPECT().
+		Request(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(method, url string, header http.Header, timeoutMs uint64, params map[string]string) (*http.Response, error) {
+			if params[constant.KEY_ACCESS_TOKEN] != "token-abc" {
+				t.Fatalf("expected access token to be injected, got: %s", params[constant.KEY_ACCESS_TOKEN])
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewBufferString("ok")),
+			}, nil
+		})
+
+	server, err := NewNacosServer(context.Background(),
+		nil,
+		clientConfig,
+		mockAgent,
+		1000,
+		endpoint,
+		nil)
+	if err != nil {
+		t.FailNow()
+	}
+
+	params := map[string]string{
+		"namespaceId": clientConfig.NamespaceId,
+		"serviceName": "svc",
+		"groupName":   constant.DEFAULT_GROUP,
+	}
+	_, err = server.ReqApi(constant.SERVICE_PATH, params, http.MethodPost, clientConfig)
+	assert.NoError(t, err)
 }
