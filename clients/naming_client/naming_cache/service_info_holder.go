@@ -193,8 +193,13 @@ func isServiceInstanceChanged(oldService, newService model.Service) bool {
 		logger.Warnf("out of date data received, old-t: %v , new-t:  %v", oldRefTime, newRefTime)
 		return false
 	}
-	// sort instance list
-	oldInstance := oldService.Hosts
+	// sort instance list. oldService.Hosts shares its backing array with the
+	// model.Service value already stored in (and possibly concurrently read
+	// back out of) ServiceInfoMap, so it must be copied before an in-place
+	// sort -- sorting it directly races with any concurrent reader holding
+	// an earlier GetServiceInfo/GetService result over the same array.
+	oldInstance := make([]model.Instance, len(oldService.Hosts))
+	copy(oldInstance, oldService.Hosts)
 	newInstance := make([]model.Instance, len(newService.Hosts))
 	copy(newInstance, newService.Hosts)
 	sortInstance(oldInstance)
