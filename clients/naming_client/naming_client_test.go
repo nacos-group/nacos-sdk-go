@@ -20,10 +20,12 @@ import (
 	"testing"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
+	"github.com/pkg/errors"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/nacos_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
+	"github.com/nacos-group/nacos-sdk-go/v2/util"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"github.com/stretchr/testify/assert"
 )
@@ -39,6 +41,11 @@ var serverConfigTest = *constant.NewServerConfig("127.0.0.1", 80, constant.WithC
 type MockNamingProxy struct {
 	unsubscribeCalled bool
 	unsubscribeParams []string // 记录调用参数
+
+	subscribeCalled bool
+	subscribeErr    error
+	subscribeResult model.Service
+	subscribed      bool
 }
 
 func (m *MockNamingProxy) RegisterInstance(serviceName string, groupName string, instance model.Instance) (bool, error) {
@@ -66,7 +73,15 @@ func (m *MockNamingProxy) QueryInstancesOfService(serviceName, groupName, cluste
 }
 
 func (m *MockNamingProxy) Subscribe(serviceName, groupName, clusters string) (model.Service, error) {
-	return model.Service{}, nil
+	m.subscribeCalled = true
+	if m.subscribeErr != nil {
+		return model.Service{}, m.subscribeErr
+	}
+	return m.subscribeResult, nil
+}
+
+func (m *MockNamingProxy) IsSubscribed(serviceName, groupName, clusters string) bool {
+	return m.subscribed
 }
 
 func (m *MockNamingProxy) Unsubscribe(serviceName, groupName, clusters string) error {
@@ -628,4 +643,60 @@ func TestNamingClient_Unsubscribe_Integration_Test(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, mockProxy.unsubscribeCalled)
 
+}
+
+func seedCachedService(client *NamingClient, serviceName, groupName string, service model.Service) {
+	cacheKey := util.GetServiceCacheKey(util.GetGroupName(serviceName, groupName), "")
+	client.serviceInfoHolder.ServiceInfoMap.Store(cacheKey, service)
+}
+
+func TestNamingClient_GetServiceInfoWithSubscribe_NotCached(t *testing.T) {
+	client := NewTestNamingClient()
+	mockProxy := client.serviceProxy.(*MockNamingProxy)
+	mockProxy.subscribeResult = model.Service{Name: "DEMO", GroupName: "DEFAULT_GROUP"}
+
+	service, err := client.getServiceInfoWithSubscribe("DEMO", "DEFAULT_GROUP")
+	assert.Nil(t, err)
+	assert.True(t, mockProxy.subscribeCalled)
+	assert.Equal(t, "DEMO", service.Name)
+}
+
+func TestNamingClient_GetServiceInfoWithSubscribe_CachedAndSubscribed(t *testing.T) {
+	client := NewTestNamingClient()
+	mockProxy := client.serviceProxy.(*MockNamingProxy)
+	mockProxy.subscribed = true
+	cachedService := model.Service{Name: "DEMO", GroupName: "DEFAULT_GROUP"}
+	seedCachedService(client, "DEMO", "DEFAULT_GROUP", cachedService)
+
+	service, err := client.getServiceInfoWithSubscribe("DEMO", "DEFAULT_GROUP")
+	assert.Nil(t, err)
+	assert.False(t, mockProxy.subscribeCalled, "should not subscribe again when already subscribed")
+	assert.Equal(t, "DEMO", service.Name)
+}
+
+func TestNamingClient_GetServiceInfoWithSubscribe_CachedButNotSubscribed(t *testing.T) {
+	client := NewTestNamingClient()
+	mockProxy := client.serviceProxy.(*MockNamingProxy)
+	freshService := model.Service{Name: "DEMO", GroupName: "DEFAULT_GROUP", LastRefTime: 2}
+	mockProxy.subscribeResult = freshService
+	cachedService := model.Service{Name: "DEMO", GroupName: "DEFAULT_GROUP", LastRefTime: 1}
+	seedCachedService(client, "DEMO", "DEFAULT_GROUP", cachedService)
+
+	service, err := client.getServiceInfoWithSubscribe("DEMO", "DEFAULT_GROUP")
+	assert.Nil(t, err)
+	assert.True(t, mockProxy.subscribeCalled, "cached service loaded from disk must still be subscribed")
+	assert.Equal(t, uint64(2), service.LastRefTime, "should return the freshly subscribed service info")
+}
+
+func TestNamingClient_GetServiceInfoWithSubscribe_SubscribeFailsFallbackToCache(t *testing.T) {
+	client := NewTestNamingClient()
+	mockProxy := client.serviceProxy.(*MockNamingProxy)
+	mockProxy.subscribeErr = errors.New("server unavailable")
+	cachedService := model.Service{Name: "DEMO", GroupName: "DEFAULT_GROUP", LastRefTime: 1}
+	seedCachedService(client, "DEMO", "DEFAULT_GROUP", cachedService)
+
+	service, err := client.getServiceInfoWithSubscribe("DEMO", "DEFAULT_GROUP")
+	assert.Nil(t, err, "subscribe failure must fall back to the local cache")
+	assert.True(t, mockProxy.subscribeCalled)
+	assert.Equal(t, uint64(1), service.LastRefTime, "should return the cached service info")
 }

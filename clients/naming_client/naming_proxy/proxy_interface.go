@@ -36,6 +36,8 @@ type INamingProxy interface {
 
 	Subscribe(serviceName, groupName, clusters string) (model.Service, error)
 
+	IsSubscribed(serviceName, groupName, clusters string) bool
+
 	Unsubscribe(serviceName, groupName, clusters string) error
 
 	CloseClient()

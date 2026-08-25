@@ -209,6 +209,10 @@ func (proxy *NamingHttpProxy) Subscribe(serviceName, groupName, clusters string)
 }
 
 // Unsubscribe ...
+func (proxy *NamingHttpProxy) IsSubscribed(serviceName, groupName, clusters string) bool {
+	return false
+}
+
 func (proxy *NamingHttpProxy) Unsubscribe(serviceName, groupName, clusters string) error {
 	return nil
 }

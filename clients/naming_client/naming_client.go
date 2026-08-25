@@ -209,12 +209,11 @@ func (sc *NamingClient) GetService(param vo.GetServiceParam) (service model.Serv
 	if len(param.GroupName) == 0 {
 		param.GroupName = constant.DEFAULT_GROUP
 	}
-	var ok bool
 	clusterSelector := naming_cache.NewClusterSelector(param.Clusters)
 	clusters := strings.Join(param.Clusters, ",")
-	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, "")
-	if !ok {
-		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, "")
+	service, err = sc.getServiceInfoWithSubscribe(param.ServiceName, param.GroupName)
+	if err != nil {
+		return model.Service{}, err
 	}
 	service.Clusters = clusters
 	service.Hosts = clusterSelector.SelectInstance(&service)
@@ -248,14 +247,10 @@ func (sc *NamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]
 	}
 	var (
 		service model.Service
-		ok      bool
 		err     error
 	)
 	clusterSelector := naming_cache.NewClusterSelector(param.Clusters)
-	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, "")
-	if !ok {
-		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, "")
-	}
+	service, err = sc.getServiceInfoWithSubscribe(param.ServiceName, param.GroupName)
 	if err != nil {
 		return []model.Instance{}, err
 	}
@@ -276,16 +271,12 @@ func (sc *NamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.
 	}
 	var (
 		service model.Service
-		ok      bool
 		err     error
 	)
 	clusterSelector := naming_cache.NewClusterSelector(param.Clusters)
-	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, "")
-	if !ok {
-		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, "")
-		if err != nil {
-			return nil, err
-		}
+	service, err = sc.getServiceInfoWithSubscribe(param.ServiceName, param.GroupName)
+	if err != nil {
+		return nil, err
 	}
 	service.Hosts = clusterSelector.SelectInstance(&service)
 	return sc.selectInstances(service, param.HealthyOnly)
@@ -316,16 +307,12 @@ func (sc *NamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanc
 	}
 	var (
 		service model.Service
-		ok      bool
 		err     error
 	)
 	clusterSelector := naming_cache.NewClusterSelector(param.Clusters)
-	service, ok = sc.serviceInfoHolder.GetServiceInfo(param.ServiceName, param.GroupName, "")
-	if !ok {
-		service, err = sc.serviceProxy.Subscribe(param.ServiceName, param.GroupName, "")
-		if err != nil {
-			return nil, err
-		}
+	service, err = sc.getServiceInfoWithSubscribe(param.ServiceName, param.GroupName)
+	if err != nil {
+		return nil, err
 	}
 	service.Hosts = clusterSelector.SelectInstance(&service)
 	return sc.selectOneHealthyInstances(service)
@@ -353,6 +340,28 @@ func (sc *NamingClient) selectOneHealthyInstances(service model.Service) (*model
 
 	instance := newChooser(result).pick()
 	return &instance, nil
+}
+
+// getServiceInfoWithSubscribe returns the cached service info while making
+// sure the service is subscribed on the server side, aligning with the Java
+// SDK tryToSubscribe: a service loaded from the local disk cache at startup
+// is still subscribed, and the local cache is used as fallback when the
+// subscribe request fails.
+func (sc *NamingClient) getServiceInfoWithSubscribe(serviceName, groupName string) (model.Service, error) {
+	service, ok := sc.serviceInfoHolder.GetServiceInfo(serviceName, groupName, "")
+	if !ok {
+		return sc.serviceProxy.Subscribe(serviceName, groupName, "")
+	}
+	if sc.serviceProxy.IsSubscribed(serviceName, groupName, "") {
+		return service, nil
+	}
+	subscribedService, err := sc.serviceProxy.Subscribe(serviceName, groupName, "")
+	if err != nil {
+		logger.Warnf("subscribe service from server failed, fall back to the local cache. service:<%s>, error:<%v>",
+			util.GetGroupName(serviceName, groupName), err)
+		return service, nil
+	}
+	return subscribedService, nil
 }
 
 // Subscribe ...
