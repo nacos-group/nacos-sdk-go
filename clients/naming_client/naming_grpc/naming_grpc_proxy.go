@@ -169,7 +169,7 @@ func (proxy *NamingGrpcProxy) QueryInstancesOfService(serviceName, groupName, cl
 }
 
 func (proxy *NamingGrpcProxy) IsSubscribed(serviceName, groupName string, clusters string) bool {
-	return proxy.eventListener.IsSubscriberCached(util.GetServiceCacheKey(util.GetGroupName(serviceName, groupName), clusters))
+	return proxy.eventListener.IsSubscriberRegistered(util.GetServiceCacheKey(util.GetGroupName(serviceName, groupName), clusters))
 }
 
 // Subscribe ...
@@ -182,8 +182,11 @@ func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters 
 	request.Headers["app"] = proxy.clientConfig.AppName
 	response, err := proxy.requestToServer(request)
 	if err != nil {
+		// The redo entry stays cached but unconfirmed, so the subscription is
+		// retried on the next attempt or when the connection is re-established.
 		return model.Service{}, err
 	}
+	proxy.eventListener.SubscriberRegistered(util.GetGroupName(serviceName, groupName), clusters)
 	subscribeServiceResponse := response.(*rpc_response.SubscribeServiceResponse)
 	return subscribeServiceResponse.ServiceInfo, nil
 }
