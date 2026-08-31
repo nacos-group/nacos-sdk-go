@@ -49,7 +49,22 @@ func (c *ConnectionEventListener) OnConnected() {
 }
 
 func (c *ConnectionEventListener) OnDisConnect() {
+	c.SubscriberOnDisconnect()
+}
 
+// SubscriberOnDisconnect resets the confirmed state of every cached subscriber
+// redo entry, aligning with the Java SDK NamingGrpcRedoService onDisConnect:
+// subscriptions confirmed on the lost connection become unconfirmed, so the
+// reconnect redo retries them and IsSubscriberRegistered no longer reports
+// them as subscribed.
+func (c *ConnectionEventListener) SubscriberOnDisconnect() {
+	for _, key := range c.subscribes.Keys() {
+		if entry, ok := c.subscribes.Get(key); ok {
+			if redoEntry, ok := entry.(*subscriberRedoEntry); ok {
+				redoEntry.registered.Store(false)
+			}
+		}
+	}
 }
 
 func (c *ConnectionEventListener) redoSubscribe() {
