@@ -584,18 +584,23 @@ func (c *ConnectionEvent) isDisConnected() bool {
 	return c.eventType == DISCONNECTED
 }
 
+// getStatus atomically loads the current status of this client.
+func (r *RpcClient) getStatus() RpcClientStatus {
+	return RpcClientStatus(atomic.LoadInt32((*int32)(&r.rpcClientStatus)))
+}
+
 // check is this client is shutdown.
 func (r *RpcClient) isShutdown() bool {
-	return atomic.LoadInt32((*int32)(&r.rpcClientStatus)) == (int32)(SHUTDOWN)
+	return r.getStatus() == SHUTDOWN
 }
 
 // IsRunning check is this client is running.
 func (r *RpcClient) IsRunning() bool {
-	return atomic.LoadInt32((*int32)(&r.rpcClientStatus)) == (int32)(RUNNING)
+	return r.getStatus() == RUNNING
 }
 
 func (r *RpcClient) IsInitialized() bool {
-	return atomic.LoadInt32((*int32)(&r.rpcClientStatus)) == (int32)(INITIALIZED)
+	return r.getStatus() == INITIALIZED
 }
 
 func (c *ConnectionEvent) toString() string {
@@ -616,7 +621,7 @@ func (r *RpcClient) Request(request rpc_request.IRequest, timeoutMills int64) (r
 		conn := r.GetCurrentConnection()
 		if conn == nil || !r.IsRunning() {
 			currentErr = waitReconnect(timeoutMills, &retryTimes, request,
-				errors.Errorf("client not connected, current status:%s", r.rpcClientStatus.getDesc()))
+				errors.Errorf("client not connected, current status:%s", r.getStatus().getDesc()))
 			continue
 		}
 		response, err := conn.request(request, timeoutMills, r)
