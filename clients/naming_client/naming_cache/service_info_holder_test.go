@@ -18,6 +18,7 @@ package naming_cache
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -284,4 +285,61 @@ func newTestService(serviceName, ip string, lastRefTime uint64) *model.Service {
 			},
 		},
 	}
+}
+
+// TestIsServiceInstanceChanged_NoDataRace 验证 isServiceInstanceChanged 不会在排序时修改原始 Hosts 切片
+// 回归测试 https://github.com/nacos-group/nacos-sdk-go/issues/818
+func TestIsServiceInstanceChanged_NoDataRace(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+	// 构造一个包含多个实例的 service，Hosts 顺序是乱序的
+	ip := createRandomIp()
+	basePort := creatRandomPort()
+	oldService := model.Service{
+		LastRefTime: 1000,
+		Hosts: []model.Instance{
+			{Ip: ip, Port: basePort + 5},
+			{Ip: ip, Port: basePort + 1},
+			{Ip: ip, Port: basePort + 3},
+			{Ip: ip, Port: basePort + 2},
+			{Ip: ip, Port: basePort + 4},
+		},
+	}
+	// newService 与 oldService 实例相同但顺序不同
+	newService := model.Service{
+		LastRefTime: 1001,
+		Hosts: []model.Instance{
+			{Ip: ip, Port: basePort + 1},
+			{Ip: ip, Port: basePort + 2},
+			{Ip: ip, Port: basePort + 3},
+			{Ip: ip, Port: basePort + 4},
+			{Ip: ip, Port: basePort + 5},
+		},
+	}
+	// 保存原始顺序用于后续验证
+	originalHosts := make([]model.Instance, len(oldService.Hosts))
+	copy(originalHosts, oldService.Hosts)
+
+	// 并发场景：一个 goroutine 调用 isServiceInstanceChanged（内部排序），
+	// 另一个 goroutine 读取 oldService.Hosts（模拟 selectInstances 的遍历）
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 100; i++ {
+			isServiceInstanceChanged(oldService, newService)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 100; i++ {
+			// 模拟 selectInstances 中遍历 Hosts
+			for _, host := range oldService.Hosts {
+				_ = host.Ip
+				_ = host.Port
+			}
+		}
+	}()
+	wg.Wait()
+	// 验证 isServiceInstanceChanged 没有修改原始 Hosts 切片
+	assert.Equal(t, originalHosts, oldService.Hosts, "isServiceInstanceChanged 不应修改原始 Hosts 切片")
 }
