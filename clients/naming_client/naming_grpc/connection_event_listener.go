@@ -18,6 +18,7 @@ package naming_grpc
 
 import (
 	"strings"
+	"sync/atomic"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
 
@@ -48,7 +49,22 @@ func (c *ConnectionEventListener) OnConnected() {
 }
 
 func (c *ConnectionEventListener) OnDisConnect() {
+	c.SubscriberOnDisconnect()
+}
 
+// SubscriberOnDisconnect resets the confirmed state of every cached subscriber
+// redo entry, aligning with the Java SDK NamingGrpcRedoService onDisConnect:
+// subscriptions confirmed on the lost connection become unconfirmed, so the
+// reconnect redo retries them and IsSubscriberRegistered no longer reports
+// them as subscribed.
+func (c *ConnectionEventListener) SubscriberOnDisconnect() {
+	for _, key := range c.subscribes.Keys() {
+		if entry, ok := c.subscribes.Get(key); ok {
+			if redoEntry, ok := entry.(*subscriberRedoEntry); ok {
+				redoEntry.registered.Store(false)
+			}
+		}
+	}
 }
 
 func (c *ConnectionEventListener) redoSubscribe() {
@@ -113,16 +129,47 @@ func (c *ConnectionEventListener) RemoveInstanceForRedo(serviceName, groupName s
 	c.registeredInstanceCached.Remove(key)
 }
 
+// subscriberRedoEntry tracks a cached subscription redo intent along with
+// whether the subscription has been confirmed by the server. It aligns with
+// the Java SDK SubscriberRedoData: the redo intent is cached before the
+// subscribe request is sent, while the registered state is only confirmed
+// after a successful subscribe response.
+type subscriberRedoEntry struct {
+	registered atomic.Bool
+}
+
 func (c *ConnectionEventListener) CacheSubscriberForRedo(fullServiceName, clusters string) {
 	key := util.GetServiceCacheKey(fullServiceName, clusters)
 	if !c.IsSubscriberCached(key) {
-		c.subscribes.Set(key, struct{}{})
+		c.subscribes.Set(key, &subscriberRedoEntry{})
 	}
 }
 
 func (c *ConnectionEventListener) IsSubscriberCached(key string) bool {
 	_, ok := c.subscribes.Get(key)
 	return ok
+}
+
+// SubscriberRegistered marks the cached redo entry as confirmed after a
+// successful subscribe response.
+func (c *ConnectionEventListener) SubscriberRegistered(fullServiceName, clusters string) {
+	if entry, ok := c.subscribes.Get(util.GetServiceCacheKey(fullServiceName, clusters)); ok {
+		if redoEntry, ok := entry.(*subscriberRedoEntry); ok {
+			redoEntry.registered.Store(true)
+		}
+	}
+}
+
+// IsSubscriberRegistered reports whether the subscription has been confirmed
+// by the server. A redo entry cached before a failed subscribe request is
+// not considered registered.
+func (c *ConnectionEventListener) IsSubscriberRegistered(key string) bool {
+	entry, ok := c.subscribes.Get(key)
+	if !ok {
+		return false
+	}
+	redoEntry, ok := entry.(*subscriberRedoEntry)
+	return ok && redoEntry.registered.Load()
 }
 
 func (c *ConnectionEventListener) RemoveSubscriberForRedo(fullServiceName, clusters string) {

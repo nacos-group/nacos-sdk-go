@@ -91,6 +91,20 @@ func (mr *MockINamingProxyMockRecorder) GetServiceList(pageNo, pageSize, groupNa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceList", reflect.TypeOf((*MockINamingProxy)(nil).GetServiceList), pageNo, pageSize, groupName, namespaceId, selector)
 }
 
+// IsSubscribed mocks base method.
+func (m *MockINamingProxy) IsSubscribed(serviceName, groupName, clusters string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSubscribed", serviceName, groupName, clusters)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsSubscribed indicates an expected call of IsSubscribed.
+func (mr *MockINamingProxyMockRecorder) IsSubscribed(serviceName, groupName, clusters interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSubscribed", reflect.TypeOf((*MockINamingProxy)(nil).IsSubscribed), serviceName, groupName, clusters)
+}
+
 // QueryInstancesOfService mocks base method.
 func (m *MockINamingProxy) QueryInstancesOfService(serviceName, groupName, clusters string, udpPort int, healthyOnly bool) (*model.Service, error) {
 	m.ctrl.T.Helper()

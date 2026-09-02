@@ -20,6 +20,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
@@ -41,6 +43,9 @@ type NamingGrpcProxy struct {
 	rpcClient         rpc.IRpcClient
 	eventListener     *ConnectionEventListener
 	serviceInfoHolder *naming_cache.ServiceInfoHolder
+
+	// requestToServerFn allows tests to stub the rpc round-trip; nil in production.
+	requestToServerFn func(request rpc_request.IRequest) (rpc_response.IResponse, error)
 }
 
 // NewNamingGrpcProxy create naming grpc proxy
@@ -83,6 +88,9 @@ func NewNamingGrpcProxy(ctx context.Context, clientCfg constant.ClientConfig, na
 }
 
 func (proxy *NamingGrpcProxy) requestToServer(request rpc_request.IRequest) (rpc_response.IResponse, error) {
+	if proxy.requestToServerFn != nil {
+		return proxy.requestToServerFn(request)
+	}
 	start := time.Now()
 	proxy.nacosServer.InjectSecurityInfo(request.GetHeaders(), security.BuildNamingResourceByRequest(request))
 	response, err := proxy.rpcClient.GetRpcClient().Request(request, int64(proxy.clientConfig.TimeoutMs))
@@ -169,7 +177,7 @@ func (proxy *NamingGrpcProxy) QueryInstancesOfService(serviceName, groupName, cl
 }
 
 func (proxy *NamingGrpcProxy) IsSubscribed(serviceName, groupName string, clusters string) bool {
-	return proxy.eventListener.IsSubscriberCached(util.GetServiceCacheKey(util.GetGroupName(serviceName, groupName), clusters))
+	return proxy.eventListener.IsSubscriberRegistered(util.GetServiceCacheKey(util.GetGroupName(serviceName, groupName), clusters))
 }
 
 // Subscribe ...
@@ -182,9 +190,24 @@ func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters 
 	request.Headers["app"] = proxy.clientConfig.AppName
 	response, err := proxy.requestToServer(request)
 	if err != nil {
+		// The redo entry stays cached but unconfirmed, so the subscription is
+		// retried on the next attempt or when the connection is re-established.
 		return model.Service{}, err
 	}
-	subscribeServiceResponse := response.(*rpc_response.SubscribeServiceResponse)
+	// The rpc layer returns a nil error even for a failed business response
+	// (RpcClient.Request only logs non-ErrorResponse failures), so the
+	// subscription is confirmed only after the response is validated.
+	subscribeServiceResponse, ok := response.(*rpc_response.SubscribeServiceResponse)
+	if !ok {
+		return model.Service{}, errors.Errorf("subscribe service failed, service:<%s>, unexpected response type:<%T>",
+			util.GetGroupName(serviceName, groupName), response)
+	}
+	if !subscribeServiceResponse.IsSuccess() {
+		return model.Service{}, errors.Errorf("subscribe service failed, service:<%s>, errorCode:<%d>, resultCode:<%d>, message:<%s>",
+			util.GetGroupName(serviceName, groupName), subscribeServiceResponse.GetErrorCode(),
+			subscribeServiceResponse.GetResultCode(), subscribeServiceResponse.GetMessage())
+	}
+	proxy.eventListener.SubscriberRegistered(util.GetGroupName(serviceName, groupName), clusters)
 	return subscribeServiceResponse.ServiceInfo, nil
 }
 
