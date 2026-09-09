@@ -103,14 +103,66 @@ func (cp *ConfigProxy) searchConfigProxy(param vo.SearchConfigParam, tenant, acc
 	if version == "v2" {
 		err = json.Unmarshal([]byte(result), &configPage)
 	} else {
-		var configPageResult model.ConfigPageResult
-		err = json.Unmarshal([]byte(result), &configPageResult)
-		configPage = configPageResult.Data
+		configPage, err = parseV3ConfigListResult([]byte(result))
 	}
 	if err != nil {
 		return nil, err
 	}
 	return &configPage, nil
+}
+
+// v3AdminConfigItem mirrors a page item of the v3 admin config list API, whose
+// response model uses groupName/namespaceId instead of group/tenant and carries
+// no content field.
+type v3AdminConfigItem struct {
+	Id          json.Number `json:"id"`
+	DataId      string      `json:"dataId"`
+	GroupName   string      `json:"groupName"`
+	NamespaceId string      `json:"namespaceId"`
+	Md5         string      `json:"md5"`
+	AppName     string      `json:"appName"`
+}
+
+type v3AdminConfigPage struct {
+	TotalCount     int                 `json:"totalCount"`
+	PageNumber     int                 `json:"pageNumber"`
+	PagesAvailable int                 `json:"pagesAvailable"`
+	PageItems      []v3AdminConfigItem `json:"pageItems"`
+}
+
+type v3AdminConfigPageResult struct {
+	Code    int               `json:"code"`
+	Message string            `json:"message"`
+	Data    v3AdminConfigPage `json:"data"`
+}
+
+// parseV3ConfigListResult parses a v3 admin config list response and normalizes
+// the v3 field names (groupName/namespaceId) into the v1-style ConfigItem, so
+// SearchConfig callers observe consistent fields no matter which server API
+// version answered the request. The v3 list API does not return content by
+// design; callers needing the content should query each config individually.
+func parseV3ConfigListResult(body []byte) (model.ConfigPage, error) {
+	var result v3AdminConfigPageResult
+	if err := json.Unmarshal(body, &result); err != nil {
+		return model.ConfigPage{}, err
+	}
+	page := model.ConfigPage{
+		TotalCount:     result.Data.TotalCount,
+		PageNumber:     result.Data.PageNumber,
+		PagesAvailable: result.Data.PagesAvailable,
+		PageItems:      make([]model.ConfigItem, 0, len(result.Data.PageItems)),
+	}
+	for _, item := range result.Data.PageItems {
+		page.PageItems = append(page.PageItems, model.ConfigItem{
+			Id:      item.Id,
+			DataId:  item.DataId,
+			Group:   item.GroupName,
+			Tenant:  item.NamespaceId,
+			Md5:     item.Md5,
+			Appname: item.AppName,
+		})
+	}
+	return page, nil
 }
 
 func (cp *ConfigProxy) queryConfig(dataId, group, tenant string, timeout uint64, notify bool, client *ConfigClient) (*rpc_response.ConfigQueryResponse, error) {
