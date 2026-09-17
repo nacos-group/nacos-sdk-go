@@ -21,7 +21,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 )
 
-//go:generate mockgen -destination ../../mock/mock_service_client_interface.go -package mock -source=./service_client_interface.go
+//go:generate mockgen -destination ../../mock/mock_naming_client_interface.go -package mock -source=./naming_client_interface.go
 
 // INamingClient interface for naming client
 type INamingClient interface {
@@ -115,6 +115,6 @@ type INamingClient interface {
 	// ServerHealthy use to check the connectivity to server
 	ServerHealthy() bool
 
-	//CloseClient close the GRPC client
+	// CloseClient close the GRPC client
 	CloseClient()
 }
