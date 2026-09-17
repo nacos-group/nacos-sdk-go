@@ -215,10 +215,30 @@ func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters 
 func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters string) error {
 	logger.Infof("Unsubscribe Service namespaceId:<%s>, serviceName:<%s>, groupName:<%s>, clusters:<%s>",
 		proxy.clientConfig.NamespaceId, serviceName, groupName, clusters)
+	request := rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
+		clusters, false)
+	response, err := proxy.requestToServer(request)
+	if err != nil {
+		// The redo entry stays cached and confirmed, matching the server-side
+		// subscription state, so the unsubscribe is retried on the next call.
+		return err
+	}
+	// The rpc layer returns a nil error even for a failed business response
+	// (RpcClient.Request only logs non-ErrorResponse failures), so the redo
+	// entry is removed only after the response is validated, aligning with
+	// the Java SDK subscriberDeregistered semantics.
+	unsubscribeResponse, ok := response.(*rpc_response.SubscribeServiceResponse)
+	if !ok {
+		return errors.Errorf("unsubscribe service failed, service:<%s>, unexpected response type:<%T>",
+			util.GetGroupName(serviceName, groupName), response)
+	}
+	if !unsubscribeResponse.IsSuccess() {
+		return errors.Errorf("unsubscribe service failed, service:<%s>, errorCode:<%d>, resultCode:<%d>, message:<%s>",
+			util.GetGroupName(serviceName, groupName), unsubscribeResponse.GetErrorCode(),
+			unsubscribeResponse.GetResultCode(), unsubscribeResponse.GetMessage())
+	}
 	proxy.eventListener.RemoveSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
-	_, err := proxy.requestToServer(rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
-		clusters, false))
-	return err
+	return nil
 }
 
 func (proxy *NamingGrpcProxy) CloseClient() {
