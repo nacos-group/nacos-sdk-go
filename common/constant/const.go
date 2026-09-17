@@ -93,6 +93,8 @@ const (
 	LABEL_MODULE_NAMING               = "naming"
 	RESPONSE_CODE_SUCCESS             = 200
 	UN_REGISTER                       = 301
+	NO_RIGHT                          = 403
+	RE_LOGIN_WINDOW_SECONDS           = 60
 	KEEP_ALIVE_TIME                   = 5
 	DEFAULT_TIMEOUT_MILLS             = 3000
 	ALL_SYNC_INTERNAL                 = 5 * time.Minute

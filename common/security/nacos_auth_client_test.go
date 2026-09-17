@@ -287,3 +287,70 @@ func TestNacosAuthClient_LoginFailure(t *testing.T) {
 	assert.False(t, success)
 	assert.Empty(t, client.GetAccessToken())
 }
+func TestNacosAuthClient_ReLogin(t *testing.T) {
+	callCount := 0
+	mockAgent := &MockHttpAgent{
+		PostFunc: func(url string, header http.Header, timeoutMs uint64, params map[string]string) (*http.Response, error) {
+			callCount++
+			return &http.Response{
+				StatusCode: constant.RESPONSE_CODE_SUCCESS,
+				Body: NewMockResponseBody(map[string]interface{}{
+					constant.KEY_ACCESS_TOKEN: fmt.Sprintf("token-%d", callCount),
+					constant.KEY_TOKEN_TTL:    float64(18000),
+				}),
+			}, nil
+		},
+	}
+	client := NewNacosAuthClient(
+		constant.ClientConfig{Username: "nacos", Password: "nacos"},
+		[]constant.ServerConfig{{IpAddr: "localhost", Port: 8848, ContextPath: "/nacos"}},
+		mockAgent,
+	)
+
+	// initial login
+	success, err := client.Login()
+	assert.NoError(t, err)
+	assert.True(t, success)
+	assert.Equal(t, 1, callCount)
+
+	// within the ttl window, Login() is a no-op
+	success, err = client.Login()
+	assert.NoError(t, err)
+	assert.True(t, success)
+	assert.Equal(t, 1, callCount)
+
+	// age the last login beyond the 60s re-login window (still deep inside the ttl window)
+	client.lastRefreshTime = time.Now().Unix() - (constant.RE_LOGIN_WINDOW_SECONDS + 1)
+	success, err = client.Login()
+	assert.NoError(t, err)
+	assert.True(t, success)
+	assert.Equal(t, 1, callCount)
+
+	// after ReLogin (server returned 403), Login() bypasses the ttl window
+	client.ReLogin()
+	success, err = client.Login()
+	assert.NoError(t, err)
+	assert.True(t, success)
+	assert.Equal(t, 2, callCount)
+	assert.Equal(t, "token-2", client.GetAccessToken())
+
+	// the flag is cleared by a successful login
+	assert.False(t, client.reLoginFlag.Load())
+
+	// a repeated 403 within RE_LOGIN_WINDOW_SECONDS after the re-login is throttled
+	client.ReLogin()
+	success, err = client.Login()
+	assert.NoError(t, err)
+	assert.True(t, success)
+	assert.Equal(t, 2, callCount)
+}
+
+func TestSecurityProxy_ReLogin(t *testing.T) {
+	nacosAuth := NewNacosAuthClient(constant.ClientConfig{Username: "nacos"}, nil, nil)
+	ramAuth := NewRamAuthClient(constant.ClientConfig{})
+	sp := SecurityProxy{Clients: []AuthClient{nacosAuth, ramAuth}}
+
+	// ram client does not hold a token and is skipped without panic
+	sp.ReLogin()
+	assert.True(t, nacosAuth.reLoginFlag.Load())
+}

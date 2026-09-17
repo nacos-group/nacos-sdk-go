@@ -23,6 +23,7 @@ type NacosAuthClient struct {
 	tokenTtl           int64
 	lastRefreshTime    int64
 	tokenRefreshWindow int64
+	reLoginFlag        atomic.Bool
 	agent              http_agent.IHttpAgent
 	clientCfg          constant.ClientConfig
 	serverCfgs         []constant.ServerConfig
@@ -82,7 +83,6 @@ func (ac *NacosAuthClient) AutoRefresh(ctx context.Context) {
 					logger.Errorf("login has error %+v", err)
 					timer.Reset(time.Second * time.Duration(5))
 				} else {
-					logger.Infof("login success, tokenTtl: %+v seconds, tokenRefreshWindow: %+v seconds", ac.tokenTtl, ac.tokenRefreshWindow)
 					timer.Reset(time.Second * time.Duration(ac.tokenTtl-ac.tokenRefreshWindow))
 				}
 			case <-ctx.Done():
@@ -108,16 +108,29 @@ func (ac *NacosAuthClient) UpdateServerList(serverList []constant.ServerConfig) 
 	ac.serverCfgs = serverList
 }
 
+// ReLogin marks the current token as rejected by the server; the next Login() call
+// bypasses the tokenTtl window and performs a real login
+func (ac *NacosAuthClient) ReLogin() {
+	ac.reLoginFlag.Store(true)
+}
+
 func (ac *NacosAuthClient) GetServerList() []constant.ServerConfig {
 	return ac.serverCfgs
 }
 
 func (ac *NacosAuthClient) login(server constant.ServerConfig) (bool, error) {
-	if ac.lastRefreshTime > 0 && ac.tokenTtl > 0 {
-		// We refresh 2 windows before expiration to ensure continuous availability
-		tokenRefreshTime := ac.lastRefreshTime + ac.tokenTtl - 2*ac.tokenRefreshWindow
-		if time.Now().Unix() < tokenRefreshTime {
-			return true, nil
+	if ac.lastRefreshTime > 0 {
+		if ac.reLoginFlag.Load() {
+			// On re-login only the 60s window applies, avoiding login storms on bursts of 403
+			if time.Now().Unix()-ac.lastRefreshTime < constant.RE_LOGIN_WINDOW_SECONDS {
+				return true, nil
+			}
+		} else if ac.tokenTtl > 0 {
+			// We refresh 2 windows before expiration to ensure continuous availability
+			tokenRefreshTime := ac.lastRefreshTime + ac.tokenTtl - 2*ac.tokenRefreshWindow
+			if time.Now().Unix() < tokenRefreshTime {
+				return true, nil
+			}
 		}
 	}
 	if ac.username == "" {
@@ -178,6 +191,8 @@ func (ac *NacosAuthClient) login(server constant.ServerConfig) (bool, error) {
 		ac.lastRefreshTime = time.Now().Unix()
 		ac.tokenTtl = int64(result[constant.KEY_TOKEN_TTL].(float64))
 		ac.tokenRefreshWindow = ac.tokenTtl / 10
+		ac.reLoginFlag.Store(false)
+		logger.Infof("login success, tokenTtl: %+v seconds, tokenRefreshWindow: %+v seconds", ac.tokenTtl, ac.tokenRefreshWindow)
 	}
 
 	return true, nil

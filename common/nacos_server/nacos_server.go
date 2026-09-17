@@ -348,6 +348,10 @@ func (server *NacosServer) InjectSecurityInfo(param map[string]string, resource 
 	}
 }
 
+func (server *NacosServer) ReLogin() {
+	server.securityLogin.ReLogin()
+}
+
 func getAddress(cfg constant.ServerConfig) string {
 	if strings.Index(cfg.IpAddr, "http://") >= 0 || strings.Index(cfg.IpAddr, "https://") >= 0 {
 		return cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))

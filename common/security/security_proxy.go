@@ -106,6 +106,10 @@ type AuthClient interface {
 	UpdateServerList(serverList []constant.ServerConfig)
 }
 
+type reLoginClient interface {
+	ReLogin()
+}
+
 type SecurityProxy struct {
 	Clients []AuthClient
 }
@@ -115,6 +119,14 @@ func (sp *SecurityProxy) Login() {
 		_, err := client.Login()
 		if err != nil {
 			logger.Errorf("login in err:%v", err)
+		}
+	}
+}
+
+func (sp *SecurityProxy) ReLogin() {
+	for _, client := range sp.Clients {
+		if rc, ok := client.(reLoginClient); ok {
+			rc.ReLogin()
 		}
 	}
 }
