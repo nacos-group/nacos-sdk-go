@@ -125,7 +125,7 @@ func (server *NacosServer) callConfigServer(api string, params map[string]string
 
 	var response *http.Response
 	response, err = server.httpAgent.Request(method, url, headers, timeoutMS, params)
-	monitor.GetConfigRequestMonitor(method, url, util.GetStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
+	monitor.GetConfigRequestMonitor(method, url, util.GetStatusCode(response)).Observe(time.Since(start).Seconds())
 	if err != nil {
 		return
 	}
@@ -177,7 +177,7 @@ func (server *NacosServer) callServer(api string, params map[string]string, meth
 		return
 	}
 	result = string(bytes)
-	monitor.GetNamingRequestMonitor(method, api, util.GetStatusCode(response)).Observe(float64(time.Now().Nanosecond() - start.Nanosecond()))
+	monitor.GetNamingRequestMonitor(method, api, util.GetStatusCode(response)).Observe(time.Since(start).Seconds())
 	if response.StatusCode == constant.RESPONSE_CODE_SUCCESS {
 		return
 	} else {
