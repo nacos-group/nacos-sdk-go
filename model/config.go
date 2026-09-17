@@ -46,9 +46,3 @@ type ConfigContext struct {
 	DataId string `json:"dataId"`
 	Tenant string `json:"tenant"`
 }
-
-type ConfigPageResult struct {
-	Code    int        `json:"code"`
-	Message string     `json:"message"`
-	Data    ConfigPage `json:"data"`
-}
