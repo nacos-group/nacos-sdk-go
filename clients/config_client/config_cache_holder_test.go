@@ -21,12 +21,39 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/nacos-group/nacos-sdk-go/v3/common/filter"
 	"github.com/nacos-group/nacos-sdk-go/v3/vo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// notifyAndSettle triggers a notify round and blocks until every delivery
+// goroutine it launched has completed (observed as no wrap left inFlight,
+// under cd.mu -- which also gives the caller a happens-before edge on
+// anything the callbacks wrote before completing).
+func notifyAndSettle(t *testing.T, cd *cacheData, chain filter.IConfigFilterChain) {
+	t.Helper()
+	cd.notifyListeners(chain, nil)
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		cd.mu.Lock()
+		busy := false
+		for _, lw := range cd.listeners {
+			if lw.inFlight {
+				busy = true
+				break
+			}
+		}
+		cd.mu.Unlock()
+		if !busy {
+			return
+		}
+		time.Sleep(2 * time.Millisecond)
+	}
+	t.Fatal("deliveries did not settle in time")
+}
 
 // newTestCacheData constructs a *cacheData directly for unit tests that only
 // need to exercise cacheData's own methods (notifyListeners, etc.) without
@@ -180,11 +207,11 @@ func TestPanickingListenerIsReplayedNextRound(t *testing.T) {
 	cd.updateContent("v1", "text", "")
 	chain := filter.NewConfigFilterChainManager()
 
-	cd.notifyListeners(chain)
+	notifyAndSettle(t, cd, chain)
 	assert.Equal(t, int32(1), panics.Load())
 	assert.Equal(t, int32(1), calls.Load())
 
-	cd.notifyListeners(chain) // second round: panicking wrap replayed, normal wrap not re-delivered
+	notifyAndSettle(t, cd, chain) // second round: panicking wrap replayed, normal wrap not re-delivered
 	assert.Equal(t, int32(2), panics.Load())
 	assert.Equal(t, int32(1), calls.Load())
 }
@@ -197,7 +224,7 @@ func TestNotifyListenersSkipsWrapAlreadyAtWatermark(t *testing.T) {
 	cd.updateContent("v1", "text", "")
 	cd.addListener(func(ns, g, d, data string) { calls.Add(1) }, "v1") // seeded at current md5
 
-	cd.notifyListeners(filter.NewConfigFilterChainManager())
+	notifyAndSettle(t, cd, filter.NewConfigFilterChainManager())
 
 	assert.Equal(t, int32(0), calls.Load(), "a wrap already at the current watermark must not be notified")
 }
@@ -215,7 +242,7 @@ func TestNotifyListenersDeliversFilterDecryptedContent(t *testing.T) {
 	chain := filter.NewConfigFilterChainManager()
 	require.NoError(t, filter.RegisterConfigFilterToChain(chain, &fakeDecryptFilter{}))
 
-	cd.notifyListeners(chain)
+	notifyAndSettle(t, cd, chain)
 
 	assert.Equal(t, "decrypted:cipher-text", got)
 }
@@ -230,7 +257,7 @@ func TestNotifyListenersBothListenersOnSameKeyReceiveChange(t *testing.T) {
 	cd.addListener(func(ns, g, d, data string) { got2 = data }, "")
 	cd.updateContent("v1", "text", "")
 
-	cd.notifyListeners(filter.NewConfigFilterChainManager())
+	notifyAndSettle(t, cd, filter.NewConfigFilterChainManager())
 
 	assert.Equal(t, "text", got1, "first listener must receive the change")
 	assert.Equal(t, "text", got2, "second listener must receive the change")
@@ -245,13 +272,15 @@ func TestNotifyListenersSkipsDeliveryOnFilterChainError(t *testing.T) {
 	cd.addListener(func(ns, g, d, data string) { calls.Add(1) }, "")
 	cd.updateContent("v1", "text", "")
 
-	cd.notifyListeners(&erroringFilterChain{})
+	cd.notifyListeners(&erroringFilterChain{}, nil)
 
 	assert.Equal(t, int32(0), calls.Load(), "listener must not be invoked when the filter chain errors")
 	cd.mu.Lock()
 	watermark := cd.listeners[0].lastCallMd5
+	inFlight := cd.listeners[0].inFlight
 	cd.mu.Unlock()
 	assert.Equal(t, "", watermark, "watermark must not advance when the filter chain errors")
+	assert.False(t, inFlight, "inFlight must be cleared when the filter chain errors, or the wrap is never retried")
 }
 
 // erroringFilterChain is a minimal filter.IConfigFilterChain whose
@@ -267,4 +296,104 @@ func (c *erroringFilterChain) DoFilters(param *vo.ConfigParam) error { return as
 
 func (c *erroringFilterChain) DoFilterByName(param *vo.ConfigParam, name string) error {
 	return assert.AnError
+}
+
+// TestNoConcurrentDuplicateDeliveryPerListener asserts the inFlight gate: a
+// second notify round issued while a listener's delivery is still running
+// must not invoke that listener concurrently; once the delivery completes
+// and the watermark is advanced, an unchanged md5 triggers no redelivery.
+func TestNoConcurrentDuplicateDeliveryPerListener(t *testing.T) {
+	cd := newTestCacheData("d", "g", "ns")
+	var active, maxActive, total atomic.Int32
+	entered := make(chan struct{}, 1)
+	release := make(chan struct{})
+	cd.addListener(func(ns, g, d, data string) {
+		cur := active.Add(1)
+		for {
+			prev := maxActive.Load()
+			if cur <= prev || maxActive.CompareAndSwap(prev, cur) {
+				break
+			}
+		}
+		total.Add(1)
+		select {
+		case entered <- struct{}{}:
+		default:
+		}
+		<-release
+		active.Add(-1)
+	}, "")
+	cd.updateContent("v1", "text", "")
+	chain := filter.NewConfigFilterChainManager()
+
+	cd.notifyListeners(chain, nil)
+	<-entered
+	// second and third rounds while the first delivery is still blocked
+	cd.notifyListeners(chain, nil)
+	cd.notifyListeners(chain, nil)
+	close(release)
+
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		cd.mu.Lock()
+		busy := cd.listeners[0].inFlight
+		cd.mu.Unlock()
+		if !busy {
+			break
+		}
+		time.Sleep(2 * time.Millisecond)
+	}
+
+	assert.Equal(t, int32(1), maxActive.Load(), "a single listener must never run concurrently with itself")
+	assert.Equal(t, int32(1), total.Load(), "rounds issued while a delivery is in flight must coalesce, not queue duplicates")
+}
+
+// TestLaggingWatermarkRedeliveredAfterInFlightCompletes asserts the catch-up
+// path: when the entry's md5 advances while a delivery is in flight, the
+// completed wrap lags behind and wake fires so a follow-up round redelivers
+// the newest content.
+func TestLaggingWatermarkRedeliveredAfterInFlightCompletes(t *testing.T) {
+	cd := newTestCacheData("d", "g", "ns")
+	woke := make(chan struct{}, 4)
+	var mu sync.Mutex
+	var got []string
+	entered := make(chan struct{}, 1)
+	release := make(chan struct{})
+	first := true
+	cd.addListener(func(ns, g, d, data string) {
+		mu.Lock()
+		blockThis := first
+		first = false
+		got = append(got, data)
+		mu.Unlock()
+		if blockThis {
+			select {
+			case entered <- struct{}{}:
+			default:
+			}
+			<-release
+		}
+	}, "")
+	cd.updateContent("v1", "content-1", "")
+	chain := filter.NewConfigFilterChainManager()
+	wake := func() { woke <- struct{}{} }
+
+	cd.notifyListeners(chain, wake)
+	<-entered
+	cd.updateContent("v2", "content-2", "") // md5 advances while delivery in flight
+	close(release)
+
+	select {
+	case <-woke:
+	case <-time.After(5 * time.Second):
+		t.Fatal("wake never fired for a lagging watermark after delivery completed")
+	}
+
+	notifyAndSettle(t, cd, chain) // the executor round the wake would trigger
+
+	mu.Lock()
+	defer mu.Unlock()
+	require.Len(t, got, 2)
+	assert.Equal(t, "content-1", got[0])
+	assert.Equal(t, "content-2", got[1], "lagging listener must catch up to the newest content")
 }

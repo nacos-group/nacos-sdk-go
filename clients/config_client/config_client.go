@@ -121,7 +121,8 @@ func NewConfigClientWithRamCredentialProvider(nc nacos_client.INacosClient, prov
 
 	config.uid = uid.String()
 	config.holder = newConfigCacheHolder()
-	config.listenExecute = make(chan struct{})
+	// 1-buffered coalescing bell; see asyncNotifyListenConfig.
+	config.listenExecute = make(chan struct{}, 1)
 	config.startInternal()
 	return config, err
 }
@@ -451,6 +452,17 @@ func (client *ConfigClient) executeConfigListen() {
 		hasChangedKeys = false
 	)
 
+	// Re-notify any listener whose watermark trails its entry's md5 with no
+	// delivery in flight: deliveries are asynchronous, so a wrap can finish a
+	// callback (or panic out of one) after its entry's content moved on, and
+	// the change that moved it may not produce another server notification.
+	// This round-entry sweep is that catch-up path (the delivery completion
+	// also rings the bell, so the sweep usually runs promptly rather than on
+	// the poll cadence). Entries with no lagging idle wrap are a cheap no-op.
+	for _, cData := range client.holder.snapshot() {
+		cData.notifyListeners(client.configFilterChainManager, client.asyncNotifyListenConfig)
+	}
+
 	listenBatch, cancelBatch := client.buildListenTask(needAllSync)
 
 	for taskId, caches := range cancelBatch {
@@ -575,7 +587,7 @@ func (client *ConfigClient) refreshContentAndCheck(cData *cacheData, notify bool
 	cData.md5 = util.Md5(cData.content)
 	cData.mu.Unlock()
 
-	cData.notifyListeners(client.configFilterChainManager)
+	cData.notifyListeners(client.configFilterChainManager, client.asyncNotifyListenConfig)
 }
 
 // buildListenTask partitions the current holder snapshot into two batches,
@@ -607,25 +619,18 @@ func (client *ConfigClient) buildListenTask(needAllSync bool) (listenBatch, canc
 }
 
 // asyncNotifyListenConfig wakes the listen executor without blocking the
-// caller. The send races against client.ctx.Done() rather than committing to
-// an unconditional send: startInternal's executor loop returns as soon as
-// ctx is cancelled (CloseClient), and after that nothing ever receives from
-// listenExecute again, so an unconditional send would leak this goroutine
-// forever once the client is closed. client.ctx is nil only for ConfigClient
-// values built by hand (bypassing the constructor, as some tests do) rather
-// than through NewConfigClientWithRamCredentialProvider; guard against that
-// so this stays a plain, always-eventually-unblocked send in that case.
+// caller. listenExecute is a 1-buffered coalescing bell (same shape as the
+// naming FuzzyWatch holder's Bell): if a wake-up is already pending, this
+// one merges into it -- the executor scans everything each round anyway, so
+// N pending bells and one pending bell trigger identical work. The
+// non-blocking send never spawns a goroutine and never leaks, no matter how
+// many notifications land while the executor is busy or after the client is
+// closed.
 func (client *ConfigClient) asyncNotifyListenConfig() {
-	go func() {
-		if client.ctx == nil {
-			client.listenExecute <- struct{}{}
-			return
-		}
-		select {
-		case client.listenExecute <- struct{}{}:
-		case <-client.ctx.Done():
-		}
-	}()
+	select {
+	case client.listenExecute <- struct{}{}:
+	default:
+	}
 }
 
 func (client *ConfigClient) buildResponse(response rpc_response.IResponse) (bool, error) {

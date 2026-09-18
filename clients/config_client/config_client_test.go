@@ -639,7 +639,7 @@ func newExecutorTestClient(proxy IConfigProxy) *ConfigClient {
 	client.configFilterChainManager = filter.NewConfigFilterChainManager()
 	client.configProxy = proxy
 	client.holder = newConfigCacheHolder()
-	client.listenExecute = make(chan struct{})
+	client.listenExecute = make(chan struct{}, 1)
 	return client
 }
 
@@ -1088,4 +1088,177 @@ func TestCloseClientTwiceDoesNotPanic(t *testing.T) {
 		client.CloseClient()
 		client.CloseClient()
 	})
+}
+
+// ---------------------------------------------------------------------------
+// Async delivery regression tests (review round-1 P1): user callbacks must
+// never run on the listen executor goroutine, or one slow callback blocks
+// every other config's queries, notifications and cancel batches.
+// ---------------------------------------------------------------------------
+
+// scriptedRounds replies each executor round with the next scripted response
+// and empty (no-change) success afterwards.
+type scriptedRounds struct {
+	mu     sync.Mutex
+	rounds []*rpc_response.ConfigChangeBatchListenResponse
+}
+
+func (s *scriptedRounds) reply(req *rpc_request.ConfigBatchListenRequest) (rpc_response.IResponse, error) {
+	if !req.Listen {
+		return batchListenSuccess(), nil
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(s.rounds) == 0 {
+		return batchListenSuccess(), nil
+	}
+	next := s.rounds[0]
+	s.rounds = s.rounds[1:]
+	return next, nil
+}
+
+func waitUntil(t *testing.T, timeout time.Duration, cond func() bool, msg string) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if cond() {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("condition not met within %v: %s", timeout, msg)
+}
+
+// TestBlockingCallbackDoesNotBlockOtherConfigs drives the REAL executor loop
+// (startInternal) and verifies that config A's blocking callback does not
+// prevent config B's change (arriving in a later round) from being delivered.
+func TestBlockingCallbackDoesNotBlockOtherConfigs(t *testing.T) {
+	proxy := &scriptedProxy{}
+	client := newExecutorTestClient(proxy)
+	defer client.cancel()
+
+	clientConfig, err := client.GetClientConfig()
+	require.NoError(t, err)
+	ns := clientConfig.NamespaceId
+
+	rounds := &scriptedRounds{rounds: []*rpc_response.ConfigChangeBatchListenResponse{
+		batchListenSuccess(model.ConfigContext{DataId: "block-a", Group: "g", Tenant: ns}),
+		batchListenSuccess(model.ConfigContext{DataId: "block-b", Group: "g", Tenant: ns}),
+	}}
+	proxy.reply = rounds.reply
+	proxy.queryConfigFn = func(dataId, group, tenant string, timeout uint64, notify bool, c *ConfigClient) (*rpc_response.ConfigQueryResponse, error) {
+		return &rpc_response.ConfigQueryResponse{
+			Response: &rpc_response.Response{Success: true},
+			Content:  "content-" + dataId,
+		}, nil
+	}
+
+	aEntered := make(chan struct{})
+	aRelease := make(chan struct{})
+	require.NoError(t, client.ListenConfig(vo.ConfigParam{DataId: "block-a", Group: "g", OnChange: func(_, _, _, _ string) {
+		close(aEntered)
+		<-aRelease
+	}}))
+	bGot := make(chan string, 4)
+	require.NoError(t, client.ListenConfig(vo.ConfigParam{DataId: "block-b", Group: "g", OnChange: func(_, _, _, data string) {
+		bGot <- data
+	}}))
+
+	client.startInternal()
+	client.asyncNotifyListenConfig() // round 1: A changes, callback blocks
+
+	select {
+	case <-aEntered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("A's callback never entered")
+	}
+
+	client.asyncNotifyListenConfig() // round 2: B changes
+
+	// B must be delivered while A is still blocked.
+	select {
+	case data := <-bGot:
+		assert.Equal(t, "content-block-b", data)
+	case <-time.After(5 * time.Second):
+		close(aRelease)
+		t.Fatal("B's callback never fired while A was blocked: blocking callback stalls the executor loop")
+	}
+	close(aRelease)
+}
+
+// TestCancelProceedsWhileCallbackBlocked verifies that CancelListenConfig's
+// listen=false batch is still sent by the executor while another config's
+// callback is blocked.
+func TestCancelProceedsWhileCallbackBlocked(t *testing.T) {
+	proxy := &scriptedProxy{}
+	client := newExecutorTestClient(proxy)
+	defer client.cancel()
+
+	clientConfig, err := client.GetClientConfig()
+	require.NoError(t, err)
+	ns := clientConfig.NamespaceId
+
+	rounds := &scriptedRounds{rounds: []*rpc_response.ConfigChangeBatchListenResponse{
+		batchListenSuccess(model.ConfigContext{DataId: "block-a2", Group: "g", Tenant: ns}),
+	}}
+	proxy.reply = rounds.reply
+	proxy.queryConfigFn = func(dataId, group, tenant string, timeout uint64, notify bool, c *ConfigClient) (*rpc_response.ConfigQueryResponse, error) {
+		return &rpc_response.ConfigQueryResponse{
+			Response: &rpc_response.Response{Success: true},
+			Content:  "content-" + dataId,
+		}, nil
+	}
+
+	aEntered := make(chan struct{})
+	aRelease := make(chan struct{})
+	require.NoError(t, client.ListenConfig(vo.ConfigParam{DataId: "block-a2", Group: "g", OnChange: func(_, _, _, _ string) {
+		close(aEntered)
+		<-aRelease
+	}}))
+	require.NoError(t, client.ListenConfig(vo.ConfigParam{DataId: "cancel-c", Group: "g", OnChange: noopOnChange}))
+
+	client.startInternal()
+	client.asyncNotifyListenConfig()
+
+	select {
+	case <-aEntered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("A's callback never entered")
+	}
+
+	require.NoError(t, client.CancelListenConfig(vo.ConfigParam{DataId: "cancel-c", Group: "g"}))
+
+	waitUntil(t, 5*time.Second, func() bool {
+		for _, req := range proxy.sentSnapshot() {
+			if req.Listen {
+				continue
+			}
+			for _, lc := range req.ConfigListenContexts {
+				if lc.DataId == "cancel-c" {
+					return true
+				}
+			}
+		}
+		return false
+	}, "listen=false batch for cancel-c never sent while A's callback was blocked")
+	close(aRelease)
+}
+
+// TestBellStormDoesNotAccumulateGoroutines verifies asyncNotifyListenConfig
+// does not spawn one blocked goroutine per pending notification while the
+// executor is busy.
+func TestBellStormDoesNotAccumulateGoroutines(t *testing.T) {
+	client := newExecutorTestClient(&scriptedProxy{})
+	defer client.cancel()
+	// no executor loop running at all: worst case for pending bells
+
+	runtime.GC()
+	before := runtime.NumGoroutine()
+	for i := 0; i < 40; i++ {
+		client.asyncNotifyListenConfig()
+	}
+	time.Sleep(200 * time.Millisecond)
+	after := runtime.NumGoroutine()
+	assert.LessOrEqual(t, after-before, 5,
+		"bell sends must coalesce, not pile up one goroutine per notification (before=%d after=%d)", before, after)
 }

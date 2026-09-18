@@ -41,10 +41,15 @@ type cacheData struct {
 
 // listenerWrap pairs a user listener callback with the md5 watermark it has
 // last been notified with, so distinct listeners on the same key can be
-// notified independently.
+// notified independently. inFlight (guarded by the owning cacheData's mu)
+// marks a delivery goroutine currently running this listener's callback:
+// while set, notify rounds skip the wrap, so a single listener is never
+// invoked concurrently with itself and a slow callback consumes exactly one
+// goroutine instead of one per change.
 type listenerWrap struct {
 	listener    vo.Listener
 	lastCallMd5 string
+	inFlight    bool
 }
 
 // configCacheHolder is the pointer-based replacement for the previous
@@ -171,13 +176,23 @@ func (c *cacheData) reviveAndAddListener(l vo.Listener) {
 // Each wrap's watermark is advanced to the snapshotted md5 (not a fresh
 // re-read -- content may change concurrently with these callbacks) only if
 // its callback returns normally: a panicking listener leaves its own
-// watermark untouched so the same content is redelivered to it next round,
-// while every other listener on the same key still receives this round's
-// notification. Callbacks run synchronously on the calling goroutine (the
-// listen executor goroutine is already asynchronous with respect to user
-// code, and running callbacks concurrently with each other would let a slow
-// listener fan out into unbounded goroutines).
-func (c *cacheData) notifyListeners(chain filter.IConfigFilterChain) {
+// watermark untouched so the same content is redelivered to it in a later
+// round, while every other listener on the same key still receives this
+// round's notification.
+//
+// Callbacks run on their own delivery goroutine, one per lagging wrap, never
+// on the caller: the caller is the single listen executor goroutine, and a
+// slow callback running inline there would stall every other config's
+// queries, notifications and cancel batches (the pre-v3 code launched
+// callbacks with `go` for the same reason). Fan-out is bounded per listener
+// by the inFlight flag -- a wrap whose previous delivery has not returned is
+// skipped, so a slow listener holds exactly one goroutine no matter how many
+// changes arrive meanwhile. When a delivery completes and the wrap's
+// watermark still trails the entry's current md5 (a newer change landed
+// while the callback ran, or the callback panicked), wake is invoked (if
+// non-nil) so the executor promptly re-notifies instead of waiting out the
+// poll interval.
+func (c *cacheData) notifyListeners(chain filter.IConfigFilterChain, wake func()) {
 	c.mu.Lock()
 	dataId, group, tenant := c.dataId, c.group, c.tenant
 	content := c.content
@@ -185,7 +200,8 @@ func (c *cacheData) notifyListeners(chain filter.IConfigFilterChain) {
 	md5 := c.md5
 	toNotify := make([]*listenerWrap, 0, len(c.listeners))
 	for _, lw := range c.listeners {
-		if lw.lastCallMd5 != md5 {
+		if lw.lastCallMd5 != md5 && !lw.inFlight {
+			lw.inFlight = true
 			toNotify = append(toNotify, lw)
 		}
 	}
@@ -193,6 +209,14 @@ func (c *cacheData) notifyListeners(chain filter.IConfigFilterChain) {
 
 	if len(toNotify) == 0 {
 		return
+	}
+
+	clearInFlight := func() {
+		c.mu.Lock()
+		for _, lw := range toNotify {
+			lw.inFlight = false
+		}
+		c.mu.Unlock()
 	}
 
 	param := &vo.ConfigParam{
@@ -203,26 +227,36 @@ func (c *cacheData) notifyListeners(chain filter.IConfigFilterChain) {
 	}
 	if err := chain.DoFilters(param); err != nil {
 		logger.Errorf("do filters failed ,dataId=%s,group=%s,tenant=%s,err:%+v ", dataId, group, tenant, err)
+		clearInFlight()
 		return
 	}
 	decryptedContent := param.Content
 
 	for _, lw := range toNotify {
-		c.deliverAndAdvance(lw, tenant, group, dataId, decryptedContent, md5)
+		go c.deliverAndAdvance(lw, tenant, group, dataId, decryptedContent, md5, wake)
 	}
 }
 
-// deliverAndAdvance invokes lw's listener and, only if it returns normally,
-// advances lw.lastCallMd5 to md5 under c.mu. The watermark write is
-// re-locked separately from notifyListeners' own snapshot lock so it never
-// happens while a callback is in flight.
-func (c *cacheData) deliverAndAdvance(lw *listenerWrap, tenant, group, dataId, content, md5 string) {
-	if !callListenerSafely(lw.listener, tenant, group, dataId, content) {
-		return
-	}
+// deliverAndAdvance invokes lw's listener on the current (delivery)
+// goroutine and, only if it returns normally, advances lw.lastCallMd5 to
+// md5. The inFlight flag is cleared in the same critical section as the
+// watermark write, so the wrap becomes eligible for the next round only
+// once its final state for this round is visible. If the wrap still trails
+// the entry's current md5 afterwards -- because a newer change arrived
+// while the callback ran, or because the callback panicked and the
+// watermark stayed put -- wake is invoked to trigger a prompt re-notify.
+func (c *cacheData) deliverAndAdvance(lw *listenerWrap, tenant, group, dataId, content, md5 string, wake func()) {
+	delivered := callListenerSafely(lw.listener, tenant, group, dataId, content)
 	c.mu.Lock()
-	lw.lastCallMd5 = md5
+	lw.inFlight = false
+	if delivered {
+		lw.lastCallMd5 = md5
+	}
+	lagging := lw.lastCallMd5 != c.md5 && !c.discard
 	c.mu.Unlock()
+	if lagging && wake != nil {
+		wake()
+	}
 }
 
 // callListenerSafely invokes listener, recovering from any panic so a single
