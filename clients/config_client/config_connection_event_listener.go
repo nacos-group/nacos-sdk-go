@@ -51,14 +51,12 @@ func (c *ConfigConnectionEventListener) OnDisConnect() {
 			return
 		}
 
-		items := c.client.cacheMap.Items()
-		for key, v := range items {
-			if data, ok := v.(cacheData); ok {
-				if data.taskId == taskIdInt {
-					data.isSyncWithServer = false
-					c.client.cacheMap.Set(key, data)
-				}
+		for _, cData := range c.client.holder.snapshot() {
+			cData.mu.Lock()
+			if cData.taskId == taskIdInt {
+				cData.isSyncWithServer = false
 			}
+			cData.mu.Unlock()
 		}
 	}
 }

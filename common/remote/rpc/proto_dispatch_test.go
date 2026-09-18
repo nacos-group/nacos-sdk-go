@@ -66,9 +66,9 @@ func TestDecodeProtoResponseExplicitFailure(t *testing.T) {
 }
 
 func TestDecodeProtoResponseUnmigratedFallsThrough(t *testing.T) {
-	_, migrated, err := decodeProtoResponse(protoPayload("ConfigQueryResponse", `{"resultCode":200}`))
+	_, migrated, err := decodeProtoResponse(protoPayload("UnknownType", `{"resultCode":200}`))
 	require.NoError(t, err)
-	assert.False(t, migrated, "config/naming types stay on the legacy path until PR4/PR5")
+	assert.False(t, migrated, "unmigrated types fall through to legacy path")
 }
 
 func TestDecodeProtoServerRequestConnectReset(t *testing.T) {
@@ -90,9 +90,9 @@ func TestDecodeProtoServerRequestClientDetection(t *testing.T) {
 	assert.Equal(t, "r-2", req.GetRequestId())
 }
 
-func TestDecodeProtoServerRequestUnmigratedFallsThrough(t *testing.T) {
-	_, ok := decodeProtoServerRequest(protoPayload("ConfigChangeNotifyRequest", `{}`))
-	assert.False(t, ok, "config push stays on the legacy path until PR5")
+func TestDecodeProtoServerRequestUnknownFallsThrough(t *testing.T) {
+	_, ok := decodeProtoServerRequest(protoPayload("UnknownRequest", `{}`))
+	assert.False(t, ok, "unmigrated requests fall through to legacy path")
 }
 
 func TestDecodeProtoServerRequestBadJsonFallsBack(t *testing.T) {

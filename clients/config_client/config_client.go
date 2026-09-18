@@ -48,60 +48,25 @@ const (
 	executorErrDelay  = 5 * time.Second
 )
 
+// ErrConfigClientClosed is returned by ListenConfig once CloseClient has run:
+// the listen executor goroutine is gone for good, so a newly (or
+// concurrently) committed listener could never be served. Exported so
+// callers can errors.Is against it rather than matching on error text.
+var ErrConfigClientClosed = errors.New("config client is closed")
+
 type ConfigClient struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	nacos_client.INacosClient
 	configFilterChainManager filter.IConfigFilterChain
-	localConfigs             []vo.ConfigParam
 	mutex                    sync.Mutex
 	configProxy              IConfigProxy
 	configCacheDir           string
 	lastAllSyncTime          time.Time
-	cacheMap                 cache.ConcurrentMap
+	holder                   *configCacheHolder
 	uid                      string
 	listenExecute            chan struct{}
 	isClosed                 bool
-}
-
-type cacheData struct {
-	isInitializing    bool
-	dataId            string
-	group             string
-	content           string
-	contentType       string
-	encryptedDataKey  string
-	tenant            string
-	cacheDataListener *cacheDataListener
-	md5               string
-	appName           string
-	taskId            int
-	configClient      *ConfigClient
-	isSyncWithServer  bool
-}
-
-type cacheDataListener struct {
-	listener vo.Listener
-	lastMd5  string
-}
-
-func (cacheData *cacheData) executeListener() {
-	cacheData.cacheDataListener.lastMd5 = cacheData.md5
-	cacheData.configClient.cacheMap.Set(util.GetConfigCacheKey(cacheData.dataId, cacheData.group, cacheData.tenant), *cacheData)
-
-	param := &vo.ConfigParam{
-		DataId:           cacheData.dataId,
-		Content:          cacheData.content,
-		EncryptedDataKey: cacheData.encryptedDataKey,
-		UsageType:        vo.ResponseType,
-	}
-	if err := cacheData.configClient.configFilterChainManager.DoFilters(param); err != nil {
-		logger.Errorf("do filters failed ,dataId=%s,group=%s,tenant=%s,err:%+v ", cacheData.dataId,
-			cacheData.group, cacheData.tenant, err)
-		return
-	}
-	decryptedContent := param.Content
-	go cacheData.cacheDataListener.listener(cacheData.tenant, cacheData.group, cacheData.dataId, decryptedContent)
 }
 
 func NewConfigClientWithRamCredentialProvider(nc nacos_client.INacosClient, provider security.RamCredentialProvider) (*ConfigClient, error) {
@@ -155,8 +120,9 @@ func NewConfigClientWithRamCredentialProvider(nc nacos_client.INacosClient, prov
 	}
 
 	config.uid = uid.String()
-	config.cacheMap = cache.NewConcurrentMap()
-	config.listenExecute = make(chan struct{})
+	config.holder = newConfigCacheHolder()
+	// 1-buffered coalescing bell; see asyncNotifyListenConfig.
+	config.listenExecute = make(chan struct{}, 1)
 	config.startInternal()
 	return config, err
 }
@@ -300,18 +266,30 @@ func (client *ConfigClient) DeleteConfig(param vo.ConfigParam) (deleted bool, er
 	return false, err
 }
 
-// Cancel Listen Config
+// CancelListenConfig cancels a previously registered listen for the given
+// key. If the key was never listened on, this is a no-op returning nil. The
+// entry (if any) is marked discarded rather than removed outright; reconciling
+// removal from the holder is left to removeIfDiscarded/the executor.
 func (client *ConfigClient) CancelListenConfig(param vo.ConfigParam) (err error) {
 	clientConfig, err := client.GetClientConfig()
 	if err != nil {
 		logger.Errorf("[checkConfigInfo.GetClientConfig] failed,err:%+v", err)
 		return
 	}
-	client.cacheMap.Remove(util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId))
+	key := util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
+	if cData, ok := client.holder.get(key); ok {
+		cData.markDiscard()
+		client.asyncNotifyListenConfig()
+	}
 	logger.Infof("Cancel listen config DataId:%s Group:%s", param.DataId, param.Group)
-	return err
+	return nil
 }
 
+// ListenConfig registers OnChange to be notified about changes to the
+// dataId/group/namespace identified by param. Calling it repeatedly for the
+// same key appends additional independent listeners rather than replacing
+// the previous one; calling it again after CancelListenConfig revives the
+// entry.
 func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	if len(param.DataId) <= 0 {
 		err = errors.New("[client.ListenConfig] DataId can not be empty")
@@ -321,6 +299,12 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 		err = errors.New("[client.ListenConfig] Group can not be empty")
 		return err
 	}
+	client.mutex.Lock()
+	closed := client.isClosed
+	client.mutex.Unlock()
+	if closed {
+		return ErrConfigClientClosed
+	}
 	clientConfig, err := client.GetClientConfig()
 	if err != nil {
 		err = errors.New("[checkConfigInfo.GetClientConfig] failed")
@@ -328,43 +312,61 @@ func (client *ConfigClient) ListenConfig(param vo.ConfigParam) (err error) {
 	}
 
 	key := util.GetConfigCacheKey(param.DataId, param.Group, clientConfig.NamespaceId)
-	var cData cacheData
-	if v, ok := client.cacheMap.Get(key); ok {
-		cData = v.(cacheData)
-		cData.isInitializing = true
-	} else {
-		var (
-			content  string
-			md5Str   string
-			innerErr error
-		)
-		if content, innerErr = cache.ReadConfigFromFile(key, client.configCacheDir); innerErr != nil {
+	// Computed ahead of getOrCreate: getOrCreate already holds the holder's
+	// write lock while invoking seed, so calling back into holder.count()
+	// (which itself locks) from inside seed would deadlock.
+	taskId := client.holder.count() / perTaskConfigSize
+
+	cData := client.holder.getOrCreate(key, func() *cacheData {
+		content, innerErr := cache.ReadConfigFromFile(key, client.configCacheDir)
+		if innerErr != nil {
 			logger.Warn(innerErr)
 		}
 		encryptedDataKey, _ := cache.ReadEncryptedDataKeyFromFile(key, client.configCacheDir)
+		var md5Str string
 		if len(content) > 0 {
 			md5Str = util.Md5(content)
 		}
-		listener := &cacheDataListener{
-			listener: param.OnChange,
-			lastMd5:  md5Str,
+		return &cacheData{
+			isInitializing:   true,
+			dataId:           param.DataId,
+			group:            param.Group,
+			tenant:           clientConfig.NamespaceId,
+			content:          content,
+			md5:              md5Str,
+			encryptedDataKey: encryptedDataKey,
+			taskId:           taskId,
 		}
+	})
 
-		cData = cacheData{
-			isInitializing:    true,
-			dataId:            param.DataId,
-			group:             param.Group,
-			tenant:            clientConfig.NamespaceId,
-			content:           content,
-			md5:               md5Str,
-			cacheDataListener: listener,
-			encryptedDataKey:  encryptedDataKey,
-			taskId:            client.cacheMap.Count() / perTaskConfigSize,
-			configClient:      client,
-		}
+	// Revive (discard=false) and append must happen in one critical section:
+	// see reviveAndAddListener's doc comment for why a separate lock/unlock
+	// around isInitializing/md5 followed by a separately-locked addListener
+	// call is unsafe against a concurrent CancelListenConfig.
+	cData.reviveAndAddListener(param.OnChange)
+
+	// CloseClient may land concurrently, between the isClosed check above and
+	// the commit just performed -- neither the check nor the seed's disk I/O
+	// nor the commit itself holds client.mutex.
+	return client.rejectIfClosedAfterCommit(cData)
+}
+
+// rejectIfClosedAfterCommit re-checks isClosed under client.mutex -- the same
+// lock CloseClient sets isClosed under, and isClosed only ever transitions
+// false->true -- immediately after a ListenConfig commit (getOrCreate +
+// reviveAndAddListener). This linearizes the commit against CloseClient: if a
+// close has already landed by this point, the commit is rolled back via
+// cData.markDiscard() rather than left live on a client whose listen executor
+// is gone for good.
+func (client *ConfigClient) rejectIfClosedAfterCommit(cData *cacheData) error {
+	client.mutex.Lock()
+	closed := client.isClosed
+	client.mutex.Unlock()
+	if closed {
+		cData.markDiscard()
+		return ErrConfigClientClosed
 	}
-	client.cacheMap.Set(key, cData)
-	return
+	return nil
 }
 
 func (client *ConfigClient) SearchConfig(param vo.SearchConfigParam) (*model.ConfigPage, error) {
@@ -429,19 +431,66 @@ func (client *ConfigClient) startInternal() {
 	}()
 }
 
+// executeConfigListen runs one round of the listen executor. Each round:
+//  1. sends a Listen=false batch (grouped by taskId) for every discarded
+//     entry, and reaps each key via holder.removeIfDiscarded once its batch
+//     gets a successful response -- entries whose cancel batch errors or
+//     comes back non-success are left in place for the next round to retry;
+//  2. sends a Listen=true batch for every non-discarded entry that is either
+//     not in sync with the server or due for a full resync;
+//  3. for every key reported in ChangedConfigs, refreshes it via
+//     refreshContentAndCheck;
+//  4. marks every other entry in that listen batch as isSyncWithServer=true.
+//
+// Cancel batches are sent before listen batches each round so a key that is
+// simultaneously being cancelled and re-listened (a revive racing with an
+// in-flight cancel) is decided by removeIfDiscarded's own re-check rather
+// than by request ordering.
 func (client *ConfigClient) executeConfigListen() {
 	var (
 		needAllSync    = time.Since(client.lastAllSyncTime) >= constant.ALL_SYNC_INTERNAL
 		hasChangedKeys = false
 	)
 
-	listenTaskMap := client.buildListenTask(needAllSync)
-	if len(listenTaskMap) == 0 {
-		return
+	// Re-notify any listener whose watermark trails its entry's md5 with no
+	// delivery in flight: deliveries are asynchronous, so a wrap can finish a
+	// callback (or panic out of one) after its entry's content moved on, and
+	// the change that moved it may not produce another server notification.
+	// This round-entry sweep is that catch-up path (the delivery completion
+	// also rings the bell, so the sweep usually runs promptly rather than on
+	// the poll cadence). Entries with no lagging idle wrap are a cheap no-op.
+	for _, cData := range client.holder.snapshot() {
+		cData.notifyListeners(client.configFilterChainManager, client.asyncNotifyListenConfig)
 	}
 
-	for taskId, caches := range listenTaskMap {
-		request := buildConfigBatchListenRequest(caches)
+	listenBatch, cancelBatch := client.buildListenTask(needAllSync)
+
+	for taskId, caches := range cancelBatch {
+		request := buildConfigBatchListenRequest(caches, false)
+		rpcClient := client.configProxy.createRpcClient(client.ctx, fmt.Sprintf("%d", taskId), client)
+		iResponse, err := client.configProxy.requestProxy(rpcClient, request, 3000)
+		if err != nil {
+			logger.Warnf("ConfigBatchListenRequest(cancel) failure, err:%v", err)
+			continue
+		}
+		if iResponse == nil {
+			logger.Warnf("ConfigBatchListenRequest(cancel) failure, response is nil")
+			continue
+		}
+		if !iResponse.IsSuccess() {
+			logger.Warnf("ConfigBatchListenRequest(cancel) failure, error code:%d", iResponse.GetErrorCode())
+			continue
+		}
+		for _, cData := range caches {
+			cData.mu.Lock()
+			key := util.GetConfigCacheKey(cData.dataId, cData.group, cData.tenant)
+			cData.mu.Unlock()
+			client.holder.removeIfDiscarded(key)
+		}
+	}
+
+	for taskId, caches := range listenBatch {
+		request := buildConfigBatchListenRequest(caches, true)
 		rpcClient := client.configProxy.createRpcClient(client.ctx, fmt.Sprintf("%d", taskId), client)
 		iResponse, err := client.configProxy.requestProxy(rpcClient, request, 3000)
 		if err != nil {
@@ -468,25 +517,26 @@ func (client *ConfigClient) executeConfigListen() {
 		for _, v := range response.ChangedConfigs {
 			changeKey := util.GetConfigCacheKey(v.DataId, v.Group, v.Tenant)
 			changeKeys[changeKey] = struct{}{}
-			if value, ok := client.cacheMap.Get(changeKey); ok {
-				cData := value.(cacheData)
-				client.refreshContentAndCheck(cData, !cData.isInitializing)
+			if cData, ok := client.holder.get(changeKey); ok {
+				cData.mu.Lock()
+				isInitializing := cData.isInitializing
+				cData.mu.Unlock()
+				client.refreshContentAndCheck(cData, !isInitializing)
 			}
 		}
 
-		for _, v := range client.cacheMap.Items() {
-			data := v.(cacheData)
-			changeKey := util.GetConfigCacheKey(data.dataId, data.group, data.tenant)
-			if _, ok := changeKeys[changeKey]; !ok {
-				data.isSyncWithServer = true
-				client.cacheMap.Set(changeKey, data)
-				continue
+		for _, cData := range caches {
+			cData.mu.Lock()
+			changeKey := util.GetConfigCacheKey(cData.dataId, cData.group, cData.tenant)
+			if _, changed := changeKeys[changeKey]; !changed {
+				cData.isSyncWithServer = true
+			} else {
+				cData.isInitializing = true
 			}
-			data.isInitializing = true
-			client.cacheMap.Set(changeKey, data)
+			cData.mu.Unlock()
 		}
-
 	}
+
 	if needAllSync {
 		client.lastAllSyncTime = time.Now()
 	}
@@ -494,72 +544,93 @@ func (client *ConfigClient) executeConfigListen() {
 	if hasChangedKeys {
 		client.asyncNotifyListenConfig()
 	}
-	monitor.GetListenConfigCountMonitor().Set(float64(client.cacheMap.Count()))
+	monitor.GetListenConfigCountMonitor().Set(float64(client.holder.count()))
 }
 
-func buildConfigBatchListenRequest(caches []cacheData) *rpc_request.ConfigBatchListenRequest {
+func buildConfigBatchListenRequest(caches []*cacheData, listen bool) *rpc_request.ConfigBatchListenRequest {
 	request := rpc_request.NewConfigBatchListenRequest(len(caches))
-	for _, cache := range caches {
-		request.ConfigListenContexts = append(request.ConfigListenContexts,
-			model.ConfigListenContext{Group: cache.group, Md5: cache.md5, DataId: cache.dataId, Tenant: cache.tenant})
+	request.Listen = listen
+	for _, cData := range caches {
+		cData.mu.Lock()
+		ctx := model.ConfigListenContext{Group: cData.group, Md5: cData.md5, DataId: cData.dataId, Tenant: cData.tenant}
+		cData.mu.Unlock()
+		request.ConfigListenContexts = append(request.ConfigListenContexts, ctx)
 	}
 	return request
 }
 
-func (client *ConfigClient) refreshContentAndCheck(cacheData cacheData, notify bool) {
-	configQueryResponse, err := client.configProxy.queryConfig(cacheData.dataId, cacheData.group, cacheData.tenant,
+func (client *ConfigClient) refreshContentAndCheck(cData *cacheData, notify bool) {
+	cData.mu.Lock()
+	dataId, group, tenant := cData.dataId, cData.group, cData.tenant
+	cData.mu.Unlock()
+
+	configQueryResponse, err := client.configProxy.queryConfig(dataId, group, tenant,
 		constant.DEFAULT_TIMEOUT_MILLS, notify, client)
 	if err != nil {
-		logger.Errorf("refresh content and check md5 fail ,dataId=%s,group=%s,tenant=%s ", cacheData.dataId,
-			cacheData.group, cacheData.tenant)
+		logger.Errorf("refresh content and check md5 fail ,dataId=%s,group=%s,tenant=%s ", dataId, group, tenant)
 		return
 	}
 	if configQueryResponse != nil && configQueryResponse.Response != nil && !configQueryResponse.IsSuccess() {
 		logger.Errorf("refresh cached config from server error:%v, dataId=%s, group=%s", configQueryResponse.GetMessage(),
-			cacheData.dataId, cacheData.group)
+			dataId, group)
 		return
 	}
-	cacheData.content = configQueryResponse.Content
-	cacheData.contentType = configQueryResponse.ContentType
-	cacheData.encryptedDataKey = configQueryResponse.EncryptedDataKey
+
+	cData.mu.Lock()
+	cData.content = configQueryResponse.Content
+	cData.contentType = configQueryResponse.ContentType
+	cData.encryptedDataKey = configQueryResponse.EncryptedDataKey
 	if notify {
 		logger.Infof("[config_rpc_client] [data-received] dataId=%s, group=%s, tenant=%s, md5=%s, content=%s, type=%s",
-			cacheData.dataId, cacheData.group, cacheData.tenant, cacheData.md5,
-			util.TruncateContent(cacheData.content), cacheData.contentType)
+			dataId, group, tenant, cData.md5, util.TruncateContent(cData.content), cData.contentType)
 	}
-	cacheData.md5 = util.Md5(cacheData.content)
-	if cacheData.md5 != cacheData.cacheDataListener.lastMd5 {
-		cacheDataPtr := &cacheData
-		cacheDataPtr.executeListener()
-	}
+	cData.md5 = util.Md5(cData.content)
+	cData.mu.Unlock()
+
+	cData.notifyListeners(client.configFilterChainManager, client.asyncNotifyListenConfig)
 }
 
-func (client *ConfigClient) buildListenTask(needAllSync bool) map[int][]cacheData {
-	listenTaskMap := make(map[int][]cacheData, 8)
+// buildListenTask partitions the current holder snapshot into two batches,
+// grouped by taskId: cancelBatch holds discarded entries (destined for a
+// Listen=false request), and listenBatch holds every other entry that is
+// either not in sync with the server or due for a full resync (destined for
+// a Listen=true request). An entry that is both in sync and not due for
+// resync needs no request this round and is omitted from both maps.
+func (client *ConfigClient) buildListenTask(needAllSync bool) (listenBatch, cancelBatch map[int][]*cacheData) {
+	listenBatch = make(map[int][]*cacheData, 8)
+	cancelBatch = make(map[int][]*cacheData, 8)
 
-	for _, v := range client.cacheMap.Items() {
-		data, ok := v.(cacheData)
-		if !ok {
+	for _, cData := range client.holder.snapshot() {
+		cData.mu.Lock()
+		discard := cData.discard
+		isSyncWithServer := cData.isSyncWithServer
+		taskId := cData.taskId
+		cData.mu.Unlock()
+
+		if discard {
+			cancelBatch[taskId] = append(cancelBatch[taskId], cData)
 			continue
 		}
-
-		if data.isSyncWithServer {
-			if data.md5 != data.cacheDataListener.lastMd5 {
-				data.executeListener()
-			}
-			if !needAllSync {
-				continue
-			}
+		if !isSyncWithServer || needAllSync {
+			listenBatch[taskId] = append(listenBatch[taskId], cData)
 		}
-		listenTaskMap[data.taskId] = append(listenTaskMap[data.taskId], data)
 	}
-	return listenTaskMap
+	return listenBatch, cancelBatch
 }
 
+// asyncNotifyListenConfig wakes the listen executor without blocking the
+// caller. listenExecute is a 1-buffered coalescing bell (same shape as the
+// naming FuzzyWatch holder's Bell): if a wake-up is already pending, this
+// one merges into it -- the executor scans everything each round anyway, so
+// N pending bells and one pending bell trigger identical work. The
+// non-blocking send never spawns a goroutine and never leaks, no matter how
+// many notifications land while the executor is busy or after the client is
+// closed.
 func (client *ConfigClient) asyncNotifyListenConfig() {
-	go func() {
-		client.listenExecute <- struct{}{}
-	}()
+	select {
+	case client.listenExecute <- struct{}{}:
+	default:
+	}
 }
 
 func (client *ConfigClient) buildResponse(response rpc_response.IResponse) (bool, error) {
