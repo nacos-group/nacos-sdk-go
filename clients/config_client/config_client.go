@@ -456,9 +456,11 @@ func (client *ConfigClient) executeConfigListen() {
 	// delivery in flight: deliveries are asynchronous, so a wrap can finish a
 	// callback (or panic out of one) after its entry's content moved on, and
 	// the change that moved it may not produce another server notification.
-	// This round-entry sweep is that catch-up path (the delivery completion
-	// also rings the bell, so the sweep usually runs promptly rather than on
-	// the poll cadence). Entries with no lagging idle wrap are a cheap no-op.
+	// This round-entry sweep is that catch-up path. A successful delivery
+	// that fell behind rings the bell, so its catch-up runs promptly; a
+	// panicking listener deliberately does not (see deliverAndAdvance) and
+	// is retried here on the poll cadence. Entries with no lagging idle wrap
+	// are a cheap no-op.
 	for _, cData := range client.holder.snapshot() {
 		cData.notifyListeners(client.configFilterChainManager, client.asyncNotifyListenConfig)
 	}

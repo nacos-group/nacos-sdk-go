@@ -187,11 +187,11 @@ func (c *cacheData) reviveAndAddListener(l vo.Listener) {
 // callbacks with `go` for the same reason). Fan-out is bounded per listener
 // by the inFlight flag -- a wrap whose previous delivery has not returned is
 // skipped, so a slow listener holds exactly one goroutine no matter how many
-// changes arrive meanwhile. When a delivery completes and the wrap's
-// watermark still trails the entry's current md5 (a newer change landed
-// while the callback ran, or the callback panicked), wake is invoked (if
-// non-nil) so the executor promptly re-notifies instead of waiting out the
-// poll interval.
+// changes arrive meanwhile. When a delivery succeeds but the entry's md5
+// moved past the delivered snapshot while the callback ran, wake is invoked
+// (if non-nil) so the executor promptly re-notifies instead of waiting out
+// the poll interval; a failed (panicking) delivery never wakes and is
+// retried by the regular poll round instead (see deliverAndAdvance).
 func (c *cacheData) notifyListeners(chain filter.IConfigFilterChain, wake func()) {
 	c.mu.Lock()
 	dataId, group, tenant := c.dataId, c.group, c.tenant
@@ -241,10 +241,18 @@ func (c *cacheData) notifyListeners(chain filter.IConfigFilterChain, wake func()
 // goroutine and, only if it returns normally, advances lw.lastCallMd5 to
 // md5. The inFlight flag is cleared in the same critical section as the
 // watermark write, so the wrap becomes eligible for the next round only
-// once its final state for this round is visible. If the wrap still trails
-// the entry's current md5 afterwards -- because a newer change arrived
-// while the callback ran, or because the callback panicked and the
-// watermark stayed put -- wake is invoked to trigger a prompt re-notify.
+// once its final state for this round is visible.
+//
+// wake is invoked only when the delivery SUCCEEDED and the entry's md5
+// moved past the just-delivered snapshot meanwhile: that listener is
+// healthy and merely behind, so a prompt re-notify catches it up. A failed
+// (panicking) delivery must NOT wake -- its watermark still lags by
+// construction, and waking on that lag redelivers the same content
+// immediately, which panics again: a self-sustaining busy loop the
+// coalescing bell cannot damp. Failed deliveries are instead retried by
+// the regular poll round's re-notify sweep (Java parity: CacheData only
+// clears its execution state on failure; ClientWorker's loop retries on
+// its own cadence).
 func (c *cacheData) deliverAndAdvance(lw *listenerWrap, tenant, group, dataId, content, md5 string, wake func()) {
 	delivered := callListenerSafely(lw.listener, tenant, group, dataId, content)
 	c.mu.Lock()
@@ -252,9 +260,9 @@ func (c *cacheData) deliverAndAdvance(lw *listenerWrap, tenant, group, dataId, c
 	if delivered {
 		lw.lastCallMd5 = md5
 	}
-	lagging := lw.lastCallMd5 != c.md5 && !c.discard
+	shouldWake := delivered && md5 != c.md5 && !c.discard
 	c.mu.Unlock()
-	if lagging && wake != nil {
+	if shouldWake && wake != nil {
 		wake()
 	}
 }

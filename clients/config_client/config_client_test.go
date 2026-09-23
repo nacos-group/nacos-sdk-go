@@ -1262,3 +1262,85 @@ func TestBellStormDoesNotAccumulateGoroutines(t *testing.T) {
 	assert.LessOrEqual(t, after-before, 5,
 		"bell sends must coalesce, not pile up one goroutine per notification (before=%d after=%d)", before, after)
 }
+
+// ---------------------------------------------------------------------------
+// Review round-2 P2: a persistently panicking listener must not busy-loop.
+// A panic leaves the watermark lagging; waking on that lag redelivers the
+// same content immediately, which panics again -- a self-sustaining spin.
+// Failed deliveries must instead wait for the regular poll round (Java
+// CacheData/ClientWorker parity).
+// ---------------------------------------------------------------------------
+
+// seedSyncedLaggingEntry registers a listener for dataId whose watermark lags
+// the entry's md5 while the entry itself is synced with the server -- the
+// executor's round-entry sweep is then the only redelivery path.
+func seedSyncedLaggingEntry(t *testing.T, client *ConfigClient, dataId string, onChange vo.Listener) *cacheData {
+	t.Helper()
+	require.NoError(t, client.ListenConfig(vo.ConfigParam{DataId: dataId, Group: "g", OnChange: onChange}))
+	cd, ok := client.holder.get(testConfigKey(t, client, dataId, "g"))
+	require.True(t, ok)
+	cd.mu.Lock()
+	cd.content = "v1"
+	cd.md5 = "md5-v1"
+	cd.isSyncWithServer = true
+	cd.mu.Unlock()
+	return cd
+}
+
+func TestPersistentlyPanickingListenerDoesNotBusyLoop(t *testing.T) {
+	proxy := &scriptedProxy{}
+	proxy.reply = func(req *rpc_request.ConfigBatchListenRequest) (rpc_response.IResponse, error) {
+		return batchListenSuccess(), nil
+	}
+	client := newExecutorTestClient(proxy)
+	defer client.cancel()
+
+	var calls atomic.Int32
+	seedSyncedLaggingEntry(t, client, "panic-spin", func(_, _, _, _ string) {
+		calls.Add(1)
+		panic("boom")
+	})
+
+	client.startInternal()
+	client.asyncNotifyListenConfig() // one legitimate wake-up
+
+	time.Sleep(600 * time.Millisecond)
+	got := calls.Load()
+	assert.LessOrEqual(t, got, int32(3),
+		"a panicking listener must be retried on the poll cadence, not in a wake/redeliver busy loop (got %d calls in 600ms)", got)
+}
+
+func TestRecoveredListenerIsRedeliveredByPollWithoutServerChange(t *testing.T) {
+	proxy := &scriptedProxy{}
+	proxy.reply = func(req *rpc_request.ConfigBatchListenRequest) (rpc_response.IResponse, error) {
+		return batchListenSuccess(), nil
+	}
+	client := newExecutorTestClient(proxy)
+	defer client.cancel()
+
+	var calls atomic.Int32
+	delivered := make(chan string, 4)
+	cd := seedSyncedLaggingEntry(t, client, "panic-recover", func(_, _, _, data string) {
+		if calls.Add(1) == 1 {
+			panic("boom once")
+		}
+		delivered <- data
+	})
+
+	client.startInternal()
+	client.asyncNotifyListenConfig()
+
+	// No further server change and no further bell: the recovery redelivery
+	// must arrive via the regular poll round (executorErrDelay = 5s).
+	select {
+	case data := <-delivered:
+		assert.Equal(t, "v1", data)
+	case <-time.After(8 * time.Second):
+		t.Fatal("recovered listener was never redelivered by the poll round")
+	}
+	waitUntil(t, 2*time.Second, func() bool {
+		cd.mu.Lock()
+		defer cd.mu.Unlock()
+		return len(cd.listeners) == 1 && cd.listeners[0].lastCallMd5 == "md5-v1"
+	}, "watermark must advance once the recovered delivery succeeds")
+}
