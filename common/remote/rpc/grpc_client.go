@@ -41,9 +41,11 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/nacos_server"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/status"
 )
 
 type GrpcClient struct {
@@ -304,37 +306,49 @@ func (c *GrpcClient) rpcPortOffset() uint64 {
 }
 
 func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiRequestStream_RequestBiStreamClient, grpcConn *GrpcConnection) {
-	go func() {
-		for {
-			select {
-			case <-streamClient.Context().Done():
+	go c.receiveBiRequestStream(streamClient, grpcConn)
+}
+
+func (c *GrpcClient) receiveBiRequestStream(streamClient nacos_grpc_service.BiRequestStream_RequestBiStreamClient, grpcConn *GrpcConnection) {
+	for {
+		select {
+		case <-streamClient.Context().Done():
+			if c.isShutdown() {
+				logger.Infof("connectionId %s stream client closed after shutdown", grpcConn.getConnectionId())
+			} else {
 				logger.Warnf("connectionId %s stream client close", grpcConn.getConnectionId())
-				return
-			default:
-				payload, err := streamClient.Recv()
-				if err != nil {
-					running := c.IsRunning()
-					abandon := grpcConn.getAbandon()
-					if c.IsRunning() && !abandon {
-						if err == io.EOF {
-							logger.Infof("connectionId %s request stream onCompleted, switch server", grpcConn.getConnectionId())
-						} else {
-							logger.Errorf("connectionId %s request stream error, switch server, error=%v", grpcConn.getConnectionId(), err)
-						}
-						if atomic.CompareAndSwapInt32((*int32)(&c.rpcClientStatus), int32(RUNNING), int32(UNHEALTHY)) {
-							c.switchServerAsync(ServerInfo{}, false)
-							return
-						}
+			}
+			return
+		default:
+			payload, err := streamClient.Recv()
+			if err != nil {
+				// Shutdown closes the connection to unblock Recv. Its cancellation
+				// or EOF is an expected lifecycle event, not a stream failure.
+				if c.isShutdown() && (errors.Is(err, context.Canceled) || errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled) {
+					logger.Infof("connectionId %s stream client closed after shutdown", grpcConn.getConnectionId())
+					return
+				}
+				running := c.IsRunning()
+				abandon := grpcConn.getAbandon()
+				if c.IsRunning() && !abandon {
+					if err == io.EOF {
+						logger.Infof("connectionId %s request stream onCompleted, switch server", grpcConn.getConnectionId())
 					} else {
-						logger.Errorf("connectionId %s received error event, isRunning:%v, isAbandon=%v, error=%v", grpcConn.getConnectionId(), running, abandon, err)
+						logger.Errorf("connectionId %s request stream error, switch server, error=%v", grpcConn.getConnectionId(), err)
+					}
+					if atomic.CompareAndSwapInt32((*int32)(&c.rpcClientStatus), int32(RUNNING), int32(UNHEALTHY)) {
+						c.switchServerAsync(ServerInfo{}, false)
 						return
 					}
 				} else {
-					c.handleServerRequest(payload, grpcConn)
+					logger.Errorf("connectionId %s received error event, isRunning:%v, isAbandon=%v, error=%v", grpcConn.getConnectionId(), running, abandon, err)
+					return
 				}
+			} else {
+				c.handleServerRequest(payload, grpcConn)
 			}
 		}
-	}()
+	}
 }
 
 func serverCheck(client nacos_grpc_service.RequestClient) (rpc_response.IResponse, error) {
