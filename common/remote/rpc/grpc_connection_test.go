@@ -40,8 +40,23 @@ func TestConvertRequestProtoPath(t *testing.T) {
 	assert.False(t, hasModule, "proto path body must come from protojson, not legacy struct")
 }
 
+// legacyTestRequest is a non-migrated stub that always uses the legacy JSON path.
+// This type does NOT implement ProtoMessage() to ensure the legacy path is always
+// tested, regardless of future proto migrations of other request types.
+type legacyTestRequest struct {
+	*rpc_request.Request
+	TestField string `json:"testField"`
+}
+
+func (r *legacyTestRequest) GetRequestType() string {
+	return "LegacyTestRequest"
+}
+
 func TestConvertRequestLegacyPath(t *testing.T) {
-	req := &rpc_request.ConfigQueryRequest{ConfigRequest: rpc_request.NewConfigRequest("g", "d", "t")}
+	req := &legacyTestRequest{
+		Request:   &rpc_request.Request{Headers: make(map[string]string)},
+		TestField: "value",
+	}
 	p := convertRequest(req)
 	assert.Equal(t, req.GetRequestType(), p.GetMetadata().GetType())
 	assert.Equal(t, req.GetBody(req), string(p.GetBody().GetValue()), "legacy path must be byte-compatible with json.Marshal")
