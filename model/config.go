@@ -46,3 +46,14 @@ type ConfigContext struct {
 	DataId string `json:"dataId"`
 	Tenant string `json:"tenant"`
 }
+
+// ConfigPageResult is the response envelope of the v3 admin config list API.
+//
+// Deprecated: the SDK decodes the v3 admin config list response internally, so
+// this type is no longer used. It is retained for source compatibility with
+// callers that still reference it and may be removed in a future release.
+type ConfigPageResult struct {
+	Code    int        `json:"code"`
+	Message string     `json:"message"`
+	Data    ConfigPage `json:"data"`
+}
