@@ -1344,3 +1344,106 @@ func TestRecoveredListenerIsRedeliveredByPollWithoutServerChange(t *testing.T) {
 		return len(cd.listeners) == 1 && cd.listeners[0].lastCallMd5 == "md5-v1"
 	}, "watermark must advance once the recovered delivery succeeds")
 }
+
+// ---------------------------------------------------------------------------
+// Review round-3: revive during an in-flight cancel must force re-listen.
+//
+// Interleaving (single key, real user APIs, RPC responses gated by the test):
+//  1. Listen=true in flight; CancelListenConfig lands (discard=true,
+//     synced=false).
+//  2. The old listen response (success, no changes) overwrites the entry to
+//     isSyncWithServer=true -- stale write over the cancel state.
+//  3. Next round sends Listen=false; while its response is in flight,
+//     ListenConfig revives the entry. Without resetting isSyncWithServer the
+//     revived entry inherits the stale true.
+//  4. The cancel succeeds server-side; the revived entry is kept locally,
+//     believes it is synced, and ordinary rounds never re-send Listen=true
+//     until the full resync -- a listener silently deaf for minutes.
+// ---------------------------------------------------------------------------
+
+// gatedProxy hands each ConfigBatchListenRequest to the test through
+// `entered` and blocks until the test pushes the response through `release`;
+// when `auto` is set it replies success immediately instead.
+type gatedProxy struct {
+	scriptedProxy
+	entered chan *rpc_request.ConfigBatchListenRequest
+	release chan rpc_response.IResponse
+	auto    atomic.Bool
+}
+
+func newGatedProxy() *gatedProxy {
+	p := &gatedProxy{
+		entered: make(chan *rpc_request.ConfigBatchListenRequest),
+		release: make(chan rpc_response.IResponse),
+	}
+	p.reply = func(req *rpc_request.ConfigBatchListenRequest) (rpc_response.IResponse, error) {
+		if p.auto.Load() {
+			return batchListenSuccess(), nil
+		}
+		p.entered <- req
+		return <-p.release, nil
+	}
+	return p
+}
+
+func TestReviveDuringCancelInFlightResubscribes(t *testing.T) {
+	proxy := newGatedProxy()
+	client := newExecutorTestClient(proxy)
+	defer client.cancel()
+
+	dataId := "revive-during-cancel"
+	require.NoError(t, client.ListenConfig(vo.ConfigParam{DataId: dataId, Group: "g", OnChange: noopOnChange}))
+
+	runRound := func() chan struct{} {
+		done := make(chan struct{})
+		go func() {
+			client.executeConfigListen()
+			close(done)
+		}()
+		return done
+	}
+
+	// Round 1: Listen=true in flight; cancel lands; stale success overwrites.
+	done1 := runRound()
+	req := <-proxy.entered
+	require.True(t, req.Listen, "round 1 must send Listen=true")
+	require.NoError(t, client.CancelListenConfig(vo.ConfigParam{DataId: dataId, Group: "g"}))
+	proxy.release <- batchListenSuccess() // no ChangedConfigs
+	<-done1
+
+	// Round 2: Listen=false in flight; revive lands before its response.
+	done2 := runRound()
+	req = <-proxy.entered
+	require.False(t, req.Listen, "round 2 must send the cancel batch")
+	require.NoError(t, client.ListenConfig(vo.ConfigParam{DataId: dataId, Group: "g", OnChange: noopOnChange}))
+	proxy.release <- batchListenSuccess()
+	<-done2
+
+	// Revived entry must still exist locally with its listener.
+	cd, ok := client.holder.get(testConfigKey(t, client, dataId, "g"))
+	require.True(t, ok, "revived entry must survive the confirmed cancel")
+	cd.mu.Lock()
+	require.False(t, cd.discard)
+	require.Len(t, cd.listeners, 1)
+	cd.mu.Unlock()
+
+	// Ordinary rounds (no full resync) must re-subscribe the revived key.
+	// Only requests sent AFTER the revive count: rounds 1-2 are the setup.
+	preRounds := len(proxy.sentSnapshot())
+	proxy.auto.Store(true)
+	for i := 0; i < 10; i++ {
+		client.executeConfigListen()
+	}
+	for _, sent := range proxy.sentSnapshot()[preRounds:] {
+		if !sent.Listen {
+			continue
+		}
+		for _, lc := range sent.ConfigListenContexts {
+			if lc.DataId == dataId {
+				// found a re-subscribe after the revive (rounds 3+)
+				return
+			}
+		}
+	}
+	t.Fatal("revived entry was never re-subscribed by ordinary rounds: stale isSyncWithServer survived the cancel/revive interleaving")
+}

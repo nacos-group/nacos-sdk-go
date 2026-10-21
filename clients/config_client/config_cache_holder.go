@@ -150,11 +150,21 @@ func (c *cacheData) addListener(l vo.Listener, initialMd5 string) {
 // never observe. Folding revive + append into one lock closes that window:
 // whichever of markDiscard/reviveAndAddListener runs last atomically
 // determines the resulting (discard, listeners) pair.
+//
+// isSyncWithServer is forced to false so the next ordinary round re-sends
+// Listen=true for the revived key. Without this, a revive can inherit a
+// stale true: a listen response that was in flight when the entry was
+// cancelled marks it synced after the fact, and if the revive then lands
+// while the Listen=false cancel is in flight, the entry survives with a
+// listener attached, locally "synced", but unsubscribed on the server --
+// deaf until the full resync. Java parity: addTenantListeners sets
+// setConsistentWithServer(false) under the same lock that revives.
 func (c *cacheData) reviveAndAddListener(l vo.Listener) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.discard = false
 	c.isInitializing = true
+	c.isSyncWithServer = false
 	c.listeners = append(c.listeners, &listenerWrap{listener: l, lastCallMd5: c.md5})
 }
 
