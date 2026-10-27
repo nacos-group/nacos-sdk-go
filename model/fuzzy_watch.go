@@ -41,3 +41,21 @@ type FuzzyWatchLoadEvent struct {
 	Pattern   string
 	ErrorCode int
 }
+
+// ConfigFuzzyWatchChangeEvent is delivered to a config FuzzyWatch callback
+// whenever a config matching the watched pattern is added, changed or deleted.
+// ChangedType is one of constant.CONFIG_FUZZY_WATCH_CHANGED_TYPE_*.
+type ConfigFuzzyWatchChangeEvent struct {
+	DataId      string
+	Group       string
+	NamespaceId string
+	ChangedType string
+	SyncType    string
+}
+
+// ConfigFuzzyWatchLoadEvent is delivered when the server reports that a config
+// fuzzy watch pattern hit a capacity limit.
+type ConfigFuzzyWatchLoadEvent struct {
+	Pattern   string
+	ErrorCode int
+}
