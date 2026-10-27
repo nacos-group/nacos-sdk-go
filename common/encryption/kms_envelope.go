@@ -24,9 +24,9 @@ import (
 // Ciphertext envelope compatible with the dkms-transfer bridge SDK:
 // base64std( keyVersionId[36] + iv[12] + raw ).
 const (
-	kmsEktIdLength            = 36 // dkms-transfer@v0.1.8 sdk/decrypt.go EktIdLength
-	kmsGcmIvLength            = 12 // 同上 GcmIvLength
-	kmsMigrationKeyVersionHdr = "x-kms-migrationkeyversionid"
+	kmsEktIdLength            = 36                            // dkms-transfer@v0.1.8 sdk/decrypt.go EktIdLength
+	kmsGcmIvLength            = 12                            // dkms-transfer@v0.1.8 sdk/decrypt.go GcmIvLength
+	kmsMigrationKeyVersionHdr = "x-kms-migrationkeyversionid" // dkms-transfer@v0.1.8 sdk/decrypt.go MigrationKeyVersionIdKey
 )
 
 // sealKmsEnvelope concatenates keyVersionId, iv and raw, then base64-encodes the result.
