@@ -207,10 +207,6 @@ func innerNewKmsClient(clientConfig constant.ClientConfig) (kmsClient KmsClient,
 	return kmsClient, err
 }
 
-func newKmsV1Client(clientConfig constant.ClientConfig) (KmsClient, error) {
-	return NewKmsV1ClientWithAccessKey(clientConfig.RegionId, clientConfig.AccessKey, clientConfig.SecretKey)
-}
-
 func newKmsV3Client(clientConfig constant.ClientConfig) (KmsClient, error) {
 	return NewKmsV3ClientWithConfig(&dkms_api.Config{
 		Protocol:         tea.String("https"),
