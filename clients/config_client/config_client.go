@@ -64,7 +64,7 @@ type ConfigClient struct {
 	configCacheDir           string
 	lastAllSyncTime          time.Time
 	holder                   *configCacheHolder
-	fuzzyWatchHolder         *ConfigFuzzyWatchHolder // set by the FuzzyWatch API wiring; nil until then
+	fuzzyWatchHolder         *ConfigFuzzyWatchHolder // built in the constructor before any rpc client exists
 	uid                      string
 	listenExecute            chan struct{}
 	isClosed                 bool
@@ -124,6 +124,18 @@ func NewConfigClientWithRamCredentialProvider(nc nacos_client.INacosClient, prov
 	config.holder = newConfigCacheHolder()
 	// 1-buffered coalescing bell; see asyncNotifyListenConfig.
 	config.listenExecute = make(chan struct{}, 1)
+
+	// Binding order is load-bearing: the push handlers are registered inside
+	// createRpcClient, once per rpc client, and only when fuzzyWatchHolder is
+	// already non-nil. So the holder must be assigned, wired and started
+	// before anything below (or any caller) can trigger the first
+	// getRpcClient.
+	config.fuzzyWatchHolder = NewConfigFuzzyWatchHolder(clientConfig.NamespaceId)
+	if cp, ok := config.configProxy.(*ConfigProxy); ok {
+		config.fuzzyWatchHolder.SetRequester(newConfigFuzzyWatchRequester(cp, config))
+	}
+	config.fuzzyWatchHolder.Start()
+
 	config.startInternal()
 	return config, err
 }
@@ -370,6 +382,47 @@ func (client *ConfigClient) rejectIfClosedAfterCommit(cData *cacheData) error {
 	return nil
 }
 
+// FuzzyWatchConfig registers a fuzzy watch on configs matching the given
+// dataId pattern within one group and returns a handle for this registration.
+// Registration is local: see IConfigClient.FuzzyWatchConfig for the error
+// contract. DataIdPattern is trimmed of surrounding whitespace; an empty Group
+// defaults to DEFAULT_GROUP.
+//
+// The closed-client path relies on the holder alone: RegisterWatcher re-checks
+// its stop channel under the holder lock, which already linearizes the commit
+// against CloseClient (Shutdown closes that channel under the same lock), so
+// no client.mutex check is duplicated here.
+func (client *ConfigClient) FuzzyWatchConfig(param *vo.ConfigFuzzyWatchParam) (*ConfigFuzzyWatchHandle, error) {
+	if param == nil {
+		return nil, errors.New("config fuzzy watch param cannot be nil!")
+	}
+	if client.fuzzyWatchHolder == nil {
+		return nil, ErrConfigFuzzyWatchClientClosed
+	}
+	dataIdPattern := strings.TrimSpace(param.DataIdPattern)
+	if dataIdPattern == "" {
+		return nil, errors.New("dataIdPattern cannot be empty!")
+	}
+	if param.OnChange == nil {
+		return nil, errors.New("onChange cannot be nil!")
+	}
+	group := strings.TrimSpace(param.Group)
+	if group == "" {
+		group = constant.DEFAULT_GROUP
+	}
+	normalized := *param
+	normalized.DataIdPattern = dataIdPattern
+	normalized.Group = group
+
+	holder := client.fuzzyWatchHolder
+	id, err := holder.RegisterWatcher(&normalized)
+	if err != nil {
+		return nil, err
+	}
+	pattern := BuildConfigFuzzyWatchPattern(holder.namespace, dataIdPattern, group)
+	return &ConfigFuzzyWatchHandle{holder: holder, pattern: pattern, id: id}, nil
+}
+
 func (client *ConfigClient) SearchConfig(param vo.SearchConfigParam) (*model.ConfigPage, error) {
 	return client.searchConfigInner(param)
 }
@@ -382,6 +435,9 @@ func (client *ConfigClient) CloseClient() {
 		return
 	}
 	client.configProxy.getRpcClient(client).Shutdown()
+	if client.fuzzyWatchHolder != nil {
+		client.fuzzyWatchHolder.Shutdown()
+	}
 	client.cancel()
 	client.isClosed = true
 }
