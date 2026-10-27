@@ -48,7 +48,8 @@ func decodeProtoResponse(payload *nacos_grpc_service.Payload) (rpc_response.IRes
 	case "HealthCheckResponse", "ServerCheckResponse", "ErrorResponse",
 		"InstanceResponse", "BatchInstanceResponse", "QueryServiceResponse",
 		"SubscribeServiceResponse", "ServiceListResponse", "NamingFuzzyWatchResponse",
-		"ConfigQueryResponse", "ConfigPublishResponse", "ConfigRemoveResponse", "ConfigChangeBatchListenResponse":
+		"ConfigQueryResponse", "ConfigPublishResponse", "ConfigRemoveResponse", "ConfigChangeBatchListenResponse",
+		"ConfigFuzzyWatchResponse":
 	default:
 		return nil, false, nil
 	}
@@ -103,6 +104,8 @@ func decodeProtoResponse(payload *nacos_grpc_service.Payload) (rpc_response.IRes
 		return adaptConfigRemoveResponse(m, body), true, nil
 	case *config.ConfigChangeBatchListenResponse:
 		return adaptConfigBatchListenResponse(m, body), true, nil
+	case *config.ConfigFuzzyWatchResponse:
+		return adaptConfigFuzzyWatchResponse(m, body), true, nil
 	}
 	return nil, true, errors.Errorf("no proto adapter for migrated type %s", payload.GetMetadata().GetType())
 }
@@ -140,7 +143,7 @@ func decodeProtoServerRequest(payload *nacos_grpc_service.Payload) (rpc_request.
 	switch payload.GetMetadata().GetType() {
 	case "ConnectResetRequest", "ClientDetectionRequest", "NotifySubscriberRequest",
 		"NamingFuzzyWatchSyncRequest", "NamingFuzzyWatchChangeNotifyRequest", "SetupAckRequest",
-		"ConfigChangeNotifyRequest":
+		"ConfigChangeNotifyRequest", "ConfigFuzzyWatchChangeNotifyRequest", "ConfigFuzzyWatchSyncRequest":
 	default:
 		return nil, false
 	}
@@ -204,6 +207,10 @@ func decodeProtoServerRequest(payload *nacos_grpc_service.Payload) (rpc_request.
 		return req, true
 	case *config.ConfigChangeNotifyRequest:
 		return adaptConfigChangeNotifyRequest(m), true
+	case *config.ConfigFuzzyWatchChangeNotifyRequest:
+		return adaptConfigFuzzyWatchChangeNotifyRequest(m), true
+	case *config.ConfigFuzzyWatchSyncRequest:
+		return adaptConfigFuzzyWatchSyncRequest(m), true
 	}
 	return nil, false
 }

@@ -65,3 +65,35 @@ func adaptConfigChangeNotifyRequest(m *config.ConfigChangeNotifyRequest) *rpc_re
 	req.RequestId = m.RequestId
 	return req
 }
+
+func adaptConfigFuzzyWatchResponse(m *config.ConfigFuzzyWatchResponse, body []byte) *rpc_response.ConfigFuzzyWatchResponse {
+	return &rpc_response.ConfigFuzzyWatchResponse{
+		Response: adaptBaseResponse(m.ResultCode, m.ErrorCode, m.Message, m.RequestId, body),
+	}
+}
+
+func adaptConfigFuzzyWatchChangeNotifyRequest(m *config.ConfigFuzzyWatchChangeNotifyRequest) *rpc_request.ConfigFuzzyWatchChangeNotifyRequest {
+	return &rpc_request.ConfigFuzzyWatchChangeNotifyRequest{
+		Request:    &rpc_request.Request{RequestId: m.RequestId},
+		GroupKey:   m.GroupKey,
+		ChangeType: m.ChangeType,
+	}
+}
+
+func adaptConfigFuzzyWatchSyncRequest(m *config.ConfigFuzzyWatchSyncRequest) *rpc_request.ConfigFuzzyWatchSyncRequest {
+	contexts := make([]rpc_request.ConfigFuzzyWatchSyncContext, 0, len(m.Contexts))
+	for _, c := range m.Contexts {
+		contexts = append(contexts, rpc_request.ConfigFuzzyWatchSyncContext{
+			GroupKey:    c.GetGroupKey(),
+			ChangedType: c.GetChangedType(),
+		})
+	}
+	return &rpc_request.ConfigFuzzyWatchSyncRequest{
+		Request:         &rpc_request.Request{RequestId: m.RequestId},
+		GroupKeyPattern: m.GroupKeyPattern,
+		SyncType:        m.SyncType,
+		Contexts:        contexts,
+		TotalBatch:      int(m.TotalBatch),
+		CurrentBatch:    int(m.CurrentBatch),
+	}
+}

@@ -57,3 +57,13 @@ type ConfigRemoveResponse struct {
 func (c *ConfigRemoveResponse) GetResponseType() string {
 	return "ConfigRemoveResponse"
 }
+
+// ConfigFuzzyWatchResponse is the server's ack for a ConfigFuzzyWatchRequest;
+// it carries only the base response fields.
+type ConfigFuzzyWatchResponse struct {
+	*Response
+}
+
+func (c *ConfigFuzzyWatchResponse) GetResponseType() string {
+	return "ConfigFuzzyWatchResponse"
+}

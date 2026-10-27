@@ -151,3 +151,74 @@ func TestDecodeProtoConfigChangeNotifyRequest(t *testing.T) {
 	assert.Equal(t, "ns", n.Tenant)
 	assert.Equal(t, "1", n.RequestId)
 }
+
+func TestDecodeProtoConfigFuzzyWatchResponse(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		msg  *config.ConfigFuzzyWatchResponse
+		ok   bool
+	}{
+		{"success", &config.ConfigFuzzyWatchResponse{ResultCode: 200, RequestId: "1"}, true},
+		{"failure", &config.ConfigFuzzyWatchResponse{ResultCode: 500, ErrorCode: 50310, Message: "over limit", RequestId: "2"}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			payload, err := payloadCodec.Encode("ConfigFuzzyWatchResponse", tc.msg, nil, "127.0.0.1")
+			require.NoError(t, err)
+			resp, migrated, err := decodeProtoResponse(payload)
+			require.True(t, migrated)
+			require.NoError(t, err)
+			fr, ok := resp.(*rpc_response.ConfigFuzzyWatchResponse)
+			require.True(t, ok)
+			assert.Equal(t, "ConfigFuzzyWatchResponse", fr.GetResponseType())
+			assert.Equal(t, tc.ok, fr.IsSuccess())
+			assert.Equal(t, tc.msg.RequestId, fr.RequestId)
+			assert.Equal(t, int(tc.msg.ErrorCode), fr.ErrorCode)
+			assert.Equal(t, tc.msg.Message, fr.Message)
+		})
+	}
+}
+
+func TestDecodeProtoConfigFuzzyWatchChangeNotifyRequest(t *testing.T) {
+	msg := &config.ConfigFuzzyWatchChangeNotifyRequest{RequestId: "20", GroupKey: "d+g+ns", ChangeType: "DELETE_CONFIG"}
+	payload, err := payloadCodec.Encode("ConfigFuzzyWatchChangeNotifyRequest", msg, nil, "127.0.0.1")
+	require.NoError(t, err)
+
+	req, decoded := decodeProtoServerRequest(payload)
+	require.True(t, decoded)
+	c, ok := req.(*rpc_request.ConfigFuzzyWatchChangeNotifyRequest)
+	require.True(t, ok)
+	assert.Equal(t, "20", c.RequestId)
+	assert.Equal(t, "d+g+ns", c.GroupKey)
+	assert.Equal(t, "DELETE_CONFIG", c.ChangeType)
+}
+
+func TestDecodeProtoConfigFuzzyWatchSyncRequest(t *testing.T) {
+	msg := &config.ConfigFuzzyWatchSyncRequest{
+		RequestId:       "21",
+		GroupKeyPattern: "public>>g*>>d*",
+		SyncType:        "FUZZY_WATCH_INIT_NOTIFY",
+		Contexts: []*config.ConfigFuzzyWatchSyncRequestContext{
+			{GroupKey: "d1+g+ns", ChangedType: "ADD_CONFIG"},
+			{GroupKey: "d2+g+ns", ChangedType: "DELETE_CONFIG"},
+		},
+		TotalBatch:   3,
+		CurrentBatch: 2,
+	}
+	payload, err := payloadCodec.Encode("ConfigFuzzyWatchSyncRequest", msg, nil, "127.0.0.1")
+	require.NoError(t, err)
+
+	req, decoded := decodeProtoServerRequest(payload)
+	require.True(t, decoded)
+	s, ok := req.(*rpc_request.ConfigFuzzyWatchSyncRequest)
+	require.True(t, ok)
+	assert.Equal(t, "21", s.RequestId)
+	assert.Equal(t, "public>>g*>>d*", s.GroupKeyPattern)
+	assert.Equal(t, "FUZZY_WATCH_INIT_NOTIFY", s.SyncType)
+	assert.Equal(t, 3, s.TotalBatch)
+	assert.Equal(t, 2, s.CurrentBatch)
+	require.Len(t, s.Contexts, 2)
+	assert.Equal(t, "d1+g+ns", s.Contexts[0].GroupKey)
+	assert.Equal(t, "ADD_CONFIG", s.Contexts[0].ChangedType)
+	assert.Equal(t, "d2+g+ns", s.Contexts[1].GroupKey)
+	assert.Equal(t, "DELETE_CONFIG", s.Contexts[1].ChangedType)
+}

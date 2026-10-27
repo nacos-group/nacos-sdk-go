@@ -121,4 +121,14 @@ const (
 	FUZZY_WATCH_REQUEST_NAME               = "NamingFuzzyWatchRequest"
 	FUZZY_WATCH_SYNC_REQUEST_NAME          = "NamingFuzzyWatchSyncRequest"
 	FUZZY_WATCH_CHANGE_NOTIFY_REQUEST_NAME = "NamingFuzzyWatchChangeNotifyRequest"
+
+	CONFIG_FUZZY_WATCH_REQUEST_NAME               = "ConfigFuzzyWatchRequest"
+	CONFIG_FUZZY_WATCH_CHANGE_NOTIFY_REQUEST_NAME = "ConfigFuzzyWatchChangeNotifyRequest"
+	CONFIG_FUZZY_WATCH_SYNC_REQUEST_NAME          = "ConfigFuzzyWatchSyncRequest"
+
+	// Config fuzzy watch changed types.
+	// Source: com.alibaba.nacos.api.common.Constants.ConfigChangedType (3.2.3)
+	CONFIG_FUZZY_WATCH_CHANGED_TYPE_ADD_CONFIG     = "ADD_CONFIG"
+	CONFIG_FUZZY_WATCH_CHANGED_TYPE_DELETE_CONFIG  = "DELETE_CONFIG"
+	CONFIG_FUZZY_WATCH_CHANGED_TYPE_CONFIG_CHANGED = "CONFIG_CHANGED"
 )
