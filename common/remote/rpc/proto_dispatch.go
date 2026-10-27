@@ -21,6 +21,7 @@ import (
 
 	nacos_grpc_service "github.com/nacos-group/nacos-sdk-proto/go"
 	"github.com/nacos-group/nacos-sdk-proto/go/common"
+	"github.com/nacos-group/nacos-sdk-proto/go/config"
 	"github.com/nacos-group/nacos-sdk-proto/go/naming"
 	"github.com/pkg/errors"
 
@@ -46,7 +47,8 @@ func decodeProtoResponse(payload *nacos_grpc_service.Payload) (rpc_response.IRes
 	switch payload.GetMetadata().GetType() {
 	case "HealthCheckResponse", "ServerCheckResponse", "ErrorResponse",
 		"InstanceResponse", "BatchInstanceResponse", "QueryServiceResponse",
-		"SubscribeServiceResponse", "ServiceListResponse", "NamingFuzzyWatchResponse":
+		"SubscribeServiceResponse", "ServiceListResponse", "NamingFuzzyWatchResponse",
+		"ConfigQueryResponse", "ConfigPublishResponse", "ConfigRemoveResponse", "ConfigChangeBatchListenResponse":
 	default:
 		return nil, false, nil
 	}
@@ -93,6 +95,14 @@ func decodeProtoResponse(payload *nacos_grpc_service.Payload) (rpc_response.IRes
 		return &rpc_response.NamingFuzzyWatchResponse{
 			Response: adaptBaseResponse(m.ResultCode, m.ErrorCode, m.Message, m.RequestId, body),
 		}, true, nil
+	case *config.ConfigQueryResponse:
+		return adaptConfigQueryResponse(m, body), true, nil
+	case *config.ConfigPublishResponse:
+		return adaptConfigPublishResponse(m, body), true, nil
+	case *config.ConfigRemoveResponse:
+		return adaptConfigRemoveResponse(m, body), true, nil
+	case *config.ConfigChangeBatchListenResponse:
+		return adaptConfigBatchListenResponse(m, body), true, nil
 	}
 	return nil, true, errors.Errorf("no proto adapter for migrated type %s", payload.GetMetadata().GetType())
 }
@@ -129,7 +139,8 @@ func adaptBaseResponse(resultCode, errorCode int32, message, requestId string, b
 func decodeProtoServerRequest(payload *nacos_grpc_service.Payload) (rpc_request.IRequest, bool) {
 	switch payload.GetMetadata().GetType() {
 	case "ConnectResetRequest", "ClientDetectionRequest", "NotifySubscriberRequest",
-		"NamingFuzzyWatchSyncRequest", "NamingFuzzyWatchChangeNotifyRequest", "SetupAckRequest":
+		"NamingFuzzyWatchSyncRequest", "NamingFuzzyWatchChangeNotifyRequest", "SetupAckRequest",
+		"ConfigChangeNotifyRequest":
 	default:
 		return nil, false
 	}
@@ -191,6 +202,8 @@ func decodeProtoServerRequest(payload *nacos_grpc_service.Payload) (rpc_request.
 		}
 		req.RequestId = m.RequestId
 		return req, true
+	case *config.ConfigChangeNotifyRequest:
+		return adaptConfigChangeNotifyRequest(m), true
 	}
 	return nil, false
 }
