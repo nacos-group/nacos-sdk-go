@@ -128,7 +128,11 @@ const (
 
 	// Config fuzzy watch changed types.
 	// Source: com.alibaba.nacos.api.common.Constants.ConfigChangedType (3.2.3)
-	CONFIG_FUZZY_WATCH_CHANGED_TYPE_ADD_CONFIG     = "ADD_CONFIG"
-	CONFIG_FUZZY_WATCH_CHANGED_TYPE_DELETE_CONFIG  = "DELETE_CONFIG"
+	// ADD_CONFIG and DELETE_CONFIG are the only values reported to users.
+	CONFIG_FUZZY_WATCH_CHANGED_TYPE_ADD_CONFIG    = "ADD_CONFIG"
+	CONFIG_FUZZY_WATCH_CHANGED_TYPE_DELETE_CONFIG = "DELETE_CONFIG"
+	// CONFIG_CHANGED is wire-side input only: it is normalized to ADD_CONFIG
+	// when the key newly matches and otherwise dropped, so it never reaches
+	// user events.
 	CONFIG_FUZZY_WATCH_CHANGED_TYPE_CONFIG_CHANGED = "CONFIG_CHANGED"
 )
