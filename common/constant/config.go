@@ -62,6 +62,7 @@ type ClientConfig struct {
 	ClusterName          string                   // the address server  clusterName
 	AppConnLabels        map[string]string        // app conn labels
 	ClientIP             string                   // the custom client ip, if not set, will use local ip auto detected
+	MaxMetadataLength    int                      // the max total length of instance metadata keys and values checked before registering, default value is 1024, negative value disables the check
 }
 
 type ClientLogSamplingConfig struct {
