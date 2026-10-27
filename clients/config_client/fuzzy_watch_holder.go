@@ -18,6 +18,7 @@ package config_client
 
 import (
 	"context"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/nacos-group/nacos-sdk-go/v3/clients/cache"
 	"github.com/nacos-group/nacos-sdk-go/v3/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v3/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v3/model"
 	"github.com/nacos-group/nacos-sdk-go/v3/vo"
 )
@@ -64,8 +66,9 @@ type watcherEntry struct {
 	removed bool
 }
 
-// notifyTask is a placeholder for the dispatch queue element Task 3 fills in
-// (event / loadEvent plus the watcher snapshot that must observe it).
+// notifyTask is one dispatch queue element: an event (or load event) together
+// with the watcher snapshot that must observe it. Queuing whole tasks keeps
+// per-pattern delivery order. event and loadEvent are mutually exclusive.
 type notifyTask struct {
 	event     *model.ConfigFuzzyWatchChangeEvent
 	loadEvent *model.ConfigFuzzyWatchLoadEvent
@@ -254,10 +257,167 @@ func (h *ConfigFuzzyWatchHolder) loop() {
 // Task 4 (the holder never sends in this task).
 func (h *ConfigFuzzyWatchHolder) executeSync() {}
 
+// pendingLimitForTest shrinks the dispatch queue bound for contexts created afterwards.
+func (h *ConfigFuzzyWatchHolder) pendingLimitForTest(n int) { h.pendingLimit = n }
+
 // replayKnownMatchesLocked replays already-known matches to a freshly added
-// watcher only. STUB: implemented by Task 3 (needs the dispatch queue and
-// groupKey parsing). Caller holds ctx.mu.
-func (c *fuzzyWatchContext) replayKnownMatchesLocked(entry *watcherEntry) {}
+// watcher only (INIT_NOTIFY / ADD_CONFIG). Caller holds ctx.mu.
+func (c *fuzzyWatchContext) replayKnownMatchesLocked(entry *watcherEntry) {
+	replay := make([]notifyTask, 0, len(c.receivedGroupKeys))
+	for groupKey := range c.receivedGroupKeys {
+		dataId, group, namespace, err := parseConfigGroupKey(groupKey)
+		if err != nil {
+			continue
+		}
+		ev := model.ConfigFuzzyWatchChangeEvent{DataId: dataId, Group: group, NamespaceId: namespace,
+			ChangedType: constant.CONFIG_FUZZY_WATCH_CHANGED_TYPE_ADD_CONFIG, SyncType: constant.FUZZY_WATCH_INIT_NOTIFY}
+		replay = append(replay, notifyTask{event: &ev, targets: []*watcherEntry{entry}})
+	}
+	c.enqueueLocked(replay...)
+}
+
+// configGroupKeySplitter joins dataId/group/namespace into a groupKey
+// (Java GroupKey.getKeyTenant: dataId+group+tenant).
+const configGroupKeySplitter = "+"
+
+var (
+	groupKeyEscaper   = strings.NewReplacer("%", "%25", "+", "%2B")
+	groupKeyUnescaper = strings.NewReplacer("%2B", "+", "%25", "%")
+)
+
+func buildConfigGroupKey(dataId, group, namespace string) string {
+	return groupKeyEscaper.Replace(dataId) + configGroupKeySplitter + groupKeyEscaper.Replace(group) +
+		configGroupKeySplitter + groupKeyEscaper.Replace(namespace)
+}
+
+// parseConfigGroupKey splits a groupKey (dataId+group+namespace) into parts.
+func parseConfigGroupKey(groupKey string) (dataId, group, namespace string, err error) {
+	parts := strings.Split(groupKey, configGroupKeySplitter)
+	if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
+		return "", "", "", errors.Errorf("groupKey %q is not dataId%sgroup%snamespace", groupKey,
+			configGroupKeySplitter, configGroupKeySplitter)
+	}
+	return groupKeyUnescaper.Replace(parts[0]), groupKeyUnescaper.Replace(parts[1]), groupKeyUnescaper.Replace(parts[2]), nil
+}
+
+func (c *fuzzyWatchContext) snapshotEntriesLocked() []*watcherEntry {
+	out := make([]*watcherEntry, len(c.entries))
+	copy(out, c.entries)
+	return out
+}
+
+// enqueueLocked appends tasks, dropping any that would push pending past
+// pendingLimit (each drop rings onDrop so the reconcile worker heals the gap
+// via syncWatchersLocked), and starts the drain goroutine when none is
+// running. Caller must hold c.mu. At most one drain goroutine exists per
+// context, so per-pattern order is preserved and callbacks never run on the
+// caller's (RPC handler / reconcile worker) goroutine.
+func (c *fuzzyWatchContext) enqueueLocked(tasks ...notifyTask) {
+	if len(tasks) == 0 {
+		return
+	}
+	for _, task := range tasks {
+		if c.pendingLimit > 0 && len(c.pending) >= c.pendingLimit {
+			logger.Warnf("config fuzzy watch pattern:%s dispatch queue full (%d), dropping notification", c.pattern, c.pendingLimit)
+			if c.onDrop != nil {
+				c.onDrop()
+			}
+			continue
+		}
+		c.pending = append(c.pending, task)
+	}
+	if len(c.pending) > 0 && !c.draining {
+		c.draining = true
+		go c.drain()
+	}
+}
+
+func (c *fuzzyWatchContext) drain() {
+	for {
+		c.mu.Lock()
+		if len(c.pending) == 0 {
+			c.draining = false
+			c.mu.Unlock()
+			return
+		}
+		batch := c.pending
+		c.pending = nil
+		c.mu.Unlock()
+		for _, task := range batch {
+			c.deliver(task)
+		}
+	}
+}
+
+// deliver dispatches one task to its snapshotted targets. The per-watcher
+// dedupe decision and the syncedKeys update happen at delivery time under
+// c.mu. A removed watcher is re-checked immediately before invoking. syncedKeys
+// advances only after the callback returns normally, so a panic leaves the key
+// unsynced and diff-sync re-delivers it. Only ADD_CONFIG / DELETE_CONFIG tasks
+// are delivered; any other changedType is skipped (applyChange normalizes
+// CONFIG_CHANGED to ADD_CONFIG-only-if-new before enqueueing).
+func (c *fuzzyWatchContext) deliver(task notifyTask) {
+	if task.event == nil && task.loadEvent == nil {
+		return
+	}
+	for _, entry := range task.targets {
+		if task.loadEvent != nil {
+			c.mu.Lock()
+			removed := entry.removed
+			c.mu.Unlock()
+			if !removed && entry.onLoadEvent != nil {
+				safeInvoke(func() { entry.onLoadEvent(*task.loadEvent) })
+			}
+			continue
+		}
+		ev := *task.event
+		key := buildConfigGroupKey(ev.DataId, ev.Group, ev.NamespaceId)
+		c.mu.Lock()
+		skip := entry.removed
+		if !skip {
+			switch ev.ChangedType {
+			case constant.CONFIG_FUZZY_WATCH_CHANGED_TYPE_ADD_CONFIG:
+				_, seen := entry.syncedKeys[key]
+				skip = seen
+			case constant.CONFIG_FUZZY_WATCH_CHANGED_TYPE_DELETE_CONFIG:
+				_, seen := entry.syncedKeys[key]
+				skip = !seen
+			default:
+				// Only ADD_CONFIG / DELETE_CONFIG are valid here; CONFIG_CHANGED
+				// is normalized upstream (applyChange). Skip defensively.
+				logger.Warnf("config fuzzy watch pattern:%s skips unexpected changedType:%s for %s", c.pattern, ev.ChangedType, key)
+				skip = true
+			}
+		}
+		c.mu.Unlock()
+		if skip {
+			continue
+		}
+		if !safeInvoke(func() { entry.fn(ev) }) {
+			continue
+		}
+		c.mu.Lock()
+		switch ev.ChangedType {
+		case constant.CONFIG_FUZZY_WATCH_CHANGED_TYPE_ADD_CONFIG:
+			entry.syncedKeys[key] = struct{}{}
+		case constant.CONFIG_FUZZY_WATCH_CHANGED_TYPE_DELETE_CONFIG:
+			delete(entry.syncedKeys, key)
+		}
+		c.mu.Unlock()
+	}
+}
+
+// safeInvoke isolates user-callback panics and reports whether fn completed
+// without panicking.
+func safeInvoke(fn func()) (completed bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Errorf("config fuzzy watch callback panic recovered: %v\n%s", r, string(debug.Stack()))
+		}
+	}()
+	fn()
+	return true
+}
 
 // BuildConfigFuzzyWatchPattern builds the groupKeyPattern the server matches
 // against. Verified against Nacos 3.2.3 FuzzyGroupKeyPattern.generatePattern
