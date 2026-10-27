@@ -38,6 +38,11 @@ func (c *ConfigConnectionEventListener) OnConnected() {
 	logger.Info("[ConfigConnectionEventListener] connect to config server for taskId: " + c.taskId)
 	if c.client != nil {
 		c.client.asyncNotifyListenConfig()
+		// Fuzzy WATCH requests ride the taskId "0" channel; a fresh connection
+		// has no server-side WATCH state, so re-send every pattern.
+		if c.taskId == "0" && c.client.fuzzyWatchHolder != nil {
+			c.client.fuzzyWatchHolder.ResetConsistenceStatus()
+		}
 	}
 }
 

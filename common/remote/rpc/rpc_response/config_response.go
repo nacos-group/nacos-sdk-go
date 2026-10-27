@@ -67,3 +67,24 @@ type ConfigFuzzyWatchResponse struct {
 func (c *ConfigFuzzyWatchResponse) GetResponseType() string {
 	return "ConfigFuzzyWatchResponse"
 }
+
+// ConfigFuzzyWatchSyncResponse is the client's ack sent back after processing a
+// server-pushed ConfigFuzzyWatchSyncRequest (Java ConfigFuzzyWatchSyncResponse).
+type ConfigFuzzyWatchSyncResponse struct {
+	*Response
+}
+
+func (c *ConfigFuzzyWatchSyncResponse) GetResponseType() string {
+	return "ConfigFuzzyWatchSyncResponse"
+}
+
+// ConfigFuzzyWatchChangeNotifyResponse is the client's ack sent back after
+// processing a server-pushed ConfigFuzzyWatchChangeNotifyRequest (Java
+// ConfigFuzzyWatchChangeNotifyResponse).
+type ConfigFuzzyWatchChangeNotifyResponse struct {
+	*Response
+}
+
+func (c *ConfigFuzzyWatchChangeNotifyResponse) GetResponseType() string {
+	return "ConfigFuzzyWatchChangeNotifyResponse"
+}

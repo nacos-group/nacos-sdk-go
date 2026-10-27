@@ -253,10 +253,6 @@ func (h *ConfigFuzzyWatchHolder) loop() {
 	}
 }
 
-// executeSync is the single sender of WATCH/CANCEL RPCs. STUB: implemented by
-// Task 4 (the holder never sends in this task).
-func (h *ConfigFuzzyWatchHolder) executeSync() {}
-
 // pendingLimitForTest shrinks the dispatch queue bound for contexts created afterwards.
 func (h *ConfigFuzzyWatchHolder) pendingLimitForTest(n int) { h.pendingLimit = n }
 

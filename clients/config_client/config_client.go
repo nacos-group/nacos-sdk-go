@@ -64,6 +64,7 @@ type ConfigClient struct {
 	configCacheDir           string
 	lastAllSyncTime          time.Time
 	holder                   *configCacheHolder
+	fuzzyWatchHolder         *ConfigFuzzyWatchHolder // set by the FuzzyWatch API wiring; nil until then
 	uid                      string
 	listenExecute            chan struct{}
 	isClosed                 bool
