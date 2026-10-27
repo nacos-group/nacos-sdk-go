@@ -65,6 +65,26 @@ type IConfigClient interface {
 	// pageSize option,default is 10
 	SearchConfig(param vo.SearchConfigParam) (*model.ConfigPage, error)
 
+	// FuzzyWatchConfig use to watch the matched set of configs whose dataId
+	// matches a pattern within one group: OnChange fires with ADD_CONFIG when a
+	// config starts matching and DELETE_CONFIG when it stops existing or
+	// matching. Content changes of an already-matched config fire no fuzzy
+	// event; use ListenConfig to observe content changes.
+	// Registration is local: the returned handle's server-side watch is
+	// established and kept in sync by a background reconcile worker, so an
+	// error here reflects only parameter validation,
+	// ErrConfigFuzzyWatchClientClosed (the client has already been shut down),
+	// or ErrConfigFuzzyWatchNotSupported (the connected server lacks the
+	// fuzzyWatch ability) - never a transient RPC outcome. Cancel the watch
+	// with handle.Cancel(); it is scoped to this registration only.
+	// DataIdPattern require (surrounding whitespace trimmed), supports five
+	//   modes: exact ("app.yaml"), match-all ("*"), prefix ("app*"),
+	//   suffix ("*.yaml"), contains ("*app*")
+	// Group optional,default:DEFAULT_GROUP
+	// OnChange require
+	// OnLoadEvent optional, receives server capacity rejections
+	FuzzyWatchConfig(param *vo.ConfigFuzzyWatchParam) (*ConfigFuzzyWatchHandle, error)
+
 	// CloseClient Close the GRPC client
 	CloseClient()
 }

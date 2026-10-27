@@ -16,6 +16,8 @@
 
 package vo
 
+import "github.com/nacos-group/nacos-sdk-go/v3/model"
+
 type Listener func(namespace, group, dataId, data string)
 
 type ConfigParam struct {
@@ -59,4 +61,14 @@ type SearchConfigParam struct {
 	AppName  string `param:"appName"`
 	PageNo   int    `param:"pageNo"`
 	PageSize int    `param:"pageSize"`
+}
+
+// ConfigFuzzyWatchParam registers a fuzzy watch on every config whose dataId
+// matches DataIdPattern within the given Group. The pattern supports exact,
+// match-all ("*"), prefix ("x*"), suffix ("*x") and contains ("*x*") modes.
+type ConfigFuzzyWatchParam struct {
+	DataIdPattern string                                        // required
+	Group         string                                        // optional, default DEFAULT_GROUP
+	OnChange      func(event model.ConfigFuzzyWatchChangeEvent) // required
+	OnLoadEvent   func(event model.ConfigFuzzyWatchLoadEvent)   // optional
 }

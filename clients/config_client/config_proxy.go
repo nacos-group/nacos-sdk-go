@@ -187,6 +187,10 @@ func (cp *ConfigProxy) createRpcClient(ctx context.Context, taskId string, clien
 			return rpc_request.NewConfigChangeNotifyRequest("", "", "")
 		}, &ConfigChangeNotifyRequestHandler{client: client})
 
+		if client.fuzzyWatchHolder != nil {
+			registerFuzzyWatchPushHandlers(rpcClient, client.fuzzyWatchHolder)
+		}
+
 		configListener := NewConfigConnectionEventListener(client, taskId)
 		rpcClient.RegisterConnectionListener(configListener)
 
@@ -232,4 +236,58 @@ func (c *ConfigChangeNotifyRequestHandler) RequestReply(request rpc_request.IReq
 	cData.mu.Unlock()
 	c.client.asyncNotifyListenConfig()
 	return successResponse
+}
+
+// registerFuzzyWatchPushHandlers wires the two config fuzzy-watch server pushes
+// into the holder. handleServerRequest only dispatches payload types that have
+// a registered handler, so without these the pushes would be dropped.
+func registerFuzzyWatchPushHandlers(rpcClient *rpc.RpcClient, holder *ConfigFuzzyWatchHolder) {
+	rpcClient.RegisterServerRequestHandler(func() rpc_request.IRequest {
+		return &rpc_request.ConfigFuzzyWatchSyncRequest{Request: &rpc_request.Request{}}
+	}, &configFuzzyWatchSyncHandler{holder: holder})
+	rpcClient.RegisterServerRequestHandler(func() rpc_request.IRequest {
+		return &rpc_request.ConfigFuzzyWatchChangeNotifyRequest{Request: &rpc_request.Request{}}
+	}, &configFuzzyWatchChangeNotifyHandler{holder: holder})
+}
+
+// configFuzzyWatchSyncHandler handles ConfigFuzzyWatchSyncRequest pushes
+// (INIT / DIFF / FINISH batches) and acks with ConfigFuzzyWatchSyncResponse.
+type configFuzzyWatchSyncHandler struct {
+	holder *ConfigFuzzyWatchHolder
+}
+
+func (*configFuzzyWatchSyncHandler) Name() string { return "ConfigFuzzyWatchSyncRequestHandler" }
+
+func (h *configFuzzyWatchSyncHandler) RequestReply(request rpc_request.IRequest, _ *rpc.RpcClient) rpc_response.IResponse {
+	syncRequest, ok := request.(*rpc_request.ConfigFuzzyWatchSyncRequest)
+	if !ok {
+		return nil
+	}
+	h.holder.HandleSync(syncRequest.GroupKeyPattern, syncRequest.SyncType, syncRequest.Contexts,
+		syncRequest.TotalBatch, syncRequest.CurrentBatch)
+	return &rpc_response.ConfigFuzzyWatchSyncResponse{
+		Response: &rpc_response.Response{ResultCode: constant.RESPONSE_CODE_SUCCESS, Success: true},
+	}
+}
+
+// configFuzzyWatchChangeNotifyHandler handles ConfigFuzzyWatchChangeNotifyRequest
+// pushes (a single config add/change/delete) and acks with
+// ConfigFuzzyWatchChangeNotifyResponse.
+type configFuzzyWatchChangeNotifyHandler struct {
+	holder *ConfigFuzzyWatchHolder
+}
+
+func (*configFuzzyWatchChangeNotifyHandler) Name() string {
+	return "ConfigFuzzyWatchChangeNotifyRequestHandler"
+}
+
+func (h *configFuzzyWatchChangeNotifyHandler) RequestReply(request rpc_request.IRequest, _ *rpc.RpcClient) rpc_response.IResponse {
+	changeRequest, ok := request.(*rpc_request.ConfigFuzzyWatchChangeNotifyRequest)
+	if !ok {
+		return nil
+	}
+	h.holder.HandleChangeNotify(changeRequest.GroupKey, changeRequest.ChangeType)
+	return &rpc_response.ConfigFuzzyWatchChangeNotifyResponse{
+		Response: &rpc_response.Response{ResultCode: constant.RESPONSE_CODE_SUCCESS, Success: true},
+	}
 }
