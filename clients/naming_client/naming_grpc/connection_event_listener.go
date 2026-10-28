@@ -18,6 +18,7 @@ package naming_grpc
 
 import (
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_proxy"
@@ -33,6 +34,10 @@ type ConnectionEventListener struct {
 	clientProxy              naming_proxy.INamingProxy
 	registeredInstanceCached cache.ConcurrentMap
 	subscribes               cache.ConcurrentMap
+	// subscribesMu makes the intent transition and the conditional removal of a
+	// subscriber redo entry atomic, so a subscription started while an
+	// unsubscribe response is in flight can never be removed by that response.
+	subscribesMu sync.Mutex
 }
 
 func NewConnectionEventListener(clientProxy naming_proxy.INamingProxy) *ConnectionEventListener {
@@ -136,13 +141,30 @@ func (c *ConnectionEventListener) RemoveInstanceForRedo(serviceName, groupName s
 // after a successful subscribe response.
 type subscriberRedoEntry struct {
 	registered atomic.Bool
+	// expectedRegistered records the current intent for this entry: true when
+	// the latest request was a subscribe, false when an unsubscribe is in
+	// flight. It aligns with the Java SDK SubscriberRedoData.expectedRegistered,
+	// which tells a delayed unsubscribe response whether the entry still
+	// belongs to that unsubscribe.
+	expectedRegistered atomic.Bool
 }
 
 func (c *ConnectionEventListener) CacheSubscriberForRedo(fullServiceName, clusters string) {
 	key := util.GetServiceCacheKey(fullServiceName, clusters)
-	if !c.IsSubscriberCached(key) {
-		c.subscribes.Set(key, &subscriberRedoEntry{})
+	c.subscribesMu.Lock()
+	defer c.subscribesMu.Unlock()
+	// The Java SDK replaces the redo entry on every subscribe; the Go SDK reuses
+	// it, so a new subscription must take the intent back explicitly, otherwise
+	// a delayed unsubscribe response would remove its redo entry.
+	if entry, ok := c.subscribes.Get(key); ok {
+		if redoEntry, ok := entry.(*subscriberRedoEntry); ok {
+			redoEntry.expectedRegistered.Store(true)
+			return
+		}
 	}
+	redoEntry := &subscriberRedoEntry{}
+	redoEntry.expectedRegistered.Store(true)
+	c.subscribes.Set(key, redoEntry)
 }
 
 func (c *ConnectionEventListener) IsSubscriberCached(key string) bool {
@@ -172,6 +194,35 @@ func (c *ConnectionEventListener) IsSubscriberRegistered(key string) bool {
 	return ok && redoEntry.registered.Load()
 }
 
+// SubscriberDeregistering marks the cached redo entry as being unsubscribed.
+// It is called before the unsubscribe request is sent, aligning with the Java
+// SDK NamingGrpcRedoService.subscriberDeregister, so that a later successful
+// unsubscribe response only removes the entry if no new subscription has taken
+// it over in the meantime.
+func (c *ConnectionEventListener) SubscriberDeregistering(fullServiceName, clusters string) {
+	c.subscribesMu.Lock()
+	defer c.subscribesMu.Unlock()
+	if entry, ok := c.subscribes.Get(util.GetServiceCacheKey(fullServiceName, clusters)); ok {
+		if redoEntry, ok := entry.(*subscriberRedoEntry); ok {
+			redoEntry.expectedRegistered.Store(false)
+		}
+	}
+}
+
 func (c *ConnectionEventListener) RemoveSubscriberForRedo(fullServiceName, clusters string) {
-	c.subscribes.Remove(util.GetServiceCacheKey(fullServiceName, clusters))
+	key := util.GetServiceCacheKey(fullServiceName, clusters)
+	c.subscribesMu.Lock()
+	defer c.subscribesMu.Unlock()
+	entry, ok := c.subscribes.Get(key)
+	if !ok {
+		return
+	}
+	redoEntry, ok := entry.(*subscriberRedoEntry)
+	// The entry belongs to a newer subscription, so this delayed unsubscribe
+	// response must not remove it: the entry is what restores that subscription
+	// when the connection is re-established.
+	if !ok || redoEntry.expectedRegistered.Load() {
+		return
+	}
+	c.subscribes.Remove(key)
 }
