@@ -1,8 +1,11 @@
 package naming_grpc
 
 import (
+	"sync"
 	"testing"
+	"time"
 
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
@@ -167,6 +170,73 @@ func TestNamingGrpcProxy_Unsubscribe_FailedResponseKeepsRedoEntry(t *testing.T) 
 		"a successful unsubscribe must remove the redo entry")
 	assert.False(t, proxy.eventListener.IsSubscriberRegistered(key),
 		"a successful unsubscribe must clear the confirmed state")
+}
+
+// TestNamingGrpcProxy_Unsubscribe_StaleResponseKeepsNewSubscription covers the
+// concurrency review: an unsubscribe already executed on the server but with a
+// delayed response must not remove the redo entry of a subscription created in
+// the meantime, and the newer subscription must still be restored on reconnect.
+func TestNamingGrpcProxy_Unsubscribe_StaleResponseKeepsNewSubscription(t *testing.T) {
+	key := util.GetServiceCacheKey(util.GetGroupName("DEMO", "DEFAULT_GROUP"), "")
+	unsubscribeSent := make(chan struct{})
+	releaseUnsubscribe := make(chan struct{})
+
+	var mu sync.Mutex
+	subscribeRequests := 0
+	proxy := newProxyWithStub(func(request rpc_request.IRequest) (rpc_response.IResponse, error) {
+		subscribeRequest := request.(*rpc_request.SubscribeServiceRequest)
+		if !subscribeRequest.Subscribe {
+			close(unsubscribeSent)
+			<-releaseUnsubscribe
+		} else {
+			mu.Lock()
+			subscribeRequests++
+			mu.Unlock()
+		}
+		return &rpc_response.SubscribeServiceResponse{
+			Response:    &rpc_response.Response{Success: true, ResultCode: 200},
+			ServiceInfo: model.Service{Name: "DEMO", GroupName: "DEFAULT_GROUP"},
+		}, nil
+	})
+	holder := naming_cache.NewServiceInfoHolder("", t.TempDir(), false, true)
+	defer holder.Close()
+	proxy.serviceInfoHolder = holder
+
+	_, err := proxy.Subscribe("DEMO", "DEFAULT_GROUP", "")
+	assert.NoError(t, err)
+
+	// the server already executed the unsubscribe, but its response is delayed
+	unsubscribeErr := make(chan error, 1)
+	go func() {
+		unsubscribeErr <- proxy.Unsubscribe("DEMO", "DEFAULT_GROUP", "")
+	}()
+	select {
+	case <-unsubscribeSent:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the unsubscribe request was not sent")
+	}
+
+	// a new subscription succeeds while the unsubscribe response is in flight
+	_, err = proxy.Subscribe("DEMO", "DEFAULT_GROUP", "")
+	assert.NoError(t, err)
+
+	close(releaseUnsubscribe)
+	assert.NoError(t, <-unsubscribeErr, "the delayed unsubscribe response is a success")
+
+	assert.True(t, proxy.eventListener.IsSubscriberCached(key),
+		"the delayed unsubscribe response must not remove the redo entry of the newer subscription")
+	assert.True(t, proxy.eventListener.IsSubscriberRegistered(key))
+
+	// reconnect: the newer subscription must be restored through redo
+	proxy.eventListener.OnDisConnect()
+	proxy.eventListener.OnConnected()
+
+	mu.Lock()
+	requests := subscribeRequests
+	mu.Unlock()
+	assert.Equal(t, 3, requests, "reconnect redo must re-subscribe the newer subscription")
+	assert.True(t, proxy.eventListener.IsSubscriberRegistered(key),
+		"the newer subscription must be confirmed again after the reconnect")
 }
 
 // TestNamingGrpcProxy_Unsubscribe_UnexpectedResponseKeepsRedoEntry keeps the

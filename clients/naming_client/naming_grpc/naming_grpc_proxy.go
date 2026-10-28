@@ -215,6 +215,11 @@ func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters 
 func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters string) error {
 	logger.Infof("Unsubscribe Service namespaceId:<%s>, serviceName:<%s>, groupName:<%s>, clusters:<%s>",
 		proxy.clientConfig.NamespaceId, serviceName, groupName, clusters)
+	// Record the unsubscribe intent before the request is sent, aligning with the
+	// Java SDK NamingGrpcClientProxy.unsubscribe. A subscription started while
+	// this response is in flight takes the intent back, so the delayed response
+	// will not remove the redo entry of the newer subscription.
+	proxy.eventListener.SubscriberDeregistering(util.GetGroupName(serviceName, groupName), clusters)
 	request := rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
 		clusters, false)
 	response, err := proxy.requestToServer(request)
