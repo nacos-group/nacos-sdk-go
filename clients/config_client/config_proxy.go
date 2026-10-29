@@ -86,29 +86,67 @@ func (cp *ConfigProxy) searchConfigProxy(param vo.SearchConfigParam, tenant, acc
 		params["dataId"] = ""
 	}
 	var headers = map[string]string{}
-	var version = "v2"
-	result, err := cp.nacosServer.ReqConfigApi(constant.CONFIG_PATH, params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
-	if err != nil {
-		if len(tenant) > 0 {
-			params["namespaceId"] = params["tenant"]
+	if param.IgnoreContent {
+		// The v3 admin list API answers with the pagination metadata only, so it is
+		// the cheapest way to satisfy IgnoreContent and is preferred here.
+		result, err := cp.reqV3ConfigList(params, tenant, headers)
+		if err == nil {
+			page, parseErr := parseV3ConfigListResult([]byte(result))
+			if parseErr != nil {
+				return nil, parseErr
+			}
+			return &page, nil
 		}
-		params["groupName"] = params["group"]
-		result, err = cp.nacosServer.ReqConfigApi("/v3/admin/cs/config/list", params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
+		// Nacos 2.x does not serve the v3 admin API, so fall back to the v1/v2 API
+		// and drop the content the server returned anyway.
+		result, err = cp.reqConfigList(params, headers)
 		if err != nil {
 			return nil, err
 		}
-		version = "v3"
+		var configPage model.ConfigPage
+		if err = json.Unmarshal([]byte(result), &configPage); err != nil {
+			return nil, err
+		}
+		for i := range configPage.PageItems {
+			configPage.PageItems[i].Content = ""
+		}
+		return &configPage, nil
 	}
-	var configPage model.ConfigPage
-	if version == "v2" {
-		err = json.Unmarshal([]byte(result), &configPage)
-	} else {
-		configPage, err = parseV3ConfigListResult([]byte(result))
+	result, err := cp.reqConfigList(params, headers)
+	if err == nil {
+		var configPage model.ConfigPage
+		if err = json.Unmarshal([]byte(result), &configPage); err != nil {
+			return nil, err
+		}
+		return &configPage, nil
 	}
+	result, err = cp.reqV3ConfigList(params, tenant, headers)
 	if err != nil {
 		return nil, err
 	}
-	return &configPage, nil
+	page, err := parseV3ConfigListResult([]byte(result))
+	if err != nil {
+		return nil, err
+	}
+	return &page, nil
+}
+
+func (cp *ConfigProxy) reqConfigList(params map[string]string, headers map[string]string) (string, error) {
+	return cp.nacosServer.ReqConfigApi(constant.CONFIG_PATH, params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
+}
+
+// reqV3ConfigList queries the v3 admin config list API, which is the only config
+// list API of Nacos 3.x and, by design, does not return the config content.
+func (cp *ConfigProxy) reqV3ConfigList(params map[string]string, tenant string, headers map[string]string) (string, error) {
+	v3Params := make(map[string]string, len(params)+2)
+	for key, value := range params {
+		v3Params[key] = value
+	}
+	if len(tenant) > 0 {
+		v3Params["namespaceId"] = tenant
+	}
+	v3Params["groupName"] = v3Params["group"]
+	return cp.nacosServer.ReqConfigApi("/v3/admin/cs/config/list", v3Params, headers, http.MethodGet, cp.clientConfig.TimeoutMs)
 }
 
 // v3AdminConfigItem mirrors a page item of the v3 admin config list API, whose

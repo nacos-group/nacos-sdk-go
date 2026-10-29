@@ -59,4 +59,10 @@ type SearchConfigParam struct {
 	AppName  string `param:"appName"`
 	PageNo   int    `param:"pageNo"`
 	PageSize int    `param:"pageSize"`
+	// IgnoreContent controls whether the config content is pulled for the config
+	// list. When it is true, ConfigItem.Content of the returned page stays empty
+	// and the server is asked for the pagination metadata only, which is much
+	// lighter for namespaces holding a large number of configs. It defaults to
+	// false, so the returned page keeps carrying the content as before.
+	IgnoreContent bool `param:"-"`
 }
