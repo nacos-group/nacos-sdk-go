@@ -72,6 +72,51 @@ func (c *ConnectionEventListener) SubscriberOnDisconnect() {
 	}
 }
 
+// subscriberRedoAction is what the reconnect replay does with one subscriber redo
+// entry, mirroring the actions the Java SDK RedoData.getRedoType selects between.
+type subscriberRedoAction int
+
+const (
+	// subscribeSkip has nothing to replay, because the entry is already gone.
+	subscribeSkip subscriberRedoAction = iota
+	// subscribeRegister re-establishes a subscription the user still wants.
+	subscribeRegister
+	// subscribeUnregister continues an unsubscribe the user still wants, since the
+	// server holds that subscription on the current connection.
+	subscribeUnregister
+	// subscribeClear drops the redo entry: the user does not want the subscription
+	// and the lost connection already removed it from the server.
+	subscribeClear
+)
+
+// redoAction reads the state of one redo entry under subscribesMu. The replay
+// only reads the intent the user last set and never writes it back, so it cannot
+// outvote an unsubscribe that is still in flight; the Java SDK keeps the same
+// separation by replaying through doSubscribe/doUnsubscribe instead of the public
+// subscribe/unsubscribe entries.
+func (c *ConnectionEventListener) redoAction(key string) subscriberRedoAction {
+	c.subscribesMu.Lock()
+	defer c.subscribesMu.Unlock()
+	entry, ok := c.subscribes.Get(key)
+	if !ok {
+		return subscribeSkip
+	}
+	redoEntry, ok := entry.(*subscriberRedoEntry)
+	if !ok {
+		return subscribeSkip
+	}
+	// A wanted subscription is always replayed: the confirmed flag can lag behind
+	// the server when a subscribe response is lost, so it cannot be trusted to
+	// skip a re-subscribe.
+	if redoEntry.expectedRegistered.Load() {
+		return subscribeRegister
+	}
+	if redoEntry.registered.Load() {
+		return subscribeUnregister
+	}
+	return subscribeClear
+}
+
 func (c *ConnectionEventListener) redoSubscribe() {
 	grpcProxy, ok := c.clientProxy.(*NamingGrpcProxy)
 	if !ok {
@@ -80,18 +125,25 @@ func (c *ConnectionEventListener) redoSubscribe() {
 	}
 	for _, key := range c.subscribes.Keys() {
 		info := strings.Split(key, constant.SERVICE_INFO_SPLITER)
-		var err error
-		var service model.Service
+		groupName, serviceName, clusters := info[0], info[1], ""
 		if len(info) > 2 {
-			service, err = c.clientProxy.Subscribe(info[1], info[0], info[2])
-		} else {
-			service, err = c.clientProxy.Subscribe(info[1], info[0], "")
+			clusters = info[2]
 		}
-		if err != nil {
-			logger.Warnf("redo subscribe service:%s faild:%+v", info[1], err)
-			continue
+		switch c.redoAction(key) {
+		case subscribeRegister:
+			service, err := grpcProxy.doSubscribe(serviceName, groupName, clusters)
+			if err != nil {
+				logger.Warnf("redo subscribe service:%s failed:%+v", serviceName, err)
+				continue
+			}
+			grpcProxy.serviceInfoHolder.ProcessService(&service)
+		case subscribeUnregister:
+			if err := grpcProxy.doUnsubscribe(serviceName, groupName, clusters); err != nil {
+				logger.Warnf("redo unsubscribe service:%s failed:%+v", serviceName, err)
+			}
+		case subscribeClear:
+			c.RemoveSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
 		}
-		grpcProxy.serviceInfoHolder.ProcessService(&service)
 	}
 }
 
@@ -145,7 +197,8 @@ type subscriberRedoEntry struct {
 	// the latest request was a subscribe, false when an unsubscribe is in
 	// flight. It aligns with the Java SDK SubscriberRedoData.expectedRegistered,
 	// which tells a delayed unsubscribe response whether the entry still
-	// belongs to that unsubscribe.
+	// belongs to that unsubscribe. Only Subscribe and Unsubscribe change it, the
+	// reconnect replay just reads it, so a replay can never outvote the user.
 	expectedRegistered atomic.Bool
 }
 

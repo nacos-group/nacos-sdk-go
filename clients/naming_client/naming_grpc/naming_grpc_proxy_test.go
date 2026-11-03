@@ -1,6 +1,7 @@
 package naming_grpc
 
 import (
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -261,4 +262,160 @@ func TestNamingGrpcProxy_Unsubscribe_UnexpectedResponseKeepsRedoEntry(t *testing
 		"an unexpected response type must keep the redo entry")
 	assert.True(t, proxy.eventListener.IsSubscriberRegistered(key),
 		"an unexpected response type must keep the confirmed state")
+}
+
+// TestNamingGrpcProxy_Unsubscribe_ReconnectWithDelayedResponseKeepsIntent covers
+// the third review: the reconnect replay went through Subscribe, so it took the
+// redo entry back as a subscription while the user was unsubscribing from it.
+// The cancelled subscription then survived both the delayed unsubscribe
+// response and the next reconnect.
+func TestNamingGrpcProxy_Unsubscribe_ReconnectWithDelayedResponseKeepsIntent(t *testing.T) {
+	key := util.GetServiceCacheKey(util.GetGroupName("DEMO", "DEFAULT_GROUP"), "")
+	unsubscribeSent := make(chan struct{})
+	releaseUnsubscribe := make(chan struct{})
+
+	var mu sync.Mutex
+	var subscribeRequests, unsubscribeRequests int
+	proxy := newProxyWithStub(func(request rpc_request.IRequest) (rpc_response.IResponse, error) {
+		subscribeRequest := request.(*rpc_request.SubscribeServiceRequest)
+		mu.Lock()
+		if subscribeRequest.Subscribe {
+			subscribeRequests++
+		} else {
+			unsubscribeRequests++
+		}
+		mu.Unlock()
+		if !subscribeRequest.Subscribe {
+			// the server executed the unsubscribe, but the response is delayed
+			close(unsubscribeSent)
+			<-releaseUnsubscribe
+		}
+		return &rpc_response.SubscribeServiceResponse{
+			Response:    &rpc_response.Response{Success: true, ResultCode: 200},
+			ServiceInfo: model.Service{Name: "DEMO", GroupName: "DEFAULT_GROUP"},
+		}, nil
+	})
+	holder := naming_cache.NewServiceInfoHolder("", t.TempDir(), false, true)
+	defer holder.Close()
+	proxy.serviceInfoHolder = holder
+
+	_, err := proxy.Subscribe("DEMO", "DEFAULT_GROUP", "")
+	assert.NoError(t, err)
+
+	unsubscribeErr := make(chan error, 1)
+	go func() {
+		unsubscribeErr <- proxy.Unsubscribe("DEMO", "DEFAULT_GROUP", "")
+	}()
+	select {
+	case <-unsubscribeSent:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the unsubscribe request was not sent")
+	}
+
+	// the connection is lost and re-established while the unsubscribe is in flight
+	proxy.eventListener.OnDisConnect()
+	proxy.eventListener.OnConnected()
+
+	// the unsubscribe response arrives and is a success
+	close(releaseUnsubscribe)
+	assert.NoError(t, <-unsubscribeErr, "the delayed unsubscribe response is a success")
+
+	assert.False(t, proxy.eventListener.IsSubscriberCached(key),
+		"a successful unsubscribe must remove the redo entry even if a reconnect happened in between")
+	assert.False(t, proxy.eventListener.IsSubscriberRegistered(key))
+
+	// a later reconnect must not restore the subscription the user cancelled
+	proxy.eventListener.OnDisConnect()
+	proxy.eventListener.OnConnected()
+
+	mu.Lock()
+	requests := subscribeRequests
+	mu.Unlock()
+	assert.Equal(t, 1, requests, "the reconnect replay must not subscribe a service the user is unsubscribing from")
+}
+
+// TestNamingGrpcProxy_Unsubscribe_FailedRpcReconnectKeepsIntent covers the same
+// intent loss when the unsubscribe never gets a response: the request failed
+// with the lost connection, so the replay must not turn the cancelled
+// subscription back into an active one.
+func TestNamingGrpcProxy_Unsubscribe_FailedRpcReconnectKeepsIntent(t *testing.T) {
+	key := util.GetServiceCacheKey(util.GetGroupName("DEMO", "DEFAULT_GROUP"), "")
+
+	var subscribeRequests int
+	proxy := newProxyWithStub(func(request rpc_request.IRequest) (rpc_response.IResponse, error) {
+		subscribeRequest := request.(*rpc_request.SubscribeServiceRequest)
+		if !subscribeRequest.Subscribe {
+			return nil, errors.New("connection is not established")
+		}
+		subscribeRequests++
+		return &rpc_response.SubscribeServiceResponse{
+			Response:    &rpc_response.Response{Success: true, ResultCode: 200},
+			ServiceInfo: model.Service{Name: "DEMO", GroupName: "DEFAULT_GROUP"},
+		}, nil
+	})
+	holder := naming_cache.NewServiceInfoHolder("", t.TempDir(), false, true)
+	defer holder.Close()
+	proxy.serviceInfoHolder = holder
+
+	_, err := proxy.Subscribe("DEMO", "DEFAULT_GROUP", "")
+	assert.NoError(t, err)
+
+	err = proxy.Unsubscribe("DEMO", "DEFAULT_GROUP", "")
+	assert.Error(t, err, "an unsubscribe request failure must be surfaced")
+	assert.True(t, proxy.eventListener.IsSubscriberCached(key),
+		"the unsubscribe intent must survive for the reconnect redo")
+
+	// reconnect: the cancelled subscription must not be replayed as a subscribe
+	proxy.eventListener.OnDisConnect()
+	proxy.eventListener.OnConnected()
+
+	assert.Equal(t, 1, subscribeRequests, "the reconnect replay must not subscribe a service the user is unsubscribing from")
+	assert.False(t, proxy.eventListener.IsSubscriberCached(key),
+		"the redo entry of a cancelled subscription is cleared once the lost connection dropped it")
+	assert.False(t, proxy.eventListener.IsSubscriberRegistered(key))
+}
+
+// TestNamingGrpcProxy_Unsubscribe_ReplayContinuesCancel covers the replay branch
+// reached when the client reports a new connection without having seen the
+// disconnect (RpcClient.reconnect with onRequestFail), so the entry is still
+// confirmed while the unsubscribe intent is pending. The server still holds the
+// subscription on that connection, so the replay must send the unsubscribe
+// instead of subscribing again.
+func TestNamingGrpcProxy_Unsubscribe_ReplayContinuesCancel(t *testing.T) {
+	key := util.GetServiceCacheKey(util.GetGroupName("DEMO", "DEFAULT_GROUP"), "")
+
+	var subscribeRequests, unsubscribeRequests int
+	proxy := newProxyWithStub(func(request rpc_request.IRequest) (rpc_response.IResponse, error) {
+		subscribeRequest := request.(*rpc_request.SubscribeServiceRequest)
+		if subscribeRequest.Subscribe {
+			subscribeRequests++
+		} else {
+			unsubscribeRequests++
+			if unsubscribeRequests == 1 {
+				return nil, errors.New("connection is not established")
+			}
+		}
+		return &rpc_response.SubscribeServiceResponse{
+			Response:    &rpc_response.Response{Success: true, ResultCode: 200},
+			ServiceInfo: model.Service{Name: "DEMO", GroupName: "DEFAULT_GROUP"},
+		}, nil
+	})
+	holder := naming_cache.NewServiceInfoHolder("", t.TempDir(), false, true)
+	defer holder.Close()
+	proxy.serviceInfoHolder = holder
+
+	_, err := proxy.Subscribe("DEMO", "DEFAULT_GROUP", "")
+	assert.NoError(t, err)
+
+	err = proxy.Unsubscribe("DEMO", "DEFAULT_GROUP", "")
+	assert.Error(t, err, "an unsubscribe request failure must be surfaced")
+	assert.True(t, proxy.eventListener.IsSubscriberRegistered(key),
+		"the server still holds the subscription on the connection")
+
+	proxy.eventListener.OnConnected()
+
+	assert.Equal(t, 1, subscribeRequests, "the replay must not subscribe a service the user is unsubscribing from")
+	assert.Equal(t, 2, unsubscribeRequests, "the replay must continue the pending unsubscribe")
+	assert.False(t, proxy.eventListener.IsSubscriberCached(key),
+		"a successful unsubscribe must remove the redo entry")
 }

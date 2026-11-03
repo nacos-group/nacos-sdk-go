@@ -185,6 +185,15 @@ func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters 
 	logger.Infof("Subscribe Service namespaceId:<%s>, serviceName:<%s>, groupName:<%s>, clusters:<%s>",
 		proxy.clientConfig.NamespaceId, serviceName, groupName, clusters)
 	proxy.eventListener.CacheSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
+	return proxy.doSubscribe(serviceName, groupName, clusters)
+}
+
+// doSubscribe sends the subscribe request and confirms the subscription, without
+// touching the subscription intent cached by Subscribe. The reconnect redo calls
+// it directly, so replaying a subscription can never take over an unsubscribe
+// the user asked for in the meantime. It aligns with the Java SDK
+// NamingGrpcClientProxy.doSubscribe.
+func (proxy *NamingGrpcProxy) doSubscribe(serviceName, groupName string, clusters string) (model.Service, error) {
 	request := rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName,
 		groupName, clusters, true)
 	request.Headers["app"] = proxy.clientConfig.AppName
@@ -220,12 +229,20 @@ func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters strin
 	// this response is in flight takes the intent back, so the delayed response
 	// will not remove the redo entry of the newer subscription.
 	proxy.eventListener.SubscriberDeregistering(util.GetGroupName(serviceName, groupName), clusters)
+	return proxy.doUnsubscribe(serviceName, groupName, clusters)
+}
+
+// doUnsubscribe sends the unsubscribe request and releases the redo entry,
+// without touching the subscription intent set by Unsubscribe, aligning with the
+// Java SDK NamingGrpcClientProxy.doUnsubscribe.
+func (proxy *NamingGrpcProxy) doUnsubscribe(serviceName, groupName, clusters string) error {
 	request := rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
 		clusters, false)
 	response, err := proxy.requestToServer(request)
 	if err != nil {
-		// The redo entry stays cached and confirmed, matching the server-side
-		// subscription state, so the unsubscribe is retried on the next call.
+		// The redo entry stays cached with the unsubscribe intent, so the
+		// reconnect redo keeps the service unsubscribed instead of subscribing
+		// it again.
 		return err
 	}
 	// The rpc layer returns a nil error even for a failed business response
