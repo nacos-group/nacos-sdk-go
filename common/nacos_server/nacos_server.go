@@ -331,6 +331,9 @@ func (server *NacosServer) refreshServerSrvIfNeed(urlString string, header map[s
 			server.lastSrvRefTime = util.CurrentMillis()
 			server.securityLogin.UpdateServerList(servers)
 			server.Unlock()
+			// Trigger an immediate login after server list updated to ensure token availability.
+			// Do this after Unlock to avoid holding the lock during network operation.
+			server.securityLogin.Login()
 		}
 
 	}
