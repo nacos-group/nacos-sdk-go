@@ -17,6 +17,7 @@
 package naming_client
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/http_agent"
@@ -739,4 +740,96 @@ func TestNamingClient_GetServiceInfoWithSubscribe_FailedSubscribeIsRetried(t *te
 	assert.Nil(t, err)
 	assert.Equal(t, 2, mockProxy.subscribeCalls, "a confirmed subscription must not subscribe again")
 	assert.Equal(t, uint64(2), service.LastRefTime)
+}
+
+func newTestNamingClientWithMaxMetadataLength(maxMetadataLength int) *NamingClient {
+	client := NewTestNamingClient()
+	config, _ := client.GetClientConfig()
+	config.MaxMetadataLength = maxMetadataLength
+	_ = client.SetClientConfig(config)
+	return client
+}
+
+func TestNamingClient_RegisterInstance_MetadataTooLong(t *testing.T) {
+	success, err := NewTestNamingClient().RegisterInstance(vo.RegisterInstanceParam{
+		ServiceName: "DEMO",
+		Ip:          "10.0.0.10",
+		Port:        80,
+		Metadata:    map[string]string{"key": strings.Repeat("a", 1022)},
+	})
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "should not exceed 1024")
+	assert.False(t, success)
+}
+
+func TestNamingClient_RegisterInstance_MetadataAtLimit(t *testing.T) {
+	success, err := NewTestNamingClient().RegisterInstance(vo.RegisterInstanceParam{
+		ServiceName: "DEMO",
+		Ip:          "10.0.0.10",
+		Port:        80,
+		// blank keys and values are not counted, matching the server's param check
+		Metadata: map[string]string{"key": strings.Repeat("a", 1021), " ": "   "},
+	})
+	assert.Nil(t, err)
+	assert.True(t, success)
+}
+
+func TestNamingClient_RegisterInstance_MetadataCountsUTF16Length(t *testing.T) {
+	client := newTestNamingClientWithMaxMetadataLength(4)
+	// "😀" is one rune but two UTF-16 code units, as counted by the server
+	_, err := client.RegisterInstance(vo.RegisterInstanceParam{
+		ServiceName: "DEMO",
+		Ip:          "10.0.0.10",
+		Port:        80,
+		Metadata:    map[string]string{"k": "😀😀"},
+	})
+	assert.NotNil(t, err)
+	_, err = client.RegisterInstance(vo.RegisterInstanceParam{
+		ServiceName: "DEMO",
+		Ip:          "10.0.0.10",
+		Port:        80,
+		Metadata:    map[string]string{"k": "😀a"},
+	})
+	assert.Nil(t, err)
+}
+
+func TestNamingClient_RegisterInstance_CustomMaxMetadataLength(t *testing.T) {
+	metadata := map[string]string{"key": strings.Repeat("a", 2000)}
+	_, err := newTestNamingClientWithMaxMetadataLength(4096).RegisterInstance(vo.RegisterInstanceParam{
+		ServiceName: "DEMO",
+		Ip:          "10.0.0.10",
+		Port:        80,
+		Metadata:    metadata,
+	})
+	assert.Nil(t, err)
+	_, err = newTestNamingClientWithMaxMetadataLength(-1).RegisterInstance(vo.RegisterInstanceParam{
+		ServiceName: "DEMO",
+		Ip:          "10.0.0.10",
+		Port:        80,
+		Metadata:    metadata,
+	})
+	assert.Nil(t, err)
+}
+
+func TestNamingClient_UpdateInstance_MetadataTooLong(t *testing.T) {
+	success, err := NewTestNamingClient().UpdateInstance(vo.UpdateInstanceParam{
+		ServiceName: "DEMO",
+		Ip:          "10.0.0.10",
+		Port:        80,
+		Metadata:    map[string]string{"key": strings.Repeat("a", 1022)},
+	})
+	assert.NotNil(t, err)
+	assert.False(t, success)
+}
+
+func TestNamingClient_BatchRegisterInstance_MetadataTooLong(t *testing.T) {
+	success, err := NewTestNamingClient().BatchRegisterInstance(vo.BatchRegisterInstanceParam{
+		ServiceName: "DEMO",
+		Instances: []vo.RegisterInstanceParam{
+			{Ip: "10.0.0.10", Port: 80, Ephemeral: true},
+			{Ip: "10.0.0.11", Port: 80, Ephemeral: true, Metadata: map[string]string{"key": strings.Repeat("a", 1022)}},
+		},
+	})
+	assert.NotNil(t, err)
+	assert.False(t, success)
 }
