@@ -39,6 +39,11 @@ type ServiceInfoHolder struct {
 	subCallback          *SubscribeCallback
 	UpdateTimeMap        sync.Map
 	diskCacheRefresher   *serviceInfoDiskCacheRefresher
+	// emptyPushIgnored records cache keys whose latest empty push was dropped
+	// because updateCacheWhenEmpty is false. The cache then still holds the
+	// pre-empty instances, so the next non-empty push must notify subscribers
+	// even if it equals that stale snapshot.
+	emptyPushIgnored sync.Map
 }
 
 func NewServiceInfoHolder(namespace, cacheDir string, updateCacheWhenEmpty, notLoadCacheAtStart bool) *ServiceInfoHolder {
@@ -77,15 +82,16 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 	if service == nil {
 		return
 	}
+	cacheKey := util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName), service.Clusters)
 	if !s.updateCacheWhenEmpty {
 		//if instance list is empty,not to update cache
 		if service.Hosts == nil || len(service.Hosts) == 0 {
 			logger.Warnf("instance list is empty, updateCacheWhenEmpty is set to false, callback is not triggered. service name:%s", service.Name)
+			s.emptyPushIgnored.Store(cacheKey, struct{}{})
 			return
 		}
 	}
 
-	cacheKey := util.GetServiceCacheKey(util.GetGroupName(service.Name, service.GroupName), service.Clusters)
 	oldDomain, ok := s.ServiceInfoMap.Load(cacheKey)
 	if ok && oldDomain.(model.Service).LastRefTime >= service.LastRefTime {
 		logger.Warnf("out of date data received, old-t: %d, new-t: %d", oldDomain.(model.Service).LastRefTime, service.LastRefTime)
@@ -94,7 +100,8 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 
 	s.UpdateTimeMap.Store(cacheKey, uint64(util.CurrentMillis()))
 	s.ServiceInfoMap.Store(cacheKey, *service)
-	if !ok || checkInstanceChanged(oldDomain, *service) {
+	_, recoveredFromEmpty := s.emptyPushIgnored.LoadAndDelete(cacheKey)
+	if !ok || recoveredFromEmpty || checkInstanceChanged(oldDomain, *service) {
 		logger.Infof("service key:%s was updated to:%s", cacheKey, util.ToJsonString(service))
 		s.refreshDiskCache(service, cacheKey)
 		s.subCallback.ServiceChanged(cacheKey, service)
@@ -128,6 +135,7 @@ func (s *ServiceInfoHolder) DeregisterCallback(serviceName string, clusters stri
 func (s *ServiceInfoHolder) StopUpdateIfContain(serviceName, clusters string) {
 	cacheKey := util.GetServiceCacheKey(serviceName, clusters)
 	s.ServiceInfoMap.Delete(cacheKey)
+	s.emptyPushIgnored.Delete(cacheKey)
 }
 
 func (s *ServiceInfoHolder) IsSubscribed(serviceName, clusters string) bool {
