@@ -25,8 +25,8 @@ import (
 
 type Chooser struct {
 	data   []model.Instance
-	totals []int
-	max    int
+	totals []float64
+	max    float64
 }
 
 type instance []model.Instance
@@ -44,19 +44,25 @@ func (a instance) Less(i, j int) bool {
 }
 
 // NewChooser initializes a new Chooser for picking from the provided Choices.
+// Weights are accumulated as float64 so that fractional weights (e.g. 0.5),
+// which are valid in Nacos, keep their proportion instead of being truncated.
 func newChooser(instances []model.Instance) Chooser {
 	sort.Sort(instance(instances))
-	totals := make([]int, len(instances))
-	runningTotal := 0
+	totals := make([]float64, len(instances))
+	runningTotal := 0.0
 	for i, c := range instances {
-		runningTotal += int(c.Weight)
+		runningTotal += c.Weight
 		totals[i] = runningTotal
 	}
 	return Chooser{data: instances, totals: totals, max: runningTotal}
 }
 
 func (chs Chooser) pick() model.Instance {
-	r := rand.Intn(chs.max) + 1
-	i := sort.SearchInts(chs.totals, r)
+	r := rand.Float64() * chs.max
+	i := sort.Search(len(chs.totals), func(i int) bool { return chs.totals[i] > r })
+	if i == len(chs.totals) {
+		// only reachable when every weight is zero
+		i = len(chs.totals) - 1
+	}
 	return chs.data[i]
 }
