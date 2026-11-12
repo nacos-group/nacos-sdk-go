@@ -238,3 +238,185 @@ func TestSearchConfigProxyV3FallbackCrossGroup(t *testing.T) {
 		}
 	}
 }
+
+// v1ConfigListResponse is what the v1/v2 config list API answers: the same page
+// metadata as v3 plus the whole content of every config.
+const v1ConfigListResponse = `{
+  "totalCount": 1,
+  "pageNumber": 1,
+  "pagesAvailable": 1,
+  "pageItems": [
+    {
+      "id": "13",
+      "dataId": "app.yaml",
+      "group": "DEFAULT_GROUP",
+      "content": "server:\n  port: 8080\n",
+      "md5": "cccccccccccccccccccccccccccccccc",
+      "tenant": "custom-ns",
+      "appname": "higress"
+    }
+  ]
+}`
+
+func newSearchConfigTestProxy(t *testing.T, mux *http.ServeMux) *ConfigProxy {
+	t.Helper()
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+
+	serverURL, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatalf("parse test server URL: %v", err)
+	}
+	port, err := strconv.ParseUint(serverURL.Port(), 10, 64)
+	if err != nil {
+		t.Fatalf("parse test server port: %v", err)
+	}
+
+	// NewConfigProxy starts a token auto-refresh goroutine bound to this context.
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	proxy, err := NewConfigProxy(
+		ctx,
+		[]constant.ServerConfig{*constant.NewServerConfig(serverURL.Hostname(), port)},
+		*constant.NewClientConfig(constant.WithTimeoutMs(5000)),
+		&http_agent.HttpAgent{},
+	)
+	if err != nil {
+		t.Fatalf("create config proxy: %v", err)
+	}
+	return proxy.(*ConfigProxy)
+}
+
+func TestSearchConfigProxyIgnoreContentPrefersV3(t *testing.T) {
+	var mu sync.Mutex
+	var v1Calls int
+
+	mux := http.NewServeMux()
+	mux.HandleFunc(constant.DEFAULT_CONTEXT_PATH+constant.CONFIG_PATH, func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		v1Calls++
+		mu.Unlock()
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(v1ConfigListResponse))
+	})
+	mux.HandleFunc(constant.DEFAULT_CONTEXT_PATH+"/v3/admin/cs/config/list", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(v3CrossGroupResponse))
+	})
+
+	proxy := newSearchConfigTestProxy(t, mux)
+
+	page, err := proxy.searchConfigProxy(vo.SearchConfigParam{
+		Search:        "accurate",
+		DataId:        "app.yaml",
+		PageNo:        1,
+		PageSize:      10,
+		IgnoreContent: true,
+	}, "custom-ns", "", "")
+	if err != nil {
+		t.Fatalf("searchConfigProxy failed: %v", err)
+	}
+
+	mu.Lock()
+	calls := v1Calls
+	mu.Unlock()
+	if calls != 0 {
+		t.Errorf("v1 API called %d times, want 0 when IgnoreContent is set and v3 is available", calls)
+	}
+	if len(page.PageItems) != 2 {
+		t.Fatalf("unexpected page items length: %d", len(page.PageItems))
+	}
+	if page.PageItems[0].Group != "GROUP_A" || page.PageItems[0].Tenant != "custom-ns" {
+		t.Errorf("unexpected first item: %+v", page.PageItems[0])
+	}
+}
+
+func TestSearchConfigProxyIgnoreContentStripsV1Content(t *testing.T) {
+	var mu sync.Mutex
+	var v3Calls int
+
+	mux := http.NewServeMux()
+	mux.HandleFunc(constant.DEFAULT_CONTEXT_PATH+"/v3/admin/cs/config/list", func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		v3Calls++
+		mu.Unlock()
+		http.Error(w, "v3 API unavailable", http.StatusNotFound)
+	})
+	mux.HandleFunc(constant.DEFAULT_CONTEXT_PATH+constant.CONFIG_PATH, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(v1ConfigListResponse))
+	})
+
+	proxy := newSearchConfigTestProxy(t, mux)
+
+	page, err := proxy.searchConfigProxy(vo.SearchConfigParam{
+		Search:        "accurate",
+		DataId:        "app.yaml",
+		PageNo:        1,
+		PageSize:      10,
+		IgnoreContent: true,
+	}, "custom-ns", "", "")
+	if err != nil {
+		t.Fatalf("searchConfigProxy failed: %v", err)
+	}
+
+	mu.Lock()
+	tried := v3Calls
+	mu.Unlock()
+	if tried == 0 {
+		t.Fatal("expected the v3 API to be tried before falling back to v1")
+	}
+	if page.TotalCount != 1 || len(page.PageItems) != 1 {
+		t.Fatalf("unexpected page: %+v", page)
+	}
+	item := page.PageItems[0]
+	if item.Content != "" {
+		t.Errorf("Content = %q, want empty when IgnoreContent is set", item.Content)
+	}
+	if item.DataId != "app.yaml" || item.Group != "DEFAULT_GROUP" || item.Tenant != "custom-ns" {
+		t.Errorf("metadata should be kept, got %+v", item)
+	}
+}
+
+func TestSearchConfigProxyKeepsContentByDefault(t *testing.T) {
+	var mu sync.Mutex
+	var v3Calls int
+
+	mux := http.NewServeMux()
+	mux.HandleFunc(constant.DEFAULT_CONTEXT_PATH+"/v3/admin/cs/config/list", func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		v3Calls++
+		mu.Unlock()
+		http.Error(w, "v3 API unavailable", http.StatusNotFound)
+	})
+	mux.HandleFunc(constant.DEFAULT_CONTEXT_PATH+constant.CONFIG_PATH, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(v1ConfigListResponse))
+	})
+
+	proxy := newSearchConfigTestProxy(t, mux)
+
+	page, err := proxy.searchConfigProxy(vo.SearchConfigParam{
+		Search:   "accurate",
+		DataId:   "app.yaml",
+		PageNo:   1,
+		PageSize: 10,
+	}, "custom-ns", "", "")
+	if err != nil {
+		t.Fatalf("searchConfigProxy failed: %v", err)
+	}
+
+	mu.Lock()
+	calls := v3Calls
+	mu.Unlock()
+	if calls != 0 {
+		t.Errorf("v3 API called %d times, want 0 when the v1 API answers", calls)
+	}
+	if len(page.PageItems) != 1 {
+		t.Fatalf("unexpected page items length: %d", len(page.PageItems))
+	}
+	if got := page.PageItems[0].Content; got != "server:\n  port: 8080\n" {
+		t.Errorf("Content = %q, want the config content to be kept by default", got)
+	}
+}

@@ -63,6 +63,7 @@ type IConfigClient interface {
 	// tenant ==>nacos.namespace optional
 	// pageNo  option,default is 1
 	// pageSize option,default is 10
+	// ignoreContent option,default is false; set it to true to skip pulling the config content, so the returned page items only carry the basic info
 	SearchConfig(param vo.SearchConfigParam) (*model.ConfigPage, error)
 
 	// CloseClient Close the GRPC client
