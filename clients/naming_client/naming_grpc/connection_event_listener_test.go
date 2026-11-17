@@ -24,6 +24,19 @@ func TestSubscriberRedoRegisteredState(t *testing.T) {
 	evListener.CacheSubscriberForRedo(fullServiceName, "")
 	assert.True(t, evListener.IsSubscriberRegistered(key))
 
+	// a removal that no unsubscribe asked for must not drop a subscribed entry
+	evListener.RemoveSubscriberForRedo(fullServiceName, "")
+	assert.True(t, evListener.IsSubscriberCached(key), "an entry claimed by a subscription must survive an unrelated removal")
+
+	// a subscription started while the unsubscribe is in flight takes the entry
+	// back, so the delayed unsubscribe response must not remove it
+	evListener.SubscriberDeregistering(fullServiceName, "")
+	evListener.CacheSubscriberForRedo(fullServiceName, "")
+	evListener.RemoveSubscriberForRedo(fullServiceName, "")
+	assert.True(t, evListener.IsSubscriberCached(key), "the delayed removal must keep the redo entry of the newer subscription")
+
+	// the unsubscribe owns the entry again: the removal goes through
+	evListener.SubscriberDeregistering(fullServiceName, "")
 	evListener.RemoveSubscriberForRedo(fullServiceName, "")
 	assert.False(t, evListener.IsSubscriberCached(key))
 	assert.False(t, evListener.IsSubscriberRegistered(key))
