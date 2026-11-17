@@ -23,6 +23,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf16"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/common/security"
 
@@ -115,6 +116,9 @@ func (sc *NamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, 
 	if param.Metadata == nil {
 		param.Metadata = make(map[string]string)
 	}
+	if err := sc.checkMetadata(param.Metadata); err != nil {
+		return false, err
+	}
 	instance := model.Instance{
 		Ip:          param.Ip,
 		Port:        param.Port,
@@ -143,6 +147,9 @@ func (sc *NamingClient) BatchRegisterInstance(param vo.BatchRegisterInstancePara
 		if !param.Ephemeral {
 			return false, errors.Errorf("Batch registration does not allow persistent instance registration! instance:%+v", param)
 		}
+		if err := sc.checkMetadata(param.Metadata); err != nil {
+			return false, err
+		}
 		modelInstances = append(modelInstances, model.Instance{
 			Ip:          param.Ip,
 			Port:        param.Port,
@@ -156,6 +163,37 @@ func (sc *NamingClient) BatchRegisterInstance(param vo.BatchRegisterInstancePara
 	}
 
 	return sc.serviceProxy.BatchRegisterInstance(param.ServiceName, param.GroupName, modelInstances)
+}
+
+// checkMetadata rejects metadata the server would refuse with "Param 'Metadata' is illegal".
+// It mirrors the server's param check: the total length of non-blank keys and values
+// must not exceed the max metadata length.
+func (sc *NamingClient) checkMetadata(metadata map[string]string) error {
+	maxLength := constant.DEFAULT_MAX_METADATA_LENGTH
+	if clientConfig, err := sc.GetClientConfig(); err == nil && clientConfig.MaxMetadataLength != 0 {
+		maxLength = clientConfig.MaxMetadataLength
+	}
+	if maxLength < 0 {
+		return nil
+	}
+	totalLength := 0
+	for k, v := range metadata {
+		if strings.TrimSpace(k) != "" {
+			totalLength += utf16Length(k)
+		}
+		if strings.TrimSpace(v) != "" {
+			totalLength += utf16Length(v)
+		}
+	}
+	if totalLength > maxLength {
+		return errors.Errorf("metadata is illegal, the total length of keys and values is %d, should not exceed %d", totalLength, maxLength)
+	}
+	return nil
+}
+
+// utf16Length returns the length of s as counted by Java's String.length().
+func utf16Length(s string) int {
+	return len(utf16.Encode([]rune(s)))
 }
 
 // DeregisterInstance ...
@@ -185,6 +223,9 @@ func (sc *NamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, erro
 	}
 	if param.Metadata == nil {
 		param.Metadata = make(map[string]string)
+	}
+	if err := sc.checkMetadata(param.Metadata); err != nil {
+		return false, err
 	}
 	instance := model.Instance{
 		Ip:          param.Ip,

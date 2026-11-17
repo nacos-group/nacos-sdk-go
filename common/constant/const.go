@@ -97,6 +97,7 @@ const (
 	RE_LOGIN_WINDOW_SECONDS           = 60
 	KEEP_ALIVE_TIME                   = 5
 	DEFAULT_TIMEOUT_MILLS             = 3000
+	DEFAULT_MAX_METADATA_LENGTH       = 1024
 	ALL_SYNC_INTERNAL                 = 5 * time.Minute
 	CLIENT_APPNAME_HEADER             = "Client-AppName"
 	APPNAME_HEADER                    = "AppName"
