@@ -149,7 +149,7 @@ func writeConfigToFile(fileName string, content string, fileType ConfigCachedFil
 	}
 	err := os.WriteFile(fileName, []byte(content), 0666)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed to write %s cache file, file name: %s, value: %s, err:%v", fileType, fileName, content, err)
+		errMsg := fmt.Sprintf("failed to write %s cache file, file name: %s, err:%v", fileType, fileName, err)
 		return errors.New(errMsg)
 	}
 	return nil
