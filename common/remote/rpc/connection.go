@@ -17,6 +17,8 @@
 package rpc
 
 import (
+	"sync/atomic"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
 	"google.golang.org/grpc"
@@ -34,7 +36,7 @@ type IConnection interface {
 type Connection struct {
 	conn         *grpc.ClientConn
 	connectionId string
-	abandon      bool
+	abandon      atomic.Bool
 	serverInfo   ServerInfo
 }
 
@@ -47,11 +49,11 @@ func (c *Connection) getServerInfo() ServerInfo {
 }
 
 func (c *Connection) setAbandon(flag bool) {
-	c.abandon = flag
+	c.abandon.Store(flag)
 }
 
 func (c *Connection) getAbandon() bool {
-	return c.abandon
+	return c.abandon.Load()
 }
 
 func (c *Connection) close() {
