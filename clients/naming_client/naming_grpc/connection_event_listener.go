@@ -129,22 +129,39 @@ func (c *ConnectionEventListener) redoSubscribe() {
 		if len(info) > 2 {
 			clusters = info[2]
 		}
-		switch c.redoAction(key) {
-		case subscribeRegister:
-			service, err := grpcProxy.doSubscribe(serviceName, groupName, clusters)
-			if err != nil {
-				logger.Warnf("redo subscribe service:%s failed:%+v", serviceName, err)
-				continue
-			}
-			grpcProxy.serviceInfoHolder.ProcessService(&service)
-		case subscribeUnregister:
-			if err := grpcProxy.doUnsubscribe(serviceName, groupName, clusters); err != nil {
-				logger.Warnf("redo unsubscribe service:%s failed:%+v", serviceName, err)
-			}
-		case subscribeClear:
-			c.RemoveSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
+		service, err := c.replaySubscriber(grpcProxy, key, serviceName, groupName, clusters)
+		if err != nil {
+			logger.Warnf("redo subscriber operation of service:%s failed:%+v", serviceName, err)
+			continue
+		}
+		// The callback must run after the service lock is released, because it can
+		// re-enter Subscribe or Unsubscribe for the same service.
+		if service != nil {
+			grpcProxy.serviceInfoHolder.ProcessService(service)
 		}
 	}
+}
+
+// replaySubscriber replays one subscriber redo entry while holding the service
+// lock, so the replay cannot overlap a subscribe or unsubscribe the user issues
+// at the same time. The action is re-read under the lock for the same reason: the
+// intent may have changed while the replay waited for an in-flight operation.
+func (c *ConnectionEventListener) replaySubscriber(grpcProxy *NamingGrpcProxy, key, serviceName, groupName, clusters string) (*model.Service, error) {
+	unlock := grpcProxy.lockSubscriberOp(key)
+	defer unlock()
+	switch c.redoAction(key) {
+	case subscribeRegister:
+		service, err := grpcProxy.doSubscribe(serviceName, groupName, clusters)
+		if err != nil {
+			return nil, err
+		}
+		return &service, nil
+	case subscribeUnregister:
+		return nil, grpcProxy.doUnsubscribe(serviceName, groupName, clusters)
+	case subscribeClear:
+		c.RemoveSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
+	}
+	return nil, nil
 }
 
 func (c *ConnectionEventListener) redoRegisterEachService() {

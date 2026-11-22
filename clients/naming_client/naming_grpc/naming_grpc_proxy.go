@@ -46,6 +46,20 @@ type NamingGrpcProxy struct {
 
 	// requestToServerFn allows tests to stub the rpc round-trip; nil in production.
 	requestToServerFn func(request rpc_request.IRequest) (rpc_response.IResponse, error)
+
+	// subscriberOps serializes the subscriber operations of one service, so the
+	// server applies them in the order the client issued them. The server has no
+	// sequence number: a subscribe and an unsubscribe that overlap on the wire can
+	// be applied in either order, and a cancel applied after a newer subscription
+	// stops the pushes while the client still reports the service as subscribed.
+	subscriberOps keyedMutex
+}
+
+// lockSubscriberOp serializes the subscriber operations of the service with the
+// given cache key and returns the function that releases it. The lock must cover
+// the whole round-trip but never the user callbacks.
+func (proxy *NamingGrpcProxy) lockSubscriberOp(key string) func() {
+	return proxy.subscriberOps.Lock(key)
 }
 
 // NewNamingGrpcProxy create naming grpc proxy
@@ -184,7 +198,10 @@ func (proxy *NamingGrpcProxy) IsSubscribed(serviceName, groupName string, cluste
 func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters string) (model.Service, error) {
 	logger.Infof("Subscribe Service namespaceId:<%s>, serviceName:<%s>, groupName:<%s>, clusters:<%s>",
 		proxy.clientConfig.NamespaceId, serviceName, groupName, clusters)
-	proxy.eventListener.CacheSubscriberForRedo(util.GetGroupName(serviceName, groupName), clusters)
+	fullServiceName := util.GetGroupName(serviceName, groupName)
+	unlock := proxy.lockSubscriberOp(util.GetServiceCacheKey(fullServiceName, clusters))
+	defer unlock()
+	proxy.eventListener.CacheSubscriberForRedo(fullServiceName, clusters)
 	return proxy.doSubscribe(serviceName, groupName, clusters)
 }
 
@@ -192,7 +209,7 @@ func (proxy *NamingGrpcProxy) Subscribe(serviceName, groupName string, clusters 
 // touching the subscription intent cached by Subscribe. The reconnect redo calls
 // it directly, so replaying a subscription can never take over an unsubscribe
 // the user asked for in the meantime. It aligns with the Java SDK
-// NamingGrpcClientProxy.doSubscribe.
+// NamingGrpcClientProxy.doSubscribe. The caller must hold the service lock.
 func (proxy *NamingGrpcProxy) doSubscribe(serviceName, groupName string, clusters string) (model.Service, error) {
 	request := rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName,
 		groupName, clusters, true)
@@ -224,17 +241,21 @@ func (proxy *NamingGrpcProxy) doSubscribe(serviceName, groupName string, cluster
 func (proxy *NamingGrpcProxy) Unsubscribe(serviceName, groupName, clusters string) error {
 	logger.Infof("Unsubscribe Service namespaceId:<%s>, serviceName:<%s>, groupName:<%s>, clusters:<%s>",
 		proxy.clientConfig.NamespaceId, serviceName, groupName, clusters)
+	fullServiceName := util.GetGroupName(serviceName, groupName)
+	unlock := proxy.lockSubscriberOp(util.GetServiceCacheKey(fullServiceName, clusters))
+	defer unlock()
 	// Record the unsubscribe intent before the request is sent, aligning with the
 	// Java SDK NamingGrpcClientProxy.unsubscribe. A subscription started while
 	// this response is in flight takes the intent back, so the delayed response
 	// will not remove the redo entry of the newer subscription.
-	proxy.eventListener.SubscriberDeregistering(util.GetGroupName(serviceName, groupName), clusters)
+	proxy.eventListener.SubscriberDeregistering(fullServiceName, clusters)
 	return proxy.doUnsubscribe(serviceName, groupName, clusters)
 }
 
 // doUnsubscribe sends the unsubscribe request and releases the redo entry,
 // without touching the subscription intent set by Unsubscribe, aligning with the
-// Java SDK NamingGrpcClientProxy.doUnsubscribe.
+// Java SDK NamingGrpcClientProxy.doUnsubscribe. The caller must hold the service
+// lock.
 func (proxy *NamingGrpcProxy) doUnsubscribe(serviceName, groupName, clusters string) error {
 	request := rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName, groupName,
 		clusters, false)

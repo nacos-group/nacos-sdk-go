@@ -174,9 +174,10 @@ func TestNamingGrpcProxy_Unsubscribe_FailedResponseKeepsRedoEntry(t *testing.T) 
 }
 
 // TestNamingGrpcProxy_Unsubscribe_StaleResponseKeepsNewSubscription covers the
-// concurrency review: an unsubscribe already executed on the server but with a
-// delayed response must not remove the redo entry of a subscription created in
-// the meantime, and the newer subscription must still be restored on reconnect.
+// concurrency review: a subscription started while an unsubscribe response is in
+// flight waits for that response, so the server applies the unsubscribe first and
+// the newer subscription second. The newer subscription must survive and still be
+// restored on reconnect.
 func TestNamingGrpcProxy_Unsubscribe_StaleResponseKeepsNewSubscription(t *testing.T) {
 	key := util.GetServiceCacheKey(util.GetGroupName("DEMO", "DEFAULT_GROUP"), "")
 	unsubscribeSent := make(chan struct{})
@@ -184,14 +185,19 @@ func TestNamingGrpcProxy_Unsubscribe_StaleResponseKeepsNewSubscription(t *testin
 
 	var mu sync.Mutex
 	subscribeRequests := 0
+	var applied []string
 	proxy := newProxyWithStub(func(request rpc_request.IRequest) (rpc_response.IResponse, error) {
 		subscribeRequest := request.(*rpc_request.SubscribeServiceRequest)
 		if !subscribeRequest.Subscribe {
 			close(unsubscribeSent)
 			<-releaseUnsubscribe
+			mu.Lock()
+			applied = append(applied, "unsubscribe")
+			mu.Unlock()
 		} else {
 			mu.Lock()
 			subscribeRequests++
+			applied = append(applied, "subscribe")
 			mu.Unlock()
 		}
 		return &rpc_response.SubscribeServiceResponse{
@@ -217,15 +223,29 @@ func TestNamingGrpcProxy_Unsubscribe_StaleResponseKeepsNewSubscription(t *testin
 		t.Fatal("the unsubscribe request was not sent")
 	}
 
-	// a new subscription succeeds while the unsubscribe response is in flight
-	_, err = proxy.Subscribe("DEMO", "DEFAULT_GROUP", "")
-	assert.NoError(t, err)
+	// a subscription created in the meantime must wait for the delayed response
+	subscribeErr := make(chan error, 1)
+	go func() {
+		_, err := proxy.Subscribe("DEMO", "DEFAULT_GROUP", "")
+		subscribeErr <- err
+	}()
+	select {
+	case <-subscribeErr:
+		t.Fatal("the newer subscription must wait for the in-flight unsubscribe of the same service")
+	case <-time.After(200 * time.Millisecond):
+	}
 
 	close(releaseUnsubscribe)
-	assert.NoError(t, <-unsubscribeErr, "the delayed unsubscribe response is a success")
+	assert.NoError(t, waitResult(t, unsubscribeErr, "the delayed unsubscribe response"))
+	assert.NoError(t, waitResult(t, subscribeErr, "the newer subscription"))
+
+	mu.Lock()
+	assert.Equal(t, []string{"subscribe", "unsubscribe", "subscribe"}, applied,
+		"the server must apply the unsubscribe before the newer subscription")
+	mu.Unlock()
 
 	assert.True(t, proxy.eventListener.IsSubscriberCached(key),
-		"the delayed unsubscribe response must not remove the redo entry of the newer subscription")
+		"the newer subscription must have a redo entry")
 	assert.True(t, proxy.eventListener.IsSubscriberRegistered(key))
 
 	// reconnect: the newer subscription must be restored through redo
@@ -276,18 +296,22 @@ func TestNamingGrpcProxy_Unsubscribe_ReconnectWithDelayedResponseKeepsIntent(t *
 
 	var mu sync.Mutex
 	var subscribeRequests, unsubscribeRequests int
+	var applied []string
+	var unsubscribeSentOnce sync.Once
 	proxy := newProxyWithStub(func(request rpc_request.IRequest) (rpc_response.IResponse, error) {
 		subscribeRequest := request.(*rpc_request.SubscribeServiceRequest)
 		mu.Lock()
 		if subscribeRequest.Subscribe {
 			subscribeRequests++
+			applied = append(applied, "subscribe")
 		} else {
 			unsubscribeRequests++
+			applied = append(applied, "unsubscribe")
 		}
 		mu.Unlock()
 		if !subscribeRequest.Subscribe {
 			// the server executed the unsubscribe, but the response is delayed
-			close(unsubscribeSent)
+			unsubscribeSentOnce.Do(func() { close(unsubscribeSent) })
 			<-releaseUnsubscribe
 		}
 		return &rpc_response.SubscribeServiceResponse{
@@ -312,13 +336,35 @@ func TestNamingGrpcProxy_Unsubscribe_ReconnectWithDelayedResponseKeepsIntent(t *
 		t.Fatal("the unsubscribe request was not sent")
 	}
 
-	// the connection is lost and re-established while the unsubscribe is in flight
+	// the connection is lost and re-established while the unsubscribe is in flight;
+	// the replay must wait for the response instead of racing it
 	proxy.eventListener.OnDisConnect()
-	proxy.eventListener.OnConnected()
+	replayDone := make(chan struct{})
+	go func() {
+		proxy.eventListener.OnConnected()
+		close(replayDone)
+	}()
+	select {
+	case <-replayDone:
+		t.Fatal("the reconnect replay must wait for the in-flight unsubscribe of the same service")
+	case <-time.After(200 * time.Millisecond):
+	}
 
 	// the unsubscribe response arrives and is a success
 	close(releaseUnsubscribe)
-	assert.NoError(t, <-unsubscribeErr, "the delayed unsubscribe response is a success")
+	assert.NoError(t, waitResult(t, unsubscribeErr, "the delayed unsubscribe response"))
+	select {
+	case <-replayDone:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the reconnect replay did not complete after the unsubscribe finished")
+	}
+
+	mu.Lock()
+	assert.Equal(t, []string{"subscribe", "unsubscribe"}, applied,
+		"the replay must not send a second unsubscribe after the delayed response")
+	assert.Equal(t, 1, unsubscribeRequests,
+		"the replay must not send the unsubscribe a second time")
+	mu.Unlock()
 
 	assert.False(t, proxy.eventListener.IsSubscriberCached(key),
 		"a successful unsubscribe must remove the redo entry even if a reconnect happened in between")
