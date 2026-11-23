@@ -38,19 +38,74 @@ type ConnectionEventListener struct {
 	// subscriber redo entry atomic, so a subscription started while an
 	// unsubscribe response is in flight can never be removed by that response.
 	subscribesMu sync.Mutex
+	// redoTrigger holds at most one pending redo run, so repeated connection
+	// events merge instead of queueing one redo pass per event.
+	redoTrigger chan struct{}
+	redoStop    chan struct{}
+	redoWG      sync.WaitGroup
+	stopOnce    sync.Once
+	// redoRunHook is called by the scheduler after each redo run; tests use it
+	// to wait for a run to finish. It is nil in production.
+	redoRunHook func()
 }
 
 func NewConnectionEventListener(clientProxy naming_proxy.INamingProxy) *ConnectionEventListener {
-	return &ConnectionEventListener{
+	listener := &ConnectionEventListener{
 		clientProxy:              clientProxy,
 		registeredInstanceCached: cache.NewConcurrentMap(),
 		subscribes:               cache.NewConcurrentMap(),
+		redoTrigger:              make(chan struct{}, 1),
+		redoStop:                 make(chan struct{}),
+	}
+	listener.redoWG.Add(1)
+	go listener.runRedoScheduler()
+	return listener
+}
+
+// OnConnected only signals the redo scheduler. The redo rpcs run on the
+// scheduler goroutine, so a slow redo request cannot delay the connection
+// events that arrive after it.
+func (c *ConnectionEventListener) OnConnected() {
+	select {
+	case <-c.redoStop:
+		return
+	default:
+	}
+	select {
+	case c.redoTrigger <- struct{}{}:
+	default:
 	}
 }
 
-func (c *ConnectionEventListener) OnConnected() {
-	c.redoSubscribe()
-	c.redoRegisterEachService()
+func (c *ConnectionEventListener) runRedoScheduler() {
+	defer c.redoWG.Done()
+	for {
+		select {
+		case <-c.redoStop:
+			return
+		case <-c.redoTrigger:
+		}
+		select {
+		case <-c.redoStop:
+			return
+		default:
+		}
+		c.redoSubscribe()
+		c.redoRegisterEachService()
+		if c.redoRunHook != nil {
+			c.redoRunHook()
+		}
+	}
+}
+
+// Stop ends the redo scheduler. It waits for the run in flight, so no redo rpc
+// is still running when the client is torn down, and turns any later connection
+// event into a no-op. It is safe to call more than once.
+func (c *ConnectionEventListener) Stop() {
+	c.stopOnce.Do(func() {
+		close(c.redoStop)
+		c.redoWG.Wait()
+	})
 }
 
 func (c *ConnectionEventListener) OnDisConnect() {

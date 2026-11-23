@@ -265,5 +265,6 @@ func (proxy *NamingGrpcProxy) doUnsubscribe(serviceName, groupName, clusters str
 
 func (proxy *NamingGrpcProxy) CloseClient() {
 	logger.Info("Close Nacos Go SDK Client...")
+	proxy.eventListener.Stop()
 	proxy.rpcClient.GetRpcClient().Shutdown()
 }
