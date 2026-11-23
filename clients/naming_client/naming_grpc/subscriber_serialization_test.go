@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client/naming_cache"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
@@ -103,6 +104,67 @@ func TestNamingGrpcProxy_SubscribeWaitsForInFlightUnsubscribe(t *testing.T) {
 	assert.Equal(t, []string{"subscribe", "unsubscribe", "subscribe"}, server.list(),
 		"the server must apply the operations in the order the client issued them")
 	assert.True(t, proxy.eventListener.IsSubscriberRegistered(key))
+}
+
+// TestNamingGrpcProxy_ReplayCallbackCanReenterSubscriberOps covers the review
+// requirement that the user callback runs after the service lock is released:
+// the callback may subscribe or unsubscribe the same service inline, so it must
+// not deadlock on the replay that delivered it.
+func TestNamingGrpcProxy_ReplayCallbackCanReenterSubscriberOps(t *testing.T) {
+	key := util.GetServiceCacheKey(util.GetGroupName("DEMO", "DEFAULT_GROUP"), "")
+	server := &appliedOps{}
+	var proxy *NamingGrpcProxy
+	proxy = newProxyWithStub(func(request rpc_request.IRequest) (rpc_response.IResponse, error) {
+		if request.(*rpc_request.SubscribeServiceRequest).Subscribe {
+			server.apply("subscribe")
+		} else {
+			server.apply("unsubscribe")
+		}
+		return &rpc_response.SubscribeServiceResponse{
+			Response: &rpc_response.Response{Success: true, ResultCode: 200},
+			ServiceInfo: model.Service{
+				Name:      "DEMO",
+				GroupName: "DEFAULT_GROUP",
+				Hosts:     []model.Instance{{Ip: "127.0.0.1", Port: 8848, Weight: 1}},
+			},
+		}, nil
+	})
+	holder := naming_cache.NewServiceInfoHolder("", t.TempDir(), false, true)
+	defer holder.Close()
+	proxy.serviceInfoHolder = holder
+
+	callbackErr := make(chan error, 1)
+	callback := func(services []model.Instance, err error) {
+		// the subscriber operations are re-entrant from the callback
+		callbackErr <- proxy.Unsubscribe("DEMO", "DEFAULT_GROUP", "")
+	}
+	holder.RegisterCallback(util.GetGroupName("DEMO", "DEFAULT_GROUP"), "",
+		&naming_cache.SubscribeCallbackFuncWrapper{
+			Selector:     &naming_cache.ClusterSelector{},
+			CallbackFunc: &callback,
+		})
+
+	_, err := proxy.Subscribe("DEMO", "DEFAULT_GROUP", "")
+	assert.NoError(t, err)
+
+	// the reconnect replays the subscription and delivers the callback
+	proxy.eventListener.OnDisConnect()
+	replayDone := make(chan struct{})
+	go func() {
+		proxy.eventListener.OnConnected()
+		close(replayDone)
+	}()
+	select {
+	case <-replayDone:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the replay deadlocked on the service lock held by its own callback")
+	}
+	assert.NoError(t, waitResult(t, callbackErr, "the callback's unsubscribe"))
+
+	assert.Equal(t, []string{"subscribe", "subscribe", "unsubscribe"}, server.list(),
+		"the callback must run after the replay released the service lock")
+	assert.False(t, proxy.eventListener.IsSubscriberCached(key))
+	assert.False(t, proxy.eventListener.IsSubscriberRegistered(key))
 }
 
 // TestNamingGrpcProxy_UnsubscribeWaitsForInFlightSubscribe is the symmetric
