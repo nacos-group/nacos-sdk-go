@@ -42,8 +42,13 @@ type ConnectionEventListener struct {
 	// events merge instead of queueing one redo pass per event.
 	redoTrigger chan struct{}
 	redoStop    chan struct{}
-	redoWG      sync.WaitGroup
 	stopOnce    sync.Once
+	// connectionEpoch identifies the current connection generation. It is
+	// incremented on every connect and disconnect, so a subscribe response that
+	// arrives after the connection it was sent on is gone can be told apart from
+	// a response on the current connection. It aligns with the Java SDK
+	// NamingGrpcRedoService.connectionEpoch.
+	connectionEpoch atomic.Uint64
 	// redoRunHook is called by the scheduler after each redo run; tests use it
 	// to wait for a run to finish. It is nil in production.
 	redoRunHook func()
@@ -57,7 +62,6 @@ func NewConnectionEventListener(clientProxy naming_proxy.INamingProxy) *Connecti
 		redoTrigger:              make(chan struct{}, 1),
 		redoStop:                 make(chan struct{}),
 	}
-	listener.redoWG.Add(1)
 	go listener.runRedoScheduler()
 	return listener
 }
@@ -66,19 +70,35 @@ func NewConnectionEventListener(clientProxy naming_proxy.INamingProxy) *Connecti
 // scheduler goroutine, so a slow redo request cannot delay the connection
 // events that arrive after it.
 func (c *ConnectionEventListener) OnConnected() {
-	select {
-	case <-c.redoStop:
+	if c.stopped() {
 		return
-	default:
 	}
+	c.connectionEpoch.Add(1)
 	select {
 	case c.redoTrigger <- struct{}{}:
 	default:
 	}
 }
 
+// stopped reports whether the scheduler has been stopped.
+func (c *ConnectionEventListener) stopped() bool {
+	select {
+	case <-c.redoStop:
+		return true
+	default:
+		return false
+	}
+}
+
+// ConnectionEpoch returns the current connection generation. Callers snapshot it
+// right before sending a subscribe request and pass it back to
+// SubscriberRegistered, so a response that arrives after the connection changed
+// is discarded instead of confirming the subscription on the new connection.
+func (c *ConnectionEventListener) ConnectionEpoch() uint64 {
+	return c.connectionEpoch.Load()
+}
+
 func (c *ConnectionEventListener) runRedoScheduler() {
-	defer c.redoWG.Done()
 	for {
 		select {
 		case <-c.redoStop:
@@ -98,13 +118,14 @@ func (c *ConnectionEventListener) runRedoScheduler() {
 	}
 }
 
-// Stop ends the redo scheduler. It waits for the run in flight, so no redo rpc
-// is still running when the client is torn down, and turns any later connection
-// event into a no-op. It is safe to call more than once.
+// Stop ends the redo scheduler: a later connection event becomes a no-op and a
+// run in flight stops after the rpc it is waiting on. It does not wait for the
+// scheduler goroutine, aligning with the Java SDK NamingGrpcRedoService.shutdown
+// (shutdownNow), because that goroutine delivers the subscriber callbacks and
+// one of them may close the client itself.
 func (c *ConnectionEventListener) Stop() {
 	c.stopOnce.Do(func() {
 		close(c.redoStop)
-		c.redoWG.Wait()
 	})
 }
 
@@ -118,6 +139,11 @@ func (c *ConnectionEventListener) OnDisConnect() {
 // reconnect redo retries them and IsSubscriberRegistered no longer reports
 // them as subscribed.
 func (c *ConnectionEventListener) SubscriberOnDisconnect() {
+	c.subscribesMu.Lock()
+	defer c.subscribesMu.Unlock()
+	// A subscribe response that arrives after this point belongs to the lost
+	// connection, so it must not confirm the subscription again.
+	c.connectionEpoch.Add(1)
 	for _, key := range c.subscribes.Keys() {
 		if entry, ok := c.subscribes.Get(key); ok {
 			if redoEntry, ok := entry.(*subscriberRedoEntry); ok {
@@ -179,6 +205,11 @@ func (c *ConnectionEventListener) redoSubscribe() {
 		return
 	}
 	for _, key := range c.subscribes.Keys() {
+		// a stopped scheduler abandons the remaining entries, so closing the
+		// client does not wait for the whole replay
+		if c.stopped() {
+			return
+		}
 		info := strings.Split(key, constant.SERVICE_INFO_SPLITER)
 		groupName, serviceName, clusters := info[0], info[1], ""
 		if len(info) > 2 {
@@ -204,6 +235,10 @@ func (c *ConnectionEventListener) redoSubscribe() {
 
 func (c *ConnectionEventListener) redoRegisterEachService() {
 	for k, v := range c.registeredInstanceCached.Items() {
+		// a stopped scheduler abandons the remaining entries
+		if c.stopped() {
+			return
+		}
 		info := strings.Split(k, constant.SERVICE_INFO_SPLITER)
 		serviceName := info[1]
 		groupName := info[0]
@@ -281,8 +316,20 @@ func (c *ConnectionEventListener) IsSubscriberCached(key string) bool {
 }
 
 // SubscriberRegistered marks the cached redo entry as confirmed after a
-// successful subscribe response.
-func (c *ConnectionEventListener) SubscriberRegistered(fullServiceName, clusters string) {
+// successful subscribe response. connectionEpochWhenRequest is the connection
+// generation snapshot taken before the request was sent: when the connection has
+// changed by the time the response arrives, the response belongs to a lost
+// connection and must not overwrite the unconfirmed state set by
+// SubscriberOnDisconnect, aligning with the Java SDK
+// NamingGrpcRedoService.instanceRegistered epoch handling.
+func (c *ConnectionEventListener) SubscriberRegistered(fullServiceName, clusters string, connectionEpochWhenRequest uint64) {
+	c.subscribesMu.Lock()
+	defer c.subscribesMu.Unlock()
+	if connectionEpochWhenRequest != c.connectionEpoch.Load() {
+		logger.Warnf("connection changed when subscribing service:%s, ignore stale result (epoch %d -> %d) and wait for redo",
+			fullServiceName, connectionEpochWhenRequest, c.connectionEpoch.Load())
+		return
+	}
 	if entry, ok := c.subscribes.Get(util.GetServiceCacheKey(fullServiceName, clusters)); ok {
 		if redoEntry, ok := entry.(*subscriberRedoEntry); ok {
 			redoEntry.registered.Store(true)

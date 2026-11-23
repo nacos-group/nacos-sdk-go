@@ -17,7 +17,7 @@ func TestSubscriberRedoRegisteredState(t *testing.T) {
 	assert.True(t, evListener.IsSubscriberCached(key))
 	assert.False(t, evListener.IsSubscriberRegistered(key), "a cached redo intent must not be treated as a confirmed subscription")
 
-	evListener.SubscriberRegistered(fullServiceName, "")
+	evListener.SubscriberRegistered(fullServiceName, "", evListener.ConnectionEpoch())
 	assert.True(t, evListener.IsSubscriberRegistered(key))
 
 	// re-caching a confirmed subscription must not lose the confirmed state
@@ -42,7 +42,7 @@ func TestSubscriberRedoRegisteredState(t *testing.T) {
 	assert.False(t, evListener.IsSubscriberRegistered(key))
 
 	// confirming an entry that was never cached is a no-op
-	evListener.SubscriberRegistered(fullServiceName, "")
+	evListener.SubscriberRegistered(fullServiceName, "", evListener.ConnectionEpoch())
 	assert.False(t, evListener.IsSubscriberRegistered(key))
 }
 
@@ -57,7 +57,7 @@ func TestSubscriberRedoOnDisconnect(t *testing.T) {
 
 	// confirmed subscription on the live connection
 	evListener.CacheSubscriberForRedo(fullServiceName, "")
-	evListener.SubscriberRegistered(fullServiceName, "")
+	evListener.SubscriberRegistered(fullServiceName, "", evListener.ConnectionEpoch())
 	assert.True(t, evListener.IsSubscriberRegistered(key))
 
 	// connection lost: the confirmed state must be reset while the redo intent survives
@@ -70,7 +70,32 @@ func TestSubscriberRedoOnDisconnect(t *testing.T) {
 	assert.False(t, evListener.IsSubscriberRegistered(key), "a failed redo must remain unconfirmed so later reads retry")
 
 	// redo eventually succeeds: confirmed again
-	evListener.SubscriberRegistered(fullServiceName, "")
+	evListener.SubscriberRegistered(fullServiceName, "", evListener.ConnectionEpoch())
+	assert.True(t, evListener.IsSubscriberRegistered(key))
+}
+
+// TestSubscriberRegistered_StaleConnectionResponseIgnored covers the race the
+// async redo makes reachable: a subscribe response can arrive after the
+// connection it was sent on is gone, and must not confirm the subscription on
+// the new connection, otherwise later reads would skip re-subscribing it.
+func TestSubscriberRegistered_StaleConnectionResponseIgnored(t *testing.T) {
+	evListener := NewConnectionEventListener(nil)
+	t.Cleanup(evListener.Stop)
+	fullServiceName := util.GetGroupName("service-a", "group-a")
+	key := util.GetServiceCacheKey(fullServiceName, "")
+
+	evListener.CacheSubscriberForRedo(fullServiceName, "")
+	connectionEpochWhenRequest := evListener.ConnectionEpoch()
+
+	// the connection is lost while the subscribe request is in flight
+	evListener.OnDisConnect()
+
+	evListener.SubscriberRegistered(fullServiceName, "", connectionEpochWhenRequest)
+	assert.False(t, evListener.IsSubscriberRegistered(key),
+		"a response from the lost connection must not confirm the subscription")
+
+	// a response from the current connection confirms it
+	evListener.SubscriberRegistered(fullServiceName, "", evListener.ConnectionEpoch())
 	assert.True(t, evListener.IsSubscriberRegistered(key))
 }
 

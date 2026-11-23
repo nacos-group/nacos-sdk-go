@@ -197,6 +197,10 @@ func (proxy *NamingGrpcProxy) doSubscribe(serviceName, groupName string, cluster
 	request := rpc_request.NewSubscribeServiceRequest(proxy.clientConfig.NamespaceId, serviceName,
 		groupName, clusters, true)
 	request.Headers["app"] = proxy.clientConfig.AppName
+	// Snapshot the connection generation before sending: when the connection
+	// changes before the response arrives, the response belongs to a lost
+	// connection and must not confirm the subscription on the new one.
+	connectionEpoch := proxy.eventListener.ConnectionEpoch()
 	response, err := proxy.requestToServer(request)
 	if err != nil {
 		// The redo entry stays cached but unconfirmed, so the subscription is
@@ -216,7 +220,7 @@ func (proxy *NamingGrpcProxy) doSubscribe(serviceName, groupName string, cluster
 			util.GetGroupName(serviceName, groupName), subscribeServiceResponse.GetErrorCode(),
 			subscribeServiceResponse.GetResultCode(), subscribeServiceResponse.GetMessage())
 	}
-	proxy.eventListener.SubscriberRegistered(util.GetGroupName(serviceName, groupName), clusters)
+	proxy.eventListener.SubscriberRegistered(util.GetGroupName(serviceName, groupName), clusters, connectionEpoch)
 	return subscribeServiceResponse.ServiceInfo, nil
 }
 

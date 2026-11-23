@@ -22,11 +22,19 @@ func okSubscribeResponse() *rpc_response.SubscribeServiceResponse {
 }
 
 func newRedoSchedulerProxy(t *testing.T, stub func(request rpc_request.IRequest) (rpc_response.IResponse, error)) *NamingGrpcProxy {
+	proxy := newRedoSchedulerProxyWithoutStopCleanup(t, stub)
+	t.Cleanup(proxy.eventListener.Stop)
+	return proxy
+}
+
+// newRedoSchedulerProxyWithoutStopCleanup is for the tests that stop the
+// scheduler themselves, so a failing Stop cannot block the test cleanup.
+func newRedoSchedulerProxyWithoutStopCleanup(t *testing.T,
+	stub func(request rpc_request.IRequest) (rpc_response.IResponse, error)) *NamingGrpcProxy {
 	proxy := newProxyWithStub(stub)
 	proxy.eventListener.redoRunHook = func() {}
 	holder := naming_cache.NewServiceInfoHolder("", t.TempDir(), false, true)
 	t.Cleanup(holder.Close)
-	t.Cleanup(proxy.eventListener.Stop)
 	proxy.serviceInfoHolder = holder
 	return proxy
 }
@@ -146,6 +154,91 @@ func TestConnectionEventListener_RedoSignalsCoalesce(t *testing.T) {
 	}
 	assert.EqualValues(t, 2, atomic.LoadInt32(&runs),
 		"five connection events during one redo run must schedule exactly one more run")
+}
+
+// TestConnectionEventListener_StopInsideRedoCallbackReturns covers the shutdown
+// deadlock: the reconnect redo delivers the subscriber callbacks on the scheduler
+// goroutine, so a callback that closes the client must not wait for the scheduler
+// goroutine to exit first.
+func TestConnectionEventListener_StopInsideRedoCallbackReturns(t *testing.T) {
+	proxy := newRedoSchedulerProxyWithoutStopCleanup(t, func(request rpc_request.IRequest) (rpc_response.IResponse, error) {
+		response := okSubscribeResponse()
+		response.ServiceInfo.Hosts = []model.Instance{{Ip: "1.1.1.1", Port: 8848, Weight: 1}}
+		return response, nil
+	})
+	fullServiceName := util.GetGroupName("DEMO", "DEFAULT_GROUP")
+	proxy.eventListener.CacheSubscriberForRedo(fullServiceName, "")
+
+	closeReturned := make(chan struct{})
+	callback := func(services []model.Instance, err error) {
+		proxy.eventListener.Stop()
+		close(closeReturned)
+	}
+	proxy.serviceInfoHolder.RegisterCallback(fullServiceName, "",
+		naming_cache.NewSubscribeCallbackFuncWrapper(naming_cache.NewClusterSelector(nil), &callback))
+
+	proxy.eventListener.OnConnected()
+
+	select {
+	case <-closeReturned:
+	case <-time.After(5 * time.Second):
+		t.Fatal("closing the client inside the redo callback deadlocked on the scheduler goroutine")
+	}
+}
+
+// TestConnectionEventListener_StopSkipsRemainingRedo covers the shutdown
+// requirement of the issue: stopping the scheduler stops a run in flight, so the
+// cached services after the current one are not replayed.
+func TestConnectionEventListener_StopSkipsRemainingRedo(t *testing.T) {
+	firstStarted := make(chan struct{})
+	releaseFirst := make(chan struct{})
+	var startOnce, releaseOnce sync.Once
+	release := func() {
+		releaseOnce.Do(func() { close(releaseFirst) })
+	}
+	defer release()
+	var mu sync.Mutex
+	var requests int
+
+	proxy := newRedoSchedulerProxyWithoutStopCleanup(t, func(request rpc_request.IRequest) (rpc_response.IResponse, error) {
+		mu.Lock()
+		requests++
+		mu.Unlock()
+		startOnce.Do(func() { close(firstStarted) })
+		<-releaseFirst
+		return okSubscribeResponse(), nil
+	})
+	proxy.eventListener.CacheSubscriberForRedo(util.GetGroupName("DEMO-1", "DEFAULT_GROUP"), "")
+	proxy.eventListener.CacheSubscriberForRedo(util.GetGroupName("DEMO-2", "DEFAULT_GROUP"), "")
+	redoDone := watchRedoRuns(proxy)
+
+	proxy.eventListener.OnConnected()
+	select {
+	case <-firstStarted:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the redo run did not start")
+	}
+
+	stopped := make(chan struct{})
+	go func() {
+		proxy.eventListener.Stop()
+		close(stopped)
+	}()
+	select {
+	case <-stopped:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Stop blocked on the redo rpc in flight")
+	}
+
+	release()
+	select {
+	case <-redoDone:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the redo run did not finish after the rpc was released")
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	assert.Equal(t, 1, requests, "a stopped scheduler must not replay the remaining cached services")
 }
 
 // TestConnectionEventListener_StopEndsRedo covers the shutdown requirement of

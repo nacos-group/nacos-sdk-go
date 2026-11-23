@@ -173,6 +173,28 @@ func TestNamingGrpcProxy_Unsubscribe_FailedResponseKeepsRedoEntry(t *testing.T) 
 		"a successful unsubscribe must clear the confirmed state")
 }
 
+// TestNamingGrpcProxy_Subscribe_DisconnectDuringRequestNotConfirmed covers the
+// same race through the real Subscribe path: the request is sent on a connection
+// that is lost before the response arrives, so the response must not leave the
+// subscription confirmed.
+func TestNamingGrpcProxy_Subscribe_DisconnectDuringRequestNotConfirmed(t *testing.T) {
+	key := util.GetServiceCacheKey(util.GetGroupName("DEMO", "DEFAULT_GROUP"), "")
+
+	var proxy *NamingGrpcProxy
+	proxy = newRedoSchedulerProxy(t, func(request rpc_request.IRequest) (rpc_response.IResponse, error) {
+		// the connection is lost while the subscribe request is in flight
+		proxy.eventListener.OnDisConnect()
+		return okSubscribeResponse(), nil
+	})
+
+	_, err := proxy.Subscribe("DEMO", "DEFAULT_GROUP", "")
+	assert.NoError(t, err)
+	assert.True(t, proxy.eventListener.IsSubscriberCached(key),
+		"the redo intent must stay cached so the subscription is re-established")
+	assert.False(t, proxy.eventListener.IsSubscriberRegistered(key),
+		"a subscribe response from the lost connection must not confirm the subscription")
+}
+
 // TestNamingGrpcProxy_Unsubscribe_StaleResponseKeepsNewSubscription covers the
 // concurrency review: an unsubscribe already executed on the server but with a
 // delayed response must not remove the redo entry of a subscription created in
