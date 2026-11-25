@@ -173,6 +173,28 @@ func TestNamingGrpcProxy_Unsubscribe_FailedResponseKeepsRedoEntry(t *testing.T) 
 		"a successful unsubscribe must clear the confirmed state")
 }
 
+// TestNamingGrpcProxy_Subscribe_DisconnectDuringRequestNotConfirmed covers the
+// same race through the real Subscribe path: the request is sent on a connection
+// that is lost before the response arrives, so the response must not leave the
+// subscription confirmed.
+func TestNamingGrpcProxy_Subscribe_DisconnectDuringRequestNotConfirmed(t *testing.T) {
+	key := util.GetServiceCacheKey(util.GetGroupName("DEMO", "DEFAULT_GROUP"), "")
+
+	var proxy *NamingGrpcProxy
+	proxy = newRedoSchedulerProxy(t, func(request rpc_request.IRequest) (rpc_response.IResponse, error) {
+		// the connection is lost while the subscribe request is in flight
+		proxy.eventListener.OnDisConnect()
+		return okSubscribeResponse(), nil
+	})
+
+	_, err := proxy.Subscribe("DEMO", "DEFAULT_GROUP", "")
+	assert.NoError(t, err)
+	assert.True(t, proxy.eventListener.IsSubscriberCached(key),
+		"the redo intent must stay cached so the subscription is re-established")
+	assert.False(t, proxy.eventListener.IsSubscriberRegistered(key),
+		"a subscribe response from the lost connection must not confirm the subscription")
+}
+
 // TestNamingGrpcProxy_Unsubscribe_StaleResponseKeepsNewSubscription covers the
 // concurrency review: an unsubscribe already executed on the server but with a
 // delayed response must not remove the redo entry of a subscription created in
@@ -199,6 +221,7 @@ func TestNamingGrpcProxy_Unsubscribe_StaleResponseKeepsNewSubscription(t *testin
 			ServiceInfo: model.Service{Name: "DEMO", GroupName: "DEFAULT_GROUP"},
 		}, nil
 	})
+	redoDone := watchRedoRuns(proxy)
 	holder := naming_cache.NewServiceInfoHolder("", t.TempDir(), false, true)
 	defer holder.Close()
 	proxy.serviceInfoHolder = holder
@@ -231,6 +254,7 @@ func TestNamingGrpcProxy_Unsubscribe_StaleResponseKeepsNewSubscription(t *testin
 	// reconnect: the newer subscription must be restored through redo
 	proxy.eventListener.OnDisConnect()
 	proxy.eventListener.OnConnected()
+	waitRedoRuns(t, redoDone, 1)
 
 	mu.Lock()
 	requests := subscribeRequests
@@ -295,6 +319,7 @@ func TestNamingGrpcProxy_Unsubscribe_ReconnectWithDelayedResponseKeepsIntent(t *
 			ServiceInfo: model.Service{Name: "DEMO", GroupName: "DEFAULT_GROUP"},
 		}, nil
 	})
+	redoDone := watchRedoRuns(proxy)
 	holder := naming_cache.NewServiceInfoHolder("", t.TempDir(), false, true)
 	defer holder.Close()
 	proxy.serviceInfoHolder = holder
@@ -315,6 +340,7 @@ func TestNamingGrpcProxy_Unsubscribe_ReconnectWithDelayedResponseKeepsIntent(t *
 	// the connection is lost and re-established while the unsubscribe is in flight
 	proxy.eventListener.OnDisConnect()
 	proxy.eventListener.OnConnected()
+	waitRedoRuns(t, redoDone, 1)
 
 	// the unsubscribe response arrives and is a success
 	close(releaseUnsubscribe)
@@ -327,6 +353,7 @@ func TestNamingGrpcProxy_Unsubscribe_ReconnectWithDelayedResponseKeepsIntent(t *
 	// a later reconnect must not restore the subscription the user cancelled
 	proxy.eventListener.OnDisConnect()
 	proxy.eventListener.OnConnected()
+	waitRedoRuns(t, redoDone, 1)
 
 	mu.Lock()
 	requests := subscribeRequests
@@ -353,6 +380,7 @@ func TestNamingGrpcProxy_Unsubscribe_FailedRpcReconnectKeepsIntent(t *testing.T)
 			ServiceInfo: model.Service{Name: "DEMO", GroupName: "DEFAULT_GROUP"},
 		}, nil
 	})
+	redoDone := watchRedoRuns(proxy)
 	holder := naming_cache.NewServiceInfoHolder("", t.TempDir(), false, true)
 	defer holder.Close()
 	proxy.serviceInfoHolder = holder
@@ -368,6 +396,7 @@ func TestNamingGrpcProxy_Unsubscribe_FailedRpcReconnectKeepsIntent(t *testing.T)
 	// reconnect: the cancelled subscription must not be replayed as a subscribe
 	proxy.eventListener.OnDisConnect()
 	proxy.eventListener.OnConnected()
+	waitRedoRuns(t, redoDone, 1)
 
 	assert.Equal(t, 1, subscribeRequests, "the reconnect replay must not subscribe a service the user is unsubscribing from")
 	assert.False(t, proxy.eventListener.IsSubscriberCached(key),
@@ -400,6 +429,7 @@ func TestNamingGrpcProxy_Unsubscribe_ReplayContinuesCancel(t *testing.T) {
 			ServiceInfo: model.Service{Name: "DEMO", GroupName: "DEFAULT_GROUP"},
 		}, nil
 	})
+	redoDone := watchRedoRuns(proxy)
 	holder := naming_cache.NewServiceInfoHolder("", t.TempDir(), false, true)
 	defer holder.Close()
 	proxy.serviceInfoHolder = holder
@@ -413,6 +443,7 @@ func TestNamingGrpcProxy_Unsubscribe_ReplayContinuesCancel(t *testing.T) {
 		"the server still holds the subscription on the connection")
 
 	proxy.eventListener.OnConnected()
+	waitRedoRuns(t, redoDone, 1)
 
 	assert.Equal(t, 1, subscribeRequests, "the replay must not subscribe a service the user is unsubscribing from")
 	assert.Equal(t, 2, unsubscribeRequests, "the replay must continue the pending unsubscribe")
