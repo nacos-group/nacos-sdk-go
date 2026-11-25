@@ -371,8 +371,8 @@ func (client *ConfigClient) CloseClient() {
 	if client.isClosed {
 		return
 	}
-	client.configProxy.getRpcClient(client).Shutdown()
 	client.cancel()
+	client.configProxy.getRpcClient(client).Shutdown()
 	client.isClosed = true
 }
 
@@ -551,7 +551,14 @@ func (client *ConfigClient) buildListenTask(needAllSync bool) map[int][]cacheDat
 
 func (client *ConfigClient) asyncNotifyListenConfig() {
 	go func() {
-		client.listenExecute <- struct{}{}
+		var canceled <-chan struct{}
+		if client.ctx != nil {
+			canceled = client.ctx.Done()
+		}
+		select {
+		case client.listenExecute <- struct{}{}:
+		case <-canceled:
+		}
 	}()
 }
 

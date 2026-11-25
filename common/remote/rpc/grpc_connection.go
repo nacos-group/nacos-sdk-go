@@ -44,7 +44,6 @@ func NewGrpcConnection(serverInfo ServerInfo, connectionId string, conn *grpc.Cl
 		Connection: &Connection{
 			serverInfo:   serverInfo,
 			connectionId: connectionId,
-			abandon:      false,
 			conn:         conn,
 		},
 		client:         client,
@@ -53,7 +52,11 @@ func NewGrpcConnection(serverInfo ServerInfo, connectionId string, conn *grpc.Cl
 }
 func (g *GrpcConnection) request(request rpc_request.IRequest, timeoutMills int64, client *RpcClient) (rpc_response.IResponse, error) {
 	p := convertRequest(request)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutMills)*time.Millisecond)
+	parent := context.Background()
+	if client != nil && client.ctx != nil {
+		parent = client.ctx
+	}
+	ctx, cancel := context.WithTimeout(parent, time.Duration(timeoutMills)*time.Millisecond)
 	defer cancel()
 	responsePayload, err := g.client.Request(ctx, p)
 	if err != nil {

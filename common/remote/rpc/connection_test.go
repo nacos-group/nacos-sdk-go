@@ -1,6 +1,9 @@
 package rpc
 
 import (
+	"sync"
+	"testing"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_request"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/remote/rpc/rpc_response"
 )
@@ -22,4 +25,24 @@ func (m *MockConnection) getServerInfo() ServerInfo {
 }
 func (m *MockConnection) setAbandon(flag bool) {
 
+}
+
+func TestConnectionAbandonConcurrent(t *testing.T) {
+	connection := &Connection{}
+	var workers sync.WaitGroup
+	workers.Add(2)
+	go func() {
+		defer workers.Done()
+		for i := 0; i < 1000; i++ {
+			connection.setAbandon(true)
+			connection.setAbandon(false)
+		}
+	}()
+	go func() {
+		defer workers.Done()
+		for i := 0; i < 1000; i++ {
+			_ = connection.getAbandon()
+		}
+	}()
+	workers.Wait()
 }

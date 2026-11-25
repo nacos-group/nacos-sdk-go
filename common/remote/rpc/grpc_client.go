@@ -54,9 +54,11 @@ type GrpcClient struct {
 }
 
 func NewGrpcClient(ctx context.Context, clientName string, nacosServer *nacos_server.NacosServer, tlsConfig *constant.TLSConfig) *GrpcClient {
+	ctx, cancel := context.WithCancel(ctx)
 	rpcClient := &GrpcClient{
 		&RpcClient{
 			ctx:              ctx,
+			cancel:           cancel,
 			name:             clientName,
 			labels:           make(map[string]string, 8),
 			rpcClientStatus:  INITIALIZED,
@@ -265,7 +267,7 @@ func (c *GrpcClient) connectToServer(serverInfo ServerInfo) (IConnection, error)
 	}
 
 	client = nacos_grpc_service.NewRequestClient(conn)
-	response, err := serverCheck(client)
+	response, err := serverCheck(c.ctx, client)
 	if err != nil {
 		_ = conn.Close()
 		return nil, errors.Errorf("server check request failed , err:%v", err)
@@ -273,14 +275,29 @@ func (c *GrpcClient) connectToServer(serverInfo ServerInfo) (IConnection, error)
 	serverCheckResponse := response.(*rpc_response.ServerCheckResponse)
 
 	biStreamClient = nacos_grpc_service.NewBiRequestStreamClient(conn)
-	biStreamRequestClient, err := biStreamClient.RequestBiStream(context.Background())
+	biStreamRequestClient, err := biStreamClient.RequestBiStream(c.ctx)
 	if err != nil {
+		_ = conn.Close()
 		return nil, errors.Errorf("create biStreamRequestClient failed , err:%v", err)
 	}
 	grpcConn := NewGrpcConnection(serverInfo, serverCheckResponse.ConnectionId, conn, client, biStreamRequestClient)
-	c.bindBiRequestStream(biStreamRequestClient, grpcConn)
-	err = c.sendConnectionSetupRequest(grpcConn)
-	return grpcConn, err
+	if err := c.sendConnectionSetupRequest(grpcConn); err != nil {
+		grpcConn.close()
+		return nil, err
+	}
+	c.lifecycleMu.Lock()
+	if c.isShutdown() || c.ctx.Err() != nil {
+		c.lifecycleMu.Unlock()
+		grpcConn.close()
+		return nil, c.ctx.Err()
+	}
+	c.workers.Add(1)
+	c.lifecycleMu.Unlock()
+	go func() {
+		defer c.workers.Done()
+		c.receiveBiRequestStream(biStreamRequestClient, grpcConn)
+	}()
+	return grpcConn, nil
 }
 
 func (c *GrpcClient) sendConnectionSetupRequest(grpcConn *GrpcConnection) error {
@@ -293,8 +310,14 @@ func (c *GrpcClient) sendConnectionSetupRequest(grpcConn *GrpcConnection) error 
 	if err != nil {
 		logger.Warnf("send connectionSetupRequest error:%v", err)
 	}
-	time.Sleep(100 * time.Millisecond)
-	return err
+	timer := time.NewTimer(100 * time.Millisecond)
+	defer timer.Stop()
+	select {
+	case <-timer.C:
+		return err
+	case <-c.ctx.Done():
+		return c.ctx.Err()
+	}
 }
 
 func (c *GrpcClient) getConnectionType() ConnectionType {
@@ -303,10 +326,6 @@ func (c *GrpcClient) getConnectionType() ConnectionType {
 
 func (c *GrpcClient) rpcPortOffset() uint64 {
 	return constant.RpcPortOffset
-}
-
-func (c *GrpcClient) bindBiRequestStream(streamClient nacos_grpc_service.BiRequestStream_RequestBiStreamClient, grpcConn *GrpcConnection) {
-	go c.receiveBiRequestStream(streamClient, grpcConn)
 }
 
 func (c *GrpcClient) receiveBiRequestStream(streamClient nacos_grpc_service.BiRequestStream_RequestBiStreamClient, grpcConn *GrpcConnection) {
@@ -351,9 +370,9 @@ func (c *GrpcClient) receiveBiRequestStream(streamClient nacos_grpc_service.BiRe
 	}
 }
 
-func serverCheck(client nacos_grpc_service.RequestClient) (rpc_response.IResponse, error) {
+func serverCheck(parent context.Context, client nacos_grpc_service.RequestClient) (rpc_response.IResponse, error) {
 	var response rpc_response.ServerCheckResponse
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(getInitialGrpcTimeout())*time.Millisecond)
+	ctx, cancel := context.WithTimeout(parent, time.Duration(getInitialGrpcTimeout())*time.Millisecond)
 	defer cancel()
 	for i := 0; i <= 30; i++ {
 		payload, err := client.Request(ctx, convertRequest(rpc_request.NewServerCheckRequest()))
@@ -370,7 +389,13 @@ func serverCheck(client nacos_grpc_service.RequestClient) (rpc_response.IRespons
 			if i == 30 {
 				return nil, errors.New("the nacos server is not ready to work in 30 seconds, connect to server failed")
 			}
-			time.Sleep(1 * time.Second)
+			timer := time.NewTimer(time.Second)
+			select {
+			case <-timer.C:
+			case <-ctx.Done():
+				timer.Stop()
+				return nil, ctx.Err()
+			}
 			continue
 		}
 		break
