@@ -252,3 +252,12 @@ func WithClientIP(clientIP string) ClientOption {
 		config.ClientIP = clientIP
 	}
 }
+
+// WithMaxMetadataLength sets the max total length of instance metadata keys and values
+// checked by the client before registering, default value is 1024. Set it to match
+// the server's param check limit if that was changed. A negative value disables the check.
+func WithMaxMetadataLength(maxMetadataLength int) ClientOption {
+	return func(config *ClientConfig) {
+		config.MaxMetadataLength = maxMetadataLength
+	}
+}
