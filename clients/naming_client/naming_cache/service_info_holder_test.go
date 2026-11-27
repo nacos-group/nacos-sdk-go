@@ -343,3 +343,40 @@ func TestIsServiceInstanceChanged_NoDataRace(t *testing.T) {
 	// 验证 isServiceInstanceChanged 没有修改原始 Hosts 切片
 	assert.Equal(t, originalHosts, oldService.Hosts, "isServiceInstanceChanged 不应修改原始 Hosts 切片")
 }
+
+// TestServiceInfoHolderNotifiesRecoveryAfterIgnoredEmptyPush verifies that when an
+// empty push is ignored (updateCacheWhenEmpty=false), the next non-empty push still
+// triggers the subscribe callback even if its instances equal the stale cache.
+// Regression test for https://github.com/nacos-group/nacos-sdk-go/issues/865
+func TestServiceInfoHolderNotifiesRecoveryAfterIgnoredEmptyPush(t *testing.T) {
+	holder := NewServiceInfoHolder("public", t.TempDir(), false, true)
+	defer holder.Close()
+
+	var callbackCount int32
+	callback := func(services []model.Instance, err error) {
+		atomic.AddInt32(&callbackCount, 1)
+	}
+	callbackWrapper := NewSubscribeCallbackFuncWrapper(NewClusterSelector(nil), &callback)
+	holder.RegisterCallback(util.GetGroupName("svc", "DEFAULT_GROUP"), "", callbackWrapper)
+
+	// instance online
+	holder.ProcessService(newTestService("svc", "1.1.1.1", 1))
+	assert.Equal(t, int32(1), atomic.LoadInt32(&callbackCount))
+
+	// instance offline: empty push is ignored, cache keeps the old instance
+	emptyService := newTestService("svc", "1.1.1.1", 2)
+	emptyService.Hosts = []model.Instance{}
+	holder.ProcessService(emptyService)
+	assert.Equal(t, int32(1), atomic.LoadInt32(&callbackCount))
+	cached, ok := holder.GetServiceInfo("svc", "DEFAULT_GROUP", "")
+	assert.True(t, ok)
+	assert.Len(t, cached.Hosts, 1)
+
+	// instance back online with the same data: callback must fire again
+	holder.ProcessService(newTestService("svc", "1.1.1.1", 3))
+	assert.Equal(t, int32(2), atomic.LoadInt32(&callbackCount))
+
+	// a further identical push is not a change and must not fire
+	holder.ProcessService(newTestService("svc", "1.1.1.1", 4))
+	assert.Equal(t, int32(2), atomic.LoadInt32(&callbackCount))
+}
