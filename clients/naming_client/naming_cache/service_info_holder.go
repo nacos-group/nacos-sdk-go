@@ -67,6 +67,7 @@ func (s *ServiceInfoHolder) loadCacheFromDisk() {
 	for k, v := range serviceMap {
 		s.ServiceInfoMap.Store(k, v)
 	}
+	s.updateServiceInfoMapSizeMonitor()
 }
 
 func (s *ServiceInfoHolder) ProcessServiceJson(data string) {
@@ -99,12 +100,7 @@ func (s *ServiceInfoHolder) ProcessService(service *model.Service) {
 		s.refreshDiskCache(service, cacheKey)
 		s.subCallback.ServiceChanged(cacheKey, service)
 	}
-	var count int
-	s.ServiceInfoMap.Range(func(key, value interface{}) bool {
-		count++
-		return true
-	})
-	monitor.GetServiceInfoMapSizeMonitor().Set(float64(count))
+	s.updateServiceInfoMapSizeMonitor()
 }
 
 func (s *ServiceInfoHolder) GetServiceInfo(serviceName, groupName, clusters string) (model.Service, bool) {
@@ -127,7 +123,18 @@ func (s *ServiceInfoHolder) DeregisterCallback(serviceName string, clusters stri
 
 func (s *ServiceInfoHolder) StopUpdateIfContain(serviceName, clusters string) {
 	cacheKey := util.GetServiceCacheKey(serviceName, clusters)
-	s.ServiceInfoMap.Delete(cacheKey)
+	if _, loaded := s.ServiceInfoMap.LoadAndDelete(cacheKey); loaded {
+		s.updateServiceInfoMapSizeMonitor()
+	}
+}
+
+func (s *ServiceInfoHolder) updateServiceInfoMapSizeMonitor() {
+	var count int
+	s.ServiceInfoMap.Range(func(key, value interface{}) bool {
+		count++
+		return true
+	})
+	monitor.GetServiceInfoMapSizeMonitor().Set(float64(count))
 }
 
 func (s *ServiceInfoHolder) IsSubscribed(serviceName, clusters string) bool {
